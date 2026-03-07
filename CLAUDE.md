@@ -69,6 +69,7 @@ clang-format-21 -i <file>
 
 **Formatting:**
 - No blank lines inside function bodies
+- Prefer empty lines between function/method declarations in headers
 
 **Testing:**
 - Test files are named `*_test.cpp` (e.g., `lexeme_stream_test.cpp`)

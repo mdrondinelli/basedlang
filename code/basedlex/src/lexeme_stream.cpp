@@ -1,17 +1,17 @@
 #include <cctype>
 #include <string>
 
-#include "basedlex/lexer.h"
+#include "basedlex/lexeme_stream.h"
 
 namespace basedlex
 {
 
-  Lexer::Lexer(Char_stream *stream) noexcept
+  Lexeme_stream::Lexeme_stream(Char_stream *stream) noexcept
       : _reader{stream}, _line{1}, _column{1}
   {
   }
 
-  Lexer::Lex_result Lexer::lex()
+  Lexeme Lexeme_stream::lex()
   {
     auto text = std::string{};
     auto token_line = int{};
@@ -73,7 +73,7 @@ namespace basedlex
                 .column = token_column
               };
             }
-            return Lex_error{.line = token_line, .column = token_column};
+            throw Lex_error{token_line, token_column};
           }
           switch (c)
           {
@@ -120,7 +120,7 @@ namespace basedlex
               .column = token_column
             };
           default:
-            return Lex_error{.line = token_line, .column = token_column};
+            throw Lex_error{token_line, token_column};
           }
         }
       case 1:

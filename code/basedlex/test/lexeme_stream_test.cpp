@@ -3,24 +3,22 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "basedlex/lexeme.h"
-#include "basedlex/lexer.h"
+#include "basedlex/lexeme_stream.h"
 #include "basedlex/token.h"
 #include "basedlex/utf8_char_stream.h"
 #include "istream_binary_stream.h"
 
-TEST_CASE("Lexer lexes first.based")
+TEST_CASE("Lexeme_stream lexes first.based")
 {
   auto file = std::ifstream{EXAMPLES_PATH "/first.based"};
   REQUIRE(file.is_open());
   auto binary = basedlex::Istream_binary_stream{&file};
   auto chars = basedlex::Utf8_char_stream{&binary};
-  auto lexer = basedlex::Lexer{&chars};
+  auto stream = basedlex::Lexeme_stream{&chars};
   auto const expect =
     [&](std::string const &text, basedlex::Token token, int line, int column)
   {
-    auto const result = lexer.lex();
-    REQUIRE(std::holds_alternative<basedlex::Lexeme>(result));
-    auto const &lexeme = std::get<basedlex::Lexeme>(result);
+    auto const lexeme = stream.lex();
     CHECK(lexeme.text == text);
     CHECK(lexeme.token == token);
     CHECK(lexeme.line == line);

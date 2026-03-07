@@ -43,6 +43,12 @@ clang-format-21 -i <file>
 **Const:**
 - Prefer `const` for local variables where possible (e.g., `auto const result = ...`)
 
+**Auto:**
+- Prefer `auto` for variable declarations (e.g., `auto x = int{};`, `auto const y = foo()`)
+
+**Formatting:**
+- No blank lines inside function bodies
+
 **Naming:**
 - `struct`, `class`, and `enum`: `Snake_case` with capital first letter (e.g., `Descriptor_set_layout`, `Work_recorder`)
 - Functions, variables, namespaces, files: `snake_case`

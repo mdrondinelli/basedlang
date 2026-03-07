@@ -1,5 +1,5 @@
-#ifndef BASEDLEX_LEXER_INPUT_STREAM_H
-#define BASEDLEX_LEXER_INPUT_STREAM_H
+#ifndef BASEDLEX_CHAR_STREAM_H
+#define BASEDLEX_CHAR_STREAM_H
 
 #include <cstdint>
 #include <optional>
@@ -7,10 +7,10 @@
 namespace basedlex
 {
 
-  class Lexer_input_stream
+  class Char_stream
   {
   public:
-    virtual ~Lexer_input_stream() = default;
+    virtual ~Char_stream() = default;
 
     // Returns the Unicode codepoint of the next character, or std::nullopt at
     // EOF.
@@ -19,4 +19,4 @@ namespace basedlex
 
 } // namespace basedlex
 
-#endif // BASEDLEX_LEXER_INPUT_STREAM_H
+#endif // BASEDLEX_CHAR_STREAM_H

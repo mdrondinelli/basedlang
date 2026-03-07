@@ -10,5 +10,5 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 add_subdirectory(extern/Catch2-3.13.0)
 
 add_executable(basedc
-  compiler/src/main.cpp
+  code/basedc/src/main.cpp
 )

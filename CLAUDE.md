@@ -46,6 +46,20 @@ clang-format-21 -i <file>
 **Auto:**
 - Prefer `auto` for variable declarations (e.g., `auto x = int{};`, `auto const y = foo()`)
 
+**Immediately invoked lambda expressions (IILEs):**
+- Use IILEs to initialize variables that require internal mutation to compute, keeping them `const` in the surrounding scope:
+  ```cpp
+  auto const x = [&]() -> int
+  {
+    auto result = int{};
+    for (auto const item : items)
+    {
+      result += item;
+    }
+    return result;
+  }();
+  ```
+
 **Formatting:**
 - No blank lines inside function bodies
 

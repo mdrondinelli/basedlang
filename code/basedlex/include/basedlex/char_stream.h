@@ -7,6 +7,8 @@
 namespace basedlex
 {
 
+  /// Abstract source of Unicode characters. Implement this to feed text into
+  /// the lexer.
   class Char_stream
   {
   public:

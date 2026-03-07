@@ -9,6 +9,8 @@
 namespace basedlex
 {
 
+  /// Wraps a Char_stream with one character of lookahead, exposing peek/read
+  /// operations.
   class Char_stream_reader
   {
   public:

@@ -8,6 +8,8 @@
 namespace basedlex
 {
 
+  /// A single token produced by the lexer, including its text and source
+  /// location.
   struct Lexeme
   {
     std::string text;

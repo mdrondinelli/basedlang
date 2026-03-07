@@ -40,6 +40,9 @@ clang-format-21 -i <file>
 - Standard library headers before project headers
 - Use relative includes for headers within the same library (e.g., `#include "token.h"` not `#include "basedlex/token.h"`)
 
+**Const:**
+- Prefer `const` for local variables where possible (e.g., `auto const result = ...`)
+
 **Naming:**
 - `struct`, `class`, and `enum`: `Snake_case` with capital first letter (e.g., `Descriptor_set_layout`, `Work_recorder`)
 - Functions, variables, namespaces, files: `snake_case`

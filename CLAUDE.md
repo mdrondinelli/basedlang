@@ -24,7 +24,7 @@ Use `clangd-21 --check=<file>` to check a file for errors and warnings:
 clangd-21 --check=<file>
 ```
 
-The output is verbose; the important lines start with `E[` (errors) or the final summary `All checks completed`.
+The output is verbose. `E[` lines about tweak failures (e.g. `tweak: ExtractFunction ==> FAIL`) are clangd refactoring noise, not compiler errors — ignore them. Real compiler errors appear as diagnostic messages in the output. The final summary line `All checks completed, N errors` reflects only real diagnostics.
 
 ## Formatting
 
@@ -35,6 +35,13 @@ clang-format-21 -i <file>
 ```
 
 ## C++ coding style
+
+**Braced initialization:**
+- Prefer braced initialization everywhere (e.g., `auto x = int{};`, `auto s = std::string{};`)
+- Exception: `std::vector<T>(n)` must use parentheses to call the size constructor — `std::vector<T>{n}` would use the initializer-list constructor instead
+
+**Parameters:**
+- Prefer pointers over non-const references for mutable parameters — it makes mutation visible at the call site (e.g., `foo(&x)` not `foo(x)`)
 
 **Includes:**
 - Standard library headers before project headers
@@ -62,6 +69,10 @@ clang-format-21 -i <file>
 
 **Formatting:**
 - No blank lines inside function bodies
+
+**Testing:**
+- Test files are named `*_test.cpp` (e.g., `lexeme_stream_test.cpp`)
+- Shared test utilities (files that don't contain tests themselves) omit the suffix (e.g., `istream_binary_stream.cpp`)
 
 **Naming:**
 - `struct`, `class`, and `enum`: `Snake_case` with capital first letter (e.g., `Descriptor_set_layout`, `Work_recorder`)

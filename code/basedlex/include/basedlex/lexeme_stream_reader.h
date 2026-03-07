@@ -18,6 +18,7 @@ namespace basedlex
 
     // The returned reference is invalidated by any subsequent call to peek or read.
     Lexeme const &peek(int offset = 0);
+
     Lexeme read();
 
   private:

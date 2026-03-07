@@ -17,6 +17,7 @@ namespace basedlex
     explicit Char_stream_reader(Char_stream *stream) noexcept;
 
     std::optional<uint32_t> peek() const noexcept;
+
     std::optional<uint32_t> read();
 
   private:

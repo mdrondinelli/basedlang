@@ -26,6 +26,9 @@ clang-format-21 -i <file>
 
 ## C++ coding style
 
+**Includes:**
+- Standard library headers before project headers (e.g., `#include <string>` above `#include "basedlex/token.h"`)
+
 **Naming:**
 - `struct`, `class`, and `enum`: `Snake_case` with capital first letter (e.g., `Descriptor_set_layout`, `Work_recorder`)
 - Functions, variables, namespaces, files: `snake_case`

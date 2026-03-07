@@ -21,7 +21,8 @@ namespace basedlex
     {
       return *b0;
     }
-    auto const [initial_codepoint, remaining] = [&]() -> std::pair<uint32_t, int>
+    auto const [initial_codepoint, remaining] =
+      [&]() -> std::pair<uint32_t, int>
     {
       if ((*b0 & 0b1110'0000) == 0b1100'0000)
       {

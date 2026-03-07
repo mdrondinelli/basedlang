@@ -16,6 +16,16 @@ Then (or if `build/` already exists):
 cmake --build build
 ```
 
+## Checking for errors and warnings
+
+Use `clangd-21 --check=<file>` to check a file for errors and warnings:
+
+```bash
+clangd-21 --check=<file>
+```
+
+The output is verbose; the important lines start with `E[` (errors) or the final summary `All checks completed`.
+
 ## Formatting
 
 Use `clang-format-21` to format C++ files:
@@ -27,7 +37,8 @@ clang-format-21 -i <file>
 ## C++ coding style
 
 **Includes:**
-- Standard library headers before project headers (e.g., `#include <string>` above `#include "basedlex/token.h"`)
+- Standard library headers before project headers
+- Use relative includes for headers within the same library (e.g., `#include "token.h"` not `#include "basedlex/token.h"`)
 
 **Naming:**
 - `struct`, `class`, and `enum`: `Snake_case` with capital first letter (e.g., `Descriptor_set_layout`, `Work_recorder`)

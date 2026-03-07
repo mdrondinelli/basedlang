@@ -11,6 +11,7 @@ add_subdirectory(extern/Catch2-3.13.0)
 
 add_library(basedlex
   code/basedlex/src/char_stream_reader.cpp
+  code/basedlex/src/lexer.cpp
   code/basedlex/src/utf8_char_stream.cpp
 )
 target_include_directories(basedlex PUBLIC code/basedlex/include)
@@ -18,8 +19,11 @@ target_include_directories(basedlex PUBLIC code/basedlex/include)
 add_executable(basedc
   code/basedc/src/main.cpp
 )
+
 add_executable(basedlex-tests
   code/basedlex/test/istream_binary_stream.cpp
+  code/basedlex/test/lexer_test.cpp
   code/basedlex/test/utf8_char_stream_test.cpp
 )
 target_link_libraries(basedlex-tests PRIVATE basedlex Catch2::Catch2WithMain)
+target_compile_definitions(basedlex-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")

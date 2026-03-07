@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## Commits
+
+Prefer atomic commits: each commit should represent one logical change. When a task involves multiple distinct steps (e.g., a refactor followed by a new feature), split them into separate commits.
+
 ## Building
 
 If `build/` doesn't exist yet:

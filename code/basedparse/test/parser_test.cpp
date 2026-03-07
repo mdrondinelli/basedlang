@@ -131,10 +131,8 @@ TEST_CASE("parse_translation_unit - empty")
 
 TEST_CASE("parse_translation_unit - multiple functions")
 {
-  auto fixture = Parse_fixture{
-    "let a = fn() -> i32 { return 1; }\n"
-    "let b = fn() -> i32 { return 2; }"
-  };
+  auto fixture = Parse_fixture{"let a = fn() -> i32 { return 1; }\n"
+                               "let b = fn() -> i32 { return 2; }"};
   auto const unit = fixture.parser.parse_translation_unit();
   REQUIRE(unit->statements.size() == 2);
   auto const *a = dynamic_cast<basedparse::Function_definition const *>(

@@ -11,14 +11,24 @@ namespace basedparse
   {
   }
 
-  Translation_unit Parser::parse_translation_unit()
+  std::unique_ptr<Translation_unit> Parser::parse_translation_unit()
   {
-    auto statements = std::vector<std::unique_ptr<Statement>>{};
+    auto unit = std::make_unique<Translation_unit>();
     while (_reader->peek().token != basedlex::Token::eof)
     {
-      statements.push_back(parse_statement());
+      unit->statements.push_back(parse_function_definition());
     }
-    return Translation_unit{std::move(statements)};
+    return unit;
+  }
+
+  std::unique_ptr<Function_definition> Parser::parse_function_definition()
+  {
+    auto stmt = std::make_unique<Function_definition>();
+    stmt->kw_let = expect(basedlex::Token::kw_let);
+    stmt->name = expect(basedlex::Token::identifier);
+    stmt->eq = expect(basedlex::Token::eq);
+    stmt->function = std::move(*parse_fn_expression());
+    return stmt;
   }
 
   std::unique_ptr<Statement> Parser::parse_statement()
@@ -26,103 +36,41 @@ namespace basedparse
     auto const &next = _reader->peek();
     if (next.token == basedlex::Token::kw_let)
     {
-      // Peek ahead: let <name> = fn means Function_definition
-      if (_reader->peek(3).token == basedlex::Token::kw_fn)
-      {
-        auto kw_let = _reader->read();
-        auto name = expect(basedlex::Token::identifier);
-        auto eq = expect(basedlex::Token::eq);
-        auto function = parse_fn_expression();
-        auto stmt = std::make_unique<Function_definition>();
-        stmt->kw_let = std::move(kw_let);
-        stmt->name = std::move(name);
-        stmt->eq = std::move(eq);
-        stmt->function = std::move(function);
-        return stmt;
-      }
-      auto kw_let = _reader->read();
-      auto name = expect(basedlex::Token::identifier);
-      auto eq = expect(basedlex::Token::eq);
-      auto initializer = parse_expression();
-      auto semicolon = expect(basedlex::Token::semicolon);
-      auto stmt = std::make_unique<Let_statement>();
-      stmt->kw_let = std::move(kw_let);
-      stmt->name = std::move(name);
-      stmt->eq = std::move(eq);
-      stmt->initializer = std::move(initializer);
-      stmt->semicolon = std::move(semicolon);
-      return stmt;
+      return parse_let_statement();
     }
     if (next.token == basedlex::Token::kw_return)
     {
-      auto kw_return = _reader->read();
-      auto value = parse_expression();
-      auto semicolon = expect(basedlex::Token::semicolon);
-      auto stmt = std::make_unique<Return_statement>();
-      stmt->kw_return = std::move(kw_return);
-      stmt->value = std::move(value);
-      stmt->semicolon = std::move(semicolon);
-      return stmt;
+      return parse_return_statement();
     }
-    auto expression = parse_expression();
-    auto semicolon = expect(basedlex::Token::semicolon);
-    auto stmt = std::make_unique<Expression_statement>();
-    stmt->expression = std::move(expression);
-    stmt->semicolon = std::move(semicolon);
+    return parse_expression_statement();
+  }
+
+  std::unique_ptr<Let_statement> Parser::parse_let_statement()
+  {
+    auto stmt = std::make_unique<Let_statement>();
+    stmt->kw_let = expect(basedlex::Token::kw_let);
+    stmt->name = expect(basedlex::Token::identifier);
+    stmt->eq = expect(basedlex::Token::eq);
+    stmt->initializer = parse_expression();
+    stmt->semicolon = expect(basedlex::Token::semicolon);
     return stmt;
   }
 
-  std::unique_ptr<Expression> Parser::parse_expression()
+  std::unique_ptr<Return_statement> Parser::parse_return_statement()
   {
-    auto const &next = _reader->peek();
-    if (next.token == basedlex::Token::int_literal)
-    {
-      auto expr = std::make_unique<Int_literal_expression>();
-      expr->literal = _reader->read();
-      return expr;
-    }
-    if (next.token == basedlex::Token::identifier)
-    {
-      auto expr = std::make_unique<Identifier_expression>();
-      expr->identifier = _reader->read();
-      return expr;
-    }
-    if (next.token == basedlex::Token::kw_fn)
-    {
-      auto fn = parse_fn_expression();
-      return std::make_unique<Fn_expression>(std::move(fn));
-    }
-    throw std::runtime_error{
-      "unexpected token '" + next.text + "' at " + std::to_string(next.line) +
-      ":" + std::to_string(next.column)
-    };
+    auto stmt = std::make_unique<Return_statement>();
+    stmt->kw_return = expect(basedlex::Token::kw_return);
+    stmt->value = parse_expression();
+    stmt->semicolon = expect(basedlex::Token::semicolon);
+    return stmt;
   }
 
-  std::unique_ptr<Type_expression> Parser::parse_type_expression()
+  std::unique_ptr<Expression_statement> Parser::parse_expression_statement()
   {
-    auto const &next = _reader->peek();
-    if (next.token == basedlex::Token::identifier)
-    {
-      auto expr = std::make_unique<Identifier_type_expression>();
-      expr->identifier = _reader->read();
-      return expr;
-    }
-    throw std::runtime_error{
-      "expected type, got '" + next.text + "' at " + std::to_string(next.line) +
-      ":" + std::to_string(next.column)
-    };
-  }
-
-  Fn_expression Parser::parse_fn_expression()
-  {
-    auto fn = Fn_expression{};
-    fn.kw_fn = expect(basedlex::Token::kw_fn);
-    fn.lparen = expect(basedlex::Token::lparen);
-    fn.rparen = expect(basedlex::Token::rparen);
-    fn.arrow = expect(basedlex::Token::arrow);
-    fn.return_type = parse_type_expression();
-    fn.body = parse_block_statement();
-    return fn;
+    auto stmt = std::make_unique<Expression_statement>();
+    stmt->expression = parse_expression();
+    stmt->semicolon = expect(basedlex::Token::semicolon);
+    return stmt;
   }
 
   std::unique_ptr<Block_statement> Parser::parse_block_statement()
@@ -135,6 +83,74 @@ namespace basedparse
     }
     block->rbrace = expect(basedlex::Token::rbrace);
     return block;
+  }
+
+  std::unique_ptr<Expression> Parser::parse_expression()
+  {
+    auto const &next = _reader->peek();
+    if (next.token == basedlex::Token::int_literal)
+    {
+      return parse_int_literal_expression();
+    }
+    if (next.token == basedlex::Token::identifier)
+    {
+      return parse_identifier_expression();
+    }
+    if (next.token == basedlex::Token::kw_fn)
+    {
+      return parse_fn_expression();
+    }
+    throw std::runtime_error{
+      "unexpected token '" + next.text + "' at " + std::to_string(next.line) +
+      ":" + std::to_string(next.column)
+    };
+  }
+
+  std::unique_ptr<Fn_expression> Parser::parse_fn_expression()
+  {
+    auto fn = std::make_unique<Fn_expression>();
+    fn->kw_fn = expect(basedlex::Token::kw_fn);
+    fn->lparen = expect(basedlex::Token::lparen);
+    fn->rparen = expect(basedlex::Token::rparen);
+    fn->arrow = expect(basedlex::Token::arrow);
+    fn->return_type = parse_type_expression();
+    fn->body = parse_block_statement();
+    return fn;
+  }
+
+  std::unique_ptr<Int_literal_expression> Parser::parse_int_literal_expression()
+  {
+    auto expr = std::make_unique<Int_literal_expression>();
+    expr->literal = expect(basedlex::Token::int_literal);
+    return expr;
+  }
+
+  std::unique_ptr<Identifier_expression> Parser::parse_identifier_expression()
+  {
+    auto expr = std::make_unique<Identifier_expression>();
+    expr->identifier = expect(basedlex::Token::identifier);
+    return expr;
+  }
+
+  std::unique_ptr<Type_expression> Parser::parse_type_expression()
+  {
+    auto const &next = _reader->peek();
+    if (next.token == basedlex::Token::identifier)
+    {
+      return parse_identifier_type_expression();
+    }
+    throw std::runtime_error{
+      "expected type, got '" + next.text + "' at " + std::to_string(next.line) +
+      ":" + std::to_string(next.column)
+    };
+  }
+
+  std::unique_ptr<Identifier_type_expression>
+  Parser::parse_identifier_type_expression()
+  {
+    auto expr = std::make_unique<Identifier_type_expression>();
+    expr->identifier = expect(basedlex::Token::identifier);
+    return expr;
   }
 
   basedlex::Lexeme Parser::expect(basedlex::Token token)

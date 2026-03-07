@@ -16,7 +16,8 @@ namespace basedlex
   public:
     explicit Lexeme_stream_reader(Lexeme_stream *stream) noexcept;
 
-    // The returned reference is invalidated by any subsequent call to peek or read.
+    // The returned reference is invalidated by any subsequent call to peek or
+    // read.
     Lexeme const &peek(int offset = 0);
 
     Lexeme read();

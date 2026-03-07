@@ -3,8 +3,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "basedlex/utf8_char_stream.h"
 #include "basedlex/istream_binary_stream.h"
+#include "basedlex/utf8_char_stream.h"
 
 TEST_CASE("Utf8_char_stream - valid sequences")
 {

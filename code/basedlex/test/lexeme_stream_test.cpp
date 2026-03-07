@@ -6,7 +6,7 @@
 #include "basedlex/lexeme_stream.h"
 #include "basedlex/token.h"
 #include "basedlex/utf8_char_stream.h"
-#include "istream_binary_stream.h"
+#include "basedlex/istream_binary_stream.h"
 
 TEST_CASE("Lexeme_stream lexes first.based")
 {

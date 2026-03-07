@@ -1,4 +1,4 @@
-#include "istream_binary_stream.h"
+#include "basedlex/istream_binary_stream.h"
 
 namespace basedlex
 {

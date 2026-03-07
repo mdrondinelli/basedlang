@@ -1,11 +1,11 @@
-#ifndef BASEDLEX_TEST_ISTREAM_BINARY_STREAM_H
-#define BASEDLEX_TEST_ISTREAM_BINARY_STREAM_H
+#ifndef BASEDLEX_ISTREAM_BINARY_STREAM_H
+#define BASEDLEX_ISTREAM_BINARY_STREAM_H
 
 #include <cstdint>
 #include <istream>
 #include <optional>
 
-#include "basedlex/binary_stream.h"
+#include "binary_stream.h"
 
 namespace basedlex
 {
@@ -23,4 +23,4 @@ namespace basedlex
 
 } // namespace basedlex
 
-#endif // BASEDLEX_TEST_ISTREAM_BINARY_STREAM_H
+#endif // BASEDLEX_ISTREAM_BINARY_STREAM_H

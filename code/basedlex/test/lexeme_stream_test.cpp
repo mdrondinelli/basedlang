@@ -42,6 +42,19 @@ TEST_CASE("Lexeme_stream lexes first.based")
   expect("", eof, 4, 1);
 }
 
+TEST_CASE("Lexeme_stream lexes colon")
+{
+  auto ss = std::istringstream{":"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == ":");
+  CHECK(lexeme.token == basedlex::Token::colon);
+  CHECK(lexeme.line == 1);
+  CHECK(lexeme.column == 1);
+}
+
 TEST_CASE("Lexeme_stream lexes comma")
 {
   auto ss = std::istringstream{","};

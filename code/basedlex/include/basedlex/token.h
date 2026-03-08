@@ -13,6 +13,7 @@ namespace basedlex
     kw_let,
     kw_return,
     arrow, // ->
+    colon, // :
     eq, // =
     lbrace, // {
     lparen, // (

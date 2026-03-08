@@ -1,6 +1,8 @@
+#include <limits>
 #include <stdexcept>
 #include <string>
 
+#include "basedparse/operator.h"
 #include "basedparse/parser.h"
 
 namespace basedparse
@@ -87,27 +89,50 @@ namespace basedparse
 
   std::unique_ptr<Expression> Parser::parse_expression()
   {
+    return parse_expression(std::numeric_limits<int>::max());
+  }
+
+  std::unique_ptr<Expression> Parser::parse_expression(int current_precedence)
+  {
     auto expr = parse_primary_expression();
-    if (_reader->peek().token == basedlex::Token::lparen)
+    for (;;)
     {
-      auto call = std::make_unique<Call_expression>();
-      call->callee = std::move(expr);
-      call->lparen = expect(basedlex::Token::lparen);
-      for (;;)
+      if (_reader->peek().token == basedlex::Token::lparen &&
+          get_operator_precedence(Operator::call) <= current_precedence)
       {
-        if (_reader->peek().token == basedlex::Token::rparen)
+        auto call = std::make_unique<Call_expression>();
+        call->callee = std::move(expr);
+        call->lparen = expect(basedlex::Token::lparen);
+        for (;;)
         {
-          break;
+          if (_reader->peek().token == basedlex::Token::rparen)
+          {
+            break;
+          }
+          call->arguments.push_back(parse_expression());
+          if (_reader->peek().token != basedlex::Token::comma)
+          {
+            break;
+          }
+          call->argument_commas.push_back(expect(basedlex::Token::comma));
         }
-        call->arguments.push_back(parse_expression());
-        if (_reader->peek().token != basedlex::Token::comma)
-        {
-          break;
-        }
-        call->argument_commas.push_back(expect(basedlex::Token::comma));
+        call->rparen = expect(basedlex::Token::rparen);
+        expr = std::move(call);
       }
-      call->rparen = expect(basedlex::Token::rparen);
-      return call;
+      else if (auto const bin_op = get_binary_operator(_reader->peek().token);
+               bin_op && get_operator_precedence(*bin_op) <= current_precedence)
+      {
+        auto const op_prec = get_operator_precedence(*bin_op);
+        auto binary = std::make_unique<Binary_expression>();
+        binary->left = std::move(expr);
+        binary->op = _reader->read();
+        binary->right = parse_expression(op_prec - 1);
+        expr = std::move(binary);
+      }
+      else
+      {
+        break;
+      }
     }
     return expr;
   }

@@ -6,6 +6,7 @@
 #include "basedlex/lexeme_stream_reader.h"
 
 #include "expression.h"
+#include "operator.h"
 #include "statement.h"
 #include "translation_unit.h"
 #include "type_expression.h"
@@ -52,6 +53,8 @@ namespace basedparse
     parse_identifier_type_expression();
 
   private:
+    std::unique_ptr<Expression> parse_expression(int current_precedence);
+
     basedlex::Lexeme expect(basedlex::Token token);
 
     basedlex::Lexeme_stream_reader *_reader;

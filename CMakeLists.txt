@@ -20,6 +20,7 @@ target_include_directories(basedlex PUBLIC code/basedlex/include)
 
 add_library(basedparse
   code/basedparse/src/ast.cpp
+  code/basedparse/src/operator.cpp
   code/basedparse/src/parser.cpp
 )
 target_include_directories(basedparse PUBLIC code/basedparse/include)

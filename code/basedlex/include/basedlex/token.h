@@ -18,6 +18,7 @@ namespace basedlex
     lparen, // (
     rbrace, // }
     rparen, // )
+    comma, // ,
     semicolon, // ;
   };
 

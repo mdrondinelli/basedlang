@@ -112,6 +112,13 @@ namespace basedlex
               .line = token_line,
               .column = token_column
             };
+          case ',':
+            return Lexeme{
+              .text = ",",
+              .token = Token::comma,
+              .line = token_line,
+              .column = token_column
+            };
           case ';':
             return Lexeme{
               .text = ";",

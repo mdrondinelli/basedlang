@@ -830,3 +830,107 @@ TEST_CASE("parse_fn_expression - array parameter")
   CHECK(size->literal.text == "4");
 }
 
+
+TEST_CASE("parse_expression - constructor: empty")
+{
+  auto fixture = Parse_fixture{"Foo{}"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *ctor =
+    dynamic_cast<basedparse::Constructor_expression const *>(expr.get());
+  REQUIRE(ctor != nullptr);
+  auto const *type =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      ctor->type.get()
+    );
+  REQUIRE(type != nullptr);
+  CHECK(type->identifier.text == "Foo");
+  CHECK(ctor->arguments.empty());
+}
+
+TEST_CASE("parse_expression - constructor: multiple arguments")
+{
+  auto fixture = Parse_fixture{"Foo{1, x, 2 + 3}"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *ctor =
+    dynamic_cast<basedparse::Constructor_expression const *>(expr.get());
+  REQUIRE(ctor != nullptr);
+  REQUIRE(ctor->arguments.size() == 3);
+  auto const *first =
+    dynamic_cast<basedparse::Int_literal_expression const *>(
+      ctor->arguments[0].get()
+    );
+  REQUIRE(first != nullptr);
+  CHECK(first->literal.text == "1");
+  auto const *second =
+    dynamic_cast<basedparse::Identifier_expression const *>(
+      ctor->arguments[1].get()
+    );
+  REQUIRE(second != nullptr);
+  CHECK(second->identifier.text == "x");
+  CHECK(
+    dynamic_cast<basedparse::Binary_expression const *>(
+      ctor->arguments[2].get()
+    ) != nullptr
+  );
+}
+
+TEST_CASE("parse_expression - constructor: array type")
+{
+  auto fixture = Parse_fixture{"i32[4] { 1, 2, 3, 4 }"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *ctor =
+    dynamic_cast<basedparse::Constructor_expression const *>(expr.get());
+  REQUIRE(ctor != nullptr);
+  auto const *type =
+    dynamic_cast<basedparse::Array_type_expression const *>(ctor->type.get());
+  REQUIRE(type != nullptr);
+  auto const *elem =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      type->element_type.get()
+    );
+  REQUIRE(elem != nullptr);
+  CHECK(elem->identifier.text == "i32");
+  REQUIRE(ctor->arguments.size() == 4);
+}
+
+TEST_CASE("parse_expression - constructor: in full program")
+{
+  CHECK(parses("let f = fn() { let x = Foo{1, 2}; }"));
+  CHECK(parses("let f = fn() { let x = i32[3] { 1, 2, 3 }; }"));
+}
+
+TEST_CASE("parse_expression - identifier still works after constructor change")
+{
+  // plain identifiers must not be misinterpreted as constructors
+  auto fixture = Parse_fixture{"x + y"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *bin =
+    dynamic_cast<basedparse::Binary_expression const *>(expr.get());
+  REQUIRE(bin != nullptr);
+  auto const *left =
+    dynamic_cast<basedparse::Identifier_expression const *>(bin->left.get());
+  REQUIRE(left != nullptr);
+  CHECK(left->identifier.text == "x");
+  auto const *right =
+    dynamic_cast<basedparse::Identifier_expression const *>(bin->right.get());
+  REQUIRE(right != nullptr);
+  CHECK(right->identifier.text == "y");
+}
+
+TEST_CASE("parse_expression - constructor: trailing comma")
+{
+  auto fixture = Parse_fixture{"Foo{1, 2,}"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *ctor =
+    dynamic_cast<basedparse::Constructor_expression const *>(expr.get());
+  REQUIRE(ctor != nullptr);
+  REQUIRE(ctor->arguments.size() == 2);
+  CHECK(ctor->argument_commas.size() == 2);
+}
+
+TEST_CASE("parse_expression - constructor: rejects")
+{
+  CHECK_FALSE(parses("let x = fn() { Foo{;}; }"));
+  CHECK_FALSE(parses("let x = fn() { Foo{1 2}; }"));
+  CHECK_FALSE(parses("let x = fn() { i32[4] ; }"));
+}

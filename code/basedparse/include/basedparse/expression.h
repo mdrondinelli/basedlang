@@ -96,6 +96,16 @@ namespace basedparse
     basedlex::Lexeme rparen;
   };
 
+  class Constructor_expression: public Expression
+  {
+  public:
+    std::unique_ptr<Type_expression> type;
+    basedlex::Lexeme lbrace;
+    std::vector<std::unique_ptr<Expression>> arguments;
+    std::vector<basedlex::Lexeme> argument_commas;
+    basedlex::Lexeme rbrace;
+  };
+
 } // namespace basedparse
 
 #endif // BASEDPARSE_EXPRESSION_H

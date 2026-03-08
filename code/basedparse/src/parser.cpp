@@ -166,7 +166,41 @@ namespace basedparse
     }
     if (next.token == basedlex::Token::identifier)
     {
-      return parse_identifier_expression();
+      auto type = parse_type_expression();
+      if (_reader->peek().token != basedlex::Token::lbrace)
+      {
+        auto const *id_type =
+          dynamic_cast<Identifier_type_expression const *>(type.get());
+        if (!id_type)
+        {
+          throw std::runtime_error{
+            "unexpected token '" + _reader->peek().text + "' at " +
+            std::to_string(_reader->peek().line) + ":" +
+            std::to_string(_reader->peek().column)
+          };
+        }
+        auto expr = std::make_unique<Identifier_expression>();
+        expr->identifier = id_type->identifier;
+        return expr;
+      }
+      auto ctor = std::make_unique<Constructor_expression>();
+      ctor->type = std::move(type);
+      ctor->lbrace = expect(basedlex::Token::lbrace);
+      for (;;)
+      {
+        if (_reader->peek().token == basedlex::Token::rbrace)
+        {
+          break;
+        }
+        ctor->arguments.push_back(parse_expression());
+        if (_reader->peek().token != basedlex::Token::comma)
+        {
+          break;
+        }
+        ctor->argument_commas.push_back(expect(basedlex::Token::comma));
+      }
+      ctor->rbrace = expect(basedlex::Token::rbrace);
+      return ctor;
     }
     if (next.token == basedlex::Token::lparen)
     {

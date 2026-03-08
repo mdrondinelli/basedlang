@@ -1,4 +1,5 @@
 #include <fstream>
+#include <sstream>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -39,4 +40,17 @@ TEST_CASE("Lexeme_stream lexes first.based")
   expect(";", semicolon, 2, 11);
   expect("}", rbrace, 3, 1);
   expect("", eof, 4, 1);
+}
+
+TEST_CASE("Lexeme_stream lexes comma")
+{
+  auto ss = std::istringstream{","};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == ",");
+  CHECK(lexeme.token == basedlex::Token::comma);
+  CHECK(lexeme.line == 1);
+  CHECK(lexeme.column == 1);
 }

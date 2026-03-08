@@ -73,10 +73,43 @@ namespace basedlex
                 .column = token_column
               };
             }
-            throw Lex_error{token_line, token_column};
+            return Lexeme{
+              .text = "-",
+              .token = Token::minus,
+              .line = token_line,
+              .column = token_column
+            };
           }
           switch (c)
           {
+          case '+':
+            return Lexeme{
+              .text = "+",
+              .token = Token::plus,
+              .line = token_line,
+              .column = token_column
+            };
+          case '*':
+            return Lexeme{
+              .text = "*",
+              .token = Token::star,
+              .line = token_line,
+              .column = token_column
+            };
+          case '/':
+            return Lexeme{
+              .text = "/",
+              .token = Token::slash,
+              .line = token_line,
+              .column = token_column
+            };
+          case '%':
+            return Lexeme{
+              .text = "%",
+              .token = Token::percent,
+              .line = token_line,
+              .column = token_column
+            };
           case '=':
             return Lexeme{
               .text = "=",

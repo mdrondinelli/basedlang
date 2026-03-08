@@ -14,6 +14,11 @@ namespace basedlex
     kw_return,
     arrow, // ->
     colon, // :
+    plus, // +
+    minus, // -
+    star, // *
+    slash, // /
+    percent, // %
     eq, // =
     lbrace, // {
     lparen, // (

@@ -42,6 +42,55 @@ TEST_CASE("Lexeme_stream lexes first.based")
   expect("", eof, 4, 1);
 }
 
+TEST_CASE("Lexeme_stream lexes arithmetic operators")
+{
+  auto ss = std::istringstream{"+ - * / %"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  using enum basedlex::Token;
+  auto const expect = [&](std::string const &text, basedlex::Token token)
+  {
+    auto const lexeme = stream.lex();
+    CHECK(lexeme.text == text);
+    CHECK(lexeme.token == token);
+  };
+  expect("+", plus);
+  expect("-", minus);
+  expect("*", star);
+  expect("/", slash);
+  expect("%", percent);
+}
+
+TEST_CASE("Lexeme_stream - minus before arrow still lexes as arrow")
+{
+  auto ss = std::istringstream{"->"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "->");
+  CHECK(lexeme.token == basedlex::Token::arrow);
+}
+
+TEST_CASE("Lexeme_stream - minus adjacent to digits lexes as separate tokens")
+{
+  auto ss = std::istringstream{"1-2"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  using enum basedlex::Token;
+  auto const first = stream.lex();
+  CHECK(first.text == "1");
+  CHECK(first.token == int_literal);
+  auto const op = stream.lex();
+  CHECK(op.text == "-");
+  CHECK(op.token == minus);
+  auto const second = stream.lex();
+  CHECK(second.text == "2");
+  CHECK(second.token == int_literal);
+}
+
 TEST_CASE("Lexeme_stream lexes colon")
 {
   auto ss = std::istringstream{":"};

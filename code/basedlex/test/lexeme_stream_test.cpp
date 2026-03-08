@@ -116,3 +116,21 @@ TEST_CASE("Lexeme_stream lexes comma")
   CHECK(lexeme.line == 1);
   CHECK(lexeme.column == 1);
 }
+
+TEST_CASE("Lexeme_stream lexes brackets")
+{
+  auto ss = std::istringstream{"[]"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const open = stream.lex();
+  CHECK(open.text == "[");
+  CHECK(open.token == basedlex::Token::lbracket);
+  CHECK(open.line == 1);
+  CHECK(open.column == 1);
+  auto const close = stream.lex();
+  CHECK(close.text == "]");
+  CHECK(close.token == basedlex::Token::rbracket);
+  CHECK(close.line == 1);
+  CHECK(close.column == 2);
+}

@@ -124,10 +124,24 @@ namespace basedlex
               .line = token_line,
               .column = token_column
             };
+          case '[':
+            return Lexeme{
+              .text = "[",
+              .token = Token::lbracket,
+              .line = token_line,
+              .column = token_column
+            };
           case '}':
             return Lexeme{
               .text = "}",
               .token = Token::rbrace,
+              .line = token_line,
+              .column = token_column
+            };
+          case ']':
+            return Lexeme{
+              .text = "]",
+              .token = Token::rbracket,
               .line = token_line,
               .column = token_column
             };

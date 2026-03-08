@@ -21,8 +21,10 @@ namespace basedlex
     percent, // %
     eq, // =
     lbrace, // {
+    lbracket, // [
     lparen, // (
     rbrace, // }
+    rbracket, // ]
     rparen, // )
     comma, // ,
     semicolon, // ;

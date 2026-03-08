@@ -52,6 +52,7 @@ clang-format-21 -i <file>
 
 **Auto:**
 - Prefer `auto` for variable declarations (e.g., `auto x = int{};`, `auto const y = foo()`)
+- For pointer-to-const results (e.g., from `dynamic_cast<T const*>`), use `auto const` rather than `auto const*` — `auto` deduces `T const*`, and the outer `const` makes the pointer itself const too
 
 **Immediately invoked lambda expressions (IILEs):**
 - Use IILEs to initialize variables that require internal mutation to compute, keeping them `const` in the surrounding scope:

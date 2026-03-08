@@ -93,6 +93,19 @@ namespace basedparse
       auto call = std::make_unique<Call_expression>();
       call->callee = std::move(expr);
       call->lparen = expect(basedlex::Token::lparen);
+      for (;;)
+      {
+        if (_reader->peek().token == basedlex::Token::rparen)
+        {
+          break;
+        }
+        call->arguments.push_back(parse_expression());
+        if (_reader->peek().token != basedlex::Token::comma)
+        {
+          break;
+        }
+        call->argument_commas.push_back(expect(basedlex::Token::comma));
+      }
       call->rparen = expect(basedlex::Token::rparen);
       return call;
     }
@@ -129,11 +142,38 @@ namespace basedparse
     auto fn = std::make_unique<Fn_expression>();
     fn->kw_fn = expect(basedlex::Token::kw_fn);
     fn->lparen = expect(basedlex::Token::lparen);
+    for (;;)
+    {
+      if (_reader->peek().token == basedlex::Token::rparen)
+      {
+        break;
+      }
+      auto param = Parameter{};
+      param.name = expect(basedlex::Token::identifier);
+      param.colon = expect(basedlex::Token::colon);
+      param.type_expression = parse_type_expression();
+      fn->parameters.push_back(std::move(param));
+      if (_reader->peek().token != basedlex::Token::comma)
+      {
+        break;
+      }
+      fn->parameter_commas.push_back(expect(basedlex::Token::comma));
+    }
     fn->rparen = expect(basedlex::Token::rparen);
-    fn->arrow = expect(basedlex::Token::arrow);
-    fn->return_type = parse_type_expression();
+    if (_reader->peek().token == basedlex::Token::arrow)
+    {
+      fn->return_type_specifier = parse_return_type_specifier();
+    }
     fn->body = parse_block_statement();
     return fn;
+  }
+
+  Fn_expression::Return_type_specifier Parser::parse_return_type_specifier()
+  {
+    auto spec = Fn_expression::Return_type_specifier{};
+    spec.arrow = expect(basedlex::Token::arrow);
+    spec.type_expression = parse_type_expression();
+    return spec;
   }
 
   std::unique_ptr<Int_literal_expression> Parser::parse_int_literal_expression()

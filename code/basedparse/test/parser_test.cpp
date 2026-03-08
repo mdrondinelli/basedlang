@@ -67,10 +67,10 @@ TEST_CASE("Parser - first.based produces a Function_definition")
   CHECK(fn_def->function.kw_fn.text == "fn");
   CHECK(fn_def->function.lparen.text == "(");
   CHECK(fn_def->function.rparen.text == ")");
-  CHECK(fn_def->function.arrow.text == "->");
+  REQUIRE(fn_def->function.return_type_specifier.has_value());
   auto const *return_type =
     dynamic_cast<basedparse::Identifier_type_expression const *>(
-      fn_def->function.return_type.get()
+      fn_def->function.return_type_specifier->type_expression.get()
     );
   REQUIRE(return_type != nullptr);
   CHECK(return_type->identifier.text == "i32");
@@ -90,6 +90,143 @@ TEST_CASE("Parser - first.based produces a Function_definition")
   CHECK(int_lit->literal.text == "0");
   CHECK(ret_stmt->semicolon.text == ";");
   CHECK(fn_def->function.body->rbrace.text == "}");
+}
+
+TEST_CASE("Parser - parameters.based parses successfully")
+{
+  auto file =
+    std::ifstream{std::string{EXAMPLES_PATH} + "/parameters.based"};
+  auto binary_stream = basedlex::Istream_binary_stream{&file};
+  auto char_stream = basedlex::Utf8_char_stream{&binary_stream};
+  auto lexeme_stream = basedlex::Lexeme_stream{&char_stream};
+  auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
+  auto parser = basedparse::Parser{&reader};
+  auto const unit = parser.parse_translation_unit();
+  REQUIRE(unit->statements.size() == 3);
+  auto const *id_def = dynamic_cast<basedparse::Function_definition const *>(
+    unit->statements[0].get()
+  );
+  auto const *first_def = dynamic_cast<basedparse::Function_definition const *>(
+    unit->statements[1].get()
+  );
+  auto const *main_def = dynamic_cast<basedparse::Function_definition const *>(
+    unit->statements[2].get()
+  );
+  REQUIRE(id_def != nullptr);
+  REQUIRE(first_def != nullptr);
+  REQUIRE(main_def != nullptr);
+  CHECK(id_def->name.text == "id");
+  CHECK(first_def->name.text == "first");
+  CHECK(main_def->name.text == "main");
+  // id: fn(x: i32) -> i32 { return x; }
+  REQUIRE(id_def->function.parameters.size() == 1);
+  CHECK(id_def->function.parameters[0].name.text == "x");
+  auto const *id_param_type =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      id_def->function.parameters[0].type_expression.get()
+    );
+  REQUIRE(id_param_type != nullptr);
+  CHECK(id_param_type->identifier.text == "i32");
+  REQUIRE(id_def->function.return_type_specifier.has_value());
+  auto const *id_ret_type =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      id_def->function.return_type_specifier->type_expression.get()
+    );
+  REQUIRE(id_ret_type != nullptr);
+  CHECK(id_ret_type->identifier.text == "i32");
+  REQUIRE(id_def->function.body->statements.size() == 1);
+  auto const *id_ret = dynamic_cast<basedparse::Return_statement const *>(
+    id_def->function.body->statements[0].get()
+  );
+  REQUIRE(id_ret != nullptr);
+  auto const *id_ret_val =
+    dynamic_cast<basedparse::Identifier_expression const *>(
+      id_ret->value.get()
+    );
+  REQUIRE(id_ret_val != nullptr);
+  CHECK(id_ret_val->identifier.text == "x");
+  // first: fn(x: i32, y: i32) -> i32 { return x; }
+  REQUIRE(first_def->function.parameters.size() == 2);
+  CHECK(first_def->function.parameters[0].name.text == "x");
+  auto const *first_param0_type =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      first_def->function.parameters[0].type_expression.get()
+    );
+  REQUIRE(first_param0_type != nullptr);
+  CHECK(first_param0_type->identifier.text == "i32");
+  CHECK(first_def->function.parameters[1].name.text == "y");
+  auto const *first_param1_type =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      first_def->function.parameters[1].type_expression.get()
+    );
+  REQUIRE(first_param1_type != nullptr);
+  CHECK(first_param1_type->identifier.text == "i32");
+  REQUIRE(first_def->function.return_type_specifier.has_value());
+  auto const *first_ret_type =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      first_def->function.return_type_specifier->type_expression.get()
+    );
+  REQUIRE(first_ret_type != nullptr);
+  CHECK(first_ret_type->identifier.text == "i32");
+  REQUIRE(first_def->function.body->statements.size() == 1);
+  auto const *first_ret = dynamic_cast<basedparse::Return_statement const *>(
+    first_def->function.body->statements[0].get()
+  );
+  REQUIRE(first_ret != nullptr);
+  auto const *first_ret_val =
+    dynamic_cast<basedparse::Identifier_expression const *>(
+      first_ret->value.get()
+    );
+  REQUIRE(first_ret_val != nullptr);
+  CHECK(first_ret_val->identifier.text == "x");
+  // main: fn() -> i32 { return first(id(42), 0); }
+  REQUIRE(main_def->function.return_type_specifier.has_value());
+  auto const *main_ret_type =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      main_def->function.return_type_specifier->type_expression.get()
+    );
+  REQUIRE(main_ret_type != nullptr);
+  CHECK(main_ret_type->identifier.text == "i32");
+  REQUIRE(main_def->function.body->statements.size() == 1);
+  auto const *main_ret = dynamic_cast<basedparse::Return_statement const *>(
+    main_def->function.body->statements[0].get()
+  );
+  REQUIRE(main_ret != nullptr);
+  // first(id(42), 0) — outer call
+  auto const *outer_call =
+    dynamic_cast<basedparse::Call_expression const *>(main_ret->value.get());
+  REQUIRE(outer_call != nullptr);
+  auto const *outer_callee =
+    dynamic_cast<basedparse::Identifier_expression const *>(
+      outer_call->callee.get()
+    );
+  REQUIRE(outer_callee != nullptr);
+  CHECK(outer_callee->identifier.text == "first");
+  REQUIRE(outer_call->arguments.size() == 2);
+  auto const *inner_call =
+    dynamic_cast<basedparse::Call_expression const *>(
+      outer_call->arguments[0].get()
+    );
+  REQUIRE(inner_call != nullptr);
+  auto const *inner_callee =
+    dynamic_cast<basedparse::Identifier_expression const *>(
+      inner_call->callee.get()
+    );
+  REQUIRE(inner_callee != nullptr);
+  CHECK(inner_callee->identifier.text == "id");
+  REQUIRE(inner_call->arguments.size() == 1);
+  auto const *inner_arg =
+    dynamic_cast<basedparse::Int_literal_expression const *>(
+      inner_call->arguments[0].get()
+    );
+  REQUIRE(inner_arg != nullptr);
+  CHECK(inner_arg->literal.text == "42");
+  auto const *outer_arg1 =
+    dynamic_cast<basedparse::Int_literal_expression const *>(
+      outer_call->arguments[1].get()
+    );
+  REQUIRE(outer_arg1 != nullptr);
+  CHECK(outer_arg1->literal.text == "0");
 }
 
 TEST_CASE("Parser - call_expression.based parses successfully")
@@ -159,6 +296,12 @@ TEST_CASE("Parser - accepts valid code")
   CHECK(parses("let main = fn() -> void { let x = 42; }"));
   CHECK(parses("let main = fn() -> void { (x); }"));
   CHECK(parses("let main = fn() -> void { ((42)); }"));
+  CHECK(parses("let f = fn(x: i32) -> i32 { return x; }"));
+  CHECK(parses("let f = fn(x: i32, y: i32) -> i32 { return x; }"));
+  CHECK(parses("let f = fn(x: i32,) -> i32 { return x; }"));
+  CHECK(parses("let main = fn() -> void { f(1); }"));
+  CHECK(parses("let main = fn() -> void { f(1, 2); }"));
+  CHECK(parses("let main = fn() -> void { f(1,); }"));
 }
 
 TEST_CASE("Parser - rejects invalid code")
@@ -178,6 +321,13 @@ TEST_CASE("Parser - rejects invalid code")
   CHECK_FALSE(parses("let x = fn() -> i32 { return; }"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return (; }"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return (); }"));
+  // malformed parameter declarations
+  CHECK_FALSE(parses("let f = fn(x) -> i32 { }"));
+  CHECK_FALSE(parses("let f = fn(x:) -> i32 { }"));
+  CHECK_FALSE(parses("let f = fn(x: i32 y: i32) -> i32 { }"));
+  // malformed argument lists
+  CHECK_FALSE(parses("let main = fn() -> void { f(,); }"));
+  CHECK_FALSE(parses("let main = fn() -> void { f(1 2); }"));
 }
 
 TEST_CASE("parse_translation_unit - empty")
@@ -291,15 +441,24 @@ TEST_CASE("parse_fn_expression")
   CHECK(fn->kw_fn.text == "fn");
   CHECK(fn->lparen.text == "(");
   CHECK(fn->rparen.text == ")");
-  CHECK(fn->arrow.text == "->");
+  REQUIRE(fn->return_type_specifier.has_value());
   auto const *ret_type =
     dynamic_cast<basedparse::Identifier_type_expression const *>(
-      fn->return_type.get()
+      fn->return_type_specifier->type_expression.get()
     );
   REQUIRE(ret_type != nullptr);
   CHECK(ret_type->identifier.text == "i32");
   REQUIRE(fn->body != nullptr);
   CHECK(fn->body->statements.size() == 1);
+}
+
+TEST_CASE("parse_fn_expression - no return type")
+{
+  auto fixture = Parse_fixture{"fn() { }"};
+  auto const fn = fixture.parser.parse_fn_expression();
+  CHECK_FALSE(fn->return_type_specifier.has_value());
+  REQUIRE(fn->body != nullptr);
+  CHECK(fn->body->statements.empty());
 }
 
 TEST_CASE("parse_int_literal_expression")

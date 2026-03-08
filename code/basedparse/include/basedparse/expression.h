@@ -2,6 +2,8 @@
 #define BASEDPARSE_EXPRESSION_H
 
 #include <memory>
+#include <optional>
+#include <vector>
 
 #include "basedlex/lexeme.h"
 
@@ -14,6 +16,13 @@ namespace basedparse
   {
   public:
     virtual ~Expression() = default;
+  };
+
+  struct Parameter
+  {
+    basedlex::Lexeme name;
+    basedlex::Lexeme colon;
+    std::unique_ptr<Type_expression> type_expression;
   };
 
   class Int_literal_expression: public Expression
@@ -31,16 +40,26 @@ namespace basedparse
   class Fn_expression: public Expression
   {
   public:
+    struct Return_type_specifier
+    {
+      basedlex::Lexeme arrow;
+      std::unique_ptr<Type_expression> type_expression;
+    };
+
     Fn_expression() = default;
+
     ~Fn_expression() override;
+
     Fn_expression(Fn_expression &&) noexcept = default;
+
     Fn_expression &operator=(Fn_expression &&) noexcept = default;
+
     basedlex::Lexeme kw_fn;
     basedlex::Lexeme lparen;
-    // TODO: parameters
+    std::vector<Parameter> parameters;
+    std::vector<basedlex::Lexeme> parameter_commas;
     basedlex::Lexeme rparen;
-    basedlex::Lexeme arrow;
-    std::unique_ptr<Type_expression> return_type;
+    std::optional<Return_type_specifier> return_type_specifier;
     std::unique_ptr<class Block_statement> body;
   };
 
@@ -57,7 +76,8 @@ namespace basedparse
   public:
     std::unique_ptr<Expression> callee;
     basedlex::Lexeme lparen;
-    // TODO: arguments
+    std::vector<std::unique_ptr<Expression>> arguments;
+    std::vector<basedlex::Lexeme> argument_commas;
     basedlex::Lexeme rparen;
   };
 

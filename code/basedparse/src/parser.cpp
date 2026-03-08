@@ -247,22 +247,26 @@ namespace basedparse
   std::unique_ptr<Type_expression> Parser::parse_type_expression()
   {
     auto const &next = _reader->peek();
-    if (next.token == basedlex::Token::identifier)
+    if (next.token != basedlex::Token::identifier)
     {
-      return parse_identifier_type_expression();
+      throw std::runtime_error{
+        "expected type, got '" + next.text + "' at " +
+        std::to_string(next.line) + ":" + std::to_string(next.column)
+      };
     }
-    throw std::runtime_error{
-      "expected type, got '" + next.text + "' at " + std::to_string(next.line) +
-      ":" + std::to_string(next.column)
-    };
-  }
-
-  std::unique_ptr<Identifier_type_expression>
-  Parser::parse_identifier_type_expression()
-  {
-    auto expr = std::make_unique<Identifier_type_expression>();
-    expr->identifier = expect(basedlex::Token::identifier);
-    return expr;
+    auto ident = std::make_unique<Identifier_type_expression>();
+    ident->identifier = expect(basedlex::Token::identifier);
+    auto type = std::unique_ptr<Type_expression>{std::move(ident)};
+    while (_reader->peek().token == basedlex::Token::lbracket)
+    {
+      auto array = std::make_unique<Array_type_expression>();
+      array->element_type = std::move(type);
+      array->lbracket = expect(basedlex::Token::lbracket);
+      array->size = parse_expression();
+      array->rbracket = expect(basedlex::Token::rbracket);
+      type = std::move(array);
+    }
+    return type;
   }
 
   basedlex::Lexeme Parser::expect(basedlex::Token token)

@@ -335,6 +335,10 @@ TEST_CASE("Parser - rejects invalid code")
   CHECK_FALSE(parses("let x = fn() -> i32 { return 1 + * 2; }"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return +; }"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return -; }"));
+  // malformed array types
+  CHECK_FALSE(parses("let f = fn(x: i32[]) -> void { }"));
+  CHECK_FALSE(parses("let f = fn(x: i32[4) -> void { }"));
+  CHECK_FALSE(parses("let f = fn(x: [4]) -> void { }"));
 }
 
 TEST_CASE("parse_translation_unit - empty")
@@ -482,10 +486,13 @@ TEST_CASE("parse_identifier_expression")
   CHECK(expr->identifier.text == "foo");
 }
 
-TEST_CASE("parse_identifier_type_expression")
+TEST_CASE("parse_type_expression - identifier")
 {
   auto fixture = Parse_fixture{"i32"};
-  auto const expr = fixture.parser.parse_identifier_type_expression();
+  auto const type = fixture.parser.parse_type_expression();
+  auto const expr =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(type.get());
+  REQUIRE(expr != nullptr);
   CHECK(expr->identifier.text == "i32");
 }
 
@@ -730,3 +737,96 @@ TEST_CASE("parse_expression - unary minus: call binds tighter")
     nullptr
   );
 }
+
+TEST_CASE("parse_type_expression - array")
+{
+  auto fixture = Parse_fixture{"i32[4]"};
+  auto const type = fixture.parser.parse_type_expression();
+  auto const *array =
+    dynamic_cast<basedparse::Array_type_expression const *>(type.get());
+  REQUIRE(array != nullptr);
+  auto const *elem =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      array->element_type.get()
+    );
+  REQUIRE(elem != nullptr);
+  CHECK(elem->identifier.text == "i32");
+  auto const *size =
+    dynamic_cast<basedparse::Int_literal_expression const *>(
+      array->size.get()
+    );
+  REQUIRE(size != nullptr);
+  CHECK(size->literal.text == "4");
+}
+
+TEST_CASE("parse_type_expression - array with expression size")
+{
+  auto fixture = Parse_fixture{"i32[n]"};
+  auto const type = fixture.parser.parse_type_expression();
+  auto const *array =
+    dynamic_cast<basedparse::Array_type_expression const *>(type.get());
+  REQUIRE(array != nullptr);
+  auto const *size =
+    dynamic_cast<basedparse::Identifier_expression const *>(array->size.get());
+  REQUIRE(size != nullptr);
+  CHECK(size->identifier.text == "n");
+}
+
+TEST_CASE("parse_type_expression - nested array")
+{
+  // i32[4][2] parses as (i32[4])[2]
+  auto fixture = Parse_fixture{"i32[4][2]"};
+  auto const type = fixture.parser.parse_type_expression();
+  auto const *outer =
+    dynamic_cast<basedparse::Array_type_expression const *>(type.get());
+  REQUIRE(outer != nullptr);
+  auto const *outer_size =
+    dynamic_cast<basedparse::Int_literal_expression const *>(
+      outer->size.get()
+    );
+  REQUIRE(outer_size != nullptr);
+  CHECK(outer_size->literal.text == "2");
+  auto const *inner =
+    dynamic_cast<basedparse::Array_type_expression const *>(
+      outer->element_type.get()
+    );
+  REQUIRE(inner != nullptr);
+  auto const *inner_size =
+    dynamic_cast<basedparse::Int_literal_expression const *>(
+      inner->size.get()
+    );
+  REQUIRE(inner_size != nullptr);
+  CHECK(inner_size->literal.text == "4");
+  auto const *elem =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      inner->element_type.get()
+    );
+  REQUIRE(elem != nullptr);
+  CHECK(elem->identifier.text == "i32");
+}
+
+TEST_CASE("parse_fn_expression - array parameter")
+{
+  auto fixture = Parse_fixture{"fn(buf: i32[4]) { }"};
+  auto const fn = fixture.parser.parse_fn_expression();
+  REQUIRE(fn->parameters.size() == 1);
+  CHECK(fn->parameters[0].name.text == "buf");
+  auto const *param_type =
+    dynamic_cast<basedparse::Array_type_expression const *>(
+      fn->parameters[0].type_expression.get()
+    );
+  REQUIRE(param_type != nullptr);
+  auto const *elem =
+    dynamic_cast<basedparse::Identifier_type_expression const *>(
+      param_type->element_type.get()
+    );
+  REQUIRE(elem != nullptr);
+  CHECK(elem->identifier.text == "i32");
+  auto const *size =
+    dynamic_cast<basedparse::Int_literal_expression const *>(
+      param_type->size.get()
+    );
+  REQUIRE(size != nullptr);
+  CHECK(size->literal.text == "4");
+}
+

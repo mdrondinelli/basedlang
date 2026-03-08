@@ -49,9 +49,6 @@ namespace basedparse
 
     std::unique_ptr<Type_expression> parse_type_expression();
 
-    std::unique_ptr<Identifier_type_expression>
-    parse_identifier_type_expression();
-
   private:
     std::unique_ptr<Expression> parse_expression(int current_precedence);
 

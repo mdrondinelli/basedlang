@@ -92,6 +92,60 @@ TEST_CASE("Parser - first.based produces a Function_definition")
   CHECK(fn_def->function.body->rbrace.text == "}");
 }
 
+TEST_CASE("Parser - call_expression.based parses successfully")
+{
+  auto file =
+    std::ifstream{std::string{EXAMPLES_PATH} + "/call_expression.based"};
+  auto binary_stream = basedlex::Istream_binary_stream{&file};
+  auto char_stream = basedlex::Utf8_char_stream{&binary_stream};
+  auto lexeme_stream = basedlex::Lexeme_stream{&char_stream};
+  auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
+  auto parser = basedparse::Parser{&reader};
+  auto const unit = parser.parse_translation_unit();
+  REQUIRE(unit->statements.size() == 2);
+  auto const *foo = dynamic_cast<basedparse::Function_definition const *>(
+    unit->statements[0].get()
+  );
+  auto const *main = dynamic_cast<basedparse::Function_definition const *>(
+    unit->statements[1].get()
+  );
+  REQUIRE(foo != nullptr);
+  REQUIRE(main != nullptr);
+  CHECK(foo->name.text == "foo");
+  CHECK(main->name.text == "main");
+  // foo returns fn() -> i32 { return 0; }() — a call with an fn expression callee
+  REQUIRE(foo->function.body->statements.size() == 1);
+  auto const *foo_ret = dynamic_cast<basedparse::Return_statement const *>(
+    foo->function.body->statements[0].get()
+  );
+  REQUIRE(foo_ret != nullptr);
+  auto const *foo_call =
+    dynamic_cast<basedparse::Call_expression const *>(foo_ret->value.get());
+  REQUIRE(foo_call != nullptr);
+  CHECK(foo_call->lparen.text == "(");
+  CHECK(foo_call->rparen.text == ")");
+  CHECK(
+    dynamic_cast<basedparse::Fn_expression const *>(foo_call->callee.get()) !=
+    nullptr
+  );
+  // main returns foo() — a call with an identifier callee
+  REQUIRE(main->function.body->statements.size() == 1);
+  auto const *main_ret = dynamic_cast<basedparse::Return_statement const *>(
+    main->function.body->statements[0].get()
+  );
+  REQUIRE(main_ret != nullptr);
+  auto const *main_call =
+    dynamic_cast<basedparse::Call_expression const *>(main_ret->value.get());
+  REQUIRE(main_call != nullptr);
+  CHECK(main_call->lparen.text == "(");
+  CHECK(main_call->rparen.text == ")");
+  auto const *callee = dynamic_cast<basedparse::Identifier_expression const *>(
+    main_call->callee.get()
+  );
+  REQUIRE(callee != nullptr);
+  CHECK(callee->identifier.text == "foo");
+}
+
 TEST_CASE("Parser - accepts valid code")
 {
   CHECK(parses(""));
@@ -297,37 +351,37 @@ TEST_CASE("parse_paren_expression - nested")
   CHECK(expr->rparen.text == ")");
 }
 
-TEST_CASE("parse_expression - dispatches to int literal")
+TEST_CASE("parse_primary_expression - dispatches to int literal")
 {
   auto fixture = Parse_fixture{"123"};
-  auto const expr = fixture.parser.parse_expression();
+  auto const expr = fixture.parser.parse_primary_expression();
   CHECK(
     dynamic_cast<basedparse::Int_literal_expression const *>(expr.get()) !=
     nullptr
   );
 }
 
-TEST_CASE("parse_expression - dispatches to identifier")
+TEST_CASE("parse_primary_expression - dispatches to identifier")
 {
   auto fixture = Parse_fixture{"x"};
-  auto const expr = fixture.parser.parse_expression();
+  auto const expr = fixture.parser.parse_primary_expression();
   CHECK(
     dynamic_cast<basedparse::Identifier_expression const *>(expr.get()) !=
     nullptr
   );
 }
 
-TEST_CASE("parse_expression - dispatches to fn")
+TEST_CASE("parse_primary_expression - dispatches to fn")
 {
   auto fixture = Parse_fixture{"fn() -> i32 { }"};
-  auto const expr = fixture.parser.parse_expression();
+  auto const expr = fixture.parser.parse_primary_expression();
   CHECK(dynamic_cast<basedparse::Fn_expression const *>(expr.get()) != nullptr);
 }
 
-TEST_CASE("parse_expression - dispatches to paren")
+TEST_CASE("parse_primary_expression - dispatches to paren")
 {
   auto fixture = Parse_fixture{"(42)"};
-  auto const expr = fixture.parser.parse_expression();
+  auto const expr = fixture.parser.parse_primary_expression();
   CHECK(
     dynamic_cast<basedparse::Paren_expression const *>(expr.get()) != nullptr
   );

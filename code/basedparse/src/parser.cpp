@@ -87,6 +87,20 @@ namespace basedparse
 
   std::unique_ptr<Expression> Parser::parse_expression()
   {
+    auto expr = parse_primary_expression();
+    if (_reader->peek().token == basedlex::Token::lparen)
+    {
+      auto call = std::make_unique<Call_expression>();
+      call->callee = std::move(expr);
+      call->lparen = expect(basedlex::Token::lparen);
+      call->rparen = expect(basedlex::Token::rparen);
+      return call;
+    }
+    return expr;
+  }
+
+  std::unique_ptr<Expression> Parser::parse_primary_expression()
+  {
     auto const &next = _reader->peek();
     if (next.token == basedlex::Token::int_literal)
     {

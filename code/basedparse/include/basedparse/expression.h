@@ -52,6 +52,15 @@ namespace basedparse
     basedlex::Lexeme rparen;
   };
 
+  class Call_expression: public Expression
+  {
+  public:
+    std::unique_ptr<Expression> callee;
+    basedlex::Lexeme lparen;
+    // TODO: arguments
+    basedlex::Lexeme rparen;
+  };
+
 } // namespace basedparse
 
 #endif // BASEDPARSE_EXPRESSION_H

@@ -34,6 +34,8 @@ namespace basedparse
 
     std::unique_ptr<Expression> parse_expression();
 
+    std::unique_ptr<Expression> parse_primary_expression();
+
     std::unique_ptr<Fn_expression> parse_fn_expression();
 
     std::unique_ptr<Int_literal_expression> parse_int_literal_expression();

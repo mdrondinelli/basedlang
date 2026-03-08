@@ -55,7 +55,7 @@ clang-format-21 -i <file>
 - For pointer-to-const results (e.g., from `dynamic_cast<T const*>`), use `auto const` rather than `auto const*` — `auto` deduces `T const*`, and the outer `const` makes the pointer itself const too
 
 **Immediately invoked lambda expressions (IILEs):**
-- Use IILEs to initialize variables that require internal mutation to compute, keeping them `const` in the surrounding scope:
+- Only use IILEs when they allow the result variable to be `const` — i.e., when computing a value requires internal mutation. Do not use an IILE if the variable cannot be `const` anyway.
   ```cpp
   auto const x = [&]() -> int
   {

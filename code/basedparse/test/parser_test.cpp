@@ -546,6 +546,121 @@ TEST_CASE("parse_primary_expression - dispatches to paren")
   );
 }
 
+TEST_CASE("parse_expression - simple binary expression")
+{
+  auto fixture = Parse_fixture{"1 + 2"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *bin =
+    dynamic_cast<basedparse::Binary_expression const *>(expr.get());
+  REQUIRE(bin != nullptr);
+  auto const *left =
+    dynamic_cast<basedparse::Int_literal_expression const *>(bin->left.get());
+  REQUIRE(left != nullptr);
+  CHECK(left->literal.text == "1");
+  CHECK(bin->op.text == "+");
+  auto const *right =
+    dynamic_cast<basedparse::Int_literal_expression const *>(bin->right.get());
+  REQUIRE(right != nullptr);
+  CHECK(right->literal.text == "2");
+}
+
+TEST_CASE("parse_expression - multiplicative before additive")
+{
+  // 1 + 2 * 3 should parse as 1 + (2 * 3)
+  auto fixture = Parse_fixture{"1 + 2 * 3"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *add =
+    dynamic_cast<basedparse::Binary_expression const *>(expr.get());
+  REQUIRE(add != nullptr);
+  CHECK(add->op.text == "+");
+  auto const *mul =
+    dynamic_cast<basedparse::Binary_expression const *>(add->right.get());
+  REQUIRE(mul != nullptr);
+  CHECK(mul->op.text == "*");
+  auto const *two =
+    dynamic_cast<basedparse::Int_literal_expression const *>(mul->left.get());
+  REQUIRE(two != nullptr);
+  CHECK(two->literal.text == "2");
+  auto const *three =
+    dynamic_cast<basedparse::Int_literal_expression const *>(mul->right.get());
+  REQUIRE(three != nullptr);
+  CHECK(three->literal.text == "3");
+}
+
+TEST_CASE("parse_expression - left associativity")
+{
+  // 1 - 2 - 3 should parse as (1 - 2) - 3
+  auto fixture = Parse_fixture{"1 - 2 - 3"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *outer =
+    dynamic_cast<basedparse::Binary_expression const *>(expr.get());
+  REQUIRE(outer != nullptr);
+  CHECK(outer->op.text == "-");
+  auto const *inner =
+    dynamic_cast<basedparse::Binary_expression const *>(outer->left.get());
+  REQUIRE(inner != nullptr);
+  CHECK(inner->op.text == "-");
+  auto const *three =
+    dynamic_cast<basedparse::Int_literal_expression const *>(outer->right.get()
+    );
+  REQUIRE(three != nullptr);
+  CHECK(three->literal.text == "3");
+}
+
+TEST_CASE("parse_expression - all binary operators with call")
+{
+  // f() + 2 - 3 * 4 / 5 % 6
+  // parses as (f() + 2) - (((3 * 4) / 5) % 6)
+  auto fixture = Parse_fixture{"f() + 2 - 3 * 4 / 5 % 6"};
+  auto const expr = fixture.parser.parse_expression();
+  // outer: (f() + 2) - (...)
+  auto const *sub =
+    dynamic_cast<basedparse::Binary_expression const *>(expr.get());
+  REQUIRE(sub != nullptr);
+  CHECK(sub->op.text == "-");
+  // left of -: f() + 2
+  auto const *add =
+    dynamic_cast<basedparse::Binary_expression const *>(sub->left.get());
+  REQUIRE(add != nullptr);
+  CHECK(add->op.text == "+");
+  auto const *call =
+    dynamic_cast<basedparse::Call_expression const *>(add->left.get());
+  REQUIRE(call != nullptr);
+  auto const *callee =
+    dynamic_cast<basedparse::Identifier_expression const *>(call->callee.get());
+  REQUIRE(callee != nullptr);
+  CHECK(callee->identifier.text == "f");
+  // right of -: ((3 * 4) / 5) % 6
+  auto const *mod =
+    dynamic_cast<basedparse::Binary_expression const *>(sub->right.get());
+  REQUIRE(mod != nullptr);
+  CHECK(mod->op.text == "%");
+  // left of %: (3 * 4) / 5
+  auto const *div =
+    dynamic_cast<basedparse::Binary_expression const *>(mod->left.get());
+  REQUIRE(div != nullptr);
+  CHECK(div->op.text == "/");
+  // left of /: 3 * 4
+  auto const *mul =
+    dynamic_cast<basedparse::Binary_expression const *>(div->left.get());
+  REQUIRE(mul != nullptr);
+  CHECK(mul->op.text == "*");
+}
+
+TEST_CASE("parse_expression - call binds tighter than binary op")
+{
+  // f() + 1 should parse as (f()) + 1
+  auto fixture = Parse_fixture{"f() + 1"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *add =
+    dynamic_cast<basedparse::Binary_expression const *>(expr.get());
+  REQUIRE(add != nullptr);
+  CHECK(add->op.text == "+");
+  CHECK(
+    dynamic_cast<basedparse::Call_expression const *>(add->left.get()) != nullptr
+  );
+}
+
 TEST_CASE("parse_type_expression - dispatches to identifier type")
 {
   auto fixture = Parse_fixture{"void"};

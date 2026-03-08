@@ -9,13 +9,40 @@ namespace basedparse
     {
     case Operator::call:
       return 0;
+    case Operator::unary_plus:
+    case Operator::unary_minus:
+      return 1;
     case Operator::multiply:
     case Operator::divide:
     case Operator::modulo:
-      return 1;
+      return 2;
     case Operator::add:
     case Operator::subtract:
-      return 2;
+      return 3;
+    }
+  }
+
+  std::optional<Operator> get_unary_operator(basedlex::Token token)
+  {
+    switch (token)
+    {
+    case basedlex::Token::plus:
+      return Operator::unary_plus;
+    case basedlex::Token::minus:
+      return Operator::unary_minus;
+    default:
+      return std::nullopt;
+    }
+  }
+
+  std::optional<Operator> get_postfix_operator(basedlex::Token token)
+  {
+    switch (token)
+    {
+    case basedlex::Token::lparen:
+      return Operator::call;
+    default:
+      return std::nullopt;
     }
   }
 

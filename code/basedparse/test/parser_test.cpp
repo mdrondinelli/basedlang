@@ -328,6 +328,13 @@ TEST_CASE("Parser - rejects invalid code")
   // malformed argument lists
   CHECK_FALSE(parses("let main = fn() -> void { f(,); }"));
   CHECK_FALSE(parses("let main = fn() -> void { f(1 2); }"));
+  // malformed expressions: missing operands
+  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 +; }"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 *; }"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return * 1; }"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 + * 2; }"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return +; }"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return -; }"));
 }
 
 TEST_CASE("parse_translation_unit - empty")
@@ -607,29 +614,41 @@ TEST_CASE("parse_expression - left associativity")
   CHECK(three->literal.text == "3");
 }
 
-TEST_CASE("parse_expression - all binary operators with call")
+TEST_CASE("parse_expression - all operators")
 {
-  // f() + 2 - 3 * 4 / 5 % 6
-  // parses as (f() + 2) - (((3 * 4) / 5) % 6)
-  auto fixture = Parse_fixture{"f() + 2 - 3 * 4 / 5 % 6"};
+  // -f() + +2 - 3 * 4 / 5 % 6
+  // parses as (-(f()) + (+2)) - (((3 * 4) / 5) % 6)
+  auto fixture = Parse_fixture{"-f() + +2 - 3 * 4 / 5 % 6"};
   auto const expr = fixture.parser.parse_expression();
-  // outer: (f() + 2) - (...)
+  // outer: (-f() + +2) - (...)
   auto const *sub =
     dynamic_cast<basedparse::Binary_expression const *>(expr.get());
   REQUIRE(sub != nullptr);
   CHECK(sub->op.text == "-");
-  // left of -: f() + 2
+  // left of -: -f() + +2
   auto const *add =
     dynamic_cast<basedparse::Binary_expression const *>(sub->left.get());
   REQUIRE(add != nullptr);
   CHECK(add->op.text == "+");
+  // left of +: -f()
+  auto const *unary_minus =
+    dynamic_cast<basedparse::Unary_expression const *>(add->left.get());
+  REQUIRE(unary_minus != nullptr);
+  CHECK(unary_minus->op.text == "-");
   auto const *call =
-    dynamic_cast<basedparse::Call_expression const *>(add->left.get());
+    dynamic_cast<basedparse::Call_expression const *>(
+      unary_minus->operand.get()
+    );
   REQUIRE(call != nullptr);
   auto const *callee =
     dynamic_cast<basedparse::Identifier_expression const *>(call->callee.get());
   REQUIRE(callee != nullptr);
   CHECK(callee->identifier.text == "f");
+  // right of +: +2
+  auto const *unary_plus =
+    dynamic_cast<basedparse::Unary_expression const *>(add->right.get());
+  REQUIRE(unary_plus != nullptr);
+  CHECK(unary_plus->op.text == "+");
   // right of -: ((3 * 4) / 5) % 6
   auto const *mod =
     dynamic_cast<basedparse::Binary_expression const *>(sub->right.get());
@@ -693,6 +712,21 @@ TEST_CASE("parse_statement - dispatches to expression statement")
   auto const stmt = fixture.parser.parse_statement();
   CHECK(
     dynamic_cast<basedparse::Expression_statement const *>(stmt.get()) !=
+    nullptr
+  );
+}
+
+TEST_CASE("parse_expression - unary minus: call binds tighter")
+{
+  // -f() should parse as -(f()), not (-f)()
+  auto fixture = Parse_fixture{"-f()"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *unary =
+    dynamic_cast<basedparse::Unary_expression const *>(expr.get());
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "-");
+  CHECK(
+    dynamic_cast<basedparse::Call_expression const *>(unary->operand.get()) !=
     nullptr
   );
 }

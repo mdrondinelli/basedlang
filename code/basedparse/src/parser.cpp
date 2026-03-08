@@ -94,33 +94,53 @@ namespace basedparse
 
   std::unique_ptr<Expression> Parser::parse_expression(int current_precedence)
   {
-    auto expr = parse_primary_expression();
+    auto expr = [&]() -> std::unique_ptr<Expression>
+    {
+      if (auto const unary_op = get_unary_operator(_reader->peek().token);
+          unary_op && get_operator_precedence(*unary_op) <= current_precedence)
+      {
+        auto unary = std::make_unique<Unary_expression>();
+        unary->op = _reader->read();
+        unary->operand =
+          parse_expression(get_operator_precedence(*unary_op) - 1);
+        return unary;
+      }
+      auto primary = parse_primary_expression();
+      for (;;)
+      {
+        if (auto const postfix_op = get_postfix_operator(_reader->peek().token);
+            postfix_op && get_operator_precedence(*postfix_op) <= current_precedence)
+        {
+          auto call = std::make_unique<Call_expression>();
+          call->callee = std::move(primary);
+          call->lparen = expect(basedlex::Token::lparen);
+          for (;;)
+          {
+            if (_reader->peek().token == basedlex::Token::rparen)
+            {
+              break;
+            }
+            call->arguments.push_back(parse_expression());
+            if (_reader->peek().token != basedlex::Token::comma)
+            {
+              break;
+            }
+            call->argument_commas.push_back(expect(basedlex::Token::comma));
+          }
+          call->rparen = expect(basedlex::Token::rparen);
+          primary = std::move(call);
+        }
+        else
+        {
+          break;
+        }
+      }
+      return primary;
+    }();
     for (;;)
     {
-      if (_reader->peek().token == basedlex::Token::lparen &&
-          get_operator_precedence(Operator::call) <= current_precedence)
-      {
-        auto call = std::make_unique<Call_expression>();
-        call->callee = std::move(expr);
-        call->lparen = expect(basedlex::Token::lparen);
-        for (;;)
-        {
-          if (_reader->peek().token == basedlex::Token::rparen)
-          {
-            break;
-          }
-          call->arguments.push_back(parse_expression());
-          if (_reader->peek().token != basedlex::Token::comma)
-          {
-            break;
-          }
-          call->argument_commas.push_back(expect(basedlex::Token::comma));
-        }
-        call->rparen = expect(basedlex::Token::rparen);
-        expr = std::move(call);
-      }
-      else if (auto const bin_op = get_binary_operator(_reader->peek().token);
-               bin_op && get_operator_precedence(*bin_op) <= current_precedence)
+      if (auto const bin_op = get_binary_operator(_reader->peek().token);
+          bin_op && get_operator_precedence(*bin_op) <= current_precedence)
       {
         auto const op_prec = get_operator_precedence(*bin_op);
         auto binary = std::make_unique<Binary_expression>();

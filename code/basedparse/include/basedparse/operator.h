@@ -11,6 +11,8 @@ namespace basedparse
   enum class Operator
   {
     call,
+    unary_plus,
+    unary_minus,
     multiply,
     divide,
     modulo,
@@ -19,6 +21,10 @@ namespace basedparse
   };
 
   int get_operator_precedence(Operator op);
+
+  std::optional<Operator> get_unary_operator(basedlex::Token token);
+
+  std::optional<Operator> get_postfix_operator(basedlex::Token token);
 
   std::optional<Operator> get_binary_operator(basedlex::Token token);
 

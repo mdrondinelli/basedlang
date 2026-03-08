@@ -71,6 +71,13 @@ namespace basedparse
     basedlex::Lexeme rparen;
   };
 
+  class Unary_expression: public Expression
+  {
+  public:
+    basedlex::Lexeme op;
+    std::unique_ptr<Expression> operand;
+  };
+
   class Binary_expression: public Expression
   {
   public:

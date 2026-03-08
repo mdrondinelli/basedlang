@@ -44,6 +44,14 @@ namespace basedparse
     std::unique_ptr<class Block_statement> body;
   };
 
+  class Paren_expression: public Expression
+  {
+  public:
+    basedlex::Lexeme lparen;
+    std::unique_ptr<Expression> inner;
+    basedlex::Lexeme rparen;
+  };
+
 } // namespace basedparse
 
 #endif // BASEDPARSE_EXPRESSION_H

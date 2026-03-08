@@ -40,6 +40,8 @@ namespace basedparse
 
     std::unique_ptr<Identifier_expression> parse_identifier_expression();
 
+    std::unique_ptr<Paren_expression> parse_paren_expression();
+
     std::unique_ptr<Type_expression> parse_type_expression();
 
     std::unique_ptr<Identifier_type_expression>

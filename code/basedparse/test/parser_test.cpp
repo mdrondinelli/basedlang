@@ -103,6 +103,8 @@ TEST_CASE("Parser - accepts valid code")
   ));
   CHECK(parses("let main = fn() -> void { x; }"));
   CHECK(parses("let main = fn() -> void { let x = 42; }"));
+  CHECK(parses("let main = fn() -> void { (x); }"));
+  CHECK(parses("let main = fn() -> void { ((42)); }"));
 }
 
 TEST_CASE("Parser - rejects invalid code")
@@ -120,6 +122,8 @@ TEST_CASE("Parser - rejects invalid code")
   CHECK_FALSE(parses("42"));
   CHECK_FALSE(parses("let = fn() -> i32 { }"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return; }"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return (; }"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return (); }"));
 }
 
 TEST_CASE("parse_translation_unit - empty")
@@ -265,6 +269,34 @@ TEST_CASE("parse_identifier_type_expression")
   CHECK(expr->identifier.text == "i32");
 }
 
+TEST_CASE("parse_paren_expression")
+{
+  auto fixture = Parse_fixture{"(42)"};
+  auto const expr = fixture.parser.parse_paren_expression();
+  CHECK(expr->lparen.text == "(");
+  auto const inner =
+    dynamic_cast<basedparse::Int_literal_expression const *>(expr->inner.get());
+  REQUIRE(inner != nullptr);
+  CHECK(inner->literal.text == "42");
+  CHECK(expr->rparen.text == ")");
+}
+
+TEST_CASE("parse_paren_expression - nested")
+{
+  auto fixture = Parse_fixture{"((x))"};
+  auto const expr = fixture.parser.parse_paren_expression();
+  CHECK(expr->lparen.text == "(");
+  auto const inner =
+    dynamic_cast<basedparse::Paren_expression const *>(expr->inner.get());
+  REQUIRE(inner != nullptr);
+  auto const id =
+    dynamic_cast<basedparse::Identifier_expression const *>(inner->inner.get());
+  REQUIRE(id != nullptr);
+  CHECK(id->identifier.text == "x");
+  CHECK(inner->rparen.text == ")");
+  CHECK(expr->rparen.text == ")");
+}
+
 TEST_CASE("parse_expression - dispatches to int literal")
 {
   auto fixture = Parse_fixture{"123"};
@@ -290,6 +322,15 @@ TEST_CASE("parse_expression - dispatches to fn")
   auto fixture = Parse_fixture{"fn() -> i32 { }"};
   auto const expr = fixture.parser.parse_expression();
   CHECK(dynamic_cast<basedparse::Fn_expression const *>(expr.get()) != nullptr);
+}
+
+TEST_CASE("parse_expression - dispatches to paren")
+{
+  auto fixture = Parse_fixture{"(42)"};
+  auto const expr = fixture.parser.parse_expression();
+  CHECK(
+    dynamic_cast<basedparse::Paren_expression const *>(expr.get()) != nullptr
+  );
 }
 
 TEST_CASE("parse_type_expression - dispatches to identifier type")

@@ -96,6 +96,10 @@ namespace basedparse
     {
       return parse_identifier_expression();
     }
+    if (next.token == basedlex::Token::lparen)
+    {
+      return parse_paren_expression();
+    }
     if (next.token == basedlex::Token::kw_fn)
     {
       return parse_fn_expression();
@@ -129,6 +133,15 @@ namespace basedparse
   {
     auto expr = std::make_unique<Identifier_expression>();
     expr->identifier = expect(basedlex::Token::identifier);
+    return expr;
+  }
+
+  std::unique_ptr<Paren_expression> Parser::parse_paren_expression()
+  {
+    auto expr = std::make_unique<Paren_expression>();
+    expr->lparen = expect(basedlex::Token::lparen);
+    expr->inner = parse_expression();
+    expr->rparen = expect(basedlex::Token::rparen);
     return expr;
   }
 

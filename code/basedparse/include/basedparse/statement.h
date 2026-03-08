@@ -57,6 +57,7 @@ namespace basedparse
     basedlex::Lexeme name;
     basedlex::Lexeme eq;
     Fn_expression function;
+    basedlex::Lexeme semicolon;
   };
 
 } // namespace basedparse

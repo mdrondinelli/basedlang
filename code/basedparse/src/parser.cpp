@@ -30,6 +30,7 @@ namespace basedparse
     stmt->name = expect(basedlex::Token::identifier);
     stmt->eq = expect(basedlex::Token::eq);
     stmt->function = std::move(*parse_fn_expression());
+    stmt->semicolon = expect(basedlex::Token::semicolon);
     return stmt;
   }
 

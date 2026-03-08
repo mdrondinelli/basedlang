@@ -286,22 +286,22 @@ TEST_CASE("Parser - call_expression.based parses successfully")
 TEST_CASE("Parser - accepts valid code")
 {
   CHECK(parses(""));
-  CHECK(parses("let main = fn() -> i32 { return 0; }"));
-  CHECK(parses("let main = fn() -> i32 { }"));
+  CHECK(parses("let main = fn() -> i32 { return 0; };"));
+  CHECK(parses("let main = fn() -> i32 { };"));
   CHECK(parses(
-    "let main = fn() -> i32 { return 0; }\n"
-    "let other = fn() -> i32 { return 1; }"
+    "let main = fn() -> i32 { return 0; };\n"
+    "let other = fn() -> i32 { return 1; };"
   ));
-  CHECK(parses("let main = fn() -> void { x; }"));
-  CHECK(parses("let main = fn() -> void { let x = 42; }"));
-  CHECK(parses("let main = fn() -> void { (x); }"));
-  CHECK(parses("let main = fn() -> void { ((42)); }"));
-  CHECK(parses("let f = fn(x: i32) -> i32 { return x; }"));
-  CHECK(parses("let f = fn(x: i32, y: i32) -> i32 { return x; }"));
-  CHECK(parses("let f = fn(x: i32,) -> i32 { return x; }"));
-  CHECK(parses("let main = fn() -> void { f(1); }"));
-  CHECK(parses("let main = fn() -> void { f(1, 2); }"));
-  CHECK(parses("let main = fn() -> void { f(1,); }"));
+  CHECK(parses("let main = fn() -> void { x; };"));
+  CHECK(parses("let main = fn() -> void { let x = 42; };"));
+  CHECK(parses("let main = fn() -> void { (x); };"));
+  CHECK(parses("let main = fn() -> void { ((42)); };"));
+  CHECK(parses("let f = fn(x: i32) -> i32 { return x; };"));
+  CHECK(parses("let f = fn(x: i32, y: i32) -> i32 { return x; };"));
+  CHECK(parses("let f = fn(x: i32,) -> i32 { return x; };"));
+  CHECK(parses("let main = fn() -> void { f(1); };"));
+  CHECK(parses("let main = fn() -> void { f(1, 2); };"));
+  CHECK(parses("let main = fn() -> void { f(1,); };"));
 }
 
 TEST_CASE("Parser - rejects invalid code")
@@ -314,31 +314,32 @@ TEST_CASE("Parser - rejects invalid code")
   CHECK_FALSE(parses("let x = fn() ->"));
   CHECK_FALSE(parses("let x = fn() -> i32"));
   CHECK_FALSE(parses("let x = fn() -> i32 {"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { }"));
   CHECK_FALSE(parses("return 0;"));
   CHECK_FALSE(parses("{"));
   CHECK_FALSE(parses("42"));
-  CHECK_FALSE(parses("let = fn() -> i32 { }"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return; }"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return (; }"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return (); }"));
+  CHECK_FALSE(parses("let = fn() -> i32 { };"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return; };"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return (; };"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return (); };"));
   // malformed parameter declarations
-  CHECK_FALSE(parses("let f = fn(x) -> i32 { }"));
-  CHECK_FALSE(parses("let f = fn(x:) -> i32 { }"));
-  CHECK_FALSE(parses("let f = fn(x: i32 y: i32) -> i32 { }"));
+  CHECK_FALSE(parses("let f = fn(x) -> i32 { };"));
+  CHECK_FALSE(parses("let f = fn(x:) -> i32 { };"));
+  CHECK_FALSE(parses("let f = fn(x: i32 y: i32) -> i32 { };"));
   // malformed argument lists
-  CHECK_FALSE(parses("let main = fn() -> void { f(,); }"));
-  CHECK_FALSE(parses("let main = fn() -> void { f(1 2); }"));
+  CHECK_FALSE(parses("let main = fn() -> void { f(,); };"));
+  CHECK_FALSE(parses("let main = fn() -> void { f(1 2); };"));
   // malformed expressions: missing operands
-  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 +; }"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 *; }"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return * 1; }"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 + * 2; }"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return +; }"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return -; }"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 +; };"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 *; };"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return * 1; };"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 + * 2; };"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return +; };"));
+  CHECK_FALSE(parses("let x = fn() -> i32 { return -; };"));
   // malformed array types
-  CHECK_FALSE(parses("let f = fn(x: i32[]) -> void { }"));
-  CHECK_FALSE(parses("let f = fn(x: i32[4) -> void { }"));
-  CHECK_FALSE(parses("let f = fn(x: [4]) -> void { }"));
+  CHECK_FALSE(parses("let f = fn(x: i32[]) -> void { };"));
+  CHECK_FALSE(parses("let f = fn(x: i32[4) -> void { };"));
+  CHECK_FALSE(parses("let f = fn(x: [4]) -> void { };"));
 }
 
 TEST_CASE("parse_translation_unit - empty")
@@ -350,8 +351,8 @@ TEST_CASE("parse_translation_unit - empty")
 
 TEST_CASE("parse_translation_unit - multiple functions")
 {
-  auto fixture = Parse_fixture{"let a = fn() -> i32 { return 1; }\n"
-                               "let b = fn() -> i32 { return 2; }"};
+  auto fixture = Parse_fixture{"let a = fn() -> i32 { return 1; };\n"
+                               "let b = fn() -> i32 { return 2; };"};
   auto const unit = fixture.parser.parse_translation_unit();
   REQUIRE(unit->statements.size() == 2);
   auto const *a = dynamic_cast<basedparse::Function_definition const *>(
@@ -368,7 +369,7 @@ TEST_CASE("parse_translation_unit - multiple functions")
 
 TEST_CASE("parse_function_definition")
 {
-  auto fixture = Parse_fixture{"let main = fn() -> i32 { return 0; }"};
+  auto fixture = Parse_fixture{"let main = fn() -> i32 { return 0; };"};
   auto const fn_def = fixture.parser.parse_function_definition();
   CHECK(fn_def->kw_let.text == "let");
   CHECK(fn_def->name.text == "main");
@@ -895,8 +896,8 @@ TEST_CASE("parse_expression - constructor: array type")
 
 TEST_CASE("parse_expression - constructor: in full program")
 {
-  CHECK(parses("let f = fn() { let x = Foo{1, 2}; }"));
-  CHECK(parses("let f = fn() { let x = i32[3] { 1, 2, 3 }; }"));
+  CHECK(parses("let f = fn() { let x = Foo{1, 2}; };"));
+  CHECK(parses("let f = fn() { let x = i32[3] { 1, 2, 3 }; };"));
 }
 
 TEST_CASE("parse_expression - identifier still works after constructor change")
@@ -930,7 +931,7 @@ TEST_CASE("parse_expression - constructor: trailing comma")
 
 TEST_CASE("parse_expression - constructor: rejects")
 {
-  CHECK_FALSE(parses("let x = fn() { Foo{;}; }"));
-  CHECK_FALSE(parses("let x = fn() { Foo{1 2}; }"));
-  CHECK_FALSE(parses("let x = fn() { i32[4] ; }"));
+  CHECK_FALSE(parses("let x = fn() { Foo{;}; };"));
+  CHECK_FALSE(parses("let x = fn() { Foo{1 2}; };"));
+  CHECK_FALSE(parses("let x = fn() { i32[4] ; };"));
 }

@@ -1,0 +1,14 @@
+let id = fn(x: i32) -> i32
+{
+  return x;
+}
+
+let first = fn(x: i32, y: i32) -> i32
+{
+  return x;
+}
+
+let main = fn() -> i32
+{
+  return first(id(42), 0);
+}

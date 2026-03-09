@@ -82,6 +82,13 @@ namespace basedlex
           }
           switch (c)
           {
+          case '&':
+            return Lexeme{
+              .text = "&",
+              .token = Token::ampersand,
+              .line = token_line,
+              .column = token_column
+            };
           case '+':
             return Lexeme{
               .text = "+",

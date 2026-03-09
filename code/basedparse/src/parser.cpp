@@ -150,7 +150,7 @@ namespace basedparse
   ///
   /// **Precedence table** (lower number = binds tighter):
   /// - 0: postfix call `()`, index `[]`
-  /// - 1: prefix `*` (dereference), unary `+`, unary `-`
+  /// - 1: prefix `&` (address-of), `*` (dereference), unary `+`, unary `-`
   /// - 2: `*`, `/`, `%`
   /// - 3: `+`, `-`
   /// - 4: `<`, `<=`, `>`, `>=`

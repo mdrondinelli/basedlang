@@ -21,6 +21,7 @@ namespace basedlex
     plus, // +
     minus, // -
     star, // *
+    ampersand, // &
     slash, // /
     percent, // %
     eq, // =

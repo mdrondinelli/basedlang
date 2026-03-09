@@ -1103,6 +1103,55 @@ TEST_CASE("parse_expression - dereference: in full program")
   CHECK(parses("let f = fn(p: i32[]*) -> i32 { return *p[0]; };"));
 }
 
+TEST_CASE("parse_expression - address-of")
+{
+  auto fixture = Parse_fixture{"&x"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "&");
+  auto const *operand =
+    std::get_if<basedparse::Identifier_expression>(&unary->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "x");
+}
+
+TEST_CASE("parse_expression - address-of: postfix binds tighter")
+{
+  // &a[0] should parse as &(a[0])
+  auto fixture = Parse_fixture{"&a[0]"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "&");
+  CHECK(
+    std::get_if<basedparse::Index_expression>(&unary->operand->value) != nullptr
+  );
+}
+
+TEST_CASE("parse_expression - address-of: in binary expression")
+{
+  // &a + &b should parse as (&a) + (&b)
+  auto fixture = Parse_fixture{"&a + &b"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *add = std::get_if<basedparse::Binary_expression>(&expr->value);
+  REQUIRE(add != nullptr);
+  CHECK(add->op.text == "+");
+  auto const *left =
+    std::get_if<basedparse::Unary_expression>(&add->left->value);
+  REQUIRE(left != nullptr);
+  CHECK(left->op.text == "&");
+  auto const *right =
+    std::get_if<basedparse::Unary_expression>(&add->right->value);
+  REQUIRE(right != nullptr);
+  CHECK(right->op.text == "&");
+}
+
+TEST_CASE("parse_expression - address-of: in full program")
+{
+  CHECK(parses("let f = fn(x: i32) -> i32* { return &x; };"));
+}
+
 TEST_CASE("parse_expression - if: simple")
 {
   auto fixture = Parse_fixture{"if x { 1 }"};

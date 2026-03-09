@@ -26,7 +26,7 @@ Precedence from tightest to loosest (all binary operators are left-associative):
 | Precedence | Kind           | Examples                |
 |------------|----------------|-------------------------|
 | 0          | postfix        | `f()`, `arr[i]`         |
-| 1          | unary          | `*p`, `+x`, `-x`       |
+| 1          | unary          | `&x`, `*p`, `+x`, `-x` |
 | 2          | multiplicative | `a * b`, `a / b`, `a % b` |
 | 3          | additive       | `a + b`, `a - b`        |
 | 4          | relational     | `a < b`, `a <= b`, `a > b`, `a >= b` |

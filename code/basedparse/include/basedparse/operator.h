@@ -12,6 +12,7 @@ namespace basedparse
   {
     call,
     index,
+    address_of,
     dereference,
     unary_plus,
     unary_minus,

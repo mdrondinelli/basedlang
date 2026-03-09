@@ -4,6 +4,7 @@ namespace basedparse
 {
 
   Array_type_expression::~Array_type_expression() = default;
+  Pointer_type_expression::~Pointer_type_expression() = default;
   Fn_expression::~Fn_expression() = default;
   Paren_expression::~Paren_expression() = default;
   Unary_expression::~Unary_expression() = default;

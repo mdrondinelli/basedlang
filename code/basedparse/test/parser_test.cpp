@@ -312,7 +312,7 @@ TEST_CASE("Parser - rejects invalid code")
   CHECK_FALSE(parses("let x = fn() -> i32 { return +; };"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return -; };"));
   // malformed array types
-  CHECK_FALSE(parses("let f = fn(x: i32[]) -> void { };"));
+  CHECK_FALSE(parses("let f = fn(x: [4]) -> void { };"));
   CHECK_FALSE(parses("let f = fn(x: i32[4) -> void { };"));
   CHECK_FALSE(parses("let f = fn(x: [4]) -> void { };"));
 }
@@ -933,4 +933,135 @@ TEST_CASE("parse_expression - index: rejects")
 {
   CHECK_FALSE(parses("let f = fn() { arr[]; };"));
   CHECK_FALSE(parses("let f = fn() { arr[0; };"));
+}
+
+TEST_CASE("parse_type_expression - pointer")
+{
+  auto fixture = Parse_fixture{"i32*"};
+  auto const type = fixture.parser.parse_type_expression();
+  auto const *ptr =
+    std::get_if<basedparse::Pointer_type_expression>(&type->value);
+  REQUIRE(ptr != nullptr);
+  CHECK_FALSE(ptr->kw_mut.has_value());
+  CHECK(ptr->star.text == "*");
+  auto const *pointee = std::get_if<basedparse::Identifier_type_expression>(
+    &ptr->pointee_type->value
+  );
+  REQUIRE(pointee != nullptr);
+  CHECK(pointee->identifier.text == "i32");
+}
+
+TEST_CASE("parse_type_expression - mutable pointer")
+{
+  auto fixture = Parse_fixture{"i32 mut*"};
+  auto const type = fixture.parser.parse_type_expression();
+  auto const *ptr =
+    std::get_if<basedparse::Pointer_type_expression>(&type->value);
+  REQUIRE(ptr != nullptr);
+  REQUIRE(ptr->kw_mut.has_value());
+  CHECK(ptr->kw_mut->text == "mut");
+  CHECK(ptr->star.text == "*");
+  auto const *pointee = std::get_if<basedparse::Identifier_type_expression>(
+    &ptr->pointee_type->value
+  );
+  REQUIRE(pointee != nullptr);
+  CHECK(pointee->identifier.text == "i32");
+}
+
+TEST_CASE("parse_type_expression - unsized array")
+{
+  auto fixture = Parse_fixture{"i32[]"};
+  auto const type = fixture.parser.parse_type_expression();
+  auto const *array =
+    std::get_if<basedparse::Array_type_expression>(&type->value);
+  REQUIRE(array != nullptr);
+  CHECK(array->size == nullptr);
+  auto const *elem = std::get_if<basedparse::Identifier_type_expression>(
+    &array->element_type->value
+  );
+  REQUIRE(elem != nullptr);
+  CHECK(elem->identifier.text == "i32");
+}
+
+TEST_CASE("parse_type_expression - unsized array pointer")
+{
+  // i32[]* — pointer to unsized array of i32
+  auto fixture = Parse_fixture{"i32[]*"};
+  auto const type = fixture.parser.parse_type_expression();
+  auto const *ptr =
+    std::get_if<basedparse::Pointer_type_expression>(&type->value);
+  REQUIRE(ptr != nullptr);
+  CHECK_FALSE(ptr->kw_mut.has_value());
+  auto const *array =
+    std::get_if<basedparse::Array_type_expression>(&ptr->pointee_type->value);
+  REQUIRE(array != nullptr);
+  CHECK(array->size == nullptr);
+}
+
+TEST_CASE("parse_type_expression - unsized array mutable pointer")
+{
+  // i32[] mut* — pointer to mutable unsized array
+  auto fixture = Parse_fixture{"i32[] mut*"};
+  auto const type = fixture.parser.parse_type_expression();
+  auto const *ptr =
+    std::get_if<basedparse::Pointer_type_expression>(&type->value);
+  REQUIRE(ptr != nullptr);
+  REQUIRE(ptr->kw_mut.has_value());
+  auto const *array =
+    std::get_if<basedparse::Array_type_expression>(&ptr->pointee_type->value);
+  REQUIRE(array != nullptr);
+  CHECK(array->size == nullptr);
+}
+
+TEST_CASE("parse_type_expression - nested pointer array")
+{
+  // i32[4] mut*[8]* — pointer to (array of 8 of (pointer to mutable (array of 4
+  // of i32)))
+  auto fixture = Parse_fixture{"i32[4] mut*[8]*"};
+  auto const type = fixture.parser.parse_type_expression();
+  // outermost: *
+  auto const *outer_ptr =
+    std::get_if<basedparse::Pointer_type_expression>(&type->value);
+  REQUIRE(outer_ptr != nullptr);
+  CHECK_FALSE(outer_ptr->kw_mut.has_value());
+  // [8]
+  auto const *array8 = std::get_if<basedparse::Array_type_expression>(
+    &outer_ptr->pointee_type->value
+  );
+  REQUIRE(array8 != nullptr);
+  auto const *size8 =
+    std::get_if<basedparse::Int_literal_expression>(&array8->size->value);
+  REQUIRE(size8 != nullptr);
+  CHECK(size8->literal.text == "8");
+  // mut*
+  auto const *inner_ptr = std::get_if<basedparse::Pointer_type_expression>(
+    &array8->element_type->value
+  );
+  REQUIRE(inner_ptr != nullptr);
+  REQUIRE(inner_ptr->kw_mut.has_value());
+  // [4]
+  auto const *array4 = std::get_if<basedparse::Array_type_expression>(
+    &inner_ptr->pointee_type->value
+  );
+  REQUIRE(array4 != nullptr);
+  auto const *size4 =
+    std::get_if<basedparse::Int_literal_expression>(&array4->size->value);
+  REQUIRE(size4 != nullptr);
+  CHECK(size4->literal.text == "4");
+  // i32
+  auto const *elem = std::get_if<basedparse::Identifier_type_expression>(
+    &array4->element_type->value
+  );
+  REQUIRE(elem != nullptr);
+  CHECK(elem->identifier.text == "i32");
+}
+
+TEST_CASE("parse_type_expression - pointer in full program")
+{
+  CHECK(parses("let f = fn(x: i32*) -> void { };"));
+  CHECK(parses("let f = fn(x: i32 mut*) -> void { };"));
+  CHECK(parses("let f = fn(x: i32[]*) -> void { };"));
+  CHECK(parses("let f = fn(x: i32[] mut*) -> void { };"));
+  CHECK(parses("let f = fn(x: i32[4]*) -> void { };"));
+  CHECK(parses("let f = fn(x: i32[4] mut*[8]*) -> void { };"));
 }

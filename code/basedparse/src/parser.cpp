@@ -298,14 +298,40 @@ namespace basedparse
     auto type = std::make_unique<Type_expression>(Identifier_type_expression{
       .identifier = expect(basedlex::Token::identifier)
     });
-    while (_reader->peek().token == basedlex::Token::lbracket)
+    for (;;)
     {
-      auto array = Array_type_expression{};
-      array.element_type = std::move(type);
-      array.lbracket = expect(basedlex::Token::lbracket);
-      array.size = parse_expression();
-      array.rbracket = expect(basedlex::Token::rbracket);
-      type = std::make_unique<Type_expression>(std::move(array));
+      if (_reader->peek().token == basedlex::Token::lbracket)
+      {
+        auto array = Array_type_expression{};
+        array.element_type = std::move(type);
+        array.lbracket = expect(basedlex::Token::lbracket);
+        if (_reader->peek().token != basedlex::Token::rbracket)
+        {
+          array.size = parse_expression();
+        }
+        array.rbracket = expect(basedlex::Token::rbracket);
+        type = std::make_unique<Type_expression>(std::move(array));
+      }
+      else if (_reader->peek().token == basedlex::Token::kw_mut &&
+               _reader->peek(1).token == basedlex::Token::star)
+      {
+        auto ptr = Pointer_type_expression{};
+        ptr.pointee_type = std::move(type);
+        ptr.kw_mut = expect(basedlex::Token::kw_mut);
+        ptr.star = expect(basedlex::Token::star);
+        type = std::make_unique<Type_expression>(std::move(ptr));
+      }
+      else if (_reader->peek().token == basedlex::Token::star)
+      {
+        auto ptr = Pointer_type_expression{};
+        ptr.pointee_type = std::move(type);
+        ptr.star = expect(basedlex::Token::star);
+        type = std::make_unique<Type_expression>(std::move(ptr));
+      }
+      else
+      {
+        break;
+      }
     }
     return type;
   }

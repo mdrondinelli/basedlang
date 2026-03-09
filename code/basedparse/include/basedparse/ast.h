@@ -36,13 +36,34 @@ namespace basedparse
 
     std::unique_ptr<Type_expression> element_type;
     basedlex::Lexeme lbracket;
-    std::unique_ptr<Expression> size;
+    std::unique_ptr<Expression> size; // nullptr for unsized arrays (e.g. i32[])
     basedlex::Lexeme rbracket;
+  };
+
+  struct Pointer_type_expression
+  {
+    ~Pointer_type_expression();
+
+    Pointer_type_expression() = default;
+
+    Pointer_type_expression(Pointer_type_expression &&) noexcept = default;
+
+    Pointer_type_expression &
+    operator=(Pointer_type_expression &&) noexcept = default;
+
+    std::unique_ptr<Type_expression> pointee_type;
+    std::optional<basedlex::Lexeme> kw_mut;
+    basedlex::Lexeme star;
   };
 
   struct Type_expression
   {
-    std::variant<Identifier_type_expression, Array_type_expression> value;
+    std::variant<
+      Identifier_type_expression,
+      Array_type_expression,
+      Pointer_type_expression
+    >
+      value;
   };
 
   // expressions

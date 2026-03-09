@@ -82,6 +82,7 @@ namespace basedparse
   {
     struct Parameter_declaration
     {
+      std::optional<basedlex::Lexeme> kw_mut;
       basedlex::Lexeme name;
       basedlex::Lexeme colon;
       Type_expression type_expression;

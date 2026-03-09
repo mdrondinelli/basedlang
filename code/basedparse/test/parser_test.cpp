@@ -274,6 +274,8 @@ TEST_CASE("Parser - accepts valid code")
   CHECK(parses("let f = fn(x: i32) -> i32 { return x; };"));
   CHECK(parses("let f = fn(x: i32, y: i32) -> i32 { return x; };"));
   CHECK(parses("let f = fn(x: i32,) -> i32 { return x; };"));
+  CHECK(parses("let f = fn(mut x: i32) -> void { };"));
+  CHECK(parses("let f = fn(x: i32, mut y: i32) -> void { };"));
   CHECK(parses("let main = fn() -> void { f(1); };"));
   CHECK(parses("let main = fn() -> void { f(1, 2); };"));
   CHECK(parses("let main = fn() -> void { f(1,); };"));
@@ -430,6 +432,27 @@ TEST_CASE("parse_fn_expression")
   CHECK(ret_type->identifier.text == "i32");
   REQUIRE(fn.body != nullptr);
   CHECK(fn.body->statements.size() == 1);
+}
+
+TEST_CASE("parse_fn_expression - mut parameter")
+{
+  auto fixture = Parse_fixture{"fn(mut x: i32) { }"};
+  auto const fn = fixture.parser.parse_fn_expression();
+  REQUIRE(fn.parameters.size() == 1);
+  REQUIRE(fn.parameters[0].kw_mut.has_value());
+  CHECK(fn.parameters[0].kw_mut->text == "mut");
+  CHECK(fn.parameters[0].name.text == "x");
+}
+
+TEST_CASE("parse_fn_expression - mixed mut and non-mut parameters")
+{
+  auto fixture = Parse_fixture{"fn(x: i32, mut y: i32) { }"};
+  auto const fn = fixture.parser.parse_fn_expression();
+  REQUIRE(fn.parameters.size() == 2);
+  CHECK_FALSE(fn.parameters[0].kw_mut.has_value());
+  CHECK(fn.parameters[0].name.text == "x");
+  REQUIRE(fn.parameters[1].kw_mut.has_value());
+  CHECK(fn.parameters[1].name.text == "y");
 }
 
 TEST_CASE("parse_fn_expression - no return type")

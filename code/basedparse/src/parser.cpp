@@ -212,6 +212,10 @@ namespace basedparse
         break;
       }
       auto param = Fn_expression::Parameter_declaration{};
+      if (_reader->peek().token == basedlex::Token::kw_mut)
+      {
+        param.kw_mut = expect(basedlex::Token::kw_mut);
+      }
       param.name = expect(basedlex::Token::identifier);
       param.colon = expect(basedlex::Token::colon);
       param.type_expression = std::move(*parse_type_expression());

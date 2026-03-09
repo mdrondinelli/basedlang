@@ -41,7 +41,8 @@ Primary expressions:
 Call and index are postfix and can chain: `f()(0)[1]`
 
 The return type (`-> Type`) is optional on `fn` expressions. Parameters support
-trailing commas.
+trailing commas. Parameters are immutable by default; prefix with `mut` for a
+mutable binding: `fn(mut x: i32) { }`.
 
 ## Type expressions
 

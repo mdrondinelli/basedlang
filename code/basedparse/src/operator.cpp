@@ -21,6 +21,14 @@ namespace basedparse
     case Operator::add:
     case Operator::subtract:
       return 3;
+    case Operator::less:
+    case Operator::less_eq:
+    case Operator::greater:
+    case Operator::greater_eq:
+      return 4;
+    case Operator::equal:
+    case Operator::not_equal:
+      return 5;
     }
   }
 
@@ -66,6 +74,18 @@ namespace basedparse
       return Operator::add;
     case basedlex::Token::minus:
       return Operator::subtract;
+    case basedlex::Token::lt:
+      return Operator::less;
+    case basedlex::Token::le:
+      return Operator::less_eq;
+    case basedlex::Token::gt:
+      return Operator::greater;
+    case basedlex::Token::ge:
+      return Operator::greater_eq;
+    case basedlex::Token::eq_eq:
+      return Operator::equal;
+    case basedlex::Token::bang_eq:
+      return Operator::not_equal;
     default:
       return std::nullopt;
     }

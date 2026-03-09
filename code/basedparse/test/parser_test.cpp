@@ -1179,6 +1179,70 @@ TEST_CASE("parse_expression - if in full program")
   ));
 }
 
+TEST_CASE("parse_expression - comparison operators")
+{
+  // each comparison operator parses correctly
+  for (auto const *op : {"<", "<=", ">", ">=", "==", "!="})
+  {
+    auto fixture = Parse_fixture{std::string{"1 "} + op + " 2"};
+    auto const expr = fixture.parser.parse_expression();
+    auto const *bin = std::get_if<basedparse::Binary_expression>(&expr->value);
+    REQUIRE(bin != nullptr);
+    CHECK(bin->op.text == op);
+    auto const *left =
+      std::get_if<basedparse::Int_literal_expression>(&bin->left->value);
+    REQUIRE(left != nullptr);
+    CHECK(left->literal.text == "1");
+    auto const *right =
+      std::get_if<basedparse::Int_literal_expression>(&bin->right->value);
+    REQUIRE(right != nullptr);
+    CHECK(right->literal.text == "2");
+  }
+}
+
+TEST_CASE("parse_expression - additive before comparison")
+{
+  // 1 + 2 < 3 + 4 should parse as (1 + 2) < (3 + 4)
+  auto fixture = Parse_fixture{"1 + 2 < 3 + 4"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *lt = std::get_if<basedparse::Binary_expression>(&expr->value);
+  REQUIRE(lt != nullptr);
+  CHECK(lt->op.text == "<");
+  auto const *left =
+    std::get_if<basedparse::Binary_expression>(&lt->left->value);
+  REQUIRE(left != nullptr);
+  CHECK(left->op.text == "+");
+  auto const *right =
+    std::get_if<basedparse::Binary_expression>(&lt->right->value);
+  REQUIRE(right != nullptr);
+  CHECK(right->op.text == "+");
+}
+
+TEST_CASE("parse_expression - comparison before equality")
+{
+  // 1 < 2 == 3 > 4 should parse as (1 < 2) == (3 > 4)
+  auto fixture = Parse_fixture{"1 < 2 == 3 > 4"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *eq = std::get_if<basedparse::Binary_expression>(&expr->value);
+  REQUIRE(eq != nullptr);
+  CHECK(eq->op.text == "==");
+  auto const *left =
+    std::get_if<basedparse::Binary_expression>(&eq->left->value);
+  REQUIRE(left != nullptr);
+  CHECK(left->op.text == "<");
+  auto const *right =
+    std::get_if<basedparse::Binary_expression>(&eq->right->value);
+  REQUIRE(right != nullptr);
+  CHECK(right->op.text == ">");
+}
+
+TEST_CASE("parse_expression - comparison in full program")
+{
+  CHECK(parses("let f = fn(x: i32) -> i32 { return if x < 10 { 0 } else { 1 }; };"));
+  CHECK(parses("let f = fn(a: i32, b: i32) -> i32 { return a == b; };"));
+  CHECK(parses("let f = fn(a: i32, b: i32) -> i32 { return a != b; };"));
+}
+
 TEST_CASE("parse_type_expression - pointer")
 {
   auto fixture = Parse_fixture{"i32*"};

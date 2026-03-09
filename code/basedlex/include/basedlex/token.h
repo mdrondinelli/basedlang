@@ -24,6 +24,12 @@ namespace basedlex
     slash, // /
     percent, // %
     eq, // =
+    eq_eq, // ==
+    bang_eq, // !=
+    lt, // <
+    le, // <=
+    gt, // >
+    ge, // >=
     lbrace, // {
     lbracket, // [
     lparen, // (

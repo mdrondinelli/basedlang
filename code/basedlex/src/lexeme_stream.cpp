@@ -111,9 +111,69 @@ namespace basedlex
               .column = token_column
             };
           case '=':
+            if (_reader.peek() && *_reader.peek() == '=')
+            {
+              _reader.read();
+              ++_column;
+              return Lexeme{
+                .text = "==",
+                .token = Token::eq_eq,
+                .line = token_line,
+                .column = token_column
+              };
+            }
             return Lexeme{
               .text = "=",
               .token = Token::eq,
+              .line = token_line,
+              .column = token_column
+            };
+          case '!':
+            if (_reader.peek() && *_reader.peek() == '=')
+            {
+              _reader.read();
+              ++_column;
+              return Lexeme{
+                .text = "!=",
+                .token = Token::bang_eq,
+                .line = token_line,
+                .column = token_column
+              };
+            }
+            throw Lex_error{token_line, token_column};
+          case '<':
+            if (_reader.peek() && *_reader.peek() == '=')
+            {
+              _reader.read();
+              ++_column;
+              return Lexeme{
+                .text = "<=",
+                .token = Token::le,
+                .line = token_line,
+                .column = token_column
+              };
+            }
+            return Lexeme{
+              .text = "<",
+              .token = Token::lt,
+              .line = token_line,
+              .column = token_column
+            };
+          case '>':
+            if (_reader.peek() && *_reader.peek() == '=')
+            {
+              _reader.read();
+              ++_column;
+              return Lexeme{
+                .text = ">=",
+                .token = Token::ge,
+                .line = token_line,
+                .column = token_column
+              };
+            }
+            return Lexeme{
+              .text = ">",
+              .token = Token::gt,
               .line = token_line,
               .column = token_column
             };

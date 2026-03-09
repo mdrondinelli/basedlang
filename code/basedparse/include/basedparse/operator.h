@@ -20,6 +20,12 @@ namespace basedparse
     modulo,
     add,
     subtract,
+    less,
+    less_eq,
+    greater,
+    greater_eq,
+    equal,
+    not_equal,
   };
 
   int get_operator_precedence(Operator op);

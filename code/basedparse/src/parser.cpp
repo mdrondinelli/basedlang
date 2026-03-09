@@ -1,3 +1,13 @@
+/// @file
+/// @brief Hand-written recursive descent parser.
+///
+/// Each grammar construct has a corresponding parse_* method. The parser reads
+/// from a Lexeme_stream_reader, which provides arbitrary lookahead via peek()
+/// and consumes tokens via read(). expect() is a helper that reads and asserts
+/// a specific token, throwing on mismatch.
+///
+/// See grammar.md for the full grammar.
+
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -117,6 +127,42 @@ namespace basedparse
     return parse_expression(std::numeric_limits<int>::max());
   }
 
+  /// @brief Parse an expression using Pratt (top-down operator precedence) parsing.
+  ///
+  /// @param current_precedence Only consume operators whose precedence is <=
+  ///   this value. The public overload passes INT_MAX to allow all operators.
+  ///   Recursive calls pass `op_prec - 1` for binary ops (left-associative) or
+  ///   `op_prec` for right-associative ops (none currently).
+  ///
+  /// The algorithm works in three phases:
+  ///
+  /// 1. **Prefix/unary**: If the next token is a unary operator (e.g. `-`, `*`),
+  ///    consume it and recursively parse the operand at a tighter precedence
+  ///    (one below the unary op's level). Otherwise fall through to primary.
+  ///
+  /// 2. **Postfix**: Repeatedly consume postfix operators (call `()`, index `[]`)
+  ///    that bind tighter than the current precedence level.
+  ///
+  /// 3. **Binary infix**: Repeatedly consume binary operators (e.g. `+`, `<`,
+  ///    `==`) whose precedence fits within `current_precedence`. For each one,
+  ///    the right-hand side is parsed by recursing with `op_prec - 1`, which
+  ///    enforces left-associativity (operators at the same level fold left).
+  ///
+  /// **Precedence table** (lower number = binds tighter):
+  /// - 0: postfix call `()`, index `[]`
+  /// - 1: prefix `*` (dereference), unary `+`, unary `-`
+  /// - 2: `*`, `/`, `%`
+  /// - 3: `+`, `-`
+  /// - 4: `<`, `<=`, `>`, `>=`
+  /// - 5: `==`, `!=`
+  ///
+  /// **To add a new operator:**
+  /// 1. Add a token to `basedlex::Token` (token.h) and lex it in lexeme_stream.cpp.
+  /// 2. Add a variant to `basedparse::Operator` (operator.h).
+  /// 3. Assign it a precedence in `get_operator_precedence` (operator.cpp).
+  /// 4. Map the token to the operator in the appropriate get_*_operator function
+  ///    (operator.cpp): `get_unary_operator`, `get_postfix_operator`, or
+  ///    `get_binary_operator`. No changes to the parser itself are needed.
   std::unique_ptr<Expression> Parser::parse_expression(int current_precedence)
   {
     auto expr = [&]() -> std::unique_ptr<Expression>

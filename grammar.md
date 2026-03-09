@@ -29,6 +29,8 @@ Precedence from tightest to loosest (all binary operators are left-associative):
 | 1          | unary          | `*p`, `+x`, `-x`       |
 | 2          | multiplicative | `a * b`, `a / b`, `a % b` |
 | 3          | additive       | `a + b`, `a - b`        |
+| 4          | relational     | `a < b`, `a <= b`, `a > b`, `a >= b` |
+| 5          | equality       | `a == b`, `a != b`      |
 
 Primary expressions:
 
@@ -38,7 +40,7 @@ Primary expressions:
 - Block expressions: `{ statements... tail_expr }`
 - If expressions: `if condition { } [else { }]`, `if cond { } else if cond { } else { }`
 - Function expressions: `fn(params) -> ReturnType { body }`
-- Constructor expressions: `new Type { args }`
+- Constructor expressions: `new Type { args }` — `Type` is a full type expression (e.g. `new i32[3]{10, 20, 30}`)
 
 Call and index are postfix and can chain: `f()(0)[1]`
 

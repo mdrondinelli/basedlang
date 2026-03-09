@@ -5,11 +5,8 @@
 
 #include "basedlex/lexeme_stream_reader.h"
 
-#include "expression.h"
+#include "ast.h"
 #include "operator.h"
-#include "statement.h"
-#include "translation_unit.h"
-#include "type_expression.h"
 
 namespace basedparse
 {
@@ -21,29 +18,29 @@ namespace basedparse
 
     std::unique_ptr<Translation_unit> parse_translation_unit();
 
-    std::unique_ptr<Function_definition> parse_function_definition();
+    Function_definition parse_function_definition();
 
-    std::unique_ptr<Statement> parse_statement();
+    Statement parse_statement();
 
-    std::unique_ptr<Let_statement> parse_let_statement();
+    Let_statement parse_let_statement();
 
-    std::unique_ptr<Return_statement> parse_return_statement();
+    Return_statement parse_return_statement();
 
-    std::unique_ptr<Expression_statement> parse_expression_statement();
+    Expression_statement parse_expression_statement();
 
-    std::unique_ptr<Block_statement> parse_block_statement();
+    Block_statement parse_block_statement();
 
     std::unique_ptr<Expression> parse_expression();
 
     std::unique_ptr<Expression> parse_primary_expression();
 
-    std::unique_ptr<Fn_expression> parse_fn_expression();
+    Fn_expression parse_fn_expression();
 
-    std::unique_ptr<Int_literal_expression> parse_int_literal_expression();
+    Int_literal_expression parse_int_literal_expression();
 
-    std::unique_ptr<Identifier_expression> parse_identifier_expression();
+    Identifier_expression parse_identifier_expression();
 
-    std::unique_ptr<Paren_expression> parse_paren_expression();
+    Paren_expression parse_paren_expression();
 
     Fn_expression::Return_type_specifier parse_return_type_specifier();
 

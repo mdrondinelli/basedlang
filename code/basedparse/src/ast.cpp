@@ -1,16 +1,15 @@
-#include "basedparse/expression.h"
-#include "basedparse/statement.h"
-#include "basedparse/type_expression.h"
+#include "basedparse/ast.h"
 
 namespace basedparse
 {
 
-  // Defined out-of-line because the default destructor needs Statement to be
-  // complete (for the vector<unique_ptr<Statement>> member).
-  Fn_expression::~Fn_expression() = default;
-
-  // Defined out-of-line because the default destructor needs Expression to be
-  // complete (for the unique_ptr<Expression> size member).
   Array_type_expression::~Array_type_expression() = default;
+  Fn_expression::~Fn_expression() = default;
+  Paren_expression::~Paren_expression() = default;
+  Unary_expression::~Unary_expression() = default;
+  Binary_expression::~Binary_expression() = default;
+  Call_expression::~Call_expression() = default;
+  Constructor_expression::~Constructor_expression() = default;
+  Block_statement::~Block_statement() = default;
 
 } // namespace basedparse

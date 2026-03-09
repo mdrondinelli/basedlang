@@ -12,6 +12,7 @@ namespace basedparse
   Call_expression::~Call_expression() = default;
   Index_expression::~Index_expression() = default;
   Block_expression::~Block_expression() = default;
+  If_expression::~If_expression() = default;
   Constructor_expression::~Constructor_expression() = default;
 
 } // namespace basedparse

@@ -42,6 +42,8 @@ namespace basedparse
 
     Paren_expression parse_paren_expression();
 
+    If_expression parse_if_expression();
+
     Constructor_expression parse_constructor_expression();
 
     Fn_expression::Return_type_specifier parse_return_type_specifier();

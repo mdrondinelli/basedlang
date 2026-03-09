@@ -196,9 +196,17 @@ namespace basedlex
           }
           auto const token = [&]() -> Token
           {
+            if (text == "else")
+            {
+              return Token::kw_else;
+            }
             if (text == "fn")
             {
               return Token::kw_fn;
+            }
+            if (text == "if")
+            {
+              return Token::kw_if;
             }
             if (text == "let")
             {

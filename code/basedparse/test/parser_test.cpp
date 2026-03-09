@@ -475,18 +475,15 @@ TEST_CASE("parse_expression - nested blocks")
   REQUIRE(b0 != nullptr);
   CHECK(b0->statements.empty());
   REQUIRE(b0->tail != nullptr);
-  auto const *b1 =
-    std::get_if<basedparse::Block_expression>(&b0->tail->value);
+  auto const *b1 = std::get_if<basedparse::Block_expression>(&b0->tail->value);
   REQUIRE(b1 != nullptr);
   CHECK(b1->statements.empty());
   REQUIRE(b1->tail != nullptr);
-  auto const *b2 =
-    std::get_if<basedparse::Block_expression>(&b1->tail->value);
+  auto const *b2 = std::get_if<basedparse::Block_expression>(&b1->tail->value);
   REQUIRE(b2 != nullptr);
   CHECK(b2->statements.empty());
   REQUIRE(b2->tail != nullptr);
-  auto const *b3 =
-    std::get_if<basedparse::Block_expression>(&b2->tail->value);
+  auto const *b3 = std::get_if<basedparse::Block_expression>(&b2->tail->value);
   REQUIRE(b3 != nullptr);
   CHECK(b3->statements.empty());
   CHECK(b3->tail == nullptr);
@@ -1104,6 +1101,82 @@ TEST_CASE("parse_expression - dereference: in full program")
 {
   CHECK(parses("let f = fn(p: i32*) -> i32 { return *p; };"));
   CHECK(parses("let f = fn(p: i32[]*) -> i32 { return *p[0]; };"));
+}
+
+TEST_CASE("parse_expression - if: simple")
+{
+  auto fixture = Parse_fixture{"if x { 1 }"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *if_expr = std::get_if<basedparse::If_expression>(&expr->value);
+  REQUIRE(if_expr != nullptr);
+  CHECK(if_expr->kw_if.text == "if");
+  auto const *cond =
+    std::get_if<basedparse::Identifier_expression>(&if_expr->condition->value);
+  REQUIRE(cond != nullptr);
+  CHECK(cond->identifier.text == "x");
+  REQUIRE(if_expr->then_block.tail != nullptr);
+  CHECK_FALSE(if_expr->else_clause.has_value());
+}
+
+TEST_CASE("parse_expression - if else")
+{
+  auto fixture = Parse_fixture{"if x { 1 } else { 0 }"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *if_expr = std::get_if<basedparse::If_expression>(&expr->value);
+  REQUIRE(if_expr != nullptr);
+  REQUIRE(if_expr->else_clause.has_value());
+  CHECK(if_expr->else_clause->kw_else.text == "else");
+  auto const *else_block = std::get_if<basedparse::Block_expression>(
+    &if_expr->else_clause->body->value
+  );
+  REQUIRE(else_block != nullptr);
+  REQUIRE(else_block->tail != nullptr);
+}
+
+TEST_CASE("parse_expression - else if chain")
+{
+  auto fixture = Parse_fixture{"if a { 1 } else if b { 2 } else { 3 }"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *if1 = std::get_if<basedparse::If_expression>(&expr->value);
+  REQUIRE(if1 != nullptr);
+  REQUIRE(if1->else_clause.has_value());
+  auto const *if2 =
+    std::get_if<basedparse::If_expression>(&if1->else_clause->body->value);
+  REQUIRE(if2 != nullptr);
+  REQUIRE(if2->else_clause.has_value());
+  auto const *else_block =
+    std::get_if<basedparse::Block_expression>(&if2->else_clause->body->value);
+  REQUIRE(else_block != nullptr);
+}
+
+TEST_CASE("parse_expression - if as expression statement")
+{
+  CHECK(parses("let f = fn() { if x { 1; }; };"));
+}
+
+TEST_CASE("parse_expression - if else as initializer")
+{
+  CHECK(parses("let f = fn() { let x = if cond { 1 } else { 0 }; };"));
+}
+
+TEST_CASE("parse_expression - if in full program")
+{
+  CHECK(parses(
+    "let f = fn(x: i32) -> i32 {"
+    "  return if x { 1 } else { 0 };"
+    "};"
+  ));
+  CHECK(parses(
+    "let f = fn(x: i32) -> i32 {"
+    "  if x { return 1; };"
+    "  return 0;"
+    "};"
+  ));
+  CHECK(parses(
+    "let f = fn(x: i32) -> i32 {"
+    "  return if x { 1 } else if y { 2 } else { 3 };"
+    "};"
+  ));
 }
 
 TEST_CASE("parse_type_expression - pointer")

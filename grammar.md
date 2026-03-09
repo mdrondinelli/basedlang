@@ -36,6 +36,7 @@ Primary expressions:
 - Identifiers: `x`
 - Parenthesized: `(expr)`
 - Block expressions: `{ statements... tail_expr }`
+- If expressions: `if condition { } [else { }]`, `if cond { } else if cond { } else { }`
 - Function expressions: `fn(params) -> ReturnType { body }`
 - Constructor expressions: `new Type { args }`
 
@@ -104,6 +105,15 @@ let x = {
 -- block with no tail expression (produces void)
 { do_something(); };
 
+-- if/else expression
+let max = if a > b { a } else { b };
+
+-- if without else (evaluates to void)
+if done { cleanup(); };
+
+-- else-if chain
+let sign = if x > 0 { 1 } else if x < 0 { -1 } else { 0 };
+
 -- dereference
 let val = *p;
 let first = *buf[0];
@@ -114,4 +124,4 @@ let y = -x + 2 * (a - b);
 
 ## Keywords
 
-`fn`, `let`, `mut`, `new`, `return`
+`else`, `fn`, `if`, `let`, `mut`, `new`, `return`

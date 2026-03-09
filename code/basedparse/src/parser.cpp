@@ -210,6 +210,10 @@ namespace basedparse
     {
       return std::make_unique<Expression>(parse_constructor_expression());
     }
+    if (next.token == basedlex::Token::kw_if)
+    {
+      return std::make_unique<Expression>(parse_if_expression());
+    }
     if (next.token == basedlex::Token::lbrace)
     {
       return std::make_unique<Expression>(parse_block_expression());
@@ -291,6 +295,30 @@ namespace basedparse
     expr.lparen = expect(basedlex::Token::lparen);
     expr.inner = parse_expression();
     expr.rparen = expect(basedlex::Token::rparen);
+    return expr;
+  }
+
+  If_expression Parser::parse_if_expression()
+  {
+    auto expr = If_expression{};
+    expr.kw_if = expect(basedlex::Token::kw_if);
+    expr.condition = parse_expression();
+    expr.then_block = parse_block_expression();
+    if (_reader->peek().token == basedlex::Token::kw_else)
+    {
+      auto else_clause = If_expression::Else_clause{};
+      else_clause.kw_else = expect(basedlex::Token::kw_else);
+      if (_reader->peek().token == basedlex::Token::kw_if)
+      {
+        else_clause.body = std::make_unique<Expression>(parse_if_expression());
+      }
+      else
+      {
+        else_clause.body =
+          std::make_unique<Expression>(parse_block_expression());
+      }
+      expr.else_clause = std::move(else_clause);
+    }
     return expr;
   }
 

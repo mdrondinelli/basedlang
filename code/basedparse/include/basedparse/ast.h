@@ -204,6 +204,29 @@ namespace basedparse
     basedlex::Lexeme rbrace;
   };
 
+  struct If_expression
+  {
+    struct Else_clause
+    {
+      basedlex::Lexeme kw_else;
+      std::unique_ptr<Expression>
+        body; // Block_expression or another If_expression
+    };
+
+    ~If_expression();
+
+    If_expression() = default;
+
+    If_expression(If_expression &&) noexcept = default;
+
+    If_expression &operator=(If_expression &&) noexcept = default;
+
+    basedlex::Lexeme kw_if;
+    std::unique_ptr<Expression> condition;
+    Block_expression then_block;
+    std::optional<Else_clause> else_clause;
+  };
+
   struct Constructor_expression
   {
     ~Constructor_expression();
@@ -235,6 +258,7 @@ namespace basedparse
       Call_expression,
       Index_expression,
       Block_expression,
+      If_expression,
       Constructor_expression
     >
       value;

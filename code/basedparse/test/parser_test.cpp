@@ -466,6 +466,32 @@ TEST_CASE("parse_expression - block as primary expression")
   );
 }
 
+TEST_CASE("parse_expression - nested blocks")
+{
+  auto fixture = Parse_fixture{"{{{{}}}}"};
+  auto const expr = fixture.parser.parse_expression();
+  // outer block: no statements, tail is a block
+  auto const *b0 = std::get_if<basedparse::Block_expression>(&expr->value);
+  REQUIRE(b0 != nullptr);
+  CHECK(b0->statements.empty());
+  REQUIRE(b0->tail != nullptr);
+  auto const *b1 =
+    std::get_if<basedparse::Block_expression>(&b0->tail->value);
+  REQUIRE(b1 != nullptr);
+  CHECK(b1->statements.empty());
+  REQUIRE(b1->tail != nullptr);
+  auto const *b2 =
+    std::get_if<basedparse::Block_expression>(&b1->tail->value);
+  REQUIRE(b2 != nullptr);
+  CHECK(b2->statements.empty());
+  REQUIRE(b2->tail != nullptr);
+  auto const *b3 =
+    std::get_if<basedparse::Block_expression>(&b2->tail->value);
+  REQUIRE(b3 != nullptr);
+  CHECK(b3->statements.empty());
+  CHECK(b3->tail == nullptr);
+}
+
 TEST_CASE("parse_expression - block as expression statement")
 {
   CHECK(parses("let f = fn() { { 42 }; };"));

@@ -10,6 +10,7 @@ namespace basedparse
     case Operator::call:
     case Operator::index:
       return 0;
+    case Operator::dereference:
     case Operator::unary_plus:
     case Operator::unary_minus:
       return 1;
@@ -27,6 +28,8 @@ namespace basedparse
   {
     switch (token)
     {
+    case basedlex::Token::star:
+      return Operator::dereference;
     case basedlex::Token::plus:
       return Operator::unary_plus;
     case basedlex::Token::minus:

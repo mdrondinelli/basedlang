@@ -307,8 +307,8 @@ TEST_CASE("Parser - rejects invalid code")
   // malformed expressions: missing operands
   CHECK_FALSE(parses("let x = fn() -> i32 { return 1 +; };"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return 1 *; };"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return * 1; };"));
-  CHECK_FALSE(parses("let x = fn() -> i32 { return 1 + * 2; };"));
+  CHECK(parses("let x = fn() -> i32 { return * 1; };"));
+  CHECK(parses("let x = fn() -> i32 { return 1 + * 2; };"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return +; };"));
   CHECK_FALSE(parses("let x = fn() -> i32 { return -; };"));
   // malformed array types
@@ -933,6 +933,56 @@ TEST_CASE("parse_expression - index: rejects")
 {
   CHECK_FALSE(parses("let f = fn() { arr[]; };"));
   CHECK_FALSE(parses("let f = fn() { arr[0; };"));
+}
+
+TEST_CASE("parse_expression - dereference")
+{
+  auto fixture = Parse_fixture{"*p"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "*");
+  auto const *operand =
+    std::get_if<basedparse::Identifier_expression>(&unary->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "p");
+}
+
+TEST_CASE("parse_expression - dereference: postfix binds tighter")
+{
+  // *p[0] should parse as *(p[0])
+  auto fixture = Parse_fixture{"*p[0]"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "*");
+  CHECK(
+    std::get_if<basedparse::Index_expression>(&unary->operand->value) != nullptr
+  );
+}
+
+TEST_CASE("parse_expression - dereference: in binary expression")
+{
+  // *a + *b should parse as (*a) + (*b)
+  auto fixture = Parse_fixture{"*a + *b"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *add = std::get_if<basedparse::Binary_expression>(&expr->value);
+  REQUIRE(add != nullptr);
+  CHECK(add->op.text == "+");
+  auto const *left =
+    std::get_if<basedparse::Unary_expression>(&add->left->value);
+  REQUIRE(left != nullptr);
+  CHECK(left->op.text == "*");
+  auto const *right =
+    std::get_if<basedparse::Unary_expression>(&add->right->value);
+  REQUIRE(right != nullptr);
+  CHECK(right->op.text == "*");
+}
+
+TEST_CASE("parse_expression - dereference: in full program")
+{
+  CHECK(parses("let f = fn(p: i32*) -> i32 { return *p; };"));
+  CHECK(parses("let f = fn(p: i32[]*) -> i32 { return *p[0]; };"));
 }
 
 TEST_CASE("parse_type_expression - pointer")

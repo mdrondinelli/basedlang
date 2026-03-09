@@ -11,7 +11,7 @@ namespace basedparse
   Binary_expression::~Binary_expression() = default;
   Call_expression::~Call_expression() = default;
   Index_expression::~Index_expression() = default;
+  Block_expression::~Block_expression() = default;
   Constructor_expression::~Constructor_expression() = default;
-  Block_statement::~Block_statement() = default;
 
 } // namespace basedparse

@@ -391,10 +391,10 @@ TEST_CASE("parse_expression_statement")
   CHECK(stmt.semicolon.text == ";");
 }
 
-TEST_CASE("parse_block_statement")
+TEST_CASE("parse_block_expression")
 {
   auto fixture = Parse_fixture{"{ return 1; let x = 2; }"};
-  auto const block = fixture.parser.parse_block_statement();
+  auto const block = fixture.parser.parse_block_expression();
   CHECK(block.lbrace.text == "{");
   REQUIRE(block.statements.size() == 2);
   CHECK(
@@ -408,13 +408,85 @@ TEST_CASE("parse_block_statement")
   CHECK(block.rbrace.text == "}");
 }
 
-TEST_CASE("parse_block_statement - empty")
+TEST_CASE("parse_block_expression - empty")
 {
   auto fixture = Parse_fixture{"{ }"};
-  auto const block = fixture.parser.parse_block_statement();
+  auto const block = fixture.parser.parse_block_expression();
   CHECK(block.lbrace.text == "{");
   CHECK(block.statements.empty());
+  CHECK(block.tail == nullptr);
   CHECK(block.rbrace.text == "}");
+}
+
+TEST_CASE("parse_block_expression - tail expression")
+{
+  auto fixture = Parse_fixture{"{ 42 }"};
+  auto const block = fixture.parser.parse_block_expression();
+  CHECK(block.statements.empty());
+  REQUIRE(block.tail != nullptr);
+  auto const *lit =
+    std::get_if<basedparse::Int_literal_expression>(&block.tail->value);
+  REQUIRE(lit != nullptr);
+  CHECK(lit->literal.text == "42");
+}
+
+TEST_CASE("parse_block_expression - statements then tail")
+{
+  auto fixture = Parse_fixture{"{ let x = 1; x + 1 }"};
+  auto const block = fixture.parser.parse_block_expression();
+  REQUIRE(block.statements.size() == 1);
+  CHECK(
+    std::get_if<basedparse::Let_statement>(&block.statements[0].value) !=
+    nullptr
+  );
+  REQUIRE(block.tail != nullptr);
+  auto const *bin =
+    std::get_if<basedparse::Binary_expression>(&block.tail->value);
+  REQUIRE(bin != nullptr);
+  CHECK(bin->op.text == "+");
+}
+
+TEST_CASE("parse_block_expression - no tail with semicolon")
+{
+  auto fixture = Parse_fixture{"{ x; }"};
+  auto const block = fixture.parser.parse_block_expression();
+  REQUIRE(block.statements.size() == 1);
+  CHECK(block.tail == nullptr);
+}
+
+TEST_CASE("parse_expression - block as primary expression")
+{
+  auto fixture = Parse_fixture{"{ 1 + 2 }"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const *block = std::get_if<basedparse::Block_expression>(&expr->value);
+  REQUIRE(block != nullptr);
+  REQUIRE(block->tail != nullptr);
+  CHECK(
+    std::get_if<basedparse::Binary_expression>(&block->tail->value) != nullptr
+  );
+}
+
+TEST_CASE("parse_expression - block as expression statement")
+{
+  CHECK(parses("let f = fn() { { 42 }; };"));
+}
+
+TEST_CASE("parse_expression - block as initializer")
+{
+  CHECK(parses("let f = fn() { let x = { let a = 1; a + 1 }; };"));
+}
+
+TEST_CASE("parse_block_expression - fn body parses tail syntactically")
+{
+  auto fixture = Parse_fixture{"fn() -> i32 { 42 }"};
+  auto const fn = fixture.parser.parse_fn_expression();
+  REQUIRE(fn.body != nullptr);
+  CHECK(fn.body->statements.empty());
+  REQUIRE(fn.body->tail != nullptr);
+  auto const *lit =
+    std::get_if<basedparse::Int_literal_expression>(&fn.body->tail->value);
+  REQUIRE(lit != nullptr);
+  CHECK(lit->literal.text == "42");
 }
 
 TEST_CASE("parse_fn_expression")

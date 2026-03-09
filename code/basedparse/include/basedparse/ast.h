@@ -14,7 +14,7 @@ namespace basedparse
   struct Type_expression;
   struct Expression;
   struct Statement;
-  struct Block_statement;
+  struct Block_expression;
 
   // type expressions
 
@@ -108,7 +108,7 @@ namespace basedparse
     std::vector<basedlex::Lexeme> parameter_commas;
     basedlex::Lexeme rparen;
     std::optional<Return_type_specifier> return_type_specifier;
-    std::unique_ptr<Block_statement> body;
+    std::unique_ptr<Block_expression> body;
   };
 
   struct Paren_expression
@@ -188,6 +188,22 @@ namespace basedparse
     basedlex::Lexeme rbracket;
   };
 
+  struct Block_expression
+  {
+    ~Block_expression();
+
+    Block_expression() = default;
+
+    Block_expression(Block_expression &&) noexcept = default;
+
+    Block_expression &operator=(Block_expression &&) noexcept = default;
+
+    basedlex::Lexeme lbrace;
+    std::vector<Statement> statements;
+    std::unique_ptr<Expression> tail;
+    basedlex::Lexeme rbrace;
+  };
+
   struct Constructor_expression
   {
     ~Constructor_expression();
@@ -218,6 +234,7 @@ namespace basedparse
       Binary_expression,
       Call_expression,
       Index_expression,
+      Block_expression,
       Constructor_expression
     >
       value;
@@ -247,21 +264,6 @@ namespace basedparse
     basedlex::Lexeme semicolon;
   };
 
-  struct Block_statement
-  {
-    ~Block_statement();
-
-    Block_statement() = default;
-
-    Block_statement(Block_statement &&) noexcept = default;
-
-    Block_statement &operator=(Block_statement &&) noexcept = default;
-
-    basedlex::Lexeme lbrace;
-    std::vector<Statement> statements;
-    basedlex::Lexeme rbrace;
-  };
-
   struct Function_definition
   {
     basedlex::Lexeme kw_let;
@@ -277,7 +279,6 @@ namespace basedparse
       Let_statement,
       Return_statement,
       Expression_statement,
-      Block_statement,
       Function_definition
     >
       value;

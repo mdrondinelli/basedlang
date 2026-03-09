@@ -35,6 +35,7 @@ Primary expressions:
 - Integer literals: `42`
 - Identifiers: `x`
 - Parenthesized: `(expr)`
+- Block expressions: `{ statements... tail_expr }`
 - Function expressions: `fn(params) -> ReturnType { body }`
 - Constructor expressions: `new Type { args }`
 
@@ -93,8 +94,15 @@ let arr = new i32[3]{10, 20, 30};
 -- nested calls and indexing
 let x = get_buffer()[i + 1];
 
--- immediately invoked function expression
-let result = fn() -> i32 { return 42; }();
+-- block expression (last expression without ; is the value)
+let x = {
+  let a = 1;
+  let b = 2;
+  a + b
+};
+
+-- block with no tail expression (produces void)
+{ do_something(); };
 
 -- dereference
 let val = *p;

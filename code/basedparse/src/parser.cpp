@@ -76,13 +76,37 @@ namespace basedparse
     return stmt;
   }
 
-  Block_statement Parser::parse_block_statement()
+  Block_expression Parser::parse_block_expression()
   {
-    auto block = Block_statement{};
+    auto block = Block_expression{};
     block.lbrace = expect(basedlex::Token::lbrace);
     while (_reader->peek().token != basedlex::Token::rbrace)
     {
-      block.statements.push_back(parse_statement());
+      auto const &next = _reader->peek();
+      if (next.token == basedlex::Token::kw_let)
+      {
+        block.statements.push_back(Statement{parse_let_statement()});
+      }
+      else if (next.token == basedlex::Token::kw_return)
+      {
+        block.statements.push_back(Statement{parse_return_statement()});
+      }
+      else
+      {
+        auto expr = parse_expression();
+        if (_reader->peek().token == basedlex::Token::semicolon)
+        {
+          auto stmt = Expression_statement{};
+          stmt.expression = std::move(*expr);
+          stmt.semicolon = expect(basedlex::Token::semicolon);
+          block.statements.push_back(Statement{std::move(stmt)});
+        }
+        else
+        {
+          block.tail = std::move(expr);
+          break;
+        }
+      }
     }
     block.rbrace = expect(basedlex::Token::rbrace);
     return block;
@@ -186,6 +210,10 @@ namespace basedparse
     {
       return std::make_unique<Expression>(parse_constructor_expression());
     }
+    if (next.token == basedlex::Token::lbrace)
+    {
+      return std::make_unique<Expression>(parse_block_expression());
+    }
     if (next.token == basedlex::Token::lparen)
     {
       return std::make_unique<Expression>(parse_paren_expression());
@@ -231,7 +259,7 @@ namespace basedparse
     {
       fn.return_type_specifier = parse_return_type_specifier();
     }
-    fn.body = std::make_unique<Block_statement>(parse_block_statement());
+    fn.body = std::make_unique<Block_expression>(parse_block_expression());
     return fn;
   }
 

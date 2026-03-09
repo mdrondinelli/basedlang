@@ -28,7 +28,7 @@ namespace basedparse
 
     Expression_statement parse_expression_statement();
 
-    Block_statement parse_block_statement();
+    Block_expression parse_block_expression();
 
     std::unique_ptr<Expression> parse_expression();
 

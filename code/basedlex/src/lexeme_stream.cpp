@@ -204,6 +204,10 @@ namespace basedlex
             {
               return Token::kw_let;
             }
+            if (text == "mut")
+            {
+              return Token::kw_mut;
+            }
             if (text == "new")
             {
               return Token::kw_new;

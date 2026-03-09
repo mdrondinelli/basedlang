@@ -11,6 +11,7 @@ namespace basedlex
     int_literal,
     kw_fn,
     kw_let,
+    kw_mut,
     kw_new,
     kw_return,
     arrow, // ->

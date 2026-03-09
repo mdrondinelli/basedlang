@@ -39,6 +39,7 @@ TEST_CASE("Lexeme_stream lexes first.based")
   expect("0", int_literal, 2, 10);
   expect(";", semicolon, 2, 11);
   expect("}", rbrace, 3, 1);
+  expect(";", semicolon, 3, 2);
   expect("", eof, 4, 1);
 }
 

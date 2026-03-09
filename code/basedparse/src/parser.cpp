@@ -110,26 +110,39 @@ namespace basedparse
       for (;;)
       {
         if (auto const postfix_op = get_postfix_operator(_reader->peek().token);
-            postfix_op && get_operator_precedence(*postfix_op) <= current_precedence)
+            postfix_op &&
+            get_operator_precedence(*postfix_op) <= current_precedence)
         {
-          auto call = Call_expression{};
-          call.callee = std::move(primary);
-          call.lparen = expect(basedlex::Token::lparen);
-          for (;;)
+          if (*postfix_op == Operator::call)
           {
-            if (_reader->peek().token == basedlex::Token::rparen)
+            auto call = Call_expression{};
+            call.callee = std::move(primary);
+            call.lparen = expect(basedlex::Token::lparen);
+            for (;;)
             {
-              break;
+              if (_reader->peek().token == basedlex::Token::rparen)
+              {
+                break;
+              }
+              call.arguments.push_back(std::move(*parse_expression()));
+              if (_reader->peek().token != basedlex::Token::comma)
+              {
+                break;
+              }
+              call.argument_commas.push_back(expect(basedlex::Token::comma));
             }
-            call.arguments.push_back(std::move(*parse_expression()));
-            if (_reader->peek().token != basedlex::Token::comma)
-            {
-              break;
-            }
-            call.argument_commas.push_back(expect(basedlex::Token::comma));
+            call.rparen = expect(basedlex::Token::rparen);
+            primary = std::make_unique<Expression>(std::move(call));
           }
-          call.rparen = expect(basedlex::Token::rparen);
-          primary = std::make_unique<Expression>(std::move(call));
+          else
+          {
+            auto idx = Index_expression{};
+            idx.operand = std::move(primary);
+            idx.lbracket = expect(basedlex::Token::lbracket);
+            idx.index = parse_expression();
+            idx.rbracket = expect(basedlex::Token::rbracket);
+            primary = std::make_unique<Expression>(std::move(idx));
+          }
         }
         else
         {
@@ -167,41 +180,11 @@ namespace basedparse
     }
     if (next.token == basedlex::Token::identifier)
     {
-      auto type = parse_type_expression();
-      if (_reader->peek().token != basedlex::Token::lbrace)
-      {
-        auto const *id_type =
-          std::get_if<Identifier_type_expression>(&type->value);
-        if (!id_type)
-        {
-          throw std::runtime_error{
-            "unexpected token '" + _reader->peek().text + "' at " +
-            std::to_string(_reader->peek().line) + ":" +
-            std::to_string(_reader->peek().column)
-          };
-        }
-        return std::make_unique<Expression>(
-          Identifier_expression{.identifier = id_type->identifier}
-        );
-      }
-      auto ctor = Constructor_expression{};
-      ctor.type = std::move(*type);
-      ctor.lbrace = expect(basedlex::Token::lbrace);
-      for (;;)
-      {
-        if (_reader->peek().token == basedlex::Token::rbrace)
-        {
-          break;
-        }
-        ctor.arguments.push_back(std::move(*parse_expression()));
-        if (_reader->peek().token != basedlex::Token::comma)
-        {
-          break;
-        }
-        ctor.argument_commas.push_back(expect(basedlex::Token::comma));
-      }
-      ctor.rbrace = expect(basedlex::Token::rbrace);
-      return std::make_unique<Expression>(std::move(ctor));
+      return std::make_unique<Expression>(parse_identifier_expression());
+    }
+    if (next.token == basedlex::Token::kw_new)
+    {
+      return std::make_unique<Expression>(parse_constructor_expression());
     }
     if (next.token == basedlex::Token::lparen)
     {
@@ -279,6 +262,29 @@ namespace basedparse
     return expr;
   }
 
+  Constructor_expression Parser::parse_constructor_expression()
+  {
+    auto ctor = Constructor_expression{};
+    ctor.kw_new = expect(basedlex::Token::kw_new);
+    ctor.type = std::move(*parse_type_expression());
+    ctor.lbrace = expect(basedlex::Token::lbrace);
+    for (;;)
+    {
+      if (_reader->peek().token == basedlex::Token::rbrace)
+      {
+        break;
+      }
+      ctor.arguments.push_back(std::move(*parse_expression()));
+      if (_reader->peek().token != basedlex::Token::comma)
+      {
+        break;
+      }
+      ctor.argument_commas.push_back(expect(basedlex::Token::comma));
+    }
+    ctor.rbrace = expect(basedlex::Token::rbrace);
+    return ctor;
+  }
+
   std::unique_ptr<Type_expression> Parser::parse_type_expression()
   {
     auto const &next = _reader->peek();
@@ -289,9 +295,9 @@ namespace basedparse
         std::to_string(next.line) + ":" + std::to_string(next.column)
       };
     }
-    auto type = std::make_unique<Type_expression>(
-      Identifier_type_expression{.identifier = expect(basedlex::Token::identifier)}
-    );
+    auto type = std::make_unique<Type_expression>(Identifier_type_expression{
+      .identifier = expect(basedlex::Token::identifier)
+    });
     while (_reader->peek().token == basedlex::Token::lbracket)
     {
       auto array = Array_type_expression{};

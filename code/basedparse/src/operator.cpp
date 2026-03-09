@@ -8,6 +8,7 @@ namespace basedparse
     switch (op)
     {
     case Operator::call:
+    case Operator::index:
       return 0;
     case Operator::unary_plus:
     case Operator::unary_minus:
@@ -41,6 +42,8 @@ namespace basedparse
     {
     case basedlex::Token::lparen:
       return Operator::call;
+    case basedlex::Token::lbracket:
+      return Operator::index;
     default:
       return std::nullopt;
     }

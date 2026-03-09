@@ -11,6 +11,7 @@ namespace basedparse
   enum class Operator
   {
     call,
+    index,
     unary_plus,
     unary_minus,
     multiply,

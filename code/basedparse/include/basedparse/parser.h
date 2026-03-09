@@ -42,6 +42,8 @@ namespace basedparse
 
     Paren_expression parse_paren_expression();
 
+    Constructor_expression parse_constructor_expression();
+
     Fn_expression::Return_type_specifier parse_return_type_specifier();
 
     std::unique_ptr<Type_expression> parse_type_expression();

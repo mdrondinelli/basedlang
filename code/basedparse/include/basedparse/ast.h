@@ -31,8 +31,8 @@ namespace basedparse
 
     Array_type_expression(Array_type_expression &&) noexcept = default;
 
-    Array_type_expression &operator=(Array_type_expression &&) noexcept =
-      default;
+    Array_type_expression &
+    operator=(Array_type_expression &&) noexcept = default;
 
     std::unique_ptr<Type_expression> element_type;
     basedlex::Lexeme lbracket;
@@ -150,6 +150,22 @@ namespace basedparse
     basedlex::Lexeme rparen;
   };
 
+  struct Index_expression
+  {
+    ~Index_expression();
+
+    Index_expression() = default;
+
+    Index_expression(Index_expression &&) noexcept = default;
+
+    Index_expression &operator=(Index_expression &&) noexcept = default;
+
+    std::unique_ptr<Expression> operand;
+    basedlex::Lexeme lbracket;
+    std::unique_ptr<Expression> index;
+    basedlex::Lexeme rbracket;
+  };
+
   struct Constructor_expression
   {
     ~Constructor_expression();
@@ -158,9 +174,10 @@ namespace basedparse
 
     Constructor_expression(Constructor_expression &&) noexcept = default;
 
-    Constructor_expression &operator=(Constructor_expression &&) noexcept =
-      default;
+    Constructor_expression &
+    operator=(Constructor_expression &&) noexcept = default;
 
+    basedlex::Lexeme kw_new;
     Type_expression type;
     basedlex::Lexeme lbrace;
     std::vector<Expression> arguments;
@@ -178,7 +195,9 @@ namespace basedparse
       Unary_expression,
       Binary_expression,
       Call_expression,
-      Constructor_expression>
+      Index_expression,
+      Constructor_expression
+    >
       value;
   };
 
@@ -237,7 +256,8 @@ namespace basedparse
       Return_statement,
       Expression_statement,
       Block_statement,
-      Function_definition>
+      Function_definition
+    >
       value;
   };
 

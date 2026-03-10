@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <memory>
 #include <variant>
+#include <vector>
 
 namespace basedinterp
 {
@@ -26,9 +27,20 @@ namespace basedinterp
     std::shared_ptr<Value> target;
   };
 
+  struct Array_value
+  {
+    std::vector<std::shared_ptr<Value>> elements;
+  };
+
   struct Value
   {
-    std::variant<std::int32_t, Function_value, Pointer_value, Reference_value>
+    std::variant<
+      std::int32_t,
+      Function_value,
+      Pointer_value,
+      Reference_value,
+      Array_value
+    >
       data;
   };
 

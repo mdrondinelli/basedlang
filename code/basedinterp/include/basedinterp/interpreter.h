@@ -71,6 +71,11 @@ namespace basedinterp
 
     Value evaluate_call(basedir::Call_expression const &expression);
 
+    Value evaluate_index(basedir::Index_expression const &expression);
+
+    Value
+    evaluate_constructor(basedir::Constructor_expression const &expression);
+
     Value evaluate_block(basedir::Block_expression const &expression);
 
     Value evaluate_if(basedir::If_expression const &expression);

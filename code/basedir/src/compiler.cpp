@@ -17,13 +17,6 @@ namespace basedir
   //   - Global_binding: an index into Program::functions
   //   - Type_symbol:    a type (e.g. i32)
   //
-  // Top-level compilation has two phases:
-  //   1. Register all function names as Global_bindings (so every function is
-  //      visible during body compilation, enabling recursion and mutual
-  //      recursion).
-  //   2. Compile each function body, during which the symbol table resolves
-  //      identifiers to Binding_expression IR nodes.
-  //
   // Within a function, parameters and let-bindings each allocate a local slot
   // via alloc_local(). The final slot count becomes the function's frame size
   // (local_names.size()). Block scopes push/pop on the scope stack so that
@@ -33,9 +26,10 @@ namespace basedir
   Program Compiler::compile(basedparse::Translation_unit const &unit)
   {
     auto program = Program{};
+    _program = &program;
     push_scope();
-    define("i32", Type_symbol{_types.get_named("i32")});
-    // Phase 1: register all top-level function names before compiling any body.
+    define("i32", Type_symbol{_program->types.get_named("i32")});
+    define("void", Type_symbol{_program->types.get_named("void")});
     for (auto const &statement : unit.statements)
     {
       auto const fn_def =
@@ -45,18 +39,19 @@ namespace basedir
         throw Compile_error{"top-level statement is not a function definition"};
       }
       auto const index = program.functions.size();
+      auto const fn_type = compile_function_type(fn_def->function);
+      program.functions.push_back(
+        Function{
+          Function_declaration{fn_def->name.text, fn_type},
+          std::nullopt,
+        }
+      );
       define(fn_def->name.text, Global_binding{index});
-      program.functions.emplace_back();
-    }
-    // Phase 2: compile each function body with all globals in scope.
-    for (auto i = std::size_t{}; i < unit.statements.size(); ++i)
-    {
-      auto const &fn_def =
-        std::get<basedparse::Function_definition>(unit.statements[i].value);
-      program.functions[i] =
-        compile_function(fn_def.name.text, fn_def.function);
+      program.functions[index].definition =
+        compile_function_body(fn_def->function);
     }
     pop_scope();
+    _program = nullptr;
     return program;
   }
 
@@ -105,26 +100,57 @@ namespace basedir
     if (auto const ident =
           std::get_if<basedparse::Identifier_type_expression>(&type_expr.value))
     {
-      auto const type = _types.get_named(ident->identifier.text);
+      auto const type = _program->types.get_named(ident->identifier.text);
       if (!type)
       {
         throw Compile_error{"unknown type: " + ident->identifier.text};
       }
       return type;
     }
+    if (auto const arr =
+          std::get_if<basedparse::Array_type_expression>(&type_expr.value))
+    {
+      auto const element = resolve_type(*arr->element_type);
+      auto size = std::optional<std::size_t>{};
+      if (arr->size)
+      {
+        auto const size_expr =
+          std::get_if<basedparse::Int_literal_expression>(&arr->size->value);
+        if (!size_expr)
+        {
+          throw Compile_error{"array size must be an integer literal"};
+        }
+        size = static_cast<std::size_t>(std::stoi(size_expr->literal.text));
+      }
+      return _program->types.get_array(element, size);
+    }
     if (auto const ptr =
           std::get_if<basedparse::Pointer_type_expression>(&type_expr.value))
     {
       auto const pointee = resolve_type(*ptr->pointee_type);
-      return _types.get_pointer(pointee);
+      return _program->types.get_pointer(pointee);
     }
     throw Compile_error{"unsupported type expression"};
   }
 
-  Function Compiler::compile_function(
-    std::optional<std::string> name,
-    basedparse::Fn_expression const &fn
-  )
+  Type *Compiler::compile_function_type(basedparse::Fn_expression const &fn)
+  {
+    auto param_types = std::vector<Type *>{};
+    for (auto const &param : fn.parameters)
+    {
+      param_types.push_back(resolve_type(param.type_expression));
+    }
+    if (!fn.return_type_specifier)
+    {
+      throw Compile_error{"function must have an explicit return type"};
+    }
+    auto const return_type =
+      resolve_type(fn.return_type_specifier->type_expression);
+    return _program->types.get_function(param_types, return_type);
+  }
+
+  Function_body
+  Compiler::compile_function_body(basedparse::Fn_expression const &fn)
   {
     _local_names.clear();
     push_scope();
@@ -137,12 +163,10 @@ namespace basedir
     }
     auto body = compile_block(*fn.body);
     pop_scope();
-    return Function{
-      std::move(name),
-      fn.parameters.size(),
-      std::move(_local_names),
-      std::get<Block_expression>(std::move(body).value),
-    };
+    auto def = Function_body{};
+    def.local_names = std::move(_local_names);
+    def.body = std::get<Block_expression>(std::move(body).value);
+    return def;
   }
 
   Statement Compiler::compile_statement(basedparse::Statement const &statement)
@@ -263,6 +287,16 @@ namespace basedir
       return compile_call(*e);
     }
     if (auto const e =
+          std::get_if<basedparse::Index_expression>(&expression.value))
+    {
+      return compile_index(*e);
+    }
+    if (auto const e =
+          std::get_if<basedparse::Constructor_expression>(&expression.value))
+    {
+      return compile_constructor(*e);
+    }
+    if (auto const e =
           std::get_if<basedparse::Block_expression>(&expression.value))
     {
       return compile_block(*e);
@@ -279,10 +313,10 @@ namespace basedir
     basedparse::Int_literal_expression const &expression
   )
   {
-    auto result =
-      Expression{Int_literal_expression{std::stoi(expression.literal.text)}};
-    result.type = _types.get_named("i32");
-    return result;
+    return Expression{
+      Int_literal_expression{std::stoi(expression.literal.text)},
+      _program->types.get_named("i32"),
+    };
   }
 
   // Resolve an identifier to a Binding_expression by looking it up in the
@@ -302,16 +336,19 @@ namespace basedir
     {
       auto binding = Binding_expression{};
       binding.value = basedir::Local_binding{local->index};
-      auto result = Expression{std::move(binding)};
-      result.type = _types.get_reference(local->type);
-      return result;
+      return Expression{
+        std::move(binding),
+        _program->types.get_reference(local->type)
+      };
     }
     if (auto const global = std::get_if<Global_binding>(symbol))
     {
       auto binding = Binding_expression{};
       binding.value = basedir::Global_binding{global->index};
-      // Functions don't have a type in the type system yet.
-      return Expression{std::move(binding)};
+      return Expression{
+        std::move(binding),
+        _program->functions[global->index].declaration.type,
+      };
     }
     throw Compile_error{name + " is not a value"};
   }
@@ -346,13 +383,11 @@ namespace basedir
       {
         throw Compile_error{"address-of requires an lvalue operand"};
       }
-      auto const result_type = _types.get_pointer(ref->referent);
+      auto const result_type = _program->types.get_pointer(ref->referent);
       auto unary = Unary_expression{};
       unary.op = *op;
       unary.operand = std::make_unique<Expression>(std::move(operand));
-      auto result = Expression{std::move(unary)};
-      result.type = result_type;
-      return result;
+      return Expression{std::move(unary), result_type};
     }
     if (*op == basedparse::Operator::dereference)
     {
@@ -366,18 +401,17 @@ namespace basedir
       auto unary = Unary_expression{};
       unary.op = *op;
       unary.operand = std::make_unique<Expression>(std::move(operand));
-      auto result = Expression{std::move(unary)};
-      result.type = _types.get_reference(pointee_type);
-      return result;
+      return Expression{
+        std::move(unary),
+        _program->types.get_reference(pointee_type)
+      };
     }
     auto operand = compile_expression(*expression.operand);
     auto const result_type = strip_reference(operand.type);
     auto unary = Unary_expression{};
     unary.op = *op;
     unary.operand = std::make_unique<Expression>(std::move(operand));
-    auto result = Expression{std::move(unary)};
-    result.type = result_type;
-    return result;
+    return Expression{std::move(unary), result_type};
   }
 
   Expression
@@ -406,9 +440,7 @@ namespace basedir
       auto assign = Assign_expression{};
       assign.target = std::make_unique<Expression>(std::move(target));
       assign.value = std::make_unique<Expression>(std::move(value));
-      auto result = Expression{std::move(assign)};
-      result.type = result_type;
-      return result;
+      return Expression{std::move(assign), result_type};
     }
     auto left = compile_expression(*expression.left);
     auto const result_type = strip_reference(left.type);
@@ -417,9 +449,7 @@ namespace basedir
     binary.op = *op;
     binary.left = std::make_unique<Expression>(std::move(left));
     binary.right = std::make_unique<Expression>(std::move(right));
-    auto result = Expression{std::move(binary)};
-    result.type = result_type;
-    return result;
+    return Expression{std::move(binary), result_type};
   }
 
   Expression
@@ -432,11 +462,77 @@ namespace basedir
     {
       arguments.push_back(compile_expression(arg));
     }
+    auto const callee_type = strip_reference(callee.type);
+    auto const fn_type =
+      callee_type ? std::get_if<Function_type>(&callee_type->value) : nullptr;
+    if (!fn_type)
+    {
+      throw Compile_error{"callee is not a function"};
+    }
+    if (fn_type->parameter_types.size() != arguments.size())
+    {
+      throw Compile_error{
+        "expected " + std::to_string(fn_type->parameter_types.size()) +
+        " arguments, got " + std::to_string(arguments.size())
+      };
+    }
     auto call = Call_expression{};
     call.callee = std::make_unique<Expression>(std::move(callee));
     call.arguments = std::move(arguments);
-    // Without function types, we don't know the return type.
-    return Expression{std::move(call)};
+    return Expression{std::move(call), fn_type->return_type};
+  }
+
+  Expression
+  Compiler::compile_index(basedparse::Index_expression const &expression)
+  {
+    auto operand = compile_expression(*expression.operand);
+    auto const stripped = strip_reference(operand.type);
+    if (!stripped || !std::get_if<Array_type>(&stripped->value))
+    {
+      throw Compile_error{"index requires an array operand"};
+    }
+    auto const element_type = std::get<Array_type>(stripped->value).element;
+    auto index = compile_expression(*expression.index);
+    auto const index_type = strip_reference(index.type);
+    if (!index_type || !std::get_if<I32_type>(&index_type->value))
+    {
+      throw Compile_error{"array index must be an integer"};
+    }
+    auto index_expr = Index_expression{};
+    index_expr.operand = std::make_unique<Expression>(std::move(operand));
+    index_expr.index = std::make_unique<Expression>(std::move(index));
+    return Expression{
+      std::move(index_expr),
+      _program->types.get_reference(element_type)
+    };
+  }
+
+  Expression Compiler::compile_constructor(
+    basedparse::Constructor_expression const &expression
+  )
+  {
+    auto const type = resolve_type(expression.type);
+    auto const arr = std::get_if<Array_type>(&type->value);
+    if (!arr)
+    {
+      throw Compile_error{"constructor requires an array type"};
+    }
+    if (arr->size && *arr->size != expression.arguments.size())
+    {
+      throw Compile_error{
+        "array size mismatch: expected " + std::to_string(*arr->size) +
+        " arguments, got " + std::to_string(expression.arguments.size())
+      };
+    }
+    auto arguments = std::vector<basedir::Expression>{};
+    arguments.reserve(expression.arguments.size());
+    for (auto const &arg : expression.arguments)
+    {
+      arguments.push_back(compile_expression(arg));
+    }
+    auto ctor = Constructor_expression{};
+    ctor.arguments = std::move(arguments);
+    return Expression{std::move(ctor), type};
   }
 
   Expression
@@ -460,9 +556,7 @@ namespace basedir
     auto block = Block_expression{};
     block.statements = std::move(statements);
     block.tail = std::move(tail);
-    auto result = Expression{std::move(block)};
-    result.type = tail_type;
-    return result;
+    return Expression{std::move(block), tail_type};
   }
 
   Expression Compiler::compile_if(basedparse::If_expression const &expression)
@@ -481,9 +575,7 @@ namespace basedir
     if_expr.condition = std::move(condition);
     if_expr.then_block = std::get<Block_expression>(std::move(then_expr).value);
     if_expr.else_body = std::move(else_body);
-    auto result = Expression{std::move(if_expr)};
-    result.type = result_type;
-    return result;
+    return Expression{std::move(if_expr), result_type};
   }
 
 } // namespace basedir

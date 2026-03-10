@@ -34,34 +34,43 @@ static basedir::Program compile_file(std::string const &filename)
   return compile_source(source);
 }
 
+static basedir::Function_type const &
+fn_type(basedir::Function const &fn)
+{
+  return std::get<basedir::Function_type>(fn.declaration.type->value);
+}
+
 TEST_CASE("Compiler - first.based produces one function")
 {
   auto const program = compile_file("first.based");
   REQUIRE(program.functions.size() == 1);
-  CHECK(program.functions[0].name == "main");
-  CHECK(program.functions[0].parameter_count == 0);
-  CHECK(program.functions[0].local_names.empty());
+  CHECK(program.functions[0].declaration.name == "main");
+  CHECK(fn_type(program.functions[0]).parameter_types.empty());
+  REQUIRE(program.functions[0].definition);
+  CHECK(program.functions[0].definition->local_names.empty());
 }
 
 TEST_CASE("Compiler - parameters.based resolves parameters")
 {
   auto const program = compile_file("parameters.based");
   REQUIRE(program.functions.size() == 3);
-  CHECK(program.functions[0].name == "id");
-  CHECK(program.functions[0].parameter_count == 1);
-  CHECK(program.functions[0].local_names.size() == 1);
-  CHECK(program.functions[0].local_names[0] == "x");
-  CHECK(program.functions[1].name == "first");
-  CHECK(program.functions[1].parameter_count == 2);
-  CHECK(program.functions[1].local_names.size() == 2);
+  CHECK(program.functions[0].declaration.name == "id");
+  CHECK(fn_type(program.functions[0]).parameter_types.size() == 1);
+  REQUIRE(program.functions[0].definition);
+  CHECK(program.functions[0].definition->local_names.size() == 1);
+  CHECK(program.functions[0].definition->local_names[0] == "x");
+  CHECK(program.functions[1].declaration.name == "first");
+  CHECK(fn_type(program.functions[1]).parameter_types.size() == 2);
+  REQUIRE(program.functions[1].definition);
+  CHECK(program.functions[1].definition->local_names.size() == 2);
 }
 
 TEST_CASE("Compiler - fibonacci.based compiles")
 {
   auto const program = compile_file("fibonacci.based");
   REQUIRE(program.functions.size() == 2);
-  CHECK(program.functions[0].name == "fib");
-  CHECK(program.functions[1].name == "main");
+  CHECK(program.functions[0].declaration.name == "fib");
+  CHECK(program.functions[1].declaration.name == "main");
 }
 
 TEST_CASE("Compiler - let creates local slots")
@@ -74,9 +83,10 @@ TEST_CASE("Compiler - let creates local slots")
     };
   )");
   REQUIRE(program.functions.size() == 1);
-  CHECK(program.functions[0].local_names.size() == 2);
-  CHECK(program.functions[0].local_names[0] == "x");
-  CHECK(program.functions[0].local_names[1] == "y");
+  REQUIRE(program.functions[0].definition);
+  CHECK(program.functions[0].definition->local_names.size() == 2);
+  CHECK(program.functions[0].definition->local_names[0] == "x");
+  CHECK(program.functions[0].definition->local_names[1] == "y");
 }
 
 TEST_CASE("Compiler - undefined symbol throws")
@@ -85,4 +95,13 @@ TEST_CASE("Compiler - undefined symbol throws")
     compile_source("let f = fn() -> i32 { x };"),
     basedir::Compiler::Compile_error
   );
+}
+
+TEST_CASE("Compiler - quicksort.based compiles")
+{
+  auto const program = compile_file("quicksort.based");
+  REQUIRE(program.functions.size() == 3);
+  CHECK(program.functions[0].declaration.name == "swap");
+  CHECK(program.functions[1].declaration.name == "partition");
+  CHECK(program.functions[2].declaration.name == "quicksort");
 }

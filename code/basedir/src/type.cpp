@@ -19,6 +19,12 @@ namespace basedir
       _named_types.emplace(std::string{name}, type);
       return type;
     }
+    if (name == "void")
+    {
+      auto const type = alloc(Type{Void_type{}});
+      _named_types.emplace(std::string{name}, type);
+      return type;
+    }
     return nullptr;
   }
 
@@ -41,6 +47,43 @@ namespace basedir
     }
     auto const type = alloc(Type{Reference_type{referent}});
     referent->reference_type = type;
+    return type;
+  }
+
+  Type *Type_pool::get_function(
+    std::span<Type *const> parameter_types,
+    Type *return_type
+  )
+  {
+    auto const view = Function_key_view{parameter_types, return_type};
+    auto const found = _function_types.find(view);
+    if (found != _function_types.end())
+    {
+      return found->second;
+    }
+    auto const type = alloc(Type{Function_type{
+      std::vector<Type *>{parameter_types.begin(), parameter_types.end()},
+      return_type,
+    }});
+    _function_types.emplace(
+      Function_key{
+        std::vector<Type *>{parameter_types.begin(), parameter_types.end()},
+        return_type,
+      },
+      type
+    );
+    return type;
+  }
+
+  Type *Type_pool::get_array(Type *element, std::optional<std::size_t> size)
+  {
+    auto const found = element->array_types.find(size);
+    if (found != element->array_types.end())
+    {
+      return found->second;
+    }
+    auto const type = alloc(Type{Array_type{element, size}});
+    element->array_types.emplace(size, type);
     return type;
   }
 

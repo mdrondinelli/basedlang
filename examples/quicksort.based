@@ -1,15 +1,15 @@
 let swap = fn(arr: i32[] mut*, i: i32, j: i32) -> void {
-  let tmp = arr[i];
-  arr[i] = arr[j];
-  arr[j] = tmp;
+  let tmp = (*arr)[i];
+  (*arr)[i] = (*arr)[j];
+  (*arr)[j] = tmp;
 };
 
 let partition = fn(arr: i32[] mut*, lo: i32, hi: i32) -> i32 {
-  let pivot = arr[hi];
+  let pivot = (*arr)[hi];
   let mut i = lo - 1;
   let mut j = lo;
   while j < hi {
-    if arr[j] <= pivot {
+    if (*arr)[j] <= pivot {
       i = i + 1;
       swap(arr, i, j);
     };

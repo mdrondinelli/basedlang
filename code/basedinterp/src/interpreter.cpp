@@ -1,9 +1,11 @@
+#include <cassert>
 #include <cstdint>
 #include <string>
 #include <utility>
 #include <variant>
 
 #include "basedinterp/interpreter.h"
+#include "basedir/type.h"
 #include "basedparse/operator.h"
 
 namespace basedinterp
@@ -41,7 +43,7 @@ namespace basedinterp
   {
     for (auto i = std::size_t{}; i < _program->functions.size(); ++i)
     {
-      if (_program->functions[i].name == name)
+      if (_program->functions[i].declaration.name == name)
       {
         return call(i, std::move(arguments));
       }
@@ -89,22 +91,19 @@ namespace basedinterp
   )
   {
     auto const &fn = _program->functions[function_index];
-    if (arguments.size() != fn.parameter_count)
-    {
-      throw Runtime_error{
-        "expected " + std::to_string(fn.parameter_count) + " arguments, got " +
-        std::to_string(arguments.size())
-      };
-    }
-    push_frame(fn.local_names.size());
-    for (auto i = std::size_t{}; i < fn.parameter_count; ++i)
+    auto const &fn_type =
+      std::get<basedir::Function_type>(fn.declaration.type->value);
+    assert(fn.definition);
+    auto const &body = *fn.definition;
+    push_frame(body.local_names.size());
+    for (auto i = std::size_t{}; i < fn_type.parameter_types.size(); ++i)
     {
       local(i) = arguments[i];
     }
     auto result = Value{};
     try
     {
-      result = evaluate_block(fn.body);
+      result = evaluate_block(body.body);
     }
     catch (Return_signal &signal)
     {
@@ -216,6 +215,16 @@ namespace basedinterp
     if (auto const e = std::get_if<basedir::Call_expression>(&expression.value))
     {
       return evaluate_call(*e);
+    }
+    if (auto const e =
+          std::get_if<basedir::Index_expression>(&expression.value))
+    {
+      return evaluate_index(*e);
+    }
+    if (auto const e =
+          std::get_if<basedir::Constructor_expression>(&expression.value))
+    {
+      return evaluate_constructor(*e);
     }
     if (auto const e =
           std::get_if<basedir::Block_expression>(&expression.value))
@@ -355,6 +364,53 @@ namespace basedinterp
       arguments.push_back(strip_reference(evaluate_expression(arg)));
     }
     return execute_function(fn->index, arguments);
+  }
+
+  Value Interpreter::evaluate_index(basedir::Index_expression const &expression)
+  {
+    auto const operand = evaluate_expression(*expression.operand);
+    auto const index_val =
+      strip_reference(evaluate_expression(*expression.index));
+    auto const idx = std::get_if<std::int32_t>(&index_val.data);
+    // The operand may be a reference to an array, or a direct array value.
+    auto const resolve_array =
+      [&](Value const &v) -> Array_value const *
+    {
+      if (auto const ref = std::get_if<Reference_value>(&v.data))
+      {
+        return std::get_if<Array_value>(&ref->target->data);
+      }
+      return std::get_if<Array_value>(&v.data);
+    };
+    auto const arr = resolve_array(operand);
+    if (!arr)
+    {
+      throw Runtime_error{"index requires an array operand"};
+    }
+    auto const i = static_cast<std::size_t>(*idx);
+    if (i >= arr->elements.size())
+    {
+      throw Runtime_error{
+        "array index out of bounds: " + std::to_string(*idx) + " >= " +
+        std::to_string(arr->elements.size())
+      };
+    }
+    return Value{Reference_value{arr->elements[i]}};
+  }
+
+  Value Interpreter::evaluate_constructor(
+    basedir::Constructor_expression const &expression
+  )
+  {
+    auto elements = std::vector<std::shared_ptr<Value>>{};
+    elements.reserve(expression.arguments.size());
+    for (auto const &arg : expression.arguments)
+    {
+      elements.push_back(
+        std::make_shared<Value>(strip_reference(evaluate_expression(arg)))
+      );
+    }
+    return Value{Array_value{std::move(elements)}};
   }
 
   Value Interpreter::evaluate_block(basedir::Block_expression const &expression)

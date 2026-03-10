@@ -48,7 +48,7 @@ namespace basedir
     using Symbol = std::variant<Local_binding, Global_binding, Type_symbol>;
     using Scope = std::unordered_map<std::string, Symbol>;
 
-    Type_pool _types;
+    Program *_program = nullptr;
     std::vector<Scope> _scopes;
     std::vector<std::string> _local_names;
 
@@ -64,10 +64,9 @@ namespace basedir
 
     Type *resolve_type(basedparse::Type_expression const &type_expr);
 
-    Function compile_function(
-      std::optional<std::string> name,
-      basedparse::Fn_expression const &fn
-    );
+    Type *compile_function_type(basedparse::Fn_expression const &fn);
+
+    Function_body compile_function_body(basedparse::Fn_expression const &fn);
 
     Statement compile_statement(basedparse::Statement const &statement);
 
@@ -103,6 +102,11 @@ namespace basedir
     Expression compile_binary(basedparse::Binary_expression const &expression);
 
     Expression compile_call(basedparse::Call_expression const &expression);
+
+    Expression compile_index(basedparse::Index_expression const &expression);
+
+    Expression
+    compile_constructor(basedparse::Constructor_expression const &expression);
 
     Expression compile_block(basedparse::Block_expression const &expression);
 

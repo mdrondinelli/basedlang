@@ -175,3 +175,112 @@ TEST_CASE("Interpreter - division by zero throws")
     basedinterp::Interpreter::Runtime_error
   );
 }
+
+TEST_CASE("Interpreter - array constructor and indexing")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> i32 {
+      let arr = new i32[3]{10, 20, 30};
+      arr[0] + arr[1] + arr[2]
+    };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  auto const int_val = std::get_if<std::int32_t>(&result.data);
+  REQUIRE(int_val);
+  CHECK(*int_val == 60);
+}
+
+TEST_CASE("Interpreter - array element assignment")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> i32 {
+      let mut arr = new i32[3]{1, 2, 3};
+      arr[1] = 99;
+      arr[1]
+    };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  auto const int_val = std::get_if<std::int32_t>(&result.data);
+  REQUIRE(int_val);
+  CHECK(*int_val == 99);
+}
+
+TEST_CASE("Interpreter - array return value")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> i32[3] {
+      new i32[3]{10, 20, 30}
+    };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  auto const arr = std::get_if<basedinterp::Array_value>(&result.data);
+  REQUIRE(arr);
+  REQUIRE(arr->elements.size() == 3);
+  CHECK(std::get<std::int32_t>(arr->elements[0]->data) == 10);
+  CHECK(std::get<std::int32_t>(arr->elements[1]->data) == 20);
+  CHECK(std::get<std::int32_t>(arr->elements[2]->data) == 30);
+}
+
+TEST_CASE("Interpreter - array via pointer")
+{
+  auto fixture = from_source(R"(
+    let set_first = fn(arr: i32[] mut*, val: i32) -> void {
+      (*arr)[0] = val;
+    };
+    let f = fn() -> i32 {
+      let mut arr = new i32[2]{0, 0};
+      set_first(&arr, 42);
+      arr[0]
+    };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  auto const int_val = std::get_if<std::int32_t>(&result.data);
+  REQUIRE(int_val);
+  CHECK(*int_val == 42);
+}
+
+TEST_CASE("Interpreter - quicksort")
+{
+  auto fixture = from_source(R"(
+    let swap = fn(arr: i32[] mut*, i: i32, j: i32) -> void {
+      let tmp = (*arr)[i];
+      (*arr)[i] = (*arr)[j];
+      (*arr)[j] = tmp;
+    };
+    let partition = fn(arr: i32[] mut*, lo: i32, hi: i32) -> i32 {
+      let pivot = (*arr)[hi];
+      let mut i = lo - 1;
+      let mut j = lo;
+      while j < hi {
+        if (*arr)[j] <= pivot {
+          i = i + 1;
+          swap(arr, i, j);
+        };
+        j = j + 1;
+      }
+      swap(arr, i + 1, hi);
+      return i + 1;
+    };
+    let quicksort = fn(arr: i32[] mut*, lo: i32, hi: i32) -> void {
+      if lo < hi {
+        let p = partition(arr, lo, hi);
+        quicksort(arr, lo, p - 1);
+        quicksort(arr, p + 1, hi);
+      };
+    };
+    let main = fn() -> i32[5] {
+      let mut arr = new i32[5]{3, 1, 4, 1, 5};
+      quicksort(&arr, 0, 4);
+      arr
+    };
+  )");
+  auto const result = fixture.interpreter.call("main", {});
+  auto const arr = std::get_if<basedinterp::Array_value>(&result.data);
+  REQUIRE(arr);
+  REQUIRE(arr->elements.size() == 5);
+  CHECK(std::get<std::int32_t>(arr->elements[0]->data) == 1);
+  CHECK(std::get<std::int32_t>(arr->elements[1]->data) == 1);
+  CHECK(std::get<std::int32_t>(arr->elements[2]->data) == 3);
+  CHECK(std::get<std::int32_t>(arr->elements[3]->data) == 4);
+  CHECK(std::get<std::int32_t>(arr->elements[4]->data) == 5);
+}

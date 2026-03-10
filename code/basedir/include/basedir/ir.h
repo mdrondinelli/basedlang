@@ -9,11 +9,10 @@
 #include <vector>
 
 #include "basedparse/operator.h"
+#include "type.h"
 
 namespace basedir
 {
-
-  struct Type;
   struct Expression;
   struct Statement;
   struct Block_expression;
@@ -111,6 +110,25 @@ namespace basedir
     std::unique_ptr<Expression> tail;
   };
 
+  struct Index_expression
+  {
+    ~Index_expression();
+
+    Index_expression() = default;
+
+    Index_expression(Index_expression &&) noexcept = default;
+
+    Index_expression &operator=(Index_expression &&) noexcept = default;
+
+    std::unique_ptr<Expression> operand;
+    std::unique_ptr<Expression> index;
+  };
+
+  struct Constructor_expression
+  {
+    std::vector<Expression> arguments;
+  };
+
   struct If_expression
   {
     ~If_expression();
@@ -128,18 +146,23 @@ namespace basedir
 
   struct Expression
   {
-    std::variant<
+    using Variant = std::variant<
       Int_literal_expression,
       Binding_expression,
       Unary_expression,
       Binary_expression,
       Assign_expression,
       Call_expression,
+      Index_expression,
+      Constructor_expression,
       Block_expression,
       If_expression
-    >
-      value;
-    Type *type = nullptr;
+    >;
+
+    Expression(Variant v, Type *t);
+
+    Variant value;
+    Type *type;
   };
 
   // statements
@@ -187,16 +210,35 @@ namespace basedir
 
   // program
 
-  struct Function
+  struct Function_declaration
   {
-    std::optional<std::string> name;
-    std::size_t parameter_count;
+    std::string name;
+    Type *type;
+  };
+
+  struct Function_body
+  {
+    ~Function_body();
+
+    Function_body() = default;
+
+    Function_body(Function_body &&) noexcept = default;
+
+    Function_body &operator=(Function_body &&) noexcept = default;
+
     std::vector<std::string> local_names;
     Block_expression body;
   };
 
+  struct Function
+  {
+    Function_declaration declaration;
+    std::optional<Function_body> definition;
+  };
+
   struct Program
   {
+    Type_pool types;
     std::vector<Function> functions;
   };
 

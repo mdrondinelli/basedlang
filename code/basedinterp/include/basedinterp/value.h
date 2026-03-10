@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <variant>
 
 namespace basedinterp
@@ -13,9 +14,22 @@ namespace basedinterp
     std::size_t index;
   };
 
+  struct Value;
+
+  struct Pointer_value
+  {
+    std::weak_ptr<Value> target;
+  };
+
+  struct Reference_value
+  {
+    std::shared_ptr<Value> target;
+  };
+
   struct Value
   {
-    std::variant<std::int32_t, Function_value> data;
+    std::variant<std::int32_t, Function_value, Pointer_value, Reference_value>
+      data;
   };
 
 } // namespace basedinterp

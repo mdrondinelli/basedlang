@@ -13,6 +13,7 @@
 namespace basedir
 {
 
+  struct Type;
   struct Expression;
   struct Statement;
   struct Block_expression;
@@ -24,14 +25,19 @@ namespace basedir
     int value;
   };
 
-  struct Local_expression
+  struct Local_binding
   {
     std::size_t index;
   };
 
-  struct Global_expression
+  struct Global_binding
   {
     std::size_t index;
+  };
+
+  struct Binding_expression
+  {
+    std::variant<Local_binding, Global_binding> value;
   };
 
   struct Unary_expression
@@ -124,8 +130,7 @@ namespace basedir
   {
     std::variant<
       Int_literal_expression,
-      Local_expression,
-      Global_expression,
+      Binding_expression,
       Unary_expression,
       Binary_expression,
       Assign_expression,
@@ -134,6 +139,7 @@ namespace basedir
       If_expression
     >
       value;
+    Type *type = nullptr;
   };
 
   // statements

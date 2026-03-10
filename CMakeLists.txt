@@ -28,6 +28,7 @@ target_link_libraries(basedparse PUBLIC basedlex)
 
 add_library(basedir
   code/basedir/src/ir.cpp
+  code/basedir/src/type.cpp
   code/basedir/src/compiler.cpp
 )
 target_include_directories(basedir PUBLIC code/basedir/include)

@@ -9,6 +9,20 @@
 namespace basedinterp
 {
 
+  namespace
+  {
+
+    Value strip_reference(Value const &v)
+    {
+      if (auto const ref = std::get_if<Reference_value>(&v.data))
+      {
+        return *ref->target;
+      }
+      return v;
+    }
+
+  } // namespace
+
   struct Return_signal
   {
     Value value;
@@ -19,7 +33,7 @@ namespace basedinterp
   {
     for (auto i = std::size_t{}; i < _program->functions.size(); ++i)
     {
-      _globals.push_back(Function_value{i});
+      _globals.push_back(std::make_shared<Value>(Value{Function_value{i}}));
     }
   }
 
@@ -46,7 +60,12 @@ namespace basedinterp
   void Interpreter::push_frame(std::size_t frame_size)
   {
     _call_stack.emplace_back();
-    _call_stack.back().locals.resize(frame_size);
+    auto &locals = _call_stack.back().locals;
+    locals.reserve(frame_size);
+    for (auto i = std::size_t{}; i < frame_size; ++i)
+    {
+      locals.push_back(std::make_shared<Value>());
+    }
   }
 
   void Interpreter::pop_frame()
@@ -54,9 +73,14 @@ namespace basedinterp
     _call_stack.pop_back();
   }
 
-  Value &Interpreter::local(std::size_t index)
+  std::shared_ptr<Value> &Interpreter::local_ptr(std::size_t index)
   {
     return _call_stack.back().locals[index];
+  }
+
+  Value &Interpreter::local(std::size_t index)
+  {
+    return *_call_stack.back().locals[index];
   }
 
   Value Interpreter::execute_function(
@@ -86,6 +110,7 @@ namespace basedinterp
     {
       result = std::move(signal.value);
     }
+    result = strip_reference(result);
     pop_frame();
     return result;
   }
@@ -121,7 +146,8 @@ namespace basedinterp
     basedir::Let_statement const &statement
   )
   {
-    local(statement.index) = evaluate_expression(statement.initializer);
+    local(statement.index) =
+      strip_reference(evaluate_expression(statement.initializer));
   }
 
   void Interpreter::execute_while_statement(
@@ -130,7 +156,8 @@ namespace basedinterp
   {
     for (;;)
     {
-      auto const condition = evaluate_expression(*statement.condition);
+      auto const condition =
+        strip_reference(evaluate_expression(*statement.condition));
       auto const int_val = std::get_if<std::int32_t>(&condition.data);
       if (!int_val)
       {
@@ -162,14 +189,14 @@ namespace basedinterp
       return Value{static_cast<std::int32_t>(e->value)};
     }
     if (auto const e =
-          std::get_if<basedir::Local_expression>(&expression.value))
+          std::get_if<basedir::Binding_expression>(&expression.value))
     {
-      return local(e->index);
-    }
-    if (auto const e =
-          std::get_if<basedir::Global_expression>(&expression.value))
-    {
-      return Value{_globals[e->index]};
+      if (auto const local = std::get_if<basedir::Local_binding>(&e->value))
+      {
+        return Value{Reference_value{local_ptr(local->index)}};
+      }
+      auto const &global = std::get<basedir::Global_binding>(e->value);
+      return Value{Reference_value{_globals[global.index]}};
     }
     if (auto const e =
           std::get_if<basedir::Unary_expression>(&expression.value))
@@ -204,7 +231,34 @@ namespace basedinterp
 
   Value Interpreter::evaluate_unary(basedir::Unary_expression const &expression)
   {
-    auto const operand = evaluate_expression(*expression.operand);
+    if (expression.op == basedparse::Operator::address_of)
+    {
+      auto const operand = evaluate_expression(*expression.operand);
+      auto const ref = std::get_if<Reference_value>(&operand.data);
+      if (!ref)
+      {
+        throw Runtime_error{"address-of requires an lvalue operand"};
+      }
+      return Value{Pointer_value{ref->target}};
+    }
+    if (expression.op == basedparse::Operator::dereference)
+    {
+      auto const operand =
+        strip_reference(evaluate_expression(*expression.operand));
+      auto const ptr = std::get_if<Pointer_value>(&operand.data);
+      if (!ptr)
+      {
+        throw Runtime_error{"dereference requires a pointer operand"};
+      }
+      auto const locked = ptr->target.lock();
+      if (!locked)
+      {
+        throw Runtime_error{"dangling pointer"};
+      }
+      return Value{Reference_value{locked}};
+    }
+    auto const operand =
+      strip_reference(evaluate_expression(*expression.operand));
     auto const int_val = std::get_if<std::int32_t>(&operand.data);
     if (!int_val)
     {
@@ -225,8 +279,8 @@ namespace basedinterp
     basedir::Binary_expression const &expression
   )
   {
-    auto const left = evaluate_expression(*expression.left);
-    auto const right = evaluate_expression(*expression.right);
+    auto const left = strip_reference(evaluate_expression(*expression.left));
+    auto const right = strip_reference(evaluate_expression(*expression.right));
     auto const lhs = std::get_if<std::int32_t>(&left.data);
     auto const rhs = std::get_if<std::int32_t>(&right.data);
     if (!lhs || !rhs)
@@ -274,19 +328,21 @@ namespace basedinterp
     basedir::Assign_expression const &expression
   )
   {
-    auto const rhs = evaluate_expression(*expression.value);
-    if (auto const target =
-          std::get_if<basedir::Local_expression>(&expression.target->value))
+    auto const target = evaluate_expression(*expression.target);
+    auto const ref = std::get_if<Reference_value>(&target.data);
+    if (!ref)
     {
-      local(target->index) = rhs;
-      return rhs;
+      throw Runtime_error{"assignment target must be an lvalue"};
     }
-    throw Runtime_error{"invalid assignment target"};
+    auto const rhs = strip_reference(evaluate_expression(*expression.value));
+    *ref->target = rhs;
+    return target;
   }
 
   Value Interpreter::evaluate_call(basedir::Call_expression const &expression)
   {
-    auto const callee = evaluate_expression(*expression.callee);
+    auto const callee =
+      strip_reference(evaluate_expression(*expression.callee));
     auto const fn = std::get_if<Function_value>(&callee.data);
     if (!fn)
     {
@@ -296,7 +352,7 @@ namespace basedinterp
     arguments.reserve(expression.arguments.size());
     for (auto const &arg : expression.arguments)
     {
-      arguments.push_back(evaluate_expression(arg));
+      arguments.push_back(strip_reference(evaluate_expression(arg)));
     }
     return execute_function(fn->index, arguments);
   }
@@ -316,7 +372,8 @@ namespace basedinterp
 
   Value Interpreter::evaluate_if(basedir::If_expression const &expression)
   {
-    auto const condition = evaluate_expression(*expression.condition);
+    auto const condition =
+      strip_reference(evaluate_expression(*expression.condition));
     auto const int_val = std::get_if<std::int32_t>(&condition.data);
     if (!int_val)
     {

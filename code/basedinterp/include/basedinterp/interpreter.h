@@ -2,6 +2,7 @@
 #define BASEDINTERP_INTERPRETER_H
 
 #include <cstddef>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -30,16 +31,18 @@ namespace basedinterp
   private:
     struct Stack_frame
     {
-      std::vector<Value> locals;
+      std::vector<std::shared_ptr<Value>> locals;
     };
 
     basedir::Program const *_program;
-    std::vector<Function_value> _globals;
+    std::vector<std::shared_ptr<Value>> _globals;
     std::vector<Stack_frame> _call_stack;
 
     void push_frame(std::size_t frame_size);
 
     void pop_frame();
+
+    std::shared_ptr<Value> &local_ptr(std::size_t index);
 
     Value &local(std::size_t index);
 

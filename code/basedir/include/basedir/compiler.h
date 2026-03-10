@@ -11,6 +11,7 @@
 
 #include "basedparse/ast.h"
 #include "ir.h"
+#include "type.h"
 
 namespace basedir
 {
@@ -31,6 +32,7 @@ namespace basedir
     {
       std::size_t index;
       bool is_mutable;
+      Type *type;
     };
 
     struct Global_binding
@@ -38,14 +40,15 @@ namespace basedir
       std::size_t index;
     };
 
-    enum class Type_symbol
+    struct Type_symbol
     {
-      i32,
+      Type *type;
     };
 
     using Symbol = std::variant<Local_binding, Global_binding, Type_symbol>;
     using Scope = std::unordered_map<std::string, Symbol>;
 
+    Type_pool _types;
     std::vector<Scope> _scopes;
     std::vector<std::string> _local_names;
 
@@ -58,6 +61,8 @@ namespace basedir
     Symbol const *lookup(std::string const &name) const;
 
     std::size_t alloc_local(std::string const &name);
+
+    Type *resolve_type(basedparse::Type_expression const &type_expr);
 
     Function compile_function(
       std::optional<std::string> name,
@@ -80,11 +85,14 @@ namespace basedir
 
     Expression compile_expression(basedparse::Expression const &expression);
 
+    static Type *strip_reference(Type *type);
+
     Expression
     compile_int_literal(basedparse::Int_literal_expression const &expression);
 
-    Expression
-    compile_identifier_expression(basedparse::Identifier_expression const &expression);
+    Expression compile_identifier_expression(
+      basedparse::Identifier_expression const &expression
+    );
 
     Expression compile_fn(basedparse::Fn_expression const &expression);
 
@@ -96,8 +104,7 @@ namespace basedir
 
     Expression compile_call(basedparse::Call_expression const &expression);
 
-    Block_expression
-    compile_block(basedparse::Block_expression const &expression);
+    Expression compile_block(basedparse::Block_expression const &expression);
 
     Expression compile_if(basedparse::If_expression const &expression);
   };

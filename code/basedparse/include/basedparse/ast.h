@@ -266,6 +266,21 @@ namespace basedparse
 
   // statements
 
+  struct While_statement
+  {
+    ~While_statement();
+
+    While_statement() = default;
+
+    While_statement(While_statement &&) noexcept = default;
+
+    While_statement &operator=(While_statement &&) noexcept = default;
+
+    basedlex::Lexeme kw_while;
+    std::unique_ptr<Expression> condition;
+    Block_expression body;
+  };
+
   struct Let_statement
   {
     basedlex::Lexeme kw_let;
@@ -301,6 +316,7 @@ namespace basedparse
   {
     std::variant<
       Let_statement,
+      While_statement,
       Return_statement,
       Expression_statement,
       Function_definition

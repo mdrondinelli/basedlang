@@ -291,6 +291,10 @@ namespace basedlex
             {
               return Token::kw_return;
             }
+            if (text == "while")
+            {
+              return Token::kw_while;
+            }
             return Token::identifier;
           }();
           return Lexeme{

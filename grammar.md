@@ -17,6 +17,7 @@ Statements appear inside block bodies (`{ ... }`):
 
 - `let x = <expr>;` — variable binding
 - `return <expr>;` — return from function
+- `while <expr> { }` — while loop
 - `<expr>;` — expression statement
 
 ## Expressions
@@ -117,6 +118,11 @@ if done { cleanup(); };
 -- else-if chain
 let sign = if x > 0 { 1 } else if x < 0 { -1 } else { 0 };
 
+-- while loop
+while n > 0 {
+  n = n - 1;
+}
+
 -- dereference
 let val = *p;
 let first = *buf[0];
@@ -127,4 +133,4 @@ let y = -x + 2 * (a - b);
 
 ## Keywords
 
-`else`, `fn`, `if`, `let`, `mut`, `new`, `return`
+`else`, `fn`, `if`, `let`, `mut`, `new`, `return`, `while`

@@ -55,6 +55,10 @@ namespace basedparse
     {
       return Statement{parse_return_statement()};
     }
+    if (next.token == basedlex::Token::kw_while)
+    {
+      return Statement{parse_while_statement()};
+    }
     return Statement{parse_expression_statement()};
   }
 
@@ -100,6 +104,10 @@ namespace basedparse
       else if (next.token == basedlex::Token::kw_return)
       {
         block.statements.push_back(Statement{parse_return_statement()});
+      }
+      else if (next.token == basedlex::Token::kw_while)
+      {
+        block.statements.push_back(Statement{parse_while_statement()});
       }
       else
       {
@@ -372,6 +380,15 @@ namespace basedparse
       expr.else_clause = std::move(else_clause);
     }
     return expr;
+  }
+
+  While_statement Parser::parse_while_statement()
+  {
+    auto stmt = While_statement{};
+    stmt.kw_while = expect(basedlex::Token::kw_while);
+    stmt.condition = parse_expression();
+    stmt.body = parse_block_expression();
+    return stmt;
   }
 
   Constructor_expression Parser::parse_constructor_expression()

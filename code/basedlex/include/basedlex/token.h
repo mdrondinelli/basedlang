@@ -16,6 +16,7 @@ namespace basedlex
     kw_mut,
     kw_new,
     kw_return,
+    kw_while,
     arrow, // ->
     colon, // :
     plus, // +

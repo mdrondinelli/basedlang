@@ -1475,3 +1475,40 @@ TEST_CASE("parse_expression - assign: in full program")
   CHECK(parses("let f = fn(mut x: i32) -> void { x = 42; };"));
   CHECK(parses("let f = fn(mut x: i32, mut y: i32) -> void { x = y = 0; };"));
 }
+
+TEST_CASE("parse_statement - while: simple")
+{
+  auto fixture = Parse_fixture{"while x { }"};
+  auto const stmt = fixture.parser.parse_statement();
+  auto const while_stmt = std::get_if<basedparse::While_statement>(&stmt.value);
+  REQUIRE(while_stmt != nullptr);
+  CHECK(while_stmt->kw_while.text == "while");
+  auto const cond =
+    std::get_if<basedparse::Identifier_expression>(&while_stmt->condition->value);
+  REQUIRE(cond != nullptr);
+  CHECK(cond->identifier.text == "x");
+  CHECK(while_stmt->body.statements.empty());
+}
+
+TEST_CASE("parse_statement - while: with body")
+{
+  auto fixture = Parse_fixture{"while n > 0 { f(n); }"};
+  auto const stmt = fixture.parser.parse_statement();
+  auto const while_stmt = std::get_if<basedparse::While_statement>(&stmt.value);
+  REQUIRE(while_stmt != nullptr);
+  auto const cond =
+    std::get_if<basedparse::Binary_expression>(&while_stmt->condition->value);
+  REQUIRE(cond != nullptr);
+  CHECK(cond->op.text == ">");
+  CHECK(while_stmt->body.statements.size() == 1);
+}
+
+TEST_CASE("parse_statement - while: in full program")
+{
+  CHECK(parses(
+    "let f = fn(mut n: i32) -> i32 {"
+    "  while n > 0 { n = n - 1; }"
+    "  return n;"
+    "};"
+  ));
+}

@@ -168,7 +168,7 @@ namespace basedir
       auto const index = alloc_local(param.name.text);
       define(param.name.text, Local_binding{index, is_mutable, type});
     }
-    auto body = compile_block(*fn.body);
+    auto body = compile_expression(*fn.body);
     auto const return_type = _return_type_stack.back();
     auto const body_type = strip_reference(body.type);
     auto const void_type = _program->types.get_named("void");
@@ -180,7 +180,7 @@ namespace basedir
     _return_type_stack.pop_back();
     auto def = Function_body{};
     def.local_names = std::move(_local_names);
-    def.body = std::get<Block_expression>(std::move(body).value);
+    def.body = std::make_unique<Expression>(std::move(body));
     return def;
   }
 

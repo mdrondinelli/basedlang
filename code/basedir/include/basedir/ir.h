@@ -227,7 +227,7 @@ namespace basedir
     Function_body &operator=(Function_body &&) noexcept = default;
 
     std::vector<std::string> local_names;
-    Block_expression body;
+    std::unique_ptr<Expression> body;
   };
 
   struct Function

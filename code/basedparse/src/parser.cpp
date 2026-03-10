@@ -323,18 +323,19 @@ namespace basedparse
       fn.parameter_commas.push_back(expect(basedlex::Token::comma));
     }
     fn.rparen = expect(basedlex::Token::rparen);
-    if (_reader->peek().token == basedlex::Token::arrow)
+    if (_reader->peek().token == basedlex::Token::colon)
     {
       fn.return_type_specifier = parse_return_type_specifier();
     }
-    fn.body = std::make_unique<Block_expression>(parse_block_expression());
+    fn.arrow = expect(basedlex::Token::arrow);
+    fn.body = parse_expression();
     return fn;
   }
 
   Fn_expression::Return_type_specifier Parser::parse_return_type_specifier()
   {
     auto spec = Fn_expression::Return_type_specifier{};
-    spec.arrow = expect(basedlex::Token::arrow);
+    spec.colon = expect(basedlex::Token::colon);
     spec.type_expression = std::move(*parse_type_expression());
     return spec;
   }

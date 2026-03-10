@@ -90,7 +90,7 @@ namespace basedparse
 
     struct Return_type_specifier
     {
-      basedlex::Lexeme arrow;
+      basedlex::Lexeme colon;
       Type_expression type_expression;
     };
 
@@ -108,7 +108,8 @@ namespace basedparse
     std::vector<basedlex::Lexeme> parameter_commas;
     basedlex::Lexeme rparen;
     std::optional<Return_type_specifier> return_type_specifier;
-    std::unique_ptr<Block_expression> body;
+    basedlex::Lexeme arrow;
+    std::unique_ptr<Expression> body;
   };
 
   struct Paren_expression

@@ -1,9 +1,9 @@
-let fib = fn(n: i32) -> i32
+let fib = fn(n: i32): i32 ->
 {
   return if n { if n - 1 { fib(n - 1) + fib(n - 2) } else { 1 } } else { 0 };
 };
 
-let main = fn() -> i32
+let main = fn(): i32 ->
 {
   return fib(10);
 };

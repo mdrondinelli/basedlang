@@ -103,7 +103,7 @@ namespace basedinterp
     auto result = Value{};
     try
     {
-      result = evaluate_block(body.body);
+      result = evaluate_expression(*body.body);
     }
     catch (Return_signal &signal)
     {

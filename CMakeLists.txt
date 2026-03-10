@@ -43,6 +43,11 @@ add_executable(basedc
   code/basedc/src/main.cpp
 )
 
+add_executable(basedi
+  code/basedinterp/src/main.cpp
+)
+target_link_libraries(basedi PRIVATE basedinterp)
+
 add_executable(basedlex-tests
   code/basedlex/test/lexeme_stream_test.cpp
   code/basedlex/test/ring_buffer_test.cpp

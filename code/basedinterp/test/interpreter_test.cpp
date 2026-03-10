@@ -239,6 +239,227 @@ TEST_CASE("Interpreter - array via pointer")
   CHECK(*int_val == 42);
 }
 
+TEST_CASE("Interpreter - modulo by zero throws")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> i32 { 1 % 0 };
+  )");
+  CHECK_THROWS_AS(
+    fixture.interpreter.call("f", {}),
+    basedinterp::Interpreter::Runtime_error
+  );
+}
+
+TEST_CASE("Interpreter - nested function calls")
+{
+  auto fixture = from_source(R"(
+    let double = fn(x: i32) -> i32 { x + x };
+    let quadruple = fn(x: i32) -> i32 { double(double(x)) };
+  )");
+  auto const result = fixture.interpreter.call(
+    "quadruple",
+    {basedinterp::Value{std::int32_t{3}}}
+  );
+  CHECK(std::get<std::int32_t>(result.data) == 12);
+}
+
+TEST_CASE("Interpreter - early return")
+{
+  auto fixture = from_source(R"(
+    let f = fn(x: i32) -> i32 {
+      if x < 0 {
+        return 0 - x;
+      };
+      x
+    };
+  )");
+  CHECK(
+    std::get<std::int32_t>(
+      fixture.interpreter.call("f", {basedinterp::Value{std::int32_t{-5}}}).data
+    ) == 5
+  );
+  CHECK(
+    std::get<std::int32_t>(
+      fixture.interpreter.call("f", {basedinterp::Value{std::int32_t{7}}}).data
+    ) == 7
+  );
+}
+
+TEST_CASE("Interpreter - return from while loop")
+{
+  auto fixture = from_source(R"(
+    let find = fn(arr: i32[]*, target: i32, len: i32) -> i32 {
+      let mut i = 0;
+      while i < len {
+        if (*arr)[i] == target {
+          return i;
+        };
+        i = i + 1;
+      }
+      return 0 - 1;
+    };
+    let f = fn() -> i32 {
+      let mut arr = new i32[5]{10, 20, 30, 40, 50};
+      find(&arr, 30, 5)
+    };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  CHECK(std::get<std::int32_t>(result.data) == 2);
+}
+
+TEST_CASE("Interpreter - return from while loop not found")
+{
+  auto fixture = from_source(R"(
+    let find = fn(arr: i32[]*, target: i32, len: i32) -> i32 {
+      let mut i = 0;
+      while i < len {
+        if (*arr)[i] == target {
+          return i;
+        };
+        i = i + 1;
+      }
+      return 0 - 1;
+    };
+    let f = fn() -> i32 {
+      let mut arr = new i32[3]{1, 2, 3};
+      find(&arr, 99, 3)
+    };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  CHECK(std::get<std::int32_t>(result.data) == -1);
+}
+
+TEST_CASE("Interpreter - array index out of bounds throws")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> i32 {
+      let arr = new i32[2]{1, 2};
+      arr[5]
+    };
+  )");
+  CHECK_THROWS_AS(
+    fixture.interpreter.call("f", {}),
+    basedinterp::Interpreter::Runtime_error
+  );
+}
+
+TEST_CASE("Interpreter - negative array index throws")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> i32 {
+      let arr = new i32[2]{1, 2};
+      arr[0 - 1]
+    };
+  )");
+  CHECK_THROWS_AS(
+    fixture.interpreter.call("f", {}),
+    basedinterp::Interpreter::Runtime_error
+  );
+}
+
+TEST_CASE("Interpreter - dangling pointer throws")
+{
+  auto fixture = from_source(R"(
+    let get_ptr = fn() -> i32* {
+      let mut x = 42;
+      &x
+    };
+    let f = fn() -> i32 {
+      let p = get_ptr();
+      *p
+    };
+  )");
+  CHECK_THROWS_AS(
+    fixture.interpreter.call("f", {}),
+    basedinterp::Interpreter::Runtime_error
+  );
+}
+
+TEST_CASE("Interpreter - pointer aliasing")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> i32 {
+      let mut x = 10;
+      let p = &x;
+      x = 20;
+      *p
+    };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  CHECK(std::get<std::int32_t>(result.data) == 20);
+}
+
+TEST_CASE("Interpreter - swap via pointers")
+{
+  auto fixture = from_source(R"(
+    let swap = fn(a: i32 mut*, b: i32 mut*) -> void {
+      let tmp = *a;
+      *a = *b;
+      *b = tmp;
+    };
+    let f = fn() -> i32 {
+      let mut x = 1;
+      let mut y = 2;
+      swap(&x, &y);
+      x * 10 + y
+    };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  CHECK(std::get<std::int32_t>(result.data) == 21);
+}
+
+TEST_CASE("Interpreter - unary plus and minus")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> i32 { +(0 - 5) + -(0 - 3) };
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  CHECK(std::get<std::int32_t>(result.data) == -2);
+}
+
+TEST_CASE("Interpreter - void function returns zero")
+{
+  auto fixture = from_source(R"(
+    let f = fn() -> void {};
+  )");
+  auto const result = fixture.interpreter.call("f", {});
+  CHECK(std::get<std::int32_t>(result.data) == 0);
+}
+
+TEST_CASE("Interpreter - fibonacci via iteration")
+{
+  auto fixture = from_source(R"(
+    let fib = fn(n: i32) -> i32 {
+      let mut a = 0;
+      let mut b = 1;
+      let mut i = 0;
+      while i < n {
+        let tmp = b;
+        b = a + b;
+        a = tmp;
+        i = i + 1;
+      }
+      a
+    };
+  )");
+  CHECK(
+    std::get<std::int32_t>(
+      fixture.interpreter.call("fib", {basedinterp::Value{std::int32_t{10}}})
+        .data
+    ) == 55
+  );
+  CHECK(
+    std::get<std::int32_t>(fixture.interpreter
+                             .call("fib", {basedinterp::Value{std::int32_t{0}}})
+                             .data) == 0
+  );
+  CHECK(
+    std::get<std::int32_t>(fixture.interpreter
+                             .call("fib", {basedinterp::Value{std::int32_t{1}}})
+                             .data) == 1
+  );
+}
+
 TEST_CASE("Interpreter - quicksort")
 {
   auto fixture = from_source(R"(

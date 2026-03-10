@@ -128,6 +128,10 @@ namespace basedir
           std::get_if<basedparse::Pointer_type_expression>(&type_expr.value))
     {
       auto const pointee = resolve_type(*ptr->pointee_type);
+      if (ptr->kw_mut)
+      {
+        return _program->types.get_mut_pointer(pointee);
+      }
       return _program->types.get_pointer(pointee);
     }
     throw Compile_error{"unsupported type expression"};
@@ -153,6 +157,9 @@ namespace basedir
   Compiler::compile_function_body(basedparse::Fn_expression const &fn)
   {
     _local_names.clear();
+    _return_type_stack.push_back(
+      resolve_type(fn.return_type_specifier->type_expression)
+    );
     push_scope();
     for (auto const &param : fn.parameters)
     {
@@ -162,7 +169,15 @@ namespace basedir
       define(param.name.text, Local_binding{index, is_mutable, type});
     }
     auto body = compile_block(*fn.body);
+    auto const return_type = _return_type_stack.back();
+    auto const body_type = strip_reference(body.type);
+    auto const void_type = _program->types.get_named("void");
+    if (body_type != void_type && !types_compatible(return_type, body_type))
+    {
+      throw Compile_error{"return type mismatch"};
+    }
     pop_scope();
+    _return_type_stack.pop_back();
     auto def = Function_body{};
     def.local_names = std::move(_local_names);
     def.body = std::get<Block_expression>(std::move(body).value);
@@ -224,6 +239,11 @@ namespace basedir
   )
   {
     auto expr = compile_expression(statement.value);
+    auto const expr_type = strip_reference(expr.type);
+    if (!types_compatible(_return_type_stack.back(), expr_type))
+    {
+      throw Compile_error{"return type mismatch"};
+    }
     return Statement{Return_statement{std::move(expr)}};
   }
 
@@ -246,6 +266,39 @@ namespace basedir
       return ref->referent;
     }
     return type;
+  }
+
+  bool Compiler::types_compatible(Type *expected, Type *actual)
+  {
+    if (expected == actual)
+    {
+      return true;
+    }
+    if (!expected || !actual)
+    {
+      return false;
+    }
+    auto const expected_arr = std::get_if<Array_type>(&expected->value);
+    auto const actual_arr = std::get_if<Array_type>(&actual->value);
+    if (expected_arr && actual_arr)
+    {
+      if (expected_arr->size && expected_arr->size != actual_arr->size)
+      {
+        return false;
+      }
+      return types_compatible(expected_arr->element, actual_arr->element);
+    }
+    auto const expected_ptr = std::get_if<Pointer_type>(&expected->value);
+    auto const actual_ptr = std::get_if<Pointer_type>(&actual->value);
+    if (expected_ptr && actual_ptr)
+    {
+      if (expected_ptr->is_mutable && !actual_ptr->is_mutable)
+      {
+        return false;
+      }
+      return types_compatible(expected_ptr->pointee, actual_ptr->pointee);
+    }
+    return false;
   }
 
   Expression
@@ -336,10 +389,10 @@ namespace basedir
     {
       auto binding = Binding_expression{};
       binding.value = basedir::Local_binding{local->index};
-      return Expression{
-        std::move(binding),
-        _program->types.get_reference(local->type)
-      };
+      auto const ref_type = local->is_mutable
+                              ? _program->types.get_mut_reference(local->type)
+                              : _program->types.get_reference(local->type);
+      return Expression{std::move(binding), ref_type};
     }
     if (auto const global = std::get_if<Global_binding>(symbol))
     {
@@ -383,7 +436,9 @@ namespace basedir
       {
         throw Compile_error{"address-of requires an lvalue operand"};
       }
-      auto const result_type = _program->types.get_pointer(ref->referent);
+      auto const result_type =
+        ref->is_mutable ? _program->types.get_mut_pointer(ref->referent)
+                        : _program->types.get_pointer(ref->referent);
       auto unary = Unary_expression{};
       unary.op = *op;
       unary.operand = std::make_unique<Expression>(std::move(operand));
@@ -397,21 +452,26 @@ namespace basedir
       {
         throw Compile_error{"dereference requires a pointer operand"};
       }
-      auto const pointee_type = std::get<Pointer_type>(stripped->value).pointee;
+      auto const &ptr = std::get<Pointer_type>(stripped->value);
       auto unary = Unary_expression{};
       unary.op = *op;
       unary.operand = std::make_unique<Expression>(std::move(operand));
-      return Expression{
-        std::move(unary),
-        _program->types.get_reference(pointee_type)
-      };
+      auto const ref_type = ptr.is_mutable
+                              ? _program->types.get_mut_reference(ptr.pointee)
+                              : _program->types.get_reference(ptr.pointee);
+      return Expression{std::move(unary), ref_type};
     }
     auto operand = compile_expression(*expression.operand);
-    auto const result_type = strip_reference(operand.type);
+    auto const operand_type = strip_reference(operand.type);
+    auto const i32_type = _program->types.get_named("i32");
+    if (operand_type != i32_type)
+    {
+      throw Compile_error{"unary operator requires an integer operand"};
+    }
     auto unary = Unary_expression{};
     unary.op = *op;
     unary.operand = std::make_unique<Expression>(std::move(operand));
-    return Expression{std::move(unary), result_type};
+    return Expression{std::move(unary), operand_type};
   }
 
   Expression
@@ -435,21 +495,36 @@ namespace basedir
       {
         throw Compile_error{"assignment target must be an lvalue"};
       }
+      if (!ref->is_mutable)
+      {
+        throw Compile_error{"cannot assign to immutable target"};
+      }
       auto const result_type = target.type;
       auto value = compile_expression(*expression.right);
+      auto const rhs_type = strip_reference(value.type);
+      if (!types_compatible(ref->referent, rhs_type))
+      {
+        throw Compile_error{"assignment type mismatch"};
+      }
       auto assign = Assign_expression{};
       assign.target = std::make_unique<Expression>(std::move(target));
       assign.value = std::make_unique<Expression>(std::move(value));
       return Expression{std::move(assign), result_type};
     }
     auto left = compile_expression(*expression.left);
-    auto const result_type = strip_reference(left.type);
+    auto const left_type = strip_reference(left.type);
     auto right = compile_expression(*expression.right);
+    auto const right_type = strip_reference(right.type);
+    auto const i32_type = _program->types.get_named("i32");
+    if (left_type != i32_type || right_type != i32_type)
+    {
+      throw Compile_error{"binary operator requires integer operands"};
+    }
     auto binary = Binary_expression{};
     binary.op = *op;
     binary.left = std::make_unique<Expression>(std::move(left));
     binary.right = std::make_unique<Expression>(std::move(right));
-    return Expression{std::move(binary), result_type};
+    return Expression{std::move(binary), left_type};
   }
 
   Expression
@@ -476,6 +551,17 @@ namespace basedir
         " arguments, got " + std::to_string(arguments.size())
       };
     }
+    for (auto i = std::size_t{}; i < arguments.size(); ++i)
+    {
+      auto const arg_type = strip_reference(arguments[i].type);
+      auto const param_type = fn_type->parameter_types[i];
+      if (!types_compatible(param_type, arg_type))
+      {
+        throw Compile_error{
+          "argument " + std::to_string(i + 1) + " type mismatch"
+        };
+      }
+    }
     auto call = Call_expression{};
     call.callee = std::make_unique<Expression>(std::move(callee));
     call.arguments = std::move(arguments);
@@ -486,6 +572,10 @@ namespace basedir
   Compiler::compile_index(basedparse::Index_expression const &expression)
   {
     auto operand = compile_expression(*expression.operand);
+    auto const ref = operand.type
+                       ? std::get_if<Reference_type>(&operand.type->value)
+                       : nullptr;
+    auto const is_mutable = ref && ref->is_mutable;
     auto const stripped = strip_reference(operand.type);
     if (!stripped || !std::get_if<Array_type>(&stripped->value))
     {
@@ -501,10 +591,10 @@ namespace basedir
     auto index_expr = Index_expression{};
     index_expr.operand = std::make_unique<Expression>(std::move(operand));
     index_expr.index = std::make_unique<Expression>(std::move(index));
-    return Expression{
-      std::move(index_expr),
-      _program->types.get_reference(element_type)
-    };
+    auto const ref_type = is_mutable
+                            ? _program->types.get_mut_reference(element_type)
+                            : _program->types.get_reference(element_type);
+    return Expression{std::move(index_expr), ref_type};
   }
 
   Expression Compiler::compile_constructor(
@@ -545,7 +635,7 @@ namespace basedir
       statements.push_back(compile_statement(statement));
     }
     auto tail = std::unique_ptr<Expression>{};
-    auto tail_type = static_cast<Type *>(nullptr);
+    auto tail_type = _program->types.get_named("void");
     if (expression.tail)
     {
       auto tail_expr = compile_expression(*expression.tail);

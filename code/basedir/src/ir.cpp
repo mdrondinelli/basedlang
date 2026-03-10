@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "basedir/ir.h"
 
 namespace basedir
@@ -6,6 +8,7 @@ namespace basedir
   Expression::Expression(Expression::Variant v, Type *t)
       : value{std::move(v)}, type{t}
   {
+    assert(t);
   }
 
   Unary_expression::~Unary_expression() = default;

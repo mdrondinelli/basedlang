@@ -187,7 +187,7 @@ namespace basedparse
         auto unary = Unary_expression{};
         unary.op = _reader->read();
         unary.operand =
-          parse_expression(get_operator_precedence(*unary_op) - 1);
+          parse_expression(get_operator_precedence(*unary_op));
         return std::make_unique<Expression>(std::move(unary));
       }
       auto primary = parse_primary_expression();

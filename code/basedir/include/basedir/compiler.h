@@ -51,6 +51,7 @@ namespace basedir
     Program *_program = nullptr;
     std::vector<Scope> _scopes;
     std::vector<std::string> _local_names;
+    std::vector<Type *> _return_type_stack;
 
     void push_scope();
 
@@ -85,6 +86,8 @@ namespace basedir
     Expression compile_expression(basedparse::Expression const &expression);
 
     static Type *strip_reference(Type *type);
+
+    static bool types_compatible(Type *expected, Type *actual);
 
     Expression
     compile_int_literal(basedparse::Int_literal_expression const &expression);

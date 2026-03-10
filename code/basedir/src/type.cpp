@@ -34,8 +34,19 @@ namespace basedir
     {
       return pointee->pointer_type;
     }
-    auto const type = alloc(Type{Pointer_type{pointee}});
+    auto const type = alloc(Type{Pointer_type{pointee, false}});
     pointee->pointer_type = type;
+    return type;
+  }
+
+  Type *Type_pool::get_mut_pointer(Type *pointee)
+  {
+    if (pointee->mut_pointer_type)
+    {
+      return pointee->mut_pointer_type;
+    }
+    auto const type = alloc(Type{Pointer_type{pointee, true}});
+    pointee->mut_pointer_type = type;
     return type;
   }
 
@@ -45,13 +56,24 @@ namespace basedir
     {
       return referent->reference_type;
     }
-    auto const type = alloc(Type{Reference_type{referent}});
+    auto const type = alloc(Type{Reference_type{referent, false}});
     referent->reference_type = type;
     return type;
   }
 
+  Type *Type_pool::get_mut_reference(Type *referent)
+  {
+    if (referent->mut_reference_type)
+    {
+      return referent->mut_reference_type;
+    }
+    auto const type = alloc(Type{Reference_type{referent, true}});
+    referent->mut_reference_type = type;
+    return type;
+  }
+
   Type *Type_pool::get_function(
-    std::span<Type *const> parameter_types,
+    std::span<Type * const> parameter_types,
     Type *return_type
   )
   {
@@ -61,10 +83,12 @@ namespace basedir
     {
       return found->second;
     }
-    auto const type = alloc(Type{Function_type{
-      std::vector<Type *>{parameter_types.begin(), parameter_types.end()},
-      return_type,
-    }});
+    auto const type = alloc(
+      Type{Function_type{
+        std::vector<Type *>{parameter_types.begin(), parameter_types.end()},
+        return_type,
+      }}
+    );
     _function_types.emplace(
       Function_key{
         std::vector<Type *>{parameter_types.begin(), parameter_types.end()},

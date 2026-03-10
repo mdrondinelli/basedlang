@@ -15,7 +15,8 @@ let main = fn() -> i32 {
 
 Statements appear inside block bodies (`{ ... }`):
 
-- `let x = <expr>;` — variable binding
+- `let x = <expr>;` — immutable variable binding
+- `let mut x = <expr>;` — mutable variable binding
 - `return <expr>;` — return from function
 - `while <expr> { }` — while loop
 - `<expr>;` — expression statement

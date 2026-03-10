@@ -66,6 +66,10 @@ namespace basedparse
   {
     auto stmt = Let_statement{};
     stmt.kw_let = expect(basedlex::Token::kw_let);
+    if (_reader->peek().token == basedlex::Token::kw_mut)
+    {
+      stmt.kw_mut = expect(basedlex::Token::kw_mut);
+    }
     stmt.name = expect(basedlex::Token::identifier);
     stmt.eq = expect(basedlex::Token::eq);
     stmt.initializer = std::move(*parse_expression());

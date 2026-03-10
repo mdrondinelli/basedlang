@@ -1512,3 +1512,27 @@ TEST_CASE("parse_statement - while: in full program")
     "};"
   ));
 }
+
+TEST_CASE("parse_let_statement - mut")
+{
+  auto fixture = Parse_fixture{"let mut x = 0;"};
+  auto const stmt = fixture.parser.parse_statement();
+  auto const let_stmt = std::get_if<basedparse::Let_statement>(&stmt.value);
+  REQUIRE(let_stmt != nullptr);
+  CHECK(let_stmt->kw_mut.has_value());
+  CHECK(let_stmt->kw_mut->text == "mut");
+  CHECK(let_stmt->name.text == "x");
+}
+
+TEST_CASE("Parser - quicksort.based parses successfully")
+{
+  auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/quicksort.based"};
+  auto binary_stream = basedlex::Istream_binary_stream{&file};
+  auto char_stream = basedlex::Utf8_char_stream{&binary_stream};
+  auto lexeme_stream = basedlex::Lexeme_stream{&char_stream};
+  auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
+  auto parser = basedparse::Parser{&reader};
+  auto const unit = parser.parse_translation_unit();
+  REQUIRE(unit != nullptr);
+  CHECK(unit->statements.size() == 3);
+}

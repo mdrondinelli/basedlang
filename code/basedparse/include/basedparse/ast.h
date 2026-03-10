@@ -284,6 +284,7 @@ namespace basedparse
   struct Let_statement
   {
     basedlex::Lexeme kw_let;
+    std::optional<basedlex::Lexeme> kw_mut;
     basedlex::Lexeme name;
     basedlex::Lexeme eq;
     Expression initializer;

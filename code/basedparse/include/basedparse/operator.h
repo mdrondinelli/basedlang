@@ -27,9 +27,18 @@ namespace basedparse
     greater_eq,
     equal,
     not_equal,
+    assign,
+  };
+
+  enum class Operator_associativity
+  {
+    left,
+    right,
   };
 
   int get_operator_precedence(Operator op);
+
+  Operator_associativity get_precedence_associativity(int precedence);
 
   std::optional<Operator> get_unary_operator(basedlex::Token token);
 

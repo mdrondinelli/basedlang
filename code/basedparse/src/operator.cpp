@@ -30,6 +30,19 @@ namespace basedparse
     case Operator::equal:
     case Operator::not_equal:
       return 5;
+    case Operator::assign:
+      return 6;
+    }
+  }
+
+  Operator_associativity get_precedence_associativity(int precedence)
+  {
+    switch (precedence)
+    {
+    case 6: // assign
+      return Operator_associativity::right;
+    default:
+      return Operator_associativity::left;
     }
   }
 
@@ -89,6 +102,8 @@ namespace basedparse
       return Operator::equal;
     case basedlex::Token::bang_eq:
       return Operator::not_equal;
+    case basedlex::Token::eq:
+      return Operator::assign;
     default:
       return std::nullopt;
     }

@@ -31,6 +31,7 @@ Precedence from tightest to loosest (all binary operators are left-associative):
 | 3          | additive       | `a + b`, `a - b`        |
 | 4          | relational     | `a < b`, `a <= b`, `a > b`, `a >= b` |
 | 5          | equality       | `a == b`, `a != b`      |
+| 6          | assignment (right-assoc) | `a = b`, `a = b = c` |
 
 Primary expressions:
 

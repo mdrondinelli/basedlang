@@ -1422,3 +1422,56 @@ TEST_CASE("parse_type_expression - pointer in full program")
   CHECK(parses("let f = fn(x: i32[4]*) -> void { };"));
   CHECK(parses("let f = fn(x: i32[4] mut*[8]*) -> void { };"));
 }
+
+TEST_CASE("parse_expression - assign: simple")
+{
+  auto fixture = Parse_fixture{"x = 1"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const bin = std::get_if<basedparse::Binary_expression>(&expr->value);
+  REQUIRE(bin != nullptr);
+  CHECK(bin->op.text == "=");
+  auto const left = std::get_if<basedparse::Identifier_expression>(&bin->left->value);
+  REQUIRE(left != nullptr);
+  CHECK(left->identifier.text == "x");
+  auto const right = std::get_if<basedparse::Int_literal_expression>(&bin->right->value);
+  REQUIRE(right != nullptr);
+  CHECK(right->literal.text == "1");
+}
+
+TEST_CASE("parse_expression - assign: right-associative")
+{
+  // a = b = 1 should parse as a = (b = 1)
+  auto fixture = Parse_fixture{"a = b = 1"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const outer = std::get_if<basedparse::Binary_expression>(&expr->value);
+  REQUIRE(outer != nullptr);
+  CHECK(outer->op.text == "=");
+  auto const left = std::get_if<basedparse::Identifier_expression>(&outer->left->value);
+  REQUIRE(left != nullptr);
+  CHECK(left->identifier.text == "a");
+  auto const inner = std::get_if<basedparse::Binary_expression>(&outer->right->value);
+  REQUIRE(inner != nullptr);
+  CHECK(inner->op.text == "=");
+  auto const inner_left = std::get_if<basedparse::Identifier_expression>(&inner->left->value);
+  REQUIRE(inner_left != nullptr);
+  CHECK(inner_left->identifier.text == "b");
+}
+
+TEST_CASE("parse_expression - assign: lower precedence than equality")
+{
+  // x = a == b should parse as x = (a == b)
+  auto fixture = Parse_fixture{"x = a == b"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const assign = std::get_if<basedparse::Binary_expression>(&expr->value);
+  REQUIRE(assign != nullptr);
+  CHECK(assign->op.text == "=");
+  auto const rhs = std::get_if<basedparse::Binary_expression>(&assign->right->value);
+  REQUIRE(rhs != nullptr);
+  CHECK(rhs->op.text == "==");
+}
+
+TEST_CASE("parse_expression - assign: in full program")
+{
+  CHECK(parses("let f = fn(mut x: i32) -> void { x = 42; };"));
+  CHECK(parses("let f = fn(mut x: i32, mut y: i32) -> void { x = y = 0; };"));
+}

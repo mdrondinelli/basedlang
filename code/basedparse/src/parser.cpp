@@ -131,8 +131,9 @@ namespace basedparse
   ///
   /// @param current_precedence Only consume operators whose precedence is <=
   ///   this value. The public overload passes INT_MAX to allow all operators.
-  ///   Recursive calls pass `op_prec - 1` for binary ops (left-associative) or
-  ///   `op_prec` for right-associative ops (none currently).
+  ///   Recursive calls pass `op_prec - 1` for left-associative binary ops or
+  ///   `op_prec` for right-associative ops. Associativity is per-level, queried
+  ///   via `get_precedence_associativity`.
   ///
   /// The algorithm works in three phases:
   ///
@@ -155,6 +156,7 @@ namespace basedparse
   /// - 3: `+`, `-`
   /// - 4: `<`, `<=`, `>`, `>=`
   /// - 5: `==`, `!=`
+  /// - 6: `=` (right-associative)
   ///
   /// **To add a new operator:**
   /// 1. Add a token to `basedlex::Token` (token.h) and lex it in lexeme_stream.cpp.
@@ -227,10 +229,14 @@ namespace basedparse
           bin_op && get_operator_precedence(*bin_op) <= current_precedence)
       {
         auto const op_prec = get_operator_precedence(*bin_op);
+        auto const rhs_prec =
+          get_precedence_associativity(op_prec) == Operator_associativity::right
+            ? op_prec
+            : op_prec - 1;
         auto binary = Binary_expression{};
         binary.left = std::move(expr);
         binary.op = _reader->read();
-        binary.right = parse_expression(op_prec - 1);
+        binary.right = parse_expression(rhs_prec);
         expr = std::make_unique<Expression>(std::move(binary));
       }
       else

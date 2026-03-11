@@ -346,7 +346,7 @@ namespace basedparse
 
   struct Translation_unit
   {
-    std::vector<Statement> statements;
+    std::vector<Function_definition> function_definitions;
   };
 
 } // namespace basedparse

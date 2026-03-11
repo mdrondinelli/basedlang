@@ -28,7 +28,7 @@ namespace basedparse
     auto unit = std::make_unique<Translation_unit>();
     while (_reader->peek().token != basedlex::Token::eof)
     {
-      unit->statements.push_back(Statement{parse_function_definition()});
+      unit->function_definitions.push_back(parse_function_definition());
     }
     return unit;
   }

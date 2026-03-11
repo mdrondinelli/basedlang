@@ -207,11 +207,26 @@ namespace basedparse
 
   struct If_expression
   {
-    struct Else_clause
+    struct Else_if_part
+    {
+      ~Else_if_part();
+
+      Else_if_part() = default;
+
+      Else_if_part(Else_if_part &&) noexcept = default;
+
+      Else_if_part &operator=(Else_if_part &&) noexcept = default;
+
+      basedlex::Lexeme kw_else;
+      basedlex::Lexeme kw_if;
+      std::unique_ptr<Expression> condition;
+      Block_expression body;
+    };
+
+    struct Else_part
     {
       basedlex::Lexeme kw_else;
-      std::unique_ptr<Expression>
-        body; // Block_expression or another If_expression
+      Block_expression body;
     };
 
     ~If_expression();
@@ -225,7 +240,8 @@ namespace basedparse
     basedlex::Lexeme kw_if;
     std::unique_ptr<Expression> condition;
     Block_expression then_block;
-    std::optional<Else_clause> else_clause;
+    std::vector<Else_if_part> else_if_parts;
+    std::optional<Else_part> else_part;
   };
 
   struct Constructor_expression

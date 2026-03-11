@@ -1192,7 +1192,8 @@ TEST_CASE("parse_expression - if: simple")
   REQUIRE(cond != nullptr);
   CHECK(cond->identifier.text == "x");
   REQUIRE(if_expr->then_block.tail != nullptr);
-  CHECK_FALSE(if_expr->else_clause.has_value());
+  CHECK(if_expr->else_if_parts.empty());
+  CHECK_FALSE(if_expr->else_part.has_value());
 }
 
 TEST_CASE("parse_expression - if else")
@@ -1201,29 +1202,29 @@ TEST_CASE("parse_expression - if else")
   auto const expr = fixture.parser.parse_expression();
   auto const if_expr = std::get_if<basedparse::If_expression>(&expr->value);
   REQUIRE(if_expr != nullptr);
-  REQUIRE(if_expr->else_clause.has_value());
-  CHECK(if_expr->else_clause->kw_else.text == "else");
-  auto const else_block = std::get_if<basedparse::Block_expression>(
-    &if_expr->else_clause->body->value
-  );
-  REQUIRE(else_block != nullptr);
-  REQUIRE(else_block->tail != nullptr);
+  CHECK(if_expr->else_if_parts.empty());
+  REQUIRE(if_expr->else_part.has_value());
+  CHECK(if_expr->else_part->kw_else.text == "else");
+  REQUIRE(if_expr->else_part->body.tail != nullptr);
 }
 
 TEST_CASE("parse_expression - else if chain")
 {
   auto fixture = Parse_fixture{"if a { 1 } else if b { 2 } else { 3 }"};
   auto const expr = fixture.parser.parse_expression();
-  auto const if1 = std::get_if<basedparse::If_expression>(&expr->value);
-  REQUIRE(if1 != nullptr);
-  REQUIRE(if1->else_clause.has_value());
-  auto const if2 =
-    std::get_if<basedparse::If_expression>(&if1->else_clause->body->value);
-  REQUIRE(if2 != nullptr);
-  REQUIRE(if2->else_clause.has_value());
-  auto const else_block =
-    std::get_if<basedparse::Block_expression>(&if2->else_clause->body->value);
-  REQUIRE(else_block != nullptr);
+  auto const if_expr = std::get_if<basedparse::If_expression>(&expr->value);
+  REQUIRE(if_expr != nullptr);
+  REQUIRE(if_expr->else_if_parts.size() == 1);
+  CHECK(if_expr->else_if_parts[0].kw_else.text == "else");
+  CHECK(if_expr->else_if_parts[0].kw_if.text == "if");
+  auto const cond = std::get_if<basedparse::Identifier_expression>(
+    &if_expr->else_if_parts[0].condition->value
+  );
+  REQUIRE(cond != nullptr);
+  CHECK(cond->identifier.text == "b");
+  REQUIRE(if_expr->else_if_parts[0].body.tail != nullptr);
+  REQUIRE(if_expr->else_part.has_value());
+  REQUIRE(if_expr->else_part->body.tail != nullptr);
 }
 
 TEST_CASE("parse_expression - if as expression statement")

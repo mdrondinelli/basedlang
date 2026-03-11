@@ -139,7 +139,8 @@ namespace basedparse
     return parse_expression(std::numeric_limits<int>::max());
   }
 
-  /// @brief Parse an expression using Pratt (top-down operator precedence) parsing.
+  /// @brief Parse an expression using Pratt (top-down operator precedence)
+  /// parsing.
   ///
   /// @param current_precedence Only consume operators whose precedence is <=
   ///   this value. The public overload passes INT_MAX to allow all operators.
@@ -149,11 +150,13 @@ namespace basedparse
   ///
   /// The algorithm works in three phases:
   ///
-  /// 1. **Prefix/unary**: If the next token is a unary operator (e.g. `-`, `*`),
+  /// 1. **Prefix/unary**: If the next token is a unary operator (e.g. `-`,
+  /// `*`),
   ///    consume it and recursively parse the operand at a tighter precedence
   ///    (one below the unary op's level). Otherwise fall through to primary.
   ///
-  /// 2. **Postfix**: Repeatedly consume postfix operators (call `()`, index `[]`)
+  /// 2. **Postfix**: Repeatedly consume postfix operators (call `()`, index
+  /// `[]`)
   ///    that bind tighter than the current precedence level.
   ///
   /// 3. **Binary infix**: Repeatedly consume binary operators (e.g. `+`, `<`,
@@ -171,10 +174,12 @@ namespace basedparse
   /// - 6: `=` (right-associative)
   ///
   /// **To add a new operator:**
-  /// 1. Add a token to `basedlex::Token` (token.h) and lex it in lexeme_stream.cpp.
+  /// 1. Add a token to `basedlex::Token` (token.h) and lex it in
+  /// lexeme_stream.cpp.
   /// 2. Add a variant to `basedparse::Operator` (operator.h).
   /// 3. Assign it a precedence in `get_operator_precedence` (operator.cpp).
-  /// 4. Map the token to the operator in the appropriate get_*_operator function
+  /// 4. Map the token to the operator in the appropriate get_*_operator
+  /// function
   ///    (operator.cpp): `get_unary_operator`, `get_postfix_operator`, or
   ///    `get_binary_operator`. No changes to the parser itself are needed.
   std::unique_ptr<Expression> Parser::parse_expression(int current_precedence)
@@ -186,8 +191,7 @@ namespace basedparse
       {
         auto unary = Unary_expression{};
         unary.op = _reader->read();
-        unary.operand =
-          parse_expression(get_operator_precedence(*unary_op));
+        unary.operand = parse_expression(get_operator_precedence(*unary_op));
         return std::make_unique<Expression>(std::move(unary));
       }
       auto primary = parse_primary_expression();
@@ -369,20 +373,26 @@ namespace basedparse
     expr.kw_if = expect(basedlex::Token::kw_if);
     expr.condition = parse_expression();
     expr.then_block = parse_block_expression();
-    if (_reader->peek().token == basedlex::Token::kw_else)
+    while (_reader->peek().token == basedlex::Token::kw_else)
     {
-      auto else_clause = If_expression::Else_clause{};
-      else_clause.kw_else = expect(basedlex::Token::kw_else);
+      auto kw_else = expect(basedlex::Token::kw_else);
       if (_reader->peek().token == basedlex::Token::kw_if)
       {
-        else_clause.body = std::make_unique<Expression>(parse_if_expression());
+        auto part = If_expression::Else_if_part{};
+        part.kw_else = kw_else;
+        part.kw_if = expect(basedlex::Token::kw_if);
+        part.condition = parse_expression();
+        part.body = parse_block_expression();
+        expr.else_if_parts.push_back(std::move(part));
       }
       else
       {
-        else_clause.body =
-          std::make_unique<Expression>(parse_block_expression());
+        auto else_part = If_expression::Else_part{};
+        else_part.kw_else = kw_else;
+        else_part.body = parse_block_expression();
+        expr.else_part = std::move(else_part);
+        break;
       }
-      expr.else_clause = std::move(else_clause);
     }
     return expr;
   }

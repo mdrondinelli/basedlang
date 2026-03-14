@@ -83,12 +83,33 @@ namespace basedlex
           switch (c)
           {
           case '&':
-            return Lexeme{
-              .text = "&",
-              .token = Token::ampersand,
-              .line = token_line,
-              .column = token_column
-            };
+            {
+              auto const p0 = _reader.peek(0);
+              auto const p1 = _reader.peek(1);
+              auto const p2 = _reader.peek(2);
+              auto const p3 = _reader.peek(3);
+              if (p0 && *p0 == 'm' && p1 && *p1 == 'u' && p2 && *p2 == 't' &&
+                  (!p3 ||
+                   !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
+              {
+                _reader.read();
+                _reader.read();
+                _reader.read();
+                _column += 3;
+                return Lexeme{
+                  .text = "&mut",
+                  .token = Token::ampersand_mut,
+                  .line = token_line,
+                  .column = token_column
+                };
+              }
+              return Lexeme{
+                .text = "&",
+                .token = Token::ampersand,
+                .line = token_line,
+                .column = token_column
+              };
+            }
           case '+':
             return Lexeme{
               .text = "+",

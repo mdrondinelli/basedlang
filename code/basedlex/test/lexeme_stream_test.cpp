@@ -136,3 +136,130 @@ TEST_CASE("Lexeme_stream lexes brackets")
   CHECK(close.line == 1);
   CHECK(close.column == 2);
 }
+
+TEST_CASE("Lexeme_stream - &mut lexes as ampersand_mut")
+{
+  auto ss = std::istringstream{"&mut"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "&mut");
+  CHECK(lexeme.token == basedlex::Token::ampersand_mut);
+  CHECK(lexeme.line == 1);
+  CHECK(lexeme.column == 1);
+  CHECK(stream.lex().token == basedlex::Token::eof);
+}
+
+TEST_CASE("Lexeme_stream - &mut with space after lexes as ampersand_mut")
+{
+  auto ss = std::istringstream{"&mut x"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const amp_mut = stream.lex();
+  CHECK(amp_mut.text == "&mut");
+  CHECK(amp_mut.token == basedlex::Token::ampersand_mut);
+  auto const id = stream.lex();
+  CHECK(id.text == "x");
+  CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - &mutable lexes as ampersand + identifier")
+{
+  auto ss = std::istringstream{"&mutable"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const amp = stream.lex();
+  CHECK(amp.text == "&");
+  CHECK(amp.token == basedlex::Token::ampersand);
+  auto const id = stream.lex();
+  CHECK(id.text == "mutable");
+  CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - &mut_ lexes as ampersand + identifier")
+{
+  auto ss = std::istringstream{"&mut_"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const amp = stream.lex();
+  CHECK(amp.text == "&");
+  CHECK(amp.token == basedlex::Token::ampersand);
+  auto const id = stream.lex();
+  CHECK(id.text == "mut_");
+  CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - &mut2 lexes as ampersand + identifier")
+{
+  auto ss = std::istringstream{"&mut2"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const amp = stream.lex();
+  CHECK(amp.text == "&");
+  CHECK(amp.token == basedlex::Token::ampersand);
+  auto const id = stream.lex();
+  CHECK(id.text == "mut2");
+  CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - & alone lexes as ampersand")
+{
+  auto ss = std::istringstream{"&"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "&");
+  CHECK(lexeme.token == basedlex::Token::ampersand);
+  CHECK(stream.lex().token == basedlex::Token::eof);
+}
+
+TEST_CASE("Lexeme_stream - & x lexes as ampersand + identifier")
+{
+  auto ss = std::istringstream{"& x"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const amp = stream.lex();
+  CHECK(amp.text == "&");
+  CHECK(amp.token == basedlex::Token::ampersand);
+  auto const id = stream.lex();
+  CHECK(id.text == "x");
+  CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - &mut column tracking")
+{
+  auto ss = std::istringstream{"x &mut y"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const x = stream.lex();
+  CHECK(x.column == 1);
+  auto const amp_mut = stream.lex();
+  CHECK(amp_mut.text == "&mut");
+  CHECK(amp_mut.token == basedlex::Token::ampersand_mut);
+  CHECK(amp_mut.column == 3);
+  auto const y = stream.lex();
+  CHECK(y.text == "y");
+  CHECK(y.column == 8);
+}
+
+TEST_CASE("Lexeme_stream - &mu lexes as ampersand + identifier")
+{
+  auto ss = std::istringstream{"&mu"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const amp = stream.lex();
+  CHECK(amp.text == "&");
+  CHECK(amp.token == basedlex::Token::ampersand);
+  auto const id = stream.lex();
+  CHECK(id.text == "mu");
+  CHECK(id.token == basedlex::Token::identifier);
+}

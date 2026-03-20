@@ -1,7 +1,20 @@
+#include <bit>
+#include <cstdint>
+
 #include "basedhlir/type.h"
 
 namespace basedhlir
 {
+
+  auto Type_pool::Function_type_hash::operator()(Function_type const &ft) const noexcept -> std::size_t
+  {
+    auto seed = std::bit_cast<std::uintptr_t>(ft.return_type);
+    for (auto const param : ft.parameter_types)
+    {
+      seed ^= std::bit_cast<std::uintptr_t>(param) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    }
+    return seed;
+  }
 
   Type *Type_pool::i32_type()
   {
@@ -64,6 +77,19 @@ namespace basedhlir
       element->_unsized_array_type = _types.back().get();
     }
     return element->_unsized_array_type;
+  }
+
+  Type *Type_pool::function_type(std::vector<Type *> parameter_types, Type *return_type)
+  {
+    auto ft = Function_type{.parameter_types = std::move(parameter_types), .return_type = return_type};
+    auto const it = _function_types.find(ft);
+    if (it != _function_types.end())
+    {
+      return it->second;
+    }
+    auto const result = _types.emplace_back(std::make_unique<Type>(ft)).get();
+    _function_types.emplace(std::move(ft), result);
+    return result;
   }
 
 } // namespace basedhlir

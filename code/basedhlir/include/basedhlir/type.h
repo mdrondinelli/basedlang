@@ -40,9 +40,18 @@ namespace basedhlir
     Type *element;
   };
 
+  struct Function_type
+  {
+    std::vector<Type *> parameter_types;
+    Type *return_type;
+
+    auto operator==(Function_type const &other) const -> bool = default;
+  };
+
   struct Type
   {
-    std::variant<I32_type, Bool_type, Void_type, Pointer_type, Sized_array_type, Unsized_array_type> data;
+    std::variant<I32_type, Bool_type, Void_type, Pointer_type, Sized_array_type, Unsized_array_type, Function_type>
+      data;
 
     Type *_pointer_type{};
     Type *_unsized_array_type{};
@@ -64,11 +73,20 @@ namespace basedhlir
 
     Type *unsized_array_type(Type *element);
 
+    Type *function_type(std::vector<Type *> parameter_types, Type *return_type);
+
   private:
     std::vector<std::unique_ptr<Type>> _types;
     Type *_i32_type{};
     Type *_bool_type{};
     Type *_void_type{};
+
+    struct Function_type_hash
+    {
+      auto operator()(Function_type const &ft) const noexcept -> std::size_t;
+    };
+
+    std::unordered_map<Function_type, Type *, Function_type_hash> _function_types;
   };
 
 } // namespace basedhlir

@@ -26,28 +26,11 @@ add_library(basedparse
 target_include_directories(basedparse PUBLIC code/basedparse/include)
 target_link_libraries(basedparse PUBLIC basedlex)
 
-add_library(basedir
-  code/basedir/src/ir.cpp
-  code/basedir/src/type.cpp
-  code/basedir/src/compiler.cpp
+add_library(basedhlir
+  code/basedhlir/src/type.cpp
 )
-target_include_directories(basedir PUBLIC code/basedir/include)
-target_link_libraries(basedir PUBLIC basedparse)
-
-add_library(basedinterp
-  code/basedinterp/src/interpreter.cpp
-)
-target_include_directories(basedinterp PUBLIC code/basedinterp/include)
-target_link_libraries(basedinterp PUBLIC basedir)
-
-add_executable(basedc
-  code/basedc/src/main.cpp
-)
-
-add_executable(basedi
-  code/basedinterp/src/main.cpp
-)
-target_link_libraries(basedi PRIVATE basedinterp)
+target_include_directories(basedhlir PUBLIC code/basedhlir/include)
+target_link_libraries(basedhlir PUBLIC basedparse)
 
 add_executable(basedlex-tests
   code/basedlex/test/lexeme_stream_test.cpp
@@ -63,14 +46,9 @@ add_executable(basedparse-tests
 target_link_libraries(basedparse-tests PRIVATE basedparse Catch2::Catch2WithMain)
 target_compile_definitions(basedparse-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
-add_executable(basedir-tests
-  code/basedir/test/compiler_test.cpp
+add_executable(basedhlir-tests
+  code/basedhlir/test/type_test.cpp
 )
-target_link_libraries(basedir-tests PRIVATE basedir Catch2::Catch2WithMain)
-target_compile_definitions(basedir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+target_link_libraries(basedhlir-tests PRIVATE basedhlir Catch2::Catch2WithMain)
+target_compile_definitions(basedhlir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
-add_executable(basedinterp-tests
-  code/basedinterp/test/interpreter_test.cpp
-)
-target_link_libraries(basedinterp-tests PRIVATE basedinterp Catch2::Catch2WithMain)
-target_compile_definitions(basedinterp-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")

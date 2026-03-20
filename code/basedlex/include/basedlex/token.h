@@ -23,6 +23,7 @@ namespace basedlex
     minus, // -
     star, // *
     ampersand, // &
+    ampersand_mut, // &mut
     slash, // /
     percent, // %
     eq, // =

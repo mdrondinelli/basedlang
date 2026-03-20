@@ -25,15 +25,6 @@ namespace basedparse
 
   struct Array_type_expression
   {
-    ~Array_type_expression();
-
-    Array_type_expression() = default;
-
-    Array_type_expression(Array_type_expression &&) noexcept = default;
-
-    Array_type_expression &
-    operator=(Array_type_expression &&) noexcept = default;
-
     std::unique_ptr<Type_expression> element_type;
     basedlex::Lexeme lbracket;
     std::unique_ptr<Expression> size; // nullptr for unsized arrays (e.g. i32[])
@@ -42,15 +33,6 @@ namespace basedparse
 
   struct Pointer_type_expression
   {
-    ~Pointer_type_expression();
-
-    Pointer_type_expression() = default;
-
-    Pointer_type_expression(Pointer_type_expression &&) noexcept = default;
-
-    Pointer_type_expression &
-    operator=(Pointer_type_expression &&) noexcept = default;
-
     std::unique_ptr<Type_expression> pointee_type;
     std::optional<basedlex::Lexeme> kw_mut;
     basedlex::Lexeme star;
@@ -94,14 +76,6 @@ namespace basedparse
       Type_expression type_expression;
     };
 
-    ~Fn_expression();
-
-    Fn_expression() = default;
-
-    Fn_expression(Fn_expression &&) noexcept = default;
-
-    Fn_expression &operator=(Fn_expression &&) noexcept = default;
-
     basedlex::Lexeme kw_fn;
     basedlex::Lexeme lparen;
     std::vector<Parameter_declaration> parameters;
@@ -114,14 +88,6 @@ namespace basedparse
 
   struct Paren_expression
   {
-    ~Paren_expression();
-
-    Paren_expression() = default;
-
-    Paren_expression(Paren_expression &&) noexcept = default;
-
-    Paren_expression &operator=(Paren_expression &&) noexcept = default;
-
     basedlex::Lexeme lparen;
     std::unique_ptr<Expression> inner;
     basedlex::Lexeme rparen;
@@ -129,28 +95,12 @@ namespace basedparse
 
   struct Unary_expression
   {
-    ~Unary_expression();
-
-    Unary_expression() = default;
-
-    Unary_expression(Unary_expression &&) noexcept = default;
-
-    Unary_expression &operator=(Unary_expression &&) noexcept = default;
-
     basedlex::Lexeme op;
     std::unique_ptr<Expression> operand;
   };
 
   struct Binary_expression
   {
-    ~Binary_expression();
-
-    Binary_expression() = default;
-
-    Binary_expression(Binary_expression &&) noexcept = default;
-
-    Binary_expression &operator=(Binary_expression &&) noexcept = default;
-
     std::unique_ptr<Expression> left;
     basedlex::Lexeme op;
     std::unique_ptr<Expression> right;
@@ -158,14 +108,6 @@ namespace basedparse
 
   struct Call_expression
   {
-    ~Call_expression();
-
-    Call_expression() = default;
-
-    Call_expression(Call_expression &&) noexcept = default;
-
-    Call_expression &operator=(Call_expression &&) noexcept = default;
-
     std::unique_ptr<Expression> callee;
     basedlex::Lexeme lparen;
     std::vector<Expression> arguments;
@@ -175,14 +117,6 @@ namespace basedparse
 
   struct Index_expression
   {
-    ~Index_expression();
-
-    Index_expression() = default;
-
-    Index_expression(Index_expression &&) noexcept = default;
-
-    Index_expression &operator=(Index_expression &&) noexcept = default;
-
     std::unique_ptr<Expression> operand;
     basedlex::Lexeme lbracket;
     std::unique_ptr<Expression> index;
@@ -191,14 +125,6 @@ namespace basedparse
 
   struct Block_expression
   {
-    ~Block_expression();
-
-    Block_expression() = default;
-
-    Block_expression(Block_expression &&) noexcept = default;
-
-    Block_expression &operator=(Block_expression &&) noexcept = default;
-
     basedlex::Lexeme lbrace;
     std::vector<Statement> statements;
     std::unique_ptr<Expression> tail;
@@ -209,14 +135,6 @@ namespace basedparse
   {
     struct Else_if_part
     {
-      ~Else_if_part();
-
-      Else_if_part() = default;
-
-      Else_if_part(Else_if_part &&) noexcept = default;
-
-      Else_if_part &operator=(Else_if_part &&) noexcept = default;
-
       basedlex::Lexeme kw_else;
       basedlex::Lexeme kw_if;
       std::unique_ptr<Expression> condition;
@@ -229,14 +147,6 @@ namespace basedparse
       Block_expression body;
     };
 
-    ~If_expression();
-
-    If_expression() = default;
-
-    If_expression(If_expression &&) noexcept = default;
-
-    If_expression &operator=(If_expression &&) noexcept = default;
-
     basedlex::Lexeme kw_if;
     std::unique_ptr<Expression> condition;
     Block_expression then_block;
@@ -246,15 +156,6 @@ namespace basedparse
 
   struct Constructor_expression
   {
-    ~Constructor_expression();
-
-    Constructor_expression() = default;
-
-    Constructor_expression(Constructor_expression &&) noexcept = default;
-
-    Constructor_expression &
-    operator=(Constructor_expression &&) noexcept = default;
-
     basedlex::Lexeme kw_new;
     Type_expression type;
     basedlex::Lexeme lbrace;
@@ -285,14 +186,6 @@ namespace basedparse
 
   struct While_statement
   {
-    ~While_statement();
-
-    While_statement() = default;
-
-    While_statement(While_statement &&) noexcept = default;
-
-    While_statement &operator=(While_statement &&) noexcept = default;
-
     basedlex::Lexeme kw_while;
     std::unique_ptr<Expression> condition;
     Block_expression body;
@@ -346,7 +239,7 @@ namespace basedparse
 
   struct Translation_unit
   {
-    std::vector<Function_definition> function_definitions;
+    std::vector<Let_statement> let_statements;
   };
 
 } // namespace basedparse

@@ -13,63 +13,83 @@ namespace basedir
     {
       return found->second;
     }
-    if (name == "i32")
+    if (name == "void")
     {
-      auto const type = alloc(Type{I32_type{}});
+      auto const type = alloc(Type{Primitive_type::pt_void});
       _named_types.emplace(std::string{name}, type);
       return type;
     }
-    if (name == "void")
+    if (name == "bool")
     {
-      auto const type = alloc(Type{Void_type{}});
+      auto const type = alloc(Type{Primitive_type::pt_void});
+      _named_types.emplace(std::string{name}, type);
+      return type;
+    }
+    if (name == "i32")
+    {
+      auto const type = alloc(Type{Primitive_type::pt_i32});
       _named_types.emplace(std::string{name}, type);
       return type;
     }
     return nullptr;
   }
 
-  Type *Type_pool::get_pointer(Type *pointee)
+  Type *Type_pool::get_pointer(Type *pointee, bool mut)
   {
-    if (pointee->pointer_type)
+    if (mut)
     {
-      return pointee->pointer_type;
+      if (pointee->mut_pointer_type)
+      {
+        return pointee->mut_pointer_type;
+      }
     }
-    auto const type = alloc(Type{Pointer_type{pointee, false}});
-    pointee->pointer_type = type;
-    return type;
+    else
+    {
+      if (pointee->pointer_type)
+      {
+        return pointee->pointer_type;
+      }
+    }
+    auto const type = alloc(Type{Pointer_type{pointee, mut}});
+    if (mut)
+    {
+      return pointee->mut_pointer_type = type;
+    }
+    else
+    {
+      return pointee->pointer_type = type;
+    }
   }
 
-  Type *Type_pool::get_mut_pointer(Type *pointee)
+  Type *Type_pool::get_reference(Type *referent, bool mut)
   {
-    if (pointee->mut_pointer_type)
+    if (mut)
     {
-      return pointee->mut_pointer_type;
+      if (referent->mut_reference_type)
+      {
+        return referent->mut_reference_type;
+      }
     }
-    auto const type = alloc(Type{Pointer_type{pointee, true}});
-    pointee->mut_pointer_type = type;
-    return type;
-  }
-
-  Type *Type_pool::get_reference(Type *referent)
-  {
+    else
+    {
+      if (referent->reference_type)
+      {
+        return referent->reference_type;
+      }
+    }
+    auto const type = alloc(Type{Pointer_type{referent, mut}});
+    if (mut)
+    {
+      return referent->mut_reference_type = type;
+    }
+    else
+    {
+      return referent->reference_type = type;
+    }
     if (referent->reference_type)
     {
       return referent->reference_type;
     }
-    auto const type = alloc(Type{Reference_type{referent, false}});
-    referent->reference_type = type;
-    return type;
-  }
-
-  Type *Type_pool::get_mut_reference(Type *referent)
-  {
-    if (referent->mut_reference_type)
-    {
-      return referent->mut_reference_type;
-    }
-    auto const type = alloc(Type{Reference_type{referent, true}});
-    referent->mut_reference_type = type;
-    return type;
   }
 
   Type *Type_pool::get_function(

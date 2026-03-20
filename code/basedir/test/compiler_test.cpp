@@ -738,3 +738,1005 @@ TEST_CASE("Compiler - multiple functions can call each other forward")
     basedir::Compiler::Compile_error
   );
 }
+
+// --- new syntax: function body is any expression ---
+
+TEST_CASE("Compiler - function body is a single literal")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> 42;
+  )"));
+}
+
+TEST_CASE("Compiler - function body is an if expression")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let abs = fn(x: i32): i32 -> if x < 0 { 0 - x } else { x };
+  )"));
+}
+
+TEST_CASE("Compiler - function body is a parenthesized expression")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(x: i32): i32 -> (x + 1);
+  )"));
+}
+
+TEST_CASE("Compiler - function body is a constructor")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32[3] -> new i32[3]{1, 2, 3};
+  )"));
+}
+
+TEST_CASE("Compiler - function body is a binary expression")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(a: i32, b: i32): i32 -> a + b;
+  )"));
+}
+
+TEST_CASE("Compiler - function body is a function call")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let id = fn(x: i32): i32 -> x;
+    let f = fn(): i32 -> id(42);
+  )"));
+}
+
+TEST_CASE("Compiler - non-block body with wrong return type throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): void -> 42;
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// --- assignment edge cases ---
+
+TEST_CASE("Compiler - assign to function call result throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> { 42 };
+      let g = fn(): i32 -> {
+        f() = 1;
+        0
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - assign to arithmetic result throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut x = 1;
+        let mut y = 2;
+        (x + y) = 3;
+        0
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - assign to literal throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        42 = 1;
+        0
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - assign to if expression lvalue compiles")
+{
+  // if both branches yield a mutable reference, the if expression is an lvalue
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut x = 1;
+      let mut y = 2;
+      (if 1 { x } else { y }) = 42;
+      x
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - assign to if expression with immutable branch throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let x = 1;
+        let mut y = 2;
+        (if 1 { x } else { y }) = 42;
+        0
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - chained assignment compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut x = 0;
+      let mut y = 0;
+      x = y = 42;
+      x + y
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - assign pointer to i32 variable throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut x = 0;
+        let mut y = 1;
+        x = &y;
+        x
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - assign i32 to pointer variable throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): void -> {
+        let mut x = 0;
+        let mut p = &x;
+        p = 42;
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// --- type checking: call result usage ---
+
+TEST_CASE("Compiler - using void function result as i32 throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let noop = fn(): void -> {};
+      let f = fn(): i32 -> { noop() + 1 };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - calling with zero args when function expects args throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(x: i32): i32 -> { x };
+      let g = fn(): i32 -> { f() };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - passing array where pointer expected throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(p: i32*): i32 -> { *p };
+      let g = fn(): i32 -> {
+        let arr = new i32[1]{42};
+        f(arr)
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - passing pointer where array expected throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(arr: i32[]*): i32 -> { (*arr)[0] };
+      let g = fn(): i32 -> {
+        let mut x = 42;
+        f(&x)
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// --- type checking: operators with more types ---
+
+TEST_CASE("Compiler - add pointer + pointer throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut x = 1;
+        let mut y = 2;
+        &x + &y
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - multiply pointer by i32 throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut x = 1;
+        &x * 2
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - compare array == array throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let a = new i32[1]{1};
+        let b = new i32[1]{1};
+        a == b
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - modulo with void operand throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let noop = fn(): void -> {};
+      let f = fn(): i32 -> { noop() % 2 };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - negate pointer throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut x = 1;
+        -&x
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - unary plus on array throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let a = new i32[1]{1};
+        +a
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// --- type checking: index edge cases ---
+
+TEST_CASE("Compiler - index on pointer throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut x = 42;
+        let p = &x;
+        p[0]
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - index on void throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let noop = fn(): void -> {};
+      let f = fn(): i32 -> { noop()[0] };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - index with pointer as index throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let arr = new i32[2]{1, 2};
+        let mut idx = 0;
+        arr[&idx]
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// --- type checking: address-of and dereference edge cases ---
+
+TEST_CASE("Compiler - address-of array element compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut arr = new i32[3]{10, 20, 30};
+      let p = &arr[1];
+      *p
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - address-of dereference roundtrips")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut x = 42;
+      let p = &x;
+      let q = &*p;
+      *q
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - dereference array throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let arr = new i32[2]{1, 2};
+        *arr
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - address-of function throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let g = fn(): i32 -> { 42 };
+      let f = fn(): i32 -> { &g; 0 };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - address-of constructor result throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> { &new i32[1]{1}; 0 };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// --- constructor edge cases ---
+
+// TODO: Detemine whether this should actually be okay.
+TEST_CASE("Compiler - constructor for non-array type throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> { new i32{1} };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// TODO: Determine whether this should actually be okay.
+TEST_CASE("Compiler - zero-length array constructor compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32[0] -> { new i32[0]{} };
+  )"));
+}
+
+TEST_CASE("Compiler - nested array constructor compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32[2] -> {
+      let inner = new i32[2]{10, 20};
+      inner
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - constructor expression with array of dynamic size throws")
+{
+  CHECK_THROWS_AS(compile_source(R"(
+    let f = fn(): i32[2] -> {
+      let inner = new i32[]{};
+      inner
+    };
+  )"),
+  basedir::Compiler::Compile_error);
+}
+
+// --- scoping edge cases ---
+
+TEST_CASE("Compiler - while body scoping hides inner bindings")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut i = 1;
+        while i > 0 {
+          let secret = 42;
+          i = 0;
+        }
+        secret
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - nested blocks scope correctly")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let x = {
+        let a = 1;
+        let b = 2;
+        a + b
+      };
+      x
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - inner block binding does not leak to outer")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        { let inner = 42; };
+        inner
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - shadowing function name with let compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> { 42 };
+    let g = fn(): i32 -> {
+      let f = 10;
+      f
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - shadowing function name makes it uncallable")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> { 42 };
+      let g = fn(): i32 -> {
+        let f = 10;
+        f()
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// --- return type edge cases ---
+
+TEST_CASE("Compiler - return pointer from i32 function throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut x = 42;
+        &x
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - return i32 from pointer function throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32* -> { 42 };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// NOTE: The compiler currently does not reject i32 functions with void body
+// (empty block or if-without-else), because it has no control flow analysis
+// to prove that the function always returns via a return statement. This is
+// a known limitation.
+
+// TODO: Make the compiler guarantee that non-void functions always return a value of the correct type.
+
+TEST_CASE("Compiler - empty block body in i32 function compiles (no flow analysis)")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {};
+  )"));
+}
+
+TEST_CASE("Compiler - return statement with pointer from i32 function throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let mut x = 0;
+        return &x;
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - return correct pointer type compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut x = 42;
+      let p = &x;
+      *p
+    };
+  )"));
+}
+
+
+// TODO: This shouldn't compile. You can't return an array of unknown size on the stack.
+TEST_CASE("Compiler - return sized array from unsized return type compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32[] -> { new i32[3]{1, 2, 3} };
+  )"));
+}
+
+// TODO: See above TODO
+TEST_CASE("Compiler - return unsized array from sized return type throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let make = fn(): i32[] -> { new i32[3]{1, 2, 3} };
+      let f = fn(): i32[3] -> { make() };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+// --- deeply nested and complex expressions ---
+
+TEST_CASE("Compiler - deeply nested blocks compile")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      {
+        {
+          {
+            42
+          }
+        }
+      }
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - deeply nested if-else chain compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let classify = fn(x: i32): i32 -> {
+      if x < 0 - 100 { 0 - 3 }
+      else if x < 0 - 10 { 0 - 2 }
+      else if x < 0 { 0 - 1 }
+      else if x == 0 { 0 }
+      else if x < 10 { 1 }
+      else if x < 100 { 2 }
+      else { 3 }
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - if-else with mismatched branch types throws")
+{
+  CHECK_THROWS_AS(compile_source(R"(
+    let f = fn(x: i32): i32 -> {
+      if x < 0 { 0 }
+      else { new i32[1]{1} }
+    };
+  )"),
+  basedir::Compiler::Compile_error);
+}
+
+TEST_CASE("Compiler - complex while with nested if and multiple locals")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut sum = 0;
+      let mut i = 0;
+      while i < 100 {
+        let even = i % 2 == 0;
+        if even {
+          let doubled = i * 2;
+          sum = sum + doubled;
+        };
+        let next = i + 1;
+        i = next;
+      }
+      sum
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - many local variables compile")
+{
+  auto const program = compile_source(R"(
+    let f = fn(): i32 -> {
+      let a = 1;
+      let b = 2;
+      let c = 3;
+      let d = 4;
+      let e = 5;
+      let f = 6;
+      let g = 7;
+      let h = 8;
+      a + b + c + d + e + f + g + h
+    };
+  )");
+  REQUIRE(program.functions[0].definition);
+  CHECK(program.functions[0].definition->local_names.size() == 8);
+}
+
+// --- mutability through pointer chains ---
+
+TEST_CASE("Compiler - address-of immutable variable produces immutable pointer")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let write = fn(p: i32 mut*): void -> { *p = 1; };
+      let f = fn(): void -> {
+        let x = 42;
+        write(&x);
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - address-of mutable variable produces mutable pointer")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let write = fn(p: i32 mut*): void -> { *p = 1; };
+    let f = fn(): void -> {
+      let mut x = 42;
+      write(&x);
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - double deref assign through mut pointer chain compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut x = 10;
+      let mut p = &x;
+      let pp = &p;
+      **pp
+    };
+  )"));
+}
+
+TEST_CASE(
+  "Compiler - assign through double deref of all-mut pointer chain compiles"
+)
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): void -> {
+      let mut x = 10;
+      let mut p = &x;
+      let mut pp = &p;
+      **pp = 20;
+    };
+  )"));
+}
+
+TEST_CASE(
+  "Compiler - assign through double deref of immutable binding to mut pointer"
+)
+{
+  // pp is immutable (can't reassign pp itself), but *pp gives a mutable
+  // reference because &p produced a mut pointer (p is let mut). So **pp = 20
+  // is valid: the mutability flows through the pointer types, not the binding.
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): void -> {
+      let mut x = 10;
+      let mut p = &x;
+      let pp = &p;
+      **pp = 20;
+    };
+  )"));
+}
+
+TEST_CASE(
+  "Compiler - assign through double deref where inner binding is immutable"
+)
+{
+  // p is immutable, so &p produces an immutable pointer (i32 mut* *).
+  // *pp gives an immutable reference to i32 mut*. But when we strip the
+  // reference to deref again, we see i32 mut* (the value), which is mutable.
+  // The inner pointer's mutability is a property of the pointer value, not the
+  // binding. So **pp = 20 is valid — the inner pointer was created from &x
+  // where x is mutable.
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): void -> {
+      let mut x = 10;
+      let p = &x;
+      let mut pp = &p;
+      **pp = 20;
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - cannot reassign through immutable pointer deref")
+{
+  // p is immutable, so &p produces an immutable pointer ((i32 mut*) *).
+  // *pp dereferences through the immutable pointer → immutable reference.
+  // Assignment to *pp should fail.
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): void -> {
+        let mut x = 10;
+        let mut y = 20;
+        let p = &x;
+        let mut pp = &p;
+        *pp = &y;
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - reassign through mutable pointer deref compiles")
+{
+  // p is mutable, so &p produces a mut pointer ((i32 mut*) mut*).
+  // *pp dereferences through mut pointer → mutable reference. Assignment ok.
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): void -> {
+      let mut x = 10;
+      let mut y = 20;
+      let mut p = &x;
+      let pp = &p;
+      *pp = &y;
+    };
+  )"));
+}
+
+// --- empty program ---
+
+TEST_CASE("Compiler - empty program compiles")
+{
+  auto const program = compile_source("");
+  CHECK(program.functions.empty());
+}
+
+// --- misc edge cases ---
+
+TEST_CASE("Compiler - unused variable compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let unused = 999;
+      42
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - let mut with no assignment compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut x = 0;
+      x
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - nested function expression throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let g = fn(): i32 -> { 42 };
+        0
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - expression statement discards value")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): void -> {
+      1 + 2;
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - while loop with pointer mutation compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let fill = fn(arr: i32[] mut*, len: i32, val: i32): void -> {
+      let mut i = 0;
+      while i < len {
+        (*arr)[i] = val;
+        i = i + 1;
+      }
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - multiple return statements with consistent types compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let clamp = fn(x: i32, lo: i32, hi: i32): i32 -> {
+      if x < lo { return lo; };
+      if x > hi { return hi; };
+      return x;
+    };
+  )"));
+}
+
+TEST_CASE(
+  "Compiler - return statement type mismatch in branch throws"
+)
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let f = fn(): i32 -> {
+        let arr = new i32[1]{1};
+        if 1 { return arr; };
+        0
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - let initializer type is inferred correctly")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let arr = new i32[3]{1, 2, 3};
+      let mut p = &arr;
+      (*p)[0]
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - reassign mutable pointer to different target compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let mut a = 1;
+      let mut b = 2;
+      let mut p = &a;
+      p = &b;
+      *p
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - assign mutable array pointer to immutable pointer throws")
+{
+  CHECK_THROWS_AS(
+    compile_source(R"(
+      let mutate = fn(p: i32 mut*): void -> { *p = 0; };
+      let f = fn(): void -> {
+        let x = 42;
+        let p = &x;
+        mutate(p);
+      };
+    )"),
+    basedir::Compiler::Compile_error
+  );
+}
+
+TEST_CASE("Compiler - single function program with complex logic compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let gcd = fn(mut a: i32, mut b: i32): i32 -> {
+      while b != 0 {
+        let t = b;
+        b = a % b;
+        a = t;
+      }
+      a
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - many functions with cross-calls compile")
+{
+  auto const program = compile_source(R"(
+    let a = fn(): i32 -> { 1 };
+    let b = fn(): i32 -> { a() + 1 };
+    let c = fn(): i32 -> { b() + a() };
+    let d = fn(): i32 -> { c() + b() + a() };
+  )");
+  CHECK(program.functions.size() == 4);
+}
+
+TEST_CASE("Compiler - block expression as let initializer compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(): i32 -> {
+      let x = {
+        let tmp = 10;
+        tmp * 2
+      };
+      x + 1
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - if expression as let initializer compiles")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(x: i32): i32 -> {
+      let sign = if x > 0 { 1 } else if x < 0 { 0 - 1 } else { 0 };
+      sign
+    };
+  )"));
+}
+
+TEST_CASE("Compiler - if without else has void type")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(mut x: i32): void -> {
+      if x < 0 { x = 0 - x; };
+    };
+  )"));
+}
+
+// TODO: Control flow analysis
+// NOTE: Same limitation as empty block body — no flow analysis to reject this.
+TEST_CASE("Compiler - if without else in i32 function compiles (no flow analysis)")
+{
+  CHECK_NOTHROW(compile_source(R"(
+    let f = fn(x: i32): i32 -> {
+      if x > 0 { 1 }
+    };
+  )"));
+}

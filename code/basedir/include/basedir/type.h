@@ -17,24 +17,16 @@ namespace basedir
 
   struct Type;
 
-  struct Void_type
+  struct Function_type
   {
-  };
-
-  struct I32_type
-  {
+    std::vector<Type *> parameter_types;
+    Type *return_type;
   };
 
   struct Array_type
   {
     Type *element;
     std::optional<std::size_t> size;
-  };
-
-  struct Function_type
-  {
-    std::vector<Type *> parameter_types;
-    Type *return_type;
   };
 
   struct Pointer_type
@@ -49,20 +41,53 @@ namespace basedir
     bool is_mutable;
   };
 
+  enum class Primitive_type
+  {
+    pt_void,
+    pt_bool,
+    pt_i32,
+  };
+
   struct Type
   {
     using Variant = std::variant<
-      Void_type,
-      I32_type,
-      Array_type,
       Function_type,
+      Array_type,
       Pointer_type,
-      Reference_type
+      Reference_type,
+      Primitive_type
     >;
 
     explicit Type(Variant v)
         : value{std::move(v)}
     {
+    }
+
+    Type *strip_reference() noexcept {
+      if (auto const ref = std::get_if<Reference_type>(&value))
+      {
+        return ref->referent;
+      }
+      return this;
+    }
+
+    Function_type *is_function_type() noexcept {
+      return std::get_if<Function_type>(&value);
+    }
+
+    Array_type *is_array_type() noexcept
+    {
+      return std::get_if<Array_type>(&value);
+    }
+
+    Pointer_type *is_pointer_type() noexcept
+    {
+      return std::get_if<Pointer_type>(&value);
+    }
+
+    Reference_type *is_reference_type() noexcept
+    {
+      return std::get_if<Reference_type>(&value);
     }
 
     Variant value;
@@ -84,17 +109,10 @@ namespace basedir
 
     // Returns the (immutable) pointer-to-pointee type, lazily creating it if
     // needed.
-    Type *get_pointer(Type *pointee);
-
-    // Returns the mutable pointer-to-pointee type, lazily creating it if
-    // needed.
-    Type *get_mut_pointer(Type *pointee);
+    Type *get_pointer(Type *pointee, bool mut);
 
     // Returns the (immutable) reference-to-referent type.
-    Type *get_reference(Type *referent);
-
-    // Returns the mutable reference-to-referent type.
-    Type *get_mut_reference(Type *referent);
+    Type *get_reference(Type *referent, bool mut);
 
     // Returns the array-of-element type, lazily creating it if needed.
     Type *get_array(Type *element, std::optional<std::size_t> size);

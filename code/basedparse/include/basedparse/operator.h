@@ -13,6 +13,7 @@ namespace basedparse
     call,
     index,
     address_of,
+    address_of_mut,
     dereference,
     unary_plus,
     unary_minus,

@@ -6,7 +6,6 @@
 #include "basedlex/lexeme_stream_reader.h"
 
 #include "ast.h"
-#include "operator.h"
 
 namespace basedparse
 {
@@ -17,8 +16,6 @@ namespace basedparse
     explicit Parser(basedlex::Lexeme_stream_reader *reader) noexcept;
 
     std::unique_ptr<Translation_unit> parse_translation_unit();
-
-    Function_definition parse_function_definition();
 
     Statement parse_statement();
 

@@ -1,0 +1,295 @@
+#ifndef BASEDIR_IR_H
+#define BASEDIR_IR_H
+
+#include <cstddef>
+#include <memory>
+#include <optional>
+#include <string>
+#include <variant>
+#include <vector>
+
+#include "basedparse/operator.h"
+#include "type.h"
+
+namespace basedir
+{
+  struct Expression;
+  struct Statement;
+  struct Block_expression;
+
+  // expressions
+
+  struct Int_literal_expression
+  {
+    int value;
+  };
+
+  struct Local_binding
+  {
+    std::size_t index;
+  };
+
+  struct Global_binding
+  {
+    std::size_t index;
+  };
+
+  struct Binding_expression
+  {
+    std::variant<Local_binding, Global_binding> value;
+  };
+
+  struct Unary_expression
+  {
+    ~Unary_expression();
+
+    Unary_expression() = default;
+
+    Unary_expression(Unary_expression &&) noexcept = default;
+
+    Unary_expression &operator=(Unary_expression &&) noexcept = default;
+
+    basedparse::Operator op;
+    std::unique_ptr<Expression> operand;
+  };
+
+  struct Binary_expression
+  {
+    ~Binary_expression();
+
+    Binary_expression() = default;
+
+    Binary_expression(Binary_expression &&) noexcept = default;
+
+    Binary_expression &operator=(Binary_expression &&) noexcept = default;
+
+    basedparse::Operator op;
+    std::unique_ptr<Expression> left;
+    std::unique_ptr<Expression> right;
+  };
+
+  struct Assign_expression
+  {
+    ~Assign_expression();
+
+    Assign_expression() = default;
+
+    Assign_expression(Assign_expression &&) noexcept = default;
+
+    Assign_expression &operator=(Assign_expression &&) noexcept = default;
+
+    std::unique_ptr<Expression> target;
+    std::unique_ptr<Expression> value;
+  };
+
+  struct Call_expression
+  {
+    ~Call_expression();
+
+    Call_expression() = default;
+
+    Call_expression(Call_expression &&) noexcept = default;
+
+    Call_expression &operator=(Call_expression &&) noexcept = default;
+
+    std::unique_ptr<Expression> callee;
+    std::vector<Expression> arguments;
+  };
+
+  struct Block_expression
+  {
+    ~Block_expression();
+
+    Block_expression() = default;
+
+    Block_expression(Block_expression &&) noexcept = default;
+
+    Block_expression &operator=(Block_expression &&) noexcept = default;
+
+    std::vector<Statement> statements;
+    std::unique_ptr<Expression> tail;
+  };
+
+  struct Index_expression
+  {
+    ~Index_expression();
+
+    Index_expression() = default;
+
+    Index_expression(Index_expression &&) noexcept = default;
+
+    Index_expression &operator=(Index_expression &&) noexcept = default;
+
+    std::unique_ptr<Expression> operand;
+    std::unique_ptr<Expression> index;
+  };
+
+  struct Constructor_expression
+  {
+    std::vector<Expression> arguments;
+  };
+
+  struct If_expression
+  {
+    struct Else_if_part {
+      ~Else_if_part();
+
+      Else_if_part(Else_if_part &&) noexcept = default;
+
+      Else_if_part &operator=(Else_if_part &&) noexcept = default;
+
+      std::unique_ptr<Expression> condition;
+      Block_expression body;
+    };
+
+    ~If_expression();
+
+    If_expression() = default;
+
+    If_expression(If_expression &&) noexcept = default;
+
+    If_expression &operator=(If_expression &&) noexcept = default;
+
+    std::unique_ptr<Expression> condition;
+    Block_expression body;
+    std::vector<Else_if_part> else_if_parts;
+    Block_expression else_body;
+  };
+
+
+  struct Expression
+  {
+    using Variant = std::variant<
+      Int_literal_expression,
+      Binding_expression,
+      Unary_expression,
+      Binary_expression,
+      Assign_expression,
+      Call_expression,
+      Index_expression,
+      Constructor_expression,
+      Block_expression,
+      If_expression
+    >;
+
+    Expression(Variant v, Type *t);
+
+    Variant value;
+    Type *type;
+  };
+
+  // statements
+
+  struct Let_statement
+  {
+    std::size_t binding_index;
+    Expression initializer;
+  };
+
+  struct While_statement
+  {
+    ~While_statement();
+
+    While_statement() = default;
+
+    While_statement(While_statement &&) noexcept = default;
+
+    While_statement &operator=(While_statement &&) noexcept = default;
+
+    std::unique_ptr<Expression> condition;
+    Block_expression body;
+  };
+
+  struct Return_statement
+  {
+    Expression value;
+  };
+
+  struct Expression_statement
+  {
+    Expression expression;
+  };
+
+  // program
+
+  struct Program;
+  struct Function;
+  struct Basic_block;
+  struct Instruction;
+
+  struct Program
+  {
+    Type_pool types;
+    std::vector<Function> functions;
+  };
+
+  struct Function_prototype
+  {
+    std::string name;
+    Type *type;
+  };
+
+  struct Function_body
+  {
+    std::vector<std::string> local_names;
+    std::vector<Basic_block> body;
+  };
+
+  struct Function
+  {
+    Function_prototype prototype;
+    std::optional<Function_body> body;
+  };
+
+  struct Constant_integral_value {
+    Type *type;
+    std::uint64_t bits;
+  };
+
+  struct Constant_function_value {
+    Type *type;
+    std::ptrdiff_t function_index;
+  };
+
+  struct Constant_value {
+    std::variant<Constant_integral_value, Constant_function_value> value;
+  };
+
+  struct Load_constant_instruction {
+    int dst_register_number;
+    Constant_value value;
+  };
+
+  struct Alloca_instruction {
+    int dst_register_number;
+    Type *type;
+  };
+
+  struct Load_instruction { 
+    int dst_register_number;
+    int pointer_register_number;
+  };
+
+  struct Store_instruction {
+    int src_register_number;
+    int pointer_register_number;
+  };
+
+  struct Integral_add_instruction {
+    int dst_register_number;
+    std::array<int, 2> src_register_numbers;
+  };
+
+  struct Instruction
+  {
+    std::variant<
+      Load_constant_instruction,
+      Alloca_instruction,
+      Load_instruction,
+      Store_instruction
+    >
+      value;
+  };
+} // namespace basedir
+
+#endif // BASEDIR_IR_H

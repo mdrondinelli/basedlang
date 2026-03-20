@@ -25,6 +25,8 @@ namespace basedir
 
   If_expression::~If_expression() = default;
 
+  If_expression::Else_if_part::~Else_if_part() = default;
+
   While_statement::~While_statement() = default;
 
   Function_body::~Function_body() = default;

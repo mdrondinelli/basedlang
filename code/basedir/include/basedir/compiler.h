@@ -1,9 +1,7 @@
 #ifndef BASEDIR_COMPILER_H
 #define BASEDIR_COMPILER_H
 
-#include <cstddef>
-#include <optional>
-#include <stdexcept>
+#include <format>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -19,101 +17,158 @@ namespace basedir
   class Compiler
   {
   public:
-    class Compile_error: public std::runtime_error
+    class Compile_error: public std::exception
     {
     public:
-      using std::runtime_error::runtime_error;
+      explicit Compile_error(int line, int column, std::string message)
+          : _message{std::format("line {} col {}: {}", line, column, message)}
+      {
+      }
+
+      char const *what() const noexcept override
+      {
+        return _message.c_str();
+      }
+
+    private:
+      std::string _message;
     };
 
+    /// Convert a TU parse tree into a representation of a valid program, or
+    /// throw `Compile_error`
     Program compile(basedparse::Translation_unit const &unit);
 
   private:
-    struct Local_binding
+    struct Symbol_handle
     {
-      std::size_t index;
-      bool is_mutable;
-      Type *type;
+      struct Named_type
+      {
+        Type *type;
+      };
+
+      struct Named_function
+      {
+        std::int64_t function_index;
+      };
+
+      struct Named_value
+      {
+        std::int64_t register_index;
+      };
+
+      std::variant<
+        Named_type,
+        Named_function,
+        Named_value
+      >
+        value;
     };
 
-    struct Global_binding
+    using Scope = std::unordered_map<std::string, Symbol_handle>;
+
+    class Scope_guard
     {
-      std::size_t index;
+    public:
+      explicit Scope_guard(Compiler *compiler);
+
+      ~Scope_guard();
+
+    private:
+      Compiler *_compiler;
     };
 
-    struct Type_symbol
+    class Function_guard
     {
-      Type *type;
+    public:
+      explicit Function_guard(Compiler *compiler);
+
+      ~Function_guard();
+      
+    private:
+      Compiler *_compiler;
     };
 
-    using Symbol = std::variant<Local_binding, Global_binding, Type_symbol>;
-    using Scope = std::unordered_map<std::string, Symbol>;
+    enum class Value_category
+    {
+      lvalue,
+      rvalue,
+    };
 
-    Program *_program = nullptr;
+    /// Stores the current `Program` being compiled. Mostly non-null.
+    Program *_program{};
+
+    /// Stores the current `Function_body` being compiled. Can be null.
+    Function_body *_function_body{};
+
+    /// The currently-visible stack of scopes in the single pass of the
+    /// compiler. The global scope (which contains only functions) is always at
+    /// index 0.
+    ///
+    /// Going into a nested function body hides everything outside other than
+    /// the global scope.
     std::vector<Scope> _scopes;
-    std::vector<std::string> _local_names;
-    std::vector<Type *> _return_type_stack;
+
+    void compile_top_level_let_statement(
+      basedparse::Let_statement const &statement
+    );
+
+    /// Sets a body of previously declared function
+    ///
+    /// \return the index of the function
+    void define_function(
+      std::int64_t function_index,
+      std::vector<Basic_block> blocks
+    );
+
+    /// Converts a type expression to a `Type *` in the current context
+    Type *compile_type_expression(basedparse::Type_expression const &type_expr);
+
+    /// Converts an expression to a `Type *` in the current context
+    Type *compile_expression_type(basedparse::Expression const &expr);
+
+    /// Converts a type expression to a `Value_category` in the current context
+    Value_category compile_expression_value_category();
+
+    /// Add a stack value of a given type to the current function and a symbol
+    /// mapping to that local to the current scope. The local is in an
+    /// uninitialized state.
+    ///
+    /// \return the index of the register holding the address of the local
+    std::int64_t declare_named_stack_value(std::string name, Type *type);
+
+    /// Add a function to the global function list and a symbol mapping to that
+    /// function to the current scope. The function has no body, only a
+    /// prototype.
+    ///
+    /// \return the index of the function
+    std::int64_t declare_named_function(std::string name, Type *type);
+
+    /// Add a named type to the type pool and a symbol mapping to that type to
+    /// the current scope.
+    ///
+    /// \return the type
+    Type *declare_named_type(std::string name);
+
+    /// Declare a symbol in the current scope
+    void bind_identifier(std::string identifier, Symbol_handle symbol);
+
+    /// Find the symbol referred to by an identifier in the current scope
+    Symbol_handle resolve_identifier(basedlex::Lexeme const &identifier) const;
+
+    Scope_guard scope_guard()
+    {
+      return Scope_guard{this};
+    }
 
     void push_scope();
 
-    void pop_scope();
+    void pop_scope() noexcept;
 
-    void define(std::string const &name, Symbol symbol);
+    std::int64_t reserve_register(Type *type);
 
-    Symbol const *lookup(std::string const &name) const;
+    Type_pool &types() const noexcept;
 
-    std::size_t alloc_local(std::string const &name);
-
-    Type *resolve_type(basedparse::Type_expression const &type_expr);
-
-    Type *compile_function_type(basedparse::Fn_expression const &fn);
-
-    Function_body compile_function_body(basedparse::Fn_expression const &fn);
-
-    Statement compile_statement(basedparse::Statement const &statement);
-
-    Statement compile_let_statement(basedparse::Let_statement const &statement);
-
-    Statement
-    compile_while_statement(basedparse::While_statement const &statement);
-
-    Statement
-    compile_return_statement(basedparse::Return_statement const &statement);
-
-    Statement compile_expression_statement(
-      basedparse::Expression_statement const &statement
-    );
-
-    Expression compile_expression(basedparse::Expression const &expression);
-
-    static Type *strip_reference(Type *type);
-
-    static bool types_compatible(Type *expected, Type *actual);
-
-    Expression
-    compile_int_literal(basedparse::Int_literal_expression const &expression);
-
-    Expression compile_identifier_expression(
-      basedparse::Identifier_expression const &expression
-    );
-
-    Expression compile_fn(basedparse::Fn_expression const &expression);
-
-    Expression compile_paren(basedparse::Paren_expression const &expression);
-
-    Expression compile_unary(basedparse::Unary_expression const &expression);
-
-    Expression compile_binary(basedparse::Binary_expression const &expression);
-
-    Expression compile_call(basedparse::Call_expression const &expression);
-
-    Expression compile_index(basedparse::Index_expression const &expression);
-
-    Expression
-    compile_constructor(basedparse::Constructor_expression const &expression);
-
-    Expression compile_block(basedparse::Block_expression const &expression);
-
-    Expression compile_if(basedparse::If_expression const &expression);
+    // static bool types_compatible(Type *expected, Type *actual);
   };
 
 } // namespace basedir

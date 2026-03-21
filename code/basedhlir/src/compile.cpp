@@ -347,9 +347,19 @@ namespace basedhlir
         emit_error(std::format("'{}' is not a value", expr.identifier.text), expr.identifier);
       }
 
-      Type *type_of_expression(basedparse::Fn_expression const &)
+      Type *type_of_expression(basedparse::Fn_expression const &expr)
       {
-        throw std::runtime_error{"type_of_expression not yet implemented for fn expressions"};
+        auto parameter_types = std::vector<Type *>{};
+        for (auto const &param : expr.parameters)
+        {
+          parameter_types.push_back(compile_type_expression(param.type_expression));
+        }
+        if (!expr.return_type_specifier.has_value())
+        {
+          throw std::runtime_error{"return type deduction not yet supported"};
+        }
+        auto const return_type = compile_type_expression(expr.return_type_specifier->type_expression);
+        return _type_pool->function_type(std::move(parameter_types), return_type);
       }
 
       Type *type_of_expression(basedparse::Paren_expression const &expr)

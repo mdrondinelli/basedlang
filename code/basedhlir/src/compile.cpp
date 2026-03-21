@@ -1,7 +1,9 @@
 #include <cassert>
+#include <cstdint>
 #include <format>
 #include <stdexcept>
 #include <utility>
+#include <variant>
 
 #include "basedhlir/compile.h"
 #include "basedhlir/symbol_table.h"
@@ -15,6 +17,8 @@ namespace basedhlir
     struct Compilation_error
     {
     };
+
+    using Constant_value = std::variant<std::int32_t, bool>;
 
     class Compilation_context
     {
@@ -30,12 +34,11 @@ namespace basedhlir
 
       Translation_unit compile(basedparse::Translation_unit const &ast)
       {
-        auto result = Translation_unit{};
         for (auto const &func_def : ast.function_definitions)
         {
           try
           {
-            compile_top_level_let_statement(func_def, &result);
+            compile_top_level_let_statement(func_def);
           }
           catch (Compilation_error const &)
           {
@@ -45,13 +48,19 @@ namespace basedhlir
         {
           throw Compilation_failure{std::move(_diagnostics)};
         }
-        return result;
+        return std::move(_translation_unit);
       }
 
     private:
       Type_pool *_type_pool;
+      Translation_unit _translation_unit;
       Symbol_table _symbol_table;
       std::vector<Diagnostic> _diagnostics;
+
+      Function *get_function(std::uint64_t function_handle)
+      {
+        return _translation_unit.functions[function_handle].get();
+      }
 
       [[noreturn]] void emit_error(std::string message, basedlex::Lexeme const &lexeme)
       {
@@ -100,6 +109,83 @@ namespace basedhlir
         return ts->type;
       }
 
+      Type *type_of_expression(basedparse::Expression const &expr)
+      {
+        return std::visit(
+          [&](auto const &e) -> Type *
+          {
+            return type_of_expression(e);
+          },
+          expr.value
+        );
+      }
+
+      Type *type_of_expression(basedparse::Int_literal_expression const &)
+      {
+        return _type_pool->i32_type();
+      }
+
+      Type *type_of_expression(basedparse::Identifier_expression const &expr)
+      {
+        auto const sym = lookup_identifier(expr.identifier);
+        auto const vs = std::get_if<Value_symbol>(&sym->data);
+        if (vs != nullptr)
+        {
+          return vs->type;
+        }
+        auto const fs = std::get_if<Function_symbol>(&sym->data);
+        if (fs != nullptr)
+        {
+          return get_function(fs->function_handle)->type;
+        }
+        emit_error(std::format("'{}' is not a value", expr.identifier.text), expr.identifier);
+      }
+
+      Type *type_of_expression(basedparse::Fn_expression const &)
+      {
+        throw std::runtime_error{"type_of_expression not yet implemented for fn expressions"};
+      }
+
+      Type *type_of_expression(basedparse::Paren_expression const &expr)
+      {
+        return type_of_expression(*expr.inner);
+      }
+
+      Type *type_of_expression(basedparse::Unary_expression const &)
+      {
+        throw std::runtime_error{"type_of_expression not yet implemented for unary expressions"};
+      }
+
+      Type *type_of_expression(basedparse::Binary_expression const &)
+      {
+        throw std::runtime_error{"type_of_expression not yet implemented for binary expressions"};
+      }
+
+      Type *type_of_expression(basedparse::Call_expression const &)
+      {
+        throw std::runtime_error{"type_of_expression not yet implemented for call expressions"};
+      }
+
+      Type *type_of_expression(basedparse::Index_expression const &)
+      {
+        throw std::runtime_error{"type_of_expression not yet implemented for index expressions"};
+      }
+
+      Type *type_of_expression(basedparse::Block_expression const &)
+      {
+        throw std::runtime_error{"type_of_expression not yet implemented for block expressions"};
+      }
+
+      Type *type_of_expression(basedparse::If_expression const &)
+      {
+        throw std::runtime_error{"type_of_expression not yet implemented for if expressions"};
+      }
+
+      Type *type_of_expression(basedparse::Constructor_expression const &)
+      {
+        throw std::runtime_error{"type_of_expression not yet implemented for constructor expressions"};
+      }
+
       Type *compile_type_expression(basedparse::Array_type_expression const &expr)
       {
         auto const element = compile_type_expression(*expr.element_type);
@@ -115,10 +201,73 @@ namespace basedhlir
         return _type_pool->pointer_type(compile_type_expression(*expr.pointee_type));
       }
 
-      void compile_top_level_let_statement(
-        basedparse::Function_definition const &func_def,
-        Translation_unit *result
-      )
+      bool is_constant_expression(basedparse::Expression const &expr)
+      {
+        return std::visit(
+          [&](auto const &e) -> bool
+          {
+            return is_constant_expression(e);
+          },
+          expr.value
+        );
+      }
+
+      bool is_constant_expression(basedparse::Int_literal_expression const &)
+      {
+        return true;
+      }
+
+      bool is_constant_expression(basedparse::Identifier_expression const &)
+      {
+        return false;
+      }
+
+      bool is_constant_expression(basedparse::Fn_expression const &)
+      {
+        return false;
+      }
+
+      bool is_constant_expression(basedparse::Paren_expression const &expr)
+      {
+        return is_constant_expression(*expr.inner);
+      }
+
+      bool is_constant_expression(basedparse::Unary_expression const &expr)
+      {
+        return is_constant_expression(*expr.operand);
+      }
+
+      bool is_constant_expression(basedparse::Binary_expression const &expr)
+      {
+        return is_constant_expression(*expr.left) && is_constant_expression(*expr.right);
+      }
+
+      bool is_constant_expression(basedparse::Call_expression const &)
+      {
+        return false;
+      }
+
+      bool is_constant_expression(basedparse::Index_expression const &expr)
+      {
+        return is_constant_expression(*expr.operand) && is_constant_expression(*expr.index);
+      }
+
+      bool is_constant_expression(basedparse::Block_expression const &)
+      {
+        return false;
+      }
+
+      bool is_constant_expression(basedparse::If_expression const &)
+      {
+        return false;
+      }
+
+      bool is_constant_expression(basedparse::Constructor_expression const &)
+      {
+        return false;
+      }
+
+      void compile_top_level_let_statement(basedparse::Function_definition const &func_def)
       {
         auto const &fn_expr = func_def.function;
         if (!fn_expr.return_type_specifier.has_value())
@@ -137,11 +286,11 @@ namespace basedhlir
         }
         auto const return_type = compile_type_expression(fn_expr.return_type_specifier->type_expression);
         auto const function_type = _type_pool->function_type(std::move(parameter_types), return_type);
-        auto const function_handle = static_cast<std::uint64_t>(result->functions.size());
-        result->functions.push_back(Function{
+        auto const function_handle = static_cast<std::uint64_t>(_translation_unit.functions.size());
+        _translation_unit.functions.push_back(std::make_unique<Function>(Function{
           .type = function_type,
           .parameters = std::move(parameters),
-        });
+        }));
         _symbol_table.declare_function(func_def.name.text, function_handle);
       }
     };

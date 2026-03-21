@@ -1,6 +1,7 @@
 #ifndef BASEDHLIR_HLIR_H
 #define BASEDHLIR_HLIR_H
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,7 +16,7 @@ namespace basedhlir
 
   struct Translation_unit
   {
-    std::vector<Function> functions;
+    std::vector<std::unique_ptr<Function>> functions;
   };
 
   struct Function

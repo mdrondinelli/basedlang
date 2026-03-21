@@ -293,6 +293,34 @@ namespace basedhlir
         return sym;
       }
 
+      bool is_type_compatible(Type *parameter_type, Type *argument_type)
+      {
+        if (parameter_type == argument_type)
+        {
+          return true;
+        }
+        auto const param_ptr = std::get_if<Pointer_type>(&parameter_type->data);
+        auto const arg_ptr = std::get_if<Pointer_type>(&argument_type->data);
+        if (param_ptr != nullptr && arg_ptr != nullptr)
+        {
+          if (param_ptr->is_mutable && !arg_ptr->is_mutable)
+          {
+            return false;
+          }
+          return is_type_compatible(param_ptr->pointee, arg_ptr->pointee);
+        }
+        if (param_ptr != nullptr)
+        {
+          auto const param_unsized = std::get_if<Unsized_array_type>(&param_ptr->pointee->data);
+          auto const arg_sized = std::get_if<Sized_array_type>(&argument_type->data);
+          if (param_unsized != nullptr && arg_sized != nullptr)
+          {
+            return is_type_compatible(param_unsized->element, arg_sized->element);
+          }
+        }
+        return false;
+      }
+
       Type *compile_type_expression(basedparse::Type_expression const &type_expr)
       {
         return std::visit(
@@ -406,9 +434,30 @@ namespace basedhlir
         emit_error(std::format("no matching overload for binary operator '{}'", expr.op.text), expr.op);
       }
 
-      Type *type_of_expression(basedparse::Call_expression const &)
+      Type *type_of_expression(basedparse::Call_expression const &expr)
       {
-        throw std::runtime_error{"type_of_expression not yet implemented for call expressions"};
+        auto const callee_type = type_of_expression(*expr.callee);
+        auto const ft = std::get_if<Function_type>(&callee_type->data);
+        if (ft == nullptr)
+        {
+          emit_error("expression is not callable", expr.lparen);
+        }
+        if (expr.arguments.size() != ft->parameter_types.size())
+        {
+          emit_error(
+            std::format("expected {} arguments, got {}", ft->parameter_types.size(), expr.arguments.size()),
+            expr.lparen
+          );
+        }
+        for (auto i = std::size_t{}; i < expr.arguments.size(); ++i)
+        {
+          auto const arg_type = type_of_expression(expr.arguments[i]);
+          if (!is_type_compatible(ft->parameter_types[i], arg_type))
+          {
+            emit_error(std::format("argument {} is not compatible with parameter type", i + 1), expr.lparen);
+          }
+        }
+        return ft->return_type;
       }
 
       Type *type_of_expression(basedparse::Index_expression const &)

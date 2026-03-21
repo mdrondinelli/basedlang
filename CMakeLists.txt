@@ -28,6 +28,7 @@ target_include_directories(basedparse PUBLIC code/basedparse/include)
 target_link_libraries(basedparse PUBLIC basedlex)
 
 add_library(basedhlir
+  code/basedhlir/src/compile.cpp
   code/basedhlir/src/symbol_table.cpp
   code/basedhlir/src/type.cpp
 )

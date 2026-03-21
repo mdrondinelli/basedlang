@@ -443,7 +443,7 @@ namespace basedhlir
 
       Type *compile_type_expression(basedparse::Pointer_type_expression const &expr)
       {
-        return _type_pool->pointer_type(compile_type_expression(*expr.pointee_type));
+        return _type_pool->pointer_type(compile_type_expression(*expr.pointee_type), expr.kw_mut.has_value());
       }
 
       bool is_constant_expression(basedparse::Expression const &expr)

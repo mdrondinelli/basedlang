@@ -28,19 +28,40 @@ TEST_CASE("Type_pool - pointer type is interned via pointee")
 {
   auto pool = basedhlir::Type_pool{};
   auto const i32 = pool.i32_type();
-  auto const ptr = pool.pointer_type(i32);
-  CHECK(ptr == pool.pointer_type(i32));
+  auto const ptr = pool.pointer_type(i32, false);
+  CHECK(ptr == pool.pointer_type(i32, false));
   CHECK(ptr != i32);
   auto const ptr_data = std::get_if<basedhlir::Pointer_type>(&ptr->data);
   REQUIRE(ptr_data != nullptr);
   CHECK(ptr_data->pointee == i32);
+  CHECK(ptr_data->is_mutable == false);
+}
+
+TEST_CASE("Type_pool - mutable pointer type is interned via pointee")
+{
+  auto pool = basedhlir::Type_pool{};
+  auto const i32 = pool.i32_type();
+  auto const ptr = pool.pointer_type(i32, true);
+  CHECK(ptr == pool.pointer_type(i32, true));
+  CHECK(ptr != i32);
+  auto const ptr_data = std::get_if<basedhlir::Pointer_type>(&ptr->data);
+  REQUIRE(ptr_data != nullptr);
+  CHECK(ptr_data->pointee == i32);
+  CHECK(ptr_data->is_mutable == true);
+}
+
+TEST_CASE("Type_pool - mutable and non-mutable pointers are distinct")
+{
+  auto pool = basedhlir::Type_pool{};
+  auto const i32 = pool.i32_type();
+  CHECK(pool.pointer_type(i32, false) != pool.pointer_type(i32, true));
 }
 
 TEST_CASE("Type_pool - pointer to different types are distinct")
 {
   auto pool = basedhlir::Type_pool{};
-  auto const ptr_i32 = pool.pointer_type(pool.i32_type());
-  auto const ptr_bool = pool.pointer_type(pool.bool_type());
+  auto const ptr_i32 = pool.pointer_type(pool.i32_type(), false);
+  auto const ptr_bool = pool.pointer_type(pool.bool_type(), false);
   CHECK(ptr_i32 != ptr_bool);
 }
 
@@ -48,10 +69,10 @@ TEST_CASE("Type_pool - pointer to pointer")
 {
   auto pool = basedhlir::Type_pool{};
   auto const i32 = pool.i32_type();
-  auto const ptr = pool.pointer_type(i32);
-  auto const ptr_ptr = pool.pointer_type(ptr);
+  auto const ptr = pool.pointer_type(i32, false);
+  auto const ptr_ptr = pool.pointer_type(ptr, false);
   CHECK(ptr_ptr != ptr);
-  CHECK(ptr_ptr == pool.pointer_type(ptr));
+  CHECK(ptr_ptr == pool.pointer_type(ptr, false));
 }
 
 TEST_CASE("Type_pool - sized array type is interned by element and size")
@@ -82,7 +103,7 @@ TEST_CASE("Type_pool - unsized array type is interned by element")
 TEST_CASE("Type_pool - array of pointers")
 {
   auto pool = basedhlir::Type_pool{};
-  auto const ptr_i32 = pool.pointer_type(pool.i32_type());
+  auto const ptr_i32 = pool.pointer_type(pool.i32_type(), false);
   auto const arr = pool.sized_array_type(ptr_i32, 5);
   auto const arr_data = std::get_if<basedhlir::Sized_array_type>(&arr->data);
   REQUIRE(arr_data != nullptr);

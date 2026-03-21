@@ -27,6 +27,7 @@ namespace basedhlir
   struct Pointer_type
   {
     Type *pointee;
+    bool is_mutable;
   };
 
   struct Sized_array_type
@@ -54,6 +55,7 @@ namespace basedhlir
       data;
 
     Type *_pointer_type{};
+    Type *_mut_pointer_type{};
     Type *_unsized_array_type{};
     std::unordered_map<std::int64_t, Type *> _sized_array_types;
   };
@@ -67,7 +69,7 @@ namespace basedhlir
 
     Type *void_type();
 
-    Type *pointer_type(Type *pointee);
+    Type *pointer_type(Type *pointee, bool is_mutable);
 
     Type *sized_array_type(Type *element, std::int64_t size);
 

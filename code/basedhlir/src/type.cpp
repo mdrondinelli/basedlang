@@ -46,14 +46,15 @@ namespace basedhlir
     return _void_type;
   }
 
-  Type *Type_pool::pointer_type(Type *pointee)
+  Type *Type_pool::pointer_type(Type *pointee, bool is_mutable)
   {
-    if (pointee->_pointer_type == nullptr)
+    auto &cached = is_mutable ? pointee->_mut_pointer_type : pointee->_pointer_type;
+    if (cached == nullptr)
     {
-      _types.push_back(std::make_unique<Type>(Pointer_type{.pointee = pointee}));
-      pointee->_pointer_type = _types.back().get();
+      _types.push_back(std::make_unique<Type>(Pointer_type{.pointee = pointee, .is_mutable = is_mutable}));
+      cached = _types.back().get();
     }
-    return pointee->_pointer_type;
+    return cached;
   }
 
   Type *Type_pool::sized_array_type(Type *element, std::int64_t size)

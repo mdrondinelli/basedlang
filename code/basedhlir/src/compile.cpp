@@ -1,9 +1,14 @@
 #include <cassert>
 #include <cstdint>
 #include <format>
+#include <memory>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
 #include <variant>
+#include <vector>
+
+#include <basedparse/operator.h>
 
 #include "basedhlir/compile.h"
 #include "basedhlir/symbol_table.h"
@@ -20,6 +25,192 @@ namespace basedhlir
 
     using Constant_value = std::variant<std::int32_t, bool>;
 
+    class Unary_operator_overload
+    {
+    public:
+      virtual ~Unary_operator_overload() = default;
+
+      virtual Type *operand_type() const = 0;
+
+      virtual Type *result_type() const = 0;
+
+      virtual Constant_value evaluate(Constant_value operand) const = 0;
+    };
+
+    class Binary_operator_overload
+    {
+    public:
+      virtual ~Binary_operator_overload() = default;
+
+      virtual Type *lhs_type() const = 0;
+
+      virtual Type *rhs_type() const = 0;
+
+      virtual Type *result_type() const = 0;
+
+      virtual Constant_value evaluate(Constant_value lhs, Constant_value rhs) const = 0;
+    };
+
+    class I32_unary_plus final : public Unary_operator_overload
+    {
+    public:
+      explicit I32_unary_plus(Type_pool *type_pool) : _type{type_pool->i32_type()} {}
+      Type *operand_type() const override { return _type; }
+      Type *result_type() const override { return _type; }
+      Constant_value evaluate(Constant_value operand) const override { return std::get<std::int32_t>(operand); }
+    private:
+      Type *_type;
+    };
+
+    class I32_unary_minus final : public Unary_operator_overload
+    {
+    public:
+      explicit I32_unary_minus(Type_pool *type_pool) : _type{type_pool->i32_type()} {}
+      Type *operand_type() const override { return _type; }
+      Type *result_type() const override { return _type; }
+      Constant_value evaluate(Constant_value operand) const override { return -std::get<std::int32_t>(operand); }
+    private:
+      Type *_type;
+    };
+
+    class I32_add final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_add(Type_pool *type_pool) : _type{type_pool->i32_type()} {}
+      Type *lhs_type() const override { return _type; }
+      Type *rhs_type() const override { return _type; }
+      Type *result_type() const override { return _type; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) + std::get<std::int32_t>(rhs); }
+    private:
+      Type *_type;
+    };
+
+    class I32_subtract final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_subtract(Type_pool *type_pool) : _type{type_pool->i32_type()} {}
+      Type *lhs_type() const override { return _type; }
+      Type *rhs_type() const override { return _type; }
+      Type *result_type() const override { return _type; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) - std::get<std::int32_t>(rhs); }
+    private:
+      Type *_type;
+    };
+
+    class I32_multiply final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_multiply(Type_pool *type_pool) : _type{type_pool->i32_type()} {}
+      Type *lhs_type() const override { return _type; }
+      Type *rhs_type() const override { return _type; }
+      Type *result_type() const override { return _type; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) * std::get<std::int32_t>(rhs); }
+    private:
+      Type *_type;
+    };
+
+    class I32_divide final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_divide(Type_pool *type_pool) : _type{type_pool->i32_type()} {}
+      Type *lhs_type() const override { return _type; }
+      Type *rhs_type() const override { return _type; }
+      Type *result_type() const override { return _type; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) / std::get<std::int32_t>(rhs); }
+    private:
+      Type *_type;
+    };
+
+    class I32_modulo final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_modulo(Type_pool *type_pool) : _type{type_pool->i32_type()} {}
+      Type *lhs_type() const override { return _type; }
+      Type *rhs_type() const override { return _type; }
+      Type *result_type() const override { return _type; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) % std::get<std::int32_t>(rhs); }
+    private:
+      Type *_type;
+    };
+
+    class I32_equal final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_equal(Type_pool *type_pool) : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()} {}
+      Type *lhs_type() const override { return _i32; }
+      Type *rhs_type() const override { return _i32; }
+      Type *result_type() const override { return _bool; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) == std::get<std::int32_t>(rhs); }
+    private:
+      Type *_i32;
+      Type *_bool;
+    };
+
+    class I32_not_equal final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_not_equal(Type_pool *type_pool) : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()} {}
+      Type *lhs_type() const override { return _i32; }
+      Type *rhs_type() const override { return _i32; }
+      Type *result_type() const override { return _bool; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) != std::get<std::int32_t>(rhs); }
+    private:
+      Type *_i32;
+      Type *_bool;
+    };
+
+    class I32_less final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_less(Type_pool *type_pool) : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()} {}
+      Type *lhs_type() const override { return _i32; }
+      Type *rhs_type() const override { return _i32; }
+      Type *result_type() const override { return _bool; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) < std::get<std::int32_t>(rhs); }
+    private:
+      Type *_i32;
+      Type *_bool;
+    };
+
+    class I32_less_eq final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_less_eq(Type_pool *type_pool) : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()} {}
+      Type *lhs_type() const override { return _i32; }
+      Type *rhs_type() const override { return _i32; }
+      Type *result_type() const override { return _bool; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) <= std::get<std::int32_t>(rhs); }
+    private:
+      Type *_i32;
+      Type *_bool;
+    };
+
+    class I32_greater final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_greater(Type_pool *type_pool) : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()} {}
+      Type *lhs_type() const override { return _i32; }
+      Type *rhs_type() const override { return _i32; }
+      Type *result_type() const override { return _bool; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) > std::get<std::int32_t>(rhs); }
+    private:
+      Type *_i32;
+      Type *_bool;
+    };
+
+    class I32_greater_eq final : public Binary_operator_overload
+    {
+    public:
+      explicit I32_greater_eq(Type_pool *type_pool) : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()} {}
+      Type *lhs_type() const override { return _i32; }
+      Type *rhs_type() const override { return _i32; }
+      Type *result_type() const override { return _bool; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<std::int32_t>(lhs) >= std::get<std::int32_t>(rhs); }
+    private:
+      Type *_i32;
+      Type *_bool;
+    };
+
     class Compilation_context
     {
     public:
@@ -30,6 +221,19 @@ namespace basedhlir
         _symbol_table.declare_type("i32", _type_pool->i32_type());
         _symbol_table.declare_type("bool", _type_pool->bool_type());
         _symbol_table.declare_type("void", _type_pool->void_type());
+        _unary_overloads[basedparse::Operator::unary_plus].push_back(std::make_unique<I32_unary_plus>(_type_pool));
+        _unary_overloads[basedparse::Operator::unary_minus].push_back(std::make_unique<I32_unary_minus>(_type_pool));
+        _binary_overloads[basedparse::Operator::add].push_back(std::make_unique<I32_add>(_type_pool));
+        _binary_overloads[basedparse::Operator::subtract].push_back(std::make_unique<I32_subtract>(_type_pool));
+        _binary_overloads[basedparse::Operator::multiply].push_back(std::make_unique<I32_multiply>(_type_pool));
+        _binary_overloads[basedparse::Operator::divide].push_back(std::make_unique<I32_divide>(_type_pool));
+        _binary_overloads[basedparse::Operator::modulo].push_back(std::make_unique<I32_modulo>(_type_pool));
+        _binary_overloads[basedparse::Operator::equal].push_back(std::make_unique<I32_equal>(_type_pool));
+        _binary_overloads[basedparse::Operator::not_equal].push_back(std::make_unique<I32_not_equal>(_type_pool));
+        _binary_overloads[basedparse::Operator::less].push_back(std::make_unique<I32_less>(_type_pool));
+        _binary_overloads[basedparse::Operator::less_eq].push_back(std::make_unique<I32_less_eq>(_type_pool));
+        _binary_overloads[basedparse::Operator::greater].push_back(std::make_unique<I32_greater>(_type_pool));
+        _binary_overloads[basedparse::Operator::greater_eq].push_back(std::make_unique<I32_greater_eq>(_type_pool));
       }
 
       Translation_unit compile(basedparse::Translation_unit const &ast)
@@ -56,6 +260,8 @@ namespace basedhlir
       Translation_unit _translation_unit;
       Symbol_table _symbol_table;
       std::vector<Diagnostic> _diagnostics;
+      std::unordered_map<basedparse::Operator, std::vector<std::unique_ptr<Unary_operator_overload>>> _unary_overloads;
+      std::unordered_map<basedparse::Operator, std::vector<std::unique_ptr<Binary_operator_overload>>> _binary_overloads;
 
       Function *get_function(std::uint64_t function_handle)
       {
@@ -151,14 +357,43 @@ namespace basedhlir
         return type_of_expression(*expr.inner);
       }
 
-      Type *type_of_expression(basedparse::Unary_expression const &)
+      Type *type_of_expression(basedparse::Unary_expression const &expr)
       {
-        throw std::runtime_error{"type_of_expression not yet implemented for unary expressions"};
+        auto const op = basedparse::get_unary_operator(expr.op.token);
+        assert(op.has_value());
+        auto const operand_type = type_of_expression(*expr.operand);
+        auto const it = _unary_overloads.find(*op);
+        if (it != _unary_overloads.end())
+        {
+          for (auto const &overload : it->second)
+          {
+            if (overload->operand_type() == operand_type)
+            {
+              return overload->result_type();
+            }
+          }
+        }
+        emit_error(std::format("no matching overload for unary operator '{}'", expr.op.text), expr.op);
       }
 
-      Type *type_of_expression(basedparse::Binary_expression const &)
+      Type *type_of_expression(basedparse::Binary_expression const &expr)
       {
-        throw std::runtime_error{"type_of_expression not yet implemented for binary expressions"};
+        auto const op = basedparse::get_binary_operator(expr.op.token);
+        assert(op.has_value());
+        auto const lhs_type = type_of_expression(*expr.left);
+        auto const rhs_type = type_of_expression(*expr.right);
+        auto const it = _binary_overloads.find(*op);
+        if (it != _binary_overloads.end())
+        {
+          for (auto const &overload : it->second)
+          {
+            if (overload->lhs_type() == lhs_type && overload->rhs_type() == rhs_type)
+            {
+              return overload->result_type();
+            }
+          }
+        }
+        emit_error(std::format("no matching overload for binary operator '{}'", expr.op.text), expr.op);
       }
 
       Type *type_of_expression(basedparse::Call_expression const &)

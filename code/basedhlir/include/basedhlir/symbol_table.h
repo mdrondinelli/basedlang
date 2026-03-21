@@ -33,19 +33,26 @@ namespace basedhlir
   class Symbol_table
   {
   public:
-    void push_scope();
-
-    void pop_scope();
-
     Symbol *declare_value(std::string name, Type *type, bool is_mutable);
 
     Symbol *declare_type(std::string name, Type *type);
 
     Symbol *lookup(std::string_view name) const;
 
+    void push_scope(bool is_barrier = false);
+
+    void pop_scope();
+
   private:
+    struct Scope
+    {
+      std::unordered_map<std::string_view, Symbol *> symbols;
+      bool is_barrier;
+    };
+
     std::vector<std::unique_ptr<Symbol>> _symbols;
-    std::vector<std::unordered_map<std::string_view, Symbol *>> _scopes;
+    std::unordered_map<std::string_view, Symbol *> _global_scope;
+    std::vector<Scope> _scopes;
   };
 
 } // namespace basedhlir

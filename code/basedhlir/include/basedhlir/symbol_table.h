@@ -1,6 +1,7 @@
 #ifndef BASEDHLIR_SYMBOL_TABLE_H
 #define BASEDHLIR_SYMBOL_TABLE_H
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -24,10 +25,15 @@ namespace basedhlir
     Type *type;
   };
 
+  struct Function_symbol
+  {
+    std::uint64_t function_handle;
+  };
+
   struct Symbol
   {
     std::string name;
-    std::variant<Value_symbol, Type_symbol> data;
+    std::variant<Value_symbol, Type_symbol, Function_symbol> data;
   };
 
   class Symbol_table
@@ -36,6 +42,8 @@ namespace basedhlir
     Symbol *declare_value(std::string name, Type *type, bool is_mutable);
 
     Symbol *declare_type(std::string name, Type *type);
+
+    Symbol *declare_function(std::string name, std::uint64_t function_handle);
 
     Symbol *lookup(std::string_view name) const;
 

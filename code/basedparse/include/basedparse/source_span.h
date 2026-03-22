@@ -13,34 +13,34 @@ namespace basedparse
     Source_location end;
   };
 
-  Source_span lexeme_span(basedlex::Lexeme const &lexeme);
+  Source_span span_of(basedlex::Lexeme const &lexeme);
 
   Source_span hull(Source_span begin, Source_span end);
 
-  Source_span source_span(Type_expression const &node);
-  Source_span source_span(Identifier_type_expression const &node);
-  Source_span source_span(Array_type_expression const &node);
-  Source_span source_span(Pointer_type_expression const &node);
+  Source_span span_of(Type_expression const &node);
+  Source_span span_of(Identifier_type_expression const &node);
+  Source_span span_of(Array_type_expression const &node);
+  Source_span span_of(Pointer_type_expression const &node);
 
-  Source_span source_span(Expression const &node);
-  Source_span source_span(Int_literal_expression const &node);
-  Source_span source_span(Identifier_expression const &node);
-  Source_span source_span(Fn_expression const &node);
-  Source_span source_span(Paren_expression const &node);
-  Source_span source_span(Unary_expression const &node);
-  Source_span source_span(Binary_expression const &node);
-  Source_span source_span(Call_expression const &node);
-  Source_span source_span(Index_expression const &node);
-  Source_span source_span(Block_expression const &node);
-  Source_span source_span(If_expression const &node);
-  Source_span source_span(Constructor_expression const &node);
+  Source_span span_of(Expression const &node);
+  Source_span span_of(Int_literal_expression const &node);
+  Source_span span_of(Identifier_expression const &node);
+  Source_span span_of(Fn_expression const &node);
+  Source_span span_of(Paren_expression const &node);
+  Source_span span_of(Unary_expression const &node);
+  Source_span span_of(Binary_expression const &node);
+  Source_span span_of(Call_expression const &node);
+  Source_span span_of(Index_expression const &node);
+  Source_span span_of(Block_expression const &node);
+  Source_span span_of(If_expression const &node);
+  Source_span span_of(Constructor_expression const &node);
 
-  Source_span source_span(Statement const &node);
-  Source_span source_span(Let_statement const &node);
-  Source_span source_span(While_statement const &node);
-  Source_span source_span(Return_statement const &node);
-  Source_span source_span(Expression_statement const &node);
-  Source_span source_span(Function_definition const &node);
+  Source_span span_of(Statement const &node);
+  Source_span span_of(Let_statement const &node);
+  Source_span span_of(While_statement const &node);
+  Source_span span_of(Return_statement const &node);
+  Source_span span_of(Expression_statement const &node);
+  Source_span span_of(Function_definition const &node);
 
 } // namespace basedparse
 

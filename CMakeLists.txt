@@ -22,6 +22,7 @@ add_library(basedparse
   code/basedparse/src/ast.cpp
   code/basedparse/src/operator.cpp
   code/basedparse/src/parser.cpp
+  code/basedparse/src/source_span.cpp
 )
 target_include_directories(basedparse PUBLIC code/basedparse/include)
 target_link_libraries(basedparse PUBLIC basedlex)

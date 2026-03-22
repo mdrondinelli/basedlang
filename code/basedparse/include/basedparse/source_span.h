@@ -7,18 +7,18 @@
 namespace basedparse
 {
 
-  /// A half-open range of source positions [start, end).
-  /// @c start is the position of the first character; @c end is one past the
-  /// last character.
+  /// A closed range of source positions [start, end].
+  /// Both @c start and @c end are inclusive: @c start is the position of the
+  /// first character and @c end is the position of the last character.
   struct Source_span
   {
     Source_location start; ///< Position of the first character (inclusive).
-    Source_location end;   ///< Position one past the last character (exclusive).
+    Source_location end;   ///< Position of the last character (inclusive).
   };
 
   /// Returns the source span of a lexeme.
   /// @c start points to the first character of the lexeme text; @c end points
-  /// one past the last character.
+  /// to the last character.
   Source_span span_of(basedlex::Lexeme const &lexeme);
 
   /// Returns the smallest span whose @c start comes from @p begin and whose
@@ -28,8 +28,8 @@ namespace basedparse
 
   /// @name AST span_of overloads
   /// Each overload returns the source span of the corresponding AST node,
-  /// from the first character of its leftmost token to one past the last
-  /// character of its rightmost token.
+  /// from the first character of its leftmost token to the last character of
+  /// its rightmost token.
   /// @{
 
   Source_span span_of(Type_expression const &node);

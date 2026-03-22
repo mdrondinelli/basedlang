@@ -13,7 +13,7 @@ namespace basedparse
     };
     auto const end = Source_location{
       .line = lexeme.line,
-      .column = lexeme.column + static_cast<std::int32_t>(lexeme.text.size()),
+      .column = lexeme.column + static_cast<std::int32_t>(lexeme.text.size()) - 1,
     };
     return Source_span{.start = begin, .end = end};
   }

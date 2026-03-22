@@ -15,7 +15,7 @@ namespace basedparse
 
   Source_span lexeme_span(basedlex::Lexeme const &lexeme);
 
-  Source_span span_bounds(Source_span begin, Source_span end);
+  Source_span hull(Source_span begin, Source_span end);
 
   Source_span source_span(Type_expression const &node);
   Source_span source_span(Identifier_type_expression const &node);

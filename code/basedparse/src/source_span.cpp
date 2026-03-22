@@ -18,10 +18,11 @@ namespace basedparse
     return Source_span{.start = begin, .end = end};
   }
 
-  Source_span span_bounds(Source_span begin, Source_span end)
+  Source_span hull(Source_span begin, Source_span end)
   {
     return Source_span{.start = begin.start, .end = end.end};
   }
+
 
   // type expressions
 
@@ -43,12 +44,12 @@ namespace basedparse
 
   Source_span source_span(Array_type_expression const &node)
   {
-    return span_bounds(source_span(*node.element_type), lexeme_span(node.rbracket));
+    return hull(source_span(*node.element_type), lexeme_span(node.rbracket));
   }
 
   Source_span source_span(Pointer_type_expression const &node)
   {
-    return span_bounds(source_span(*node.pointee_type), lexeme_span(node.star));
+    return hull(source_span(*node.pointee_type), lexeme_span(node.star));
   }
 
   // expressions
@@ -76,37 +77,37 @@ namespace basedparse
 
   Source_span source_span(Fn_expression const &node)
   {
-    return span_bounds(lexeme_span(node.kw_fn), source_span(*node.body));
+    return hull(lexeme_span(node.kw_fn), source_span(*node.body));
   }
 
   Source_span source_span(Paren_expression const &node)
   {
-    return span_bounds(lexeme_span(node.lparen), lexeme_span(node.rparen));
+    return hull(lexeme_span(node.lparen), lexeme_span(node.rparen));
   }
 
   Source_span source_span(Unary_expression const &node)
   {
-    return span_bounds(lexeme_span(node.op), source_span(*node.operand));
+    return hull(lexeme_span(node.op), source_span(*node.operand));
   }
 
   Source_span source_span(Binary_expression const &node)
   {
-    return span_bounds(source_span(*node.left), source_span(*node.right));
+    return hull(source_span(*node.left), source_span(*node.right));
   }
 
   Source_span source_span(Call_expression const &node)
   {
-    return span_bounds(source_span(*node.callee), lexeme_span(node.rparen));
+    return hull(source_span(*node.callee), lexeme_span(node.rparen));
   }
 
   Source_span source_span(Index_expression const &node)
   {
-    return span_bounds(source_span(*node.operand), lexeme_span(node.rbracket));
+    return hull(source_span(*node.operand), lexeme_span(node.rbracket));
   }
 
   Source_span source_span(Block_expression const &node)
   {
-    return span_bounds(lexeme_span(node.lbrace), lexeme_span(node.rbrace));
+    return hull(lexeme_span(node.lbrace), lexeme_span(node.rbrace));
   }
 
   Source_span source_span(If_expression const &node)
@@ -123,12 +124,12 @@ namespace basedparse
       }
       return lexeme_span(node.then_block.rbrace);
     }();
-    return span_bounds(lexeme_span(node.kw_if), end_span);
+    return hull(lexeme_span(node.kw_if), end_span);
   }
 
   Source_span source_span(Constructor_expression const &node)
   {
-    return span_bounds(lexeme_span(node.kw_new), lexeme_span(node.rbrace));
+    return hull(lexeme_span(node.kw_new), lexeme_span(node.rbrace));
   }
 
   // statements
@@ -146,27 +147,27 @@ namespace basedparse
 
   Source_span source_span(Let_statement const &node)
   {
-    return span_bounds(lexeme_span(node.kw_let), lexeme_span(node.semicolon));
+    return hull(lexeme_span(node.kw_let), lexeme_span(node.semicolon));
   }
 
   Source_span source_span(While_statement const &node)
   {
-    return span_bounds(lexeme_span(node.kw_while), lexeme_span(node.body.rbrace));
+    return hull(lexeme_span(node.kw_while), lexeme_span(node.body.rbrace));
   }
 
   Source_span source_span(Return_statement const &node)
   {
-    return span_bounds(lexeme_span(node.kw_return), lexeme_span(node.semicolon));
+    return hull(lexeme_span(node.kw_return), lexeme_span(node.semicolon));
   }
 
   Source_span source_span(Expression_statement const &node)
   {
-    return span_bounds(source_span(node.expression), lexeme_span(node.semicolon));
+    return hull(source_span(node.expression), lexeme_span(node.semicolon));
   }
 
   Source_span source_span(Function_definition const &node)
   {
-    return span_bounds(lexeme_span(node.kw_let), lexeme_span(node.semicolon));
+    return hull(lexeme_span(node.kw_let), lexeme_span(node.semicolon));
   }
 
 } // namespace basedparse

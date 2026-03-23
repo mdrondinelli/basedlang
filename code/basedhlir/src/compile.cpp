@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <basedparse/operator.h>
+#include <basedparse/source_span.h>
 
 #include "basedhlir/compile.h"
 #include "basedhlir/symbol_table.h"
@@ -278,6 +279,16 @@ namespace basedhlir
         throw Compilation_error{};
       }
 
+      [[noreturn]] void emit_error(std::string message, basedparse::Source_location location)
+      {
+        _diagnostics.push_back(Diagnostic{
+          .message = std::move(message),
+          .line = location.line,
+          .column = location.column,
+        });
+        throw Compilation_error{};
+      }
+
       Symbol *try_lookup_identifier(basedlex::Lexeme const &identifier)
       {
         return _symbol_table.lookup(identifier.text);
@@ -454,7 +465,8 @@ namespace basedhlir
           auto const arg_type = type_of_expression(expr.arguments[i]);
           if (!is_type_compatible(ft->parameter_types[i], arg_type))
           {
-            emit_error(std::format("argument {} is not compatible with parameter type", i + 1), expr.lparen);
+            auto const span = basedparse::span_of(expr.arguments[i]);
+            emit_error(std::format("argument {} is not compatible with parameter type", i + 1), span.start);
           }
         }
         return ft->return_type;

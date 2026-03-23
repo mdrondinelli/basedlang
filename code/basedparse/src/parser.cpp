@@ -295,8 +295,8 @@ namespace basedparse
       return std::make_unique<Expression>(parse_fn_expression());
     }
     throw std::runtime_error{
-      "unexpected token '" + next.text + "' at " + std::to_string(next.line) +
-      ":" + std::to_string(next.column)
+      "unexpected token '" + next.text + "' at " + std::to_string(next.location.line) +
+      ":" + std::to_string(next.location.column)
     };
   }
 
@@ -436,7 +436,7 @@ namespace basedparse
     {
       throw std::runtime_error{
         "expected type, got '" + next.text + "' at " +
-        std::to_string(next.line) + ":" + std::to_string(next.column)
+        std::to_string(next.location.line) + ":" + std::to_string(next.location.column)
       };
     }
     auto type = std::make_unique<Type_expression>(Identifier_type_expression{
@@ -487,7 +487,7 @@ namespace basedparse
     {
       throw std::runtime_error{
         "unexpected token '" + lexeme.text + "' at " +
-        std::to_string(lexeme.line) + ":" + std::to_string(lexeme.column)
+        std::to_string(lexeme.location.line) + ":" + std::to_string(lexeme.location.column)
       };
     }
     return lexeme;

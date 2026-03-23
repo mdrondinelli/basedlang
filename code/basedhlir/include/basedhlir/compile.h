@@ -8,6 +8,7 @@
 #include <basedparse/ast.h>
 
 #include "hlir.h"
+#include "source_location.h"
 #include "type.h"
 
 namespace basedhlir
@@ -16,8 +17,7 @@ namespace basedhlir
   struct Diagnostic
   {
     std::string message;
-    int line;
-    int column;
+    Source_location location;
   };
 
   class Compilation_failure : public std::exception

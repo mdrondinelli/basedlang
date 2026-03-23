@@ -271,20 +271,14 @@ namespace basedhlir
 
       [[noreturn]] void emit_error(std::string message, basedlex::Lexeme const &lexeme)
       {
-        _diagnostics.push_back(Diagnostic{
-          .message = std::move(message),
-          .line = lexeme.line,
-          .column = lexeme.column,
-        });
-        throw Compilation_error{};
+        emit_error(std::move(message), lexeme.location);
       }
 
-      [[noreturn]] void emit_error(std::string message, basedparse::Source_location location)
+      [[noreturn]] void emit_error(std::string message, Source_location location)
       {
         _diagnostics.push_back(Diagnostic{
           .message = std::move(message),
-          .line = location.line,
-          .column = location.column,
+          .location = location,
         });
         throw Compilation_error{};
       }

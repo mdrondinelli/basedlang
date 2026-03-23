@@ -7,15 +7,11 @@ namespace basedparse
 
   Source_span span_of(basedlex::Lexeme const &lexeme)
   {
-    auto const begin = Source_location{
-      .line = lexeme.line,
-      .column = lexeme.column,
-    };
     auto const end = Source_location{
-      .line = lexeme.line,
-      .column = lexeme.column + static_cast<std::int32_t>(lexeme.text.size()) - 1,
+      .line = lexeme.location.line,
+      .column = lexeme.location.column + static_cast<std::int32_t>(lexeme.text.size()) - 1,
     };
-    return Source_span{.start = begin, .end = end};
+    return Source_span{.start = lexeme.location, .end = end};
   }
 
   Source_span hull(Source_span begin, Source_span end)

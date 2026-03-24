@@ -466,19 +466,65 @@ namespace basedhlir
         return ft->return_type;
       }
 
-      Type *type_of_expression(basedparse::Index_expression const &)
+      Type *type_of_expression(basedparse::Index_expression const &expr)
       {
-        throw std::runtime_error{"type_of_expression not yet implemented for index expressions"};
+        auto const operand_type = type_of_expression(*expr.operand);
+        auto const sa = std::get_if<Sized_array_type>(&operand_type->data);
+        if (sa != nullptr)
+        {
+          return sa->element;
+        }
+        auto const ua = std::get_if<Unsized_array_type>(&operand_type->data);
+        if (ua != nullptr)
+        {
+          return ua->element;
+        }
+        emit_error("expression is not indexable", expr.lbracket);
       }
 
-      Type *type_of_expression(basedparse::Block_expression const &)
+      Type *type_of_expression(basedparse::Block_expression const &expr)
       {
-        throw std::runtime_error{"type_of_expression not yet implemented for block expressions"};
+        if (!expr.tail)
+        {
+          return _type_pool->void_type();
+        }
+        _symbol_table.push_scope();
+        for (auto const &stmt : expr.statements)
+        {
+          auto const let = std::get_if<basedparse::Let_statement>(&stmt.value);
+          if (let != nullptr)
+          {
+            auto const type = type_of_expression(let->initializer);
+            _symbol_table.declare_value(let->name.text, type, let->kw_mut.has_value());
+          }
+        }
+        auto const result = type_of_expression(*expr.tail);
+        _symbol_table.pop_scope();
+        return result;
       }
 
-      Type *type_of_expression(basedparse::If_expression const &)
+      // TODO: consider what to do when branch types differ only in mutability
+      Type *type_of_expression(basedparse::If_expression const &expr)
       {
-        throw std::runtime_error{"type_of_expression not yet implemented for if expressions"};
+        if (!expr.else_part.has_value())
+        {
+          return _type_pool->void_type();
+        }
+        auto const then_type = type_of_expression(expr.then_block);
+        for (auto const &else_if : expr.else_if_parts)
+        {
+          auto const else_if_type = type_of_expression(else_if.body);
+          if (else_if_type != then_type)
+          {
+            emit_error("else-if branch type does not match then branch type", else_if.body.lbrace);
+          }
+        }
+        auto const else_type = type_of_expression(expr.else_part->body);
+        if (else_type != then_type)
+        {
+          emit_error("else branch type does not match then branch type", expr.else_part->body.lbrace);
+        }
+        return then_type;
       }
 
       Type *type_of_expression(basedparse::Constructor_expression const &)

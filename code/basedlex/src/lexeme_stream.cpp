@@ -276,10 +276,6 @@ namespace basedlex
             {
               return Token::kw_mut;
             }
-            if (text == "new")
-            {
-              return Token::kw_new;
-            }
             if (text == "return")
             {
               return Token::kw_return;

@@ -20,34 +20,6 @@ namespace basedparse
   }
 
 
-  // type expressions
-
-  Source_span span_of(Type_expression const &node)
-  {
-    return std::visit(
-      [&](auto const &n) -> Source_span
-      {
-        return span_of(n);
-      },
-      node.value
-    );
-  }
-
-  Source_span span_of(Identifier_type_expression const &node)
-  {
-    return span_of(node.identifier);
-  }
-
-  Source_span span_of(Array_type_expression const &node)
-  {
-    return hull(span_of(*node.element_type), span_of(node.rbracket));
-  }
-
-  Source_span span_of(Pointer_type_expression const &node)
-  {
-    return hull(span_of(*node.pointee_type), span_of(node.star));
-  }
-
   // expressions
 
   Source_span span_of(Expression const &node)
@@ -121,11 +93,6 @@ namespace basedparse
       return span_of(node.then_block.rbrace);
     }();
     return hull(span_of(node.kw_if), end_span);
-  }
-
-  Source_span span_of(Constructor_expression const &node)
-  {
-    return hull(span_of(node.kw_new), span_of(node.rbrace));
   }
 
   // statements

@@ -326,26 +326,43 @@ namespace basedhlir
         return false;
       }
 
-      Type *compile_type_expression(basedparse::Type_expression const &type_expr)
+      Type *compile_type_expression(basedparse::Expression const &expr)
       {
-        return std::visit(
-          [&](auto const &expr) -> Type *
-          {
-            return compile_type_expression(expr);
-          },
-          type_expr.value
-        );
-      }
-
-      Type *compile_type_expression(basedparse::Identifier_type_expression const &expr)
-      {
-        auto const sym = lookup_identifier(expr.identifier);
-        auto const ts = std::get_if<Type_symbol>(&sym->data);
-        if (ts == nullptr)
+        auto const ident = std::get_if<basedparse::Identifier_expression>(&expr.value);
+        if (ident != nullptr)
         {
-          emit_error(std::format("'{}' is not a type", expr.identifier.text), expr.identifier);
+          auto const sym = lookup_identifier(ident->identifier);
+          auto const ts = std::get_if<Type_symbol>(&sym->data);
+          if (ts == nullptr)
+          {
+            emit_error(std::format("'{}' is not a type", ident->identifier.text), ident->identifier);
+          }
+          return ts->type;
         }
-        return ts->type;
+        auto const idx = std::get_if<basedparse::Index_expression>(&expr.value);
+        if (idx != nullptr)
+        {
+          auto const element = compile_type_expression(*idx->operand);
+          if (idx->index == nullptr)
+          {
+            return _type_pool->unsized_array_type(element);
+          }
+          throw std::runtime_error{"sized array types not yet supported"};
+        }
+        auto const unary = std::get_if<basedparse::Unary_expression>(&expr.value);
+        if (unary != nullptr)
+        {
+          if (unary->op.token == basedlex::Token::ampersand)
+          {
+            return _type_pool->pointer_type(compile_type_expression(*unary->operand), false);
+          }
+          if (unary->op.token == basedlex::Token::ampersand_mut)
+          {
+            return _type_pool->pointer_type(compile_type_expression(*unary->operand), true);
+          }
+        }
+        auto const span = basedparse::span_of(expr);
+        emit_error("expected a type expression", span.start);
       }
 
       Type *type_of_expression(basedparse::Expression const &expr)
@@ -385,13 +402,13 @@ namespace basedhlir
         auto parameter_types = std::vector<Type *>{};
         for (auto const &param : expr.parameters)
         {
-          parameter_types.push_back(compile_type_expression(param.type_expression));
+          parameter_types.push_back(compile_type_expression(*param.type));
         }
         if (!expr.return_type_specifier.has_value())
         {
           throw std::runtime_error{"return type deduction not yet supported"};
         }
-        auto const return_type = compile_type_expression(expr.return_type_specifier->type_expression);
+        auto const return_type = compile_type_expression(*expr.return_type_specifier->type);
         return _type_pool->function_type(std::move(parameter_types), return_type);
       }
 
@@ -527,26 +544,6 @@ namespace basedhlir
         return then_type;
       }
 
-      Type *type_of_expression(basedparse::Constructor_expression const &)
-      {
-        throw std::runtime_error{"type_of_expression not yet implemented for constructor expressions"};
-      }
-
-      Type *compile_type_expression(basedparse::Array_type_expression const &expr)
-      {
-        auto const element = compile_type_expression(*expr.element_type);
-        if (expr.size == nullptr)
-        {
-          return _type_pool->unsized_array_type(element);
-        }
-        throw std::runtime_error{"sized array types not yet supported"};
-      }
-
-      Type *compile_type_expression(basedparse::Pointer_type_expression const &expr)
-      {
-        return _type_pool->pointer_type(compile_type_expression(*expr.pointee_type), expr.kw_mut.has_value());
-      }
-
       bool is_constant_expression(basedparse::Expression const &expr)
       {
         return std::visit(
@@ -608,11 +605,6 @@ namespace basedhlir
         return false;
       }
 
-      bool is_constant_expression(basedparse::Constructor_expression const &)
-      {
-        return false;
-      }
-
       void compile_top_level_let_statement(basedparse::Function_definition const &func_def)
       {
         auto const &fn_expr = func_def.function;
@@ -624,13 +616,13 @@ namespace basedhlir
         auto parameters = std::vector<Parameter>{};
         for (auto const &param : fn_expr.parameters)
         {
-          parameter_types.push_back(compile_type_expression(param.type_expression));
+          parameter_types.push_back(compile_type_expression(*param.type));
           parameters.push_back(Parameter{
             .name = param.name.text,
             .is_mutable = param.kw_mut.has_value(),
           });
         }
-        auto const return_type = compile_type_expression(fn_expr.return_type_specifier->type_expression);
+        auto const return_type = compile_type_expression(*fn_expr.return_type_specifier->type);
         auto const function_type = _type_pool->function_type(std::move(parameter_types), return_type);
         auto const function_handle = static_cast<std::uint64_t>(_translation_unit.functions.size());
         _translation_unit.functions.push_back(std::make_unique<Function>(Function{

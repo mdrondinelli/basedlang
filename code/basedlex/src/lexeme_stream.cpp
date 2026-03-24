@@ -65,13 +65,13 @@ namespace basedlex
               return Lexeme{
                 .text = "->",
                 .token = Token::arrow,
-                .location = token_location
+                .location = token_location,
               };
             }
             return Lexeme{
               .text = "-",
               .token = Token::minus,
-              .location = token_location
+              .location = token_location,
             };
           }
           switch (c)
@@ -134,13 +134,23 @@ namespace basedlex
               return Lexeme{
                 .text = "==",
                 .token = Token::eq_eq,
-                .location = token_location
+                .location = token_location,
+              };
+            }
+            if (_reader.peek() && *_reader.peek() == '>')
+            {
+              _reader.read();
+              ++_location.column;
+              return Lexeme{
+                .text = "=>",
+                .token = Token::fat_arrow,
+                .location = token_location,
               };
             }
             return Lexeme{
               .text = "=",
               .token = Token::eq,
-              .location = token_location
+              .location = token_location,
             };
           case '!':
             if (_reader.peek() && *_reader.peek() == '=')

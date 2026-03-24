@@ -17,6 +17,7 @@ namespace basedlex
     kw_return,
     kw_while,
     arrow, // ->
+    fat_arrow, // =>
     colon, // :
     plus, // +
     minus, // -

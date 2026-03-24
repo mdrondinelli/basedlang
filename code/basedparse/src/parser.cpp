@@ -330,7 +330,7 @@ namespace basedparse
     {
       fn.return_type_specifier = parse_return_type_specifier();
     }
-    fn.arrow = expect(basedlex::Token::arrow);
+    fn.arrow = expect(basedlex::Token::fat_arrow);
     fn.body = parse_expression();
     return fn;
   }

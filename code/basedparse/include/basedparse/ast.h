@@ -34,13 +34,13 @@ namespace basedparse
       std::optional<basedlex::Lexeme> kw_mut;
       basedlex::Lexeme name;
       basedlex::Lexeme colon;
-      Expression type;
+      std::unique_ptr<Expression> type;
     };
 
     struct Return_type_specifier
     {
       basedlex::Lexeme colon;
-      Expression type;
+      std::unique_ptr<Expression> type;
     };
 
     ~Fn_expression();

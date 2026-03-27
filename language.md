@@ -90,7 +90,7 @@ The compiler then evaluates this expression at compile time:
 Because types are values, the same expression machinery handles all type
 construction. The `[n]` operator accepts any compile-time constant integer
 expression as the size, so `[2 + 2]Int32` is a valid type meaning "array of 4
-`Int32`". No special constant-expression sublanguage is needed.
+`Int32`".
 
 The prefix operators that construct types are:
 

@@ -16,6 +16,8 @@ namespace basedparse
   public:
     explicit Parser(basedlex::Lexeme_stream_reader *reader) noexcept;
 
+    // TODO: Make this return a `Translation_unit` instead of
+    // `std::unique_ptr<..>`
     std::unique_ptr<Translation_unit> parse_translation_unit();
 
     Function_definition parse_function_definition();

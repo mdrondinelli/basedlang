@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -87,14 +86,6 @@ namespace basedhlir
     explicit Compilation_context(Type_pool *type_pool);
 
     Translation_unit compile(basedparse::Translation_unit const &ast);
-
-  private:
-    Type_pool *_type_pool;
-    Translation_unit _translation_unit;
-    Symbol_table _symbol_table;
-    std::vector<Diagnostic> _diagnostics;
-    std::unordered_map<basedparse::Operator, std::vector<std::unique_ptr<Unary_operator_overload>>> _unary_overloads;
-    std::unordered_map<basedparse::Operator, std::vector<std::unique_ptr<Binary_operator_overload>>> _binary_overloads;
 
     Function *get_function(std::uint64_t function_handle);
 
@@ -187,6 +178,14 @@ namespace basedhlir
     Constant_value evaluate_constant_expression(basedparse::If_expression const &);
 
     void compile_top_level_let_statement(basedparse::Function_definition const &func_def);
+
+  private:
+    Type_pool *_type_pool;
+    Translation_unit _translation_unit;
+    Symbol_table _symbol_table;
+    std::vector<Diagnostic> _diagnostics;
+    std::unordered_map<basedparse::Operator, std::vector<std::unique_ptr<Unary_operator_overload>>> _unary_overloads;
+    std::unordered_map<basedparse::Operator, std::vector<std::unique_ptr<Binary_operator_overload>>> _binary_overloads;
   };
 
   Translation_unit compile(basedparse::Translation_unit const &ast, Type_pool *type_pool);

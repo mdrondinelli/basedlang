@@ -77,7 +77,40 @@ TEST_CASE("evaluate_constant_expression - integer arithmetic")
   CHECK(std::get<int32_t>(value) == 1);
 }
 
-TEST_CASE("evaluate_constant_expression - integer lt")
+TEST_CASE("evaluate_constant_expression - unary plus")
+{
+  auto parse_fixture = Parse_fixture{"+42"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+  auto const value = compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == 42);
+}
+
+TEST_CASE("evaluate_constant_expression - unary minus")
+{
+  auto parse_fixture = Parse_fixture{"-42"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+  auto const value = compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == -42);
+}
+
+TEST_CASE("evaluate_constant_expression - nested arithmetic")
+{
+  auto parse_fixture = Parse_fixture{"(1 + 2) * 3"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+  auto const value = compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == 9);
+}
+
+TEST_CASE("evaluate_constant_expression - integer comparisons")
 {
   auto compile_fixture = Compile_fixture{};
   auto cases = std::vector<std::pair<std::unique_ptr<Parse_fixture>, bool>>{};
@@ -88,7 +121,25 @@ TEST_CASE("evaluate_constant_expression - integer lt")
   cases.emplace_back(make_parse_fixture("123 == 456"), false);
   cases.emplace_back(make_parse_fixture("123 != 456"), true);
   auto expressions = std::vector<std::unique_ptr<basedparse::Expression>>{};
-  for (auto const &[parse_fixture, expected] : cases) 
+  for (auto const &[parse_fixture, expected] : cases)
+  {
+    auto const &expr = *expressions.emplace_back(parse_fixture->parser.parse_expression());
+    REQUIRE(compile_fixture.compiler.is_constant_expression(expr));
+    auto const value = compile_fixture.compiler.evaluate_constant_expression(expr);
+    REQUIRE(std::holds_alternative<bool>(value));
+    CHECK(std::get<bool>(value) == expected);
+  }
+}
+
+TEST_CASE("evaluate_constant_expression - bool equality")
+{
+  auto compile_fixture = Compile_fixture{};
+  auto cases = std::vector<std::pair<std::unique_ptr<Parse_fixture>, bool>>{};
+  cases.emplace_back(make_parse_fixture("1 == 1 == (2 == 2)"), true);
+  cases.emplace_back(make_parse_fixture("1 == 1 != (1 == 2)"), true);
+  cases.emplace_back(make_parse_fixture("1 == 2 == (3 == 4)"), true);
+  auto expressions = std::vector<std::unique_ptr<basedparse::Expression>>{};
+  for (auto const &[parse_fixture, expected] : cases)
   {
     auto const &expr = *expressions.emplace_back(parse_fixture->parser.parse_expression());
     REQUIRE(compile_fixture.compiler.is_constant_expression(expr));

@@ -722,7 +722,25 @@ namespace basedhlir
       {
         return _type_pool->unsized_array_type(element);
       }
-      throw std::runtime_error{"sized array types not yet supported"};
+      if (!is_constant_expression(*prefix->size))
+      {
+        auto const span = basedparse::span_of(*prefix->size);
+        emit_error("array size must be a constant expression", span.start);
+      }
+      auto const size_type = type_of_expression(*prefix->size);
+      if (size_type != _type_pool->i32_type())
+      {
+        auto const span = basedparse::span_of(*prefix->size);
+        emit_error("array size must be an integer", span.start);
+      }
+      auto const size_value = evaluate_constant_expression(*prefix->size);
+      auto const size = std::get<std::int32_t>(size_value);
+      if (size <= 0)
+      {
+        auto const span = basedparse::span_of(*prefix->size);
+        emit_error("array size must be positive", span.start);
+      }
+      return _type_pool->sized_array_type(element, size);
     }
     auto const unary = std::get_if<basedparse::Unary_expression>(&expr.value);
     if (unary != nullptr)

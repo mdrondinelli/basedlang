@@ -174,6 +174,63 @@ TEST_CASE("evaluate_constant_expression - if without else is void")
   CHECK(std::holds_alternative<basedhlir::Void_value>(value));
 }
 
+TEST_CASE("compile_type_expression - sized array")
+{
+  auto parse_fixture = Parse_fixture{"[4]i32"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const type = compile_fixture.compiler.compile_type_expression(*expr);
+  auto const sa = std::get_if<basedhlir::Sized_array_type>(&type->data);
+  REQUIRE(sa != nullptr);
+  CHECK(sa->element == compile_fixture.types.i32_type());
+  CHECK(sa->size == 4);
+}
+
+TEST_CASE("compile_type_expression - sized array with constant expression size")
+{
+  auto parse_fixture = Parse_fixture{"[2 + 2]i32"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const type = compile_fixture.compiler.compile_type_expression(*expr);
+  auto const sa = std::get_if<basedhlir::Sized_array_type>(&type->data);
+  REQUIRE(sa != nullptr);
+  CHECK(sa->element == compile_fixture.types.i32_type());
+  CHECK(sa->size == 4);
+}
+
+TEST_CASE("compile_type_expression - sized array rejects zero size")
+{
+  auto parse_fixture = Parse_fixture{"[0]i32"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  CHECK_THROWS_AS(
+    compile_fixture.compiler.compile_type_expression(*expr),
+    basedhlir::Compilation_error
+  );
+}
+
+TEST_CASE("compile_type_expression - sized array rejects negative size")
+{
+  auto parse_fixture = Parse_fixture{"[-1]i32"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  CHECK_THROWS_AS(
+    compile_fixture.compiler.compile_type_expression(*expr),
+    basedhlir::Compilation_error
+  );
+}
+
+TEST_CASE("compile_type_expression - sized array rejects non-integer size")
+{
+  auto parse_fixture = Parse_fixture{"[1 < 2]i32"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  CHECK_THROWS_AS(
+    compile_fixture.compiler.compile_type_expression(*expr),
+    basedhlir::Compilation_error
+  );
+}
+
 TEST_CASE("evaluate_constant_expression - bool equality")
 {
   auto compile_fixture = Compile_fixture{};

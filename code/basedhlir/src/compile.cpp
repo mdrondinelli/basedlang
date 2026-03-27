@@ -212,6 +212,30 @@ namespace basedhlir
       Type *_bool;
     };
 
+    class Bool_equal final : public Binary_operator_overload
+    {
+    public:
+      explicit Bool_equal(Type_pool *type_pool) : _bool{type_pool->bool_type()} {}
+      Type *lhs_type() const override { return _bool; }
+      Type *rhs_type() const override { return _bool; }
+      Type *result_type() const override { return _bool; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<bool>(lhs) == std::get<bool>(rhs); }
+    private:
+      Type *_bool;
+    };
+
+    class Bool_not_equal final : public Binary_operator_overload
+    {
+    public:
+      explicit Bool_not_equal(Type_pool *type_pool) : _bool{type_pool->bool_type()} {}
+      Type *lhs_type() const override { return _bool; }
+      Type *rhs_type() const override { return _bool; }
+      Type *result_type() const override { return _bool; }
+      Constant_value evaluate(Constant_value lhs, Constant_value rhs) const override { return std::get<bool>(lhs) != std::get<bool>(rhs); }
+    private:
+      Type *_bool;
+    };
+
     class Compilation_context
     {
     public:
@@ -235,6 +259,8 @@ namespace basedhlir
         _binary_overloads[basedparse::Operator::less_eq].push_back(std::make_unique<I32_less_eq>(_type_pool));
         _binary_overloads[basedparse::Operator::greater].push_back(std::make_unique<I32_greater>(_type_pool));
         _binary_overloads[basedparse::Operator::greater_eq].push_back(std::make_unique<I32_greater_eq>(_type_pool));
+        _binary_overloads[basedparse::Operator::equal].push_back(std::make_unique<Bool_equal>(_type_pool));
+        _binary_overloads[basedparse::Operator::not_equal].push_back(std::make_unique<Bool_not_equal>(_type_pool));
       }
 
       Translation_unit compile(basedparse::Translation_unit const &ast)
@@ -339,11 +365,11 @@ namespace basedhlir
           }
           return ts->type;
         }
-        auto const idx = std::get_if<basedparse::Index_expression>(&expr.value);
-        if (idx != nullptr)
+        auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&expr.value);
+        if (prefix != nullptr)
         {
-          auto const element = compile_type_expression(*idx->operand);
-          if (idx->index == nullptr)
+          auto const element = compile_type_expression(*prefix->operand);
+          if (prefix->size == nullptr)
           {
             return _type_pool->unsized_array_type(element);
           }
@@ -352,11 +378,11 @@ namespace basedhlir
         auto const unary = std::get_if<basedparse::Unary_expression>(&expr.value);
         if (unary != nullptr)
         {
-          if (unary->op.token == basedlex::Token::ampersand)
+          if (unary->op.token == basedlex::Token::star)
           {
             return _type_pool->pointer_type(compile_type_expression(*unary->operand), false);
           }
-          if (unary->op.token == basedlex::Token::ampersand_mut)
+          if (unary->op.token == basedlex::Token::star_mut)
           {
             return _type_pool->pointer_type(compile_type_expression(*unary->operand), true);
           }
@@ -483,6 +509,11 @@ namespace basedhlir
         return ft->return_type;
       }
 
+      Type *type_of_expression(basedparse::Prefix_bracket_expression const &expr)
+      {
+        emit_error("prefix bracket expression is not a value", expr.lbracket);
+      }
+
       Type *type_of_expression(basedparse::Index_expression const &expr)
       {
         auto const operand_type = type_of_expression(*expr.operand);
@@ -586,6 +617,11 @@ namespace basedhlir
       }
 
       bool is_constant_expression(basedparse::Call_expression const &)
+      {
+        return false;
+      }
+
+      bool is_constant_expression(basedparse::Prefix_bracket_expression const &)
       {
         return false;
       }

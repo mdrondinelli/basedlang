@@ -15,13 +15,12 @@ namespace basedlex
     class Lex_error: public std::runtime_error
     {
     public:
-      Lex_error(int line, int column)
-          : std::runtime_error{"lex error"}, line{line}, column{column}
+      explicit Lex_error(Source_location location)
+          : std::runtime_error{"lex error"}, location{location}
       {
       }
 
-      int line;
-      int column;
+      Source_location location;
     };
 
     explicit Lexeme_stream(Char_stream *stream) noexcept;
@@ -30,8 +29,7 @@ namespace basedlex
 
   private:
     Char_stream_reader _reader;
-    int _line;
-    int _column;
+    Source_location _location;
   };
 
 } // namespace basedlex

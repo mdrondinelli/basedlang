@@ -194,6 +194,19 @@ namespace basedparse
         unary.operand = parse_expression(get_operator_precedence(*unary_op));
         return std::make_unique<Expression>(std::move(unary));
       }
+      if (_reader->peek().token == basedlex::Token::lbracket &&
+          1 <= current_precedence)
+      {
+        auto prefix = Prefix_bracket_expression{};
+        prefix.lbracket = expect(basedlex::Token::lbracket);
+        if (_reader->peek().token != basedlex::Token::rbracket)
+        {
+          prefix.size = parse_expression();
+        }
+        prefix.rbracket = expect(basedlex::Token::rbracket);
+        prefix.operand = parse_expression(1);
+        return std::make_unique<Expression>(std::move(prefix));
+      }
       auto primary = parse_primary_expression();
       for (;;)
       {
@@ -274,10 +287,6 @@ namespace basedparse
     {
       return std::make_unique<Expression>(parse_identifier_expression());
     }
-    if (next.token == basedlex::Token::kw_new)
-    {
-      return std::make_unique<Expression>(parse_constructor_expression());
-    }
     if (next.token == basedlex::Token::kw_if)
     {
       return std::make_unique<Expression>(parse_if_expression());
@@ -295,8 +304,9 @@ namespace basedparse
       return std::make_unique<Expression>(parse_fn_expression());
     }
     throw std::runtime_error{
-      "unexpected token '" + next.text + "' at " + std::to_string(next.line) +
-      ":" + std::to_string(next.column)
+      "unexpected token '" + next.text + "' at " +
+      std::to_string(next.location.line) + ":" +
+      std::to_string(next.location.column)
     };
   }
 
@@ -318,7 +328,7 @@ namespace basedparse
       }
       param.name = expect(basedlex::Token::identifier);
       param.colon = expect(basedlex::Token::colon);
-      param.type_expression = std::move(*parse_type_expression());
+      param.type = parse_expression();
       fn.parameters.push_back(std::move(param));
       if (_reader->peek().token != basedlex::Token::comma)
       {
@@ -331,7 +341,7 @@ namespace basedparse
     {
       fn.return_type_specifier = parse_return_type_specifier();
     }
-    fn.arrow = expect(basedlex::Token::arrow);
+    fn.arrow = expect(basedlex::Token::fat_arrow);
     fn.body = parse_expression();
     return fn;
   }
@@ -340,7 +350,7 @@ namespace basedparse
   {
     auto spec = Fn_expression::Return_type_specifier{};
     spec.colon = expect(basedlex::Token::colon);
-    spec.type_expression = std::move(*parse_type_expression());
+    spec.type = parse_expression();
     return spec;
   }
 
@@ -406,80 +416,6 @@ namespace basedparse
     return stmt;
   }
 
-  Constructor_expression Parser::parse_constructor_expression()
-  {
-    auto ctor = Constructor_expression{};
-    ctor.kw_new = expect(basedlex::Token::kw_new);
-    ctor.type = std::move(*parse_type_expression());
-    ctor.lbrace = expect(basedlex::Token::lbrace);
-    for (;;)
-    {
-      if (_reader->peek().token == basedlex::Token::rbrace)
-      {
-        break;
-      }
-      ctor.arguments.push_back(std::move(*parse_expression()));
-      if (_reader->peek().token != basedlex::Token::comma)
-      {
-        break;
-      }
-      ctor.argument_commas.push_back(expect(basedlex::Token::comma));
-    }
-    ctor.rbrace = expect(basedlex::Token::rbrace);
-    return ctor;
-  }
-
-  std::unique_ptr<Type_expression> Parser::parse_type_expression()
-  {
-    auto const &next = _reader->peek();
-    if (next.token != basedlex::Token::identifier)
-    {
-      throw std::runtime_error{
-        "expected type, got '" + next.text + "' at " +
-        std::to_string(next.line) + ":" + std::to_string(next.column)
-      };
-    }
-    auto type = std::make_unique<Type_expression>(Identifier_type_expression{
-      .identifier = expect(basedlex::Token::identifier)
-    });
-    for (;;)
-    {
-      if (_reader->peek().token == basedlex::Token::lbracket)
-      {
-        auto array = Array_type_expression{};
-        array.element_type = std::move(type);
-        array.lbracket = expect(basedlex::Token::lbracket);
-        if (_reader->peek().token != basedlex::Token::rbracket)
-        {
-          array.size = parse_expression();
-        }
-        array.rbracket = expect(basedlex::Token::rbracket);
-        type = std::make_unique<Type_expression>(std::move(array));
-      }
-      else if (_reader->peek().token == basedlex::Token::kw_mut &&
-               _reader->peek(1).token == basedlex::Token::star)
-      {
-        auto ptr = Pointer_type_expression{};
-        ptr.pointee_type = std::move(type);
-        ptr.kw_mut = expect(basedlex::Token::kw_mut);
-        ptr.star = expect(basedlex::Token::star);
-        type = std::make_unique<Type_expression>(std::move(ptr));
-      }
-      else if (_reader->peek().token == basedlex::Token::star)
-      {
-        auto ptr = Pointer_type_expression{};
-        ptr.pointee_type = std::move(type);
-        ptr.star = expect(basedlex::Token::star);
-        type = std::make_unique<Type_expression>(std::move(ptr));
-      }
-      else
-      {
-        break;
-      }
-    }
-    return type;
-  }
-
   basedlex::Lexeme Parser::expect(basedlex::Token token)
   {
     auto lexeme = _reader->read();
@@ -487,7 +423,8 @@ namespace basedparse
     {
       throw std::runtime_error{
         "unexpected token '" + lexeme.text + "' at " +
-        std::to_string(lexeme.line) + ":" + std::to_string(lexeme.column)
+        std::to_string(lexeme.location.line) + ":" +
+        std::to_string(lexeme.location.column)
       };
     }
     return lexeme;

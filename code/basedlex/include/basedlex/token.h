@@ -14,14 +14,15 @@ namespace basedlex
     kw_if,
     kw_let,
     kw_mut,
-    kw_new,
     kw_return,
     kw_while,
     arrow, // ->
+    fat_arrow, // =>
     colon, // :
     plus, // +
     minus, // -
     star, // *
+    star_mut, // *mut
     ampersand, // &
     ampersand_mut, // &mut
     slash, // /

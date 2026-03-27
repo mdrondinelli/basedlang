@@ -22,8 +22,8 @@ TEST_CASE("Lexeme_stream lexes first.based")
     auto const lexeme = stream.lex();
     CHECK(lexeme.text == text);
     CHECK(lexeme.token == token);
-    CHECK(lexeme.line == line);
-    CHECK(lexeme.column == column);
+    CHECK(lexeme.location.line == line);
+    CHECK(lexeme.location.column == column);
   };
   using enum basedlex::Token;
   expect("let", kw_let, 1, 1);
@@ -34,7 +34,7 @@ TEST_CASE("Lexeme_stream lexes first.based")
   expect(")", rparen, 1, 15);
   expect(":", colon, 1, 16);
   expect("i32", identifier, 1, 18);
-  expect("->", arrow, 1, 22);
+  expect("=>", fat_arrow, 1, 22);
   expect("{", lbrace, 1, 25);
   expect("return", kw_return, 2, 3);
   expect("0", int_literal, 2, 10);
@@ -102,8 +102,8 @@ TEST_CASE("Lexeme_stream lexes colon")
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == ":");
   CHECK(lexeme.token == basedlex::Token::colon);
-  CHECK(lexeme.line == 1);
-  CHECK(lexeme.column == 1);
+  CHECK(lexeme.location.line == 1);
+  CHECK(lexeme.location.column == 1);
 }
 
 TEST_CASE("Lexeme_stream lexes comma")
@@ -115,8 +115,8 @@ TEST_CASE("Lexeme_stream lexes comma")
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == ",");
   CHECK(lexeme.token == basedlex::Token::comma);
-  CHECK(lexeme.line == 1);
-  CHECK(lexeme.column == 1);
+  CHECK(lexeme.location.line == 1);
+  CHECK(lexeme.location.column == 1);
 }
 
 TEST_CASE("Lexeme_stream lexes brackets")
@@ -128,13 +128,13 @@ TEST_CASE("Lexeme_stream lexes brackets")
   auto const open = stream.lex();
   CHECK(open.text == "[");
   CHECK(open.token == basedlex::Token::lbracket);
-  CHECK(open.line == 1);
-  CHECK(open.column == 1);
+  CHECK(open.location.line == 1);
+  CHECK(open.location.column == 1);
   auto const close = stream.lex();
   CHECK(close.text == "]");
   CHECK(close.token == basedlex::Token::rbracket);
-  CHECK(close.line == 1);
-  CHECK(close.column == 2);
+  CHECK(close.location.line == 1);
+  CHECK(close.location.column == 2);
 }
 
 TEST_CASE("Lexeme_stream - &mut lexes as ampersand_mut")
@@ -146,8 +146,8 @@ TEST_CASE("Lexeme_stream - &mut lexes as ampersand_mut")
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "&mut");
   CHECK(lexeme.token == basedlex::Token::ampersand_mut);
-  CHECK(lexeme.line == 1);
-  CHECK(lexeme.column == 1);
+  CHECK(lexeme.location.line == 1);
+  CHECK(lexeme.location.column == 1);
   CHECK(stream.lex().token == basedlex::Token::eof);
 }
 
@@ -240,14 +240,14 @@ TEST_CASE("Lexeme_stream - &mut column tracking")
   auto chars = basedlex::Utf8_char_stream{&binary};
   auto stream = basedlex::Lexeme_stream{&chars};
   auto const x = stream.lex();
-  CHECK(x.column == 1);
+  CHECK(x.location.column == 1);
   auto const amp_mut = stream.lex();
   CHECK(amp_mut.text == "&mut");
   CHECK(amp_mut.token == basedlex::Token::ampersand_mut);
-  CHECK(amp_mut.column == 3);
+  CHECK(amp_mut.location.column == 3);
   auto const y = stream.lex();
   CHECK(y.text == "y");
-  CHECK(y.column == 8);
+  CHECK(y.location.column == 8);
 }
 
 TEST_CASE("Lexeme_stream - &mu lexes as ampersand + identifier")
@@ -262,4 +262,89 @@ TEST_CASE("Lexeme_stream - &mu lexes as ampersand + identifier")
   auto const id = stream.lex();
   CHECK(id.text == "mu");
   CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - *mut lexes as star_mut")
+{
+  auto ss = std::istringstream{"*mut"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "*mut");
+  CHECK(lexeme.token == basedlex::Token::star_mut);
+  CHECK(lexeme.location.line == 1);
+  CHECK(lexeme.location.column == 1);
+  CHECK(stream.lex().token == basedlex::Token::eof);
+}
+
+TEST_CASE("Lexeme_stream - *mut with space after lexes as star_mut")
+{
+  auto ss = std::istringstream{"*mut x"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const star_mut = stream.lex();
+  CHECK(star_mut.text == "*mut");
+  CHECK(star_mut.token == basedlex::Token::star_mut);
+  auto const id = stream.lex();
+  CHECK(id.text == "x");
+  CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - *mutable lexes as star + identifier")
+{
+  auto ss = std::istringstream{"*mutable"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const star = stream.lex();
+  CHECK(star.text == "*");
+  CHECK(star.token == basedlex::Token::star);
+  auto const id = stream.lex();
+  CHECK(id.text == "mutable");
+  CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - *mut_ lexes as star + identifier")
+{
+  auto ss = std::istringstream{"*mut_"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const star = stream.lex();
+  CHECK(star.text == "*");
+  CHECK(star.token == basedlex::Token::star);
+  auto const id = stream.lex();
+  CHECK(id.text == "mut_");
+  CHECK(id.token == basedlex::Token::identifier);
+}
+
+TEST_CASE("Lexeme_stream - * alone lexes as star")
+{
+  auto ss = std::istringstream{"*"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "*");
+  CHECK(lexeme.token == basedlex::Token::star);
+  CHECK(stream.lex().token == basedlex::Token::eof);
+}
+
+TEST_CASE("Lexeme_stream - *mut column tracking")
+{
+  auto ss = std::istringstream{"x *mut y"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const x = stream.lex();
+  CHECK(x.location.column == 1);
+  auto const star_mut = stream.lex();
+  CHECK(star_mut.text == "*mut");
+  CHECK(star_mut.token == basedlex::Token::star_mut);
+  CHECK(star_mut.location.column == 3);
+  auto const y = stream.lex();
+  CHECK(y.text == "y");
+  CHECK(y.location.column == 8);
 }

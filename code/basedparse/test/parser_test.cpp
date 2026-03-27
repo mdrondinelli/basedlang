@@ -65,12 +65,12 @@ TEST_CASE("Parser - first.based produces a Function_definition")
   CHECK(fn_def.function.rparen.text == ")");
   REQUIRE(fn_def.function.return_type_specifier.has_value());
   CHECK(fn_def.function.return_type_specifier->colon.text == ":");
-  auto const return_type = std::get_if<basedparse::Identifier_type_expression>(
-    &fn_def.function.return_type_specifier->type_expression.value
+  auto const return_type = std::get_if<basedparse::Identifier_expression>(
+    &fn_def.function.return_type_specifier->type->value
   );
   REQUIRE(return_type != nullptr);
   CHECK(return_type->identifier.text == "i32");
-  CHECK(fn_def.function.arrow.text == "->");
+  CHECK(fn_def.function.arrow.text == "=>");
   REQUIRE(fn_def.function.body != nullptr);
   auto const body =
     std::get_if<basedparse::Block_expression>(&fn_def.function.body->value);
@@ -105,18 +105,18 @@ TEST_CASE("Parser - parameters.based parses successfully")
   CHECK(id_def.name.text == "id");
   CHECK(first_def.name.text == "first");
   CHECK(main_def.name.text == "main");
-  // id: fn(x: i32): i32 -> { return x; }
+  // id: fn(x: i32): i32 => { return x; }
   REQUIRE(id_def.function.parameters.size() == 1);
   CHECK(id_def.function.parameters[0].name.text == "x");
   auto const id_param_type =
-    std::get_if<basedparse::Identifier_type_expression>(
-      &id_def.function.parameters[0].type_expression.value
+    std::get_if<basedparse::Identifier_expression>(
+      &id_def.function.parameters[0].type->value
     );
   REQUIRE(id_param_type != nullptr);
   CHECK(id_param_type->identifier.text == "i32");
   REQUIRE(id_def.function.return_type_specifier.has_value());
-  auto const id_ret_type = std::get_if<basedparse::Identifier_type_expression>(
-    &id_def.function.return_type_specifier->type_expression.value
+  auto const id_ret_type = std::get_if<basedparse::Identifier_expression>(
+    &id_def.function.return_type_specifier->type->value
   );
   REQUIRE(id_ret_type != nullptr);
   CHECK(id_ret_type->identifier.text == "i32");
@@ -131,26 +131,26 @@ TEST_CASE("Parser - parameters.based parses successfully")
     std::get_if<basedparse::Identifier_expression>(&id_ret->value.value);
   REQUIRE(id_ret_val != nullptr);
   CHECK(id_ret_val->identifier.text == "x");
-  // first: fn(x: i32, y: i32): i32 -> { return x; }
+  // first: fn(x: i32, y: i32): i32 => { return x; }
   REQUIRE(first_def.function.parameters.size() == 2);
   CHECK(first_def.function.parameters[0].name.text == "x");
   auto const first_param0_type =
-    std::get_if<basedparse::Identifier_type_expression>(
-      &first_def.function.parameters[0].type_expression.value
+    std::get_if<basedparse::Identifier_expression>(
+      &first_def.function.parameters[0].type->value
     );
   REQUIRE(first_param0_type != nullptr);
   CHECK(first_param0_type->identifier.text == "i32");
   CHECK(first_def.function.parameters[1].name.text == "y");
   auto const first_param1_type =
-    std::get_if<basedparse::Identifier_type_expression>(
-      &first_def.function.parameters[1].type_expression.value
+    std::get_if<basedparse::Identifier_expression>(
+      &first_def.function.parameters[1].type->value
     );
   REQUIRE(first_param1_type != nullptr);
   CHECK(first_param1_type->identifier.text == "i32");
   REQUIRE(first_def.function.return_type_specifier.has_value());
   auto const first_ret_type =
-    std::get_if<basedparse::Identifier_type_expression>(
-      &first_def.function.return_type_specifier->type_expression.value
+    std::get_if<basedparse::Identifier_expression>(
+      &first_def.function.return_type_specifier->type->value
     );
   REQUIRE(first_ret_type != nullptr);
   CHECK(first_ret_type->identifier.text == "i32");
@@ -165,11 +165,11 @@ TEST_CASE("Parser - parameters.based parses successfully")
     std::get_if<basedparse::Identifier_expression>(&first_ret->value.value);
   REQUIRE(first_ret_val != nullptr);
   CHECK(first_ret_val->identifier.text == "x");
-  // main: fn(): i32 -> { return first(id(42), 0); }
+  // main: fn(): i32 => { return first(id(42), 0); }
   REQUIRE(main_def.function.return_type_specifier.has_value());
   auto const main_ret_type =
-    std::get_if<basedparse::Identifier_type_expression>(
-      &main_def.function.return_type_specifier->type_expression.value
+    std::get_if<basedparse::Identifier_expression>(
+      &main_def.function.return_type_specifier->type->value
     );
   REQUIRE(main_ret_type != nullptr);
   CHECK(main_ret_type->identifier.text == "i32");
@@ -224,7 +224,7 @@ TEST_CASE("Parser - call_expression.based parses successfully")
   auto const &main = unit->function_definitions[1];
   CHECK(foo.name.text == "foo");
   CHECK(main.name.text == "main");
-  // foo returns (fn(): i32 -> { return 0; })() — a call with a paren-wrapped
+  // foo returns (fn(): i32 => { return 0; })() — a call with a paren-wrapped
   // fn expression callee
   auto const foo_body =
     std::get_if<basedparse::Block_expression>(&foo.function.body->value);
@@ -266,24 +266,24 @@ TEST_CASE("Parser - call_expression.based parses successfully")
 TEST_CASE("Parser - accepts valid code")
 {
   CHECK(parses(""));
-  CHECK(parses("let main = fn(): i32 -> { return 0; };"));
-  CHECK(parses("let main = fn(): i32 -> { };"));
+  CHECK(parses("let main = fn(): i32 => { return 0; };"));
+  CHECK(parses("let main = fn(): i32 => { };"));
   CHECK(parses(
-    "let main = fn(): i32 -> { return 0; };\n"
-    "let other = fn(): i32 -> { return 1; };"
+    "let main = fn(): i32 => { return 0; };\n"
+    "let other = fn(): i32 => { return 1; };"
   ));
-  CHECK(parses("let main = fn(): void -> { x; };"));
-  CHECK(parses("let main = fn(): void -> { let x = 42; };"));
-  CHECK(parses("let main = fn(): void -> { (x); };"));
-  CHECK(parses("let main = fn(): void -> { ((42)); };"));
-  CHECK(parses("let f = fn(x: i32): i32 -> { return x; };"));
-  CHECK(parses("let f = fn(x: i32, y: i32): i32 -> { return x; };"));
-  CHECK(parses("let f = fn(x: i32,): i32 -> { return x; };"));
-  CHECK(parses("let f = fn(mut x: i32): void -> { };"));
-  CHECK(parses("let f = fn(x: i32, mut y: i32): void -> { };"));
-  CHECK(parses("let main = fn(): void -> { f(1); };"));
-  CHECK(parses("let main = fn(): void -> { f(1, 2); };"));
-  CHECK(parses("let main = fn(): void -> { f(1,); };"));
+  CHECK(parses("let main = fn(): void => { x; };"));
+  CHECK(parses("let main = fn(): void => { let x = 42; };"));
+  CHECK(parses("let main = fn(): void => { (x); };"));
+  CHECK(parses("let main = fn(): void => { ((42)); };"));
+  CHECK(parses("let f = fn(x: i32): i32 => { return x; };"));
+  CHECK(parses("let f = fn(x: i32, y: i32): i32 => { return x; };"));
+  CHECK(parses("let f = fn(x: i32,): i32 => { return x; };"));
+  CHECK(parses("let f = fn(mut x: i32): void => { };"));
+  CHECK(parses("let f = fn(x: i32, mut y: i32): void => { };"));
+  CHECK(parses("let main = fn(): void => { f(1); };"));
+  CHECK(parses("let main = fn(): void => { f(1, 2); };"));
+  CHECK(parses("let main = fn(): void => { f(1,); };"));
 }
 
 TEST_CASE("Parser - rejects invalid code")
@@ -293,35 +293,35 @@ TEST_CASE("Parser - rejects invalid code")
   CHECK_FALSE(parses("let x ="));
   CHECK_FALSE(parses("let x = 42;"));
   CHECK_FALSE(parses("let x = fn()"));
-  CHECK_FALSE(parses("let x = fn() ->"));
-  CHECK_FALSE(parses("let x = fn() -> i32"));
-  CHECK_FALSE(parses("let x = fn(): i32 -> {"));
-  CHECK_FALSE(parses("let x = fn(): i32 -> { }"));
+  CHECK_FALSE(parses("let x = fn() =>"));
+  CHECK_FALSE(parses("let x = fn() => i32"));
+  CHECK_FALSE(parses("let x = fn(): i32 => {"));
+  CHECK_FALSE(parses("let x = fn(): i32 => { }"));
   CHECK_FALSE(parses("return 0;"));
   CHECK_FALSE(parses("{"));
   CHECK_FALSE(parses("42"));
-  CHECK_FALSE(parses("let = fn(): i32 -> { };"));
-  CHECK_FALSE(parses("let x = fn(): i32 -> { return; };"));
-  CHECK_FALSE(parses("let x = fn(): i32 -> { return (; };"));
-  CHECK_FALSE(parses("let x = fn(): i32 -> { return (); };"));
+  CHECK_FALSE(parses("let = fn(): i32 => { };"));
+  CHECK_FALSE(parses("let x = fn(): i32 => { return; };"));
+  CHECK_FALSE(parses("let x = fn(): i32 => { return (; };"));
+  CHECK_FALSE(parses("let x = fn(): i32 => { return (); };"));
   // malformed parameter declarations
-  CHECK_FALSE(parses("let f = fn(x): i32 -> { };"));
-  CHECK_FALSE(parses("let f = fn(x:): i32 -> { };"));
-  CHECK_FALSE(parses("let f = fn(x: i32 y: i32): i32 -> { };"));
+  CHECK_FALSE(parses("let f = fn(x): i32 => { };"));
+  CHECK_FALSE(parses("let f = fn(x:): i32 => { };"));
+  CHECK_FALSE(parses("let f = fn(x: i32 y: i32): i32 => { };"));
   // malformed argument lists
-  CHECK_FALSE(parses("let main = fn(): void -> { f(,); };"));
-  CHECK_FALSE(parses("let main = fn(): void -> { f(1 2); };"));
+  CHECK_FALSE(parses("let main = fn(): void => { f(,); };"));
+  CHECK_FALSE(parses("let main = fn(): void => { f(1 2); };"));
   // malformed expressions: missing operands
-  CHECK_FALSE(parses("let x = fn(): i32 -> { return 1 +; };"));
-  CHECK_FALSE(parses("let x = fn(): i32 -> { return 1 *; };"));
-  CHECK(parses("let x = fn(): i32 -> { return * 1; };"));
-  CHECK(parses("let x = fn(): i32 -> { return 1 + * 2; };"));
-  CHECK_FALSE(parses("let x = fn(): i32 -> { return +; };"));
-  CHECK_FALSE(parses("let x = fn(): i32 -> { return -; };"));
+  CHECK_FALSE(parses("let x = fn(): i32 => { return 1 +; };"));
+  CHECK_FALSE(parses("let x = fn(): i32 => { return 1 *; };"));
+  CHECK(parses("let x = fn(): i32 => { return * 1; };"));
+  CHECK(parses("let x = fn(): i32 => { return 1 + * 2; };"));
+  CHECK_FALSE(parses("let x = fn(): i32 => { return +; };"));
+  CHECK_FALSE(parses("let x = fn(): i32 => { return -; };"));
   // malformed array types
-  CHECK_FALSE(parses("let f = fn(x: [4]): void -> { };"));
-  CHECK_FALSE(parses("let f = fn(x: i32[4): void -> { };"));
-  CHECK_FALSE(parses("let f = fn(x: [4]): void -> { };"));
+  CHECK_FALSE(parses("let f = fn(x: [4]): void => { };"));
+  CHECK_FALSE(parses("let f = fn(x: i32[4): void => { };"));
+  CHECK_FALSE(parses("let f = fn(x: [4]): void => { };"));
 }
 
 TEST_CASE("parse_translation_unit - empty")
@@ -333,8 +333,8 @@ TEST_CASE("parse_translation_unit - empty")
 
 TEST_CASE("parse_translation_unit - multiple functions")
 {
-  auto fixture = Parse_fixture{"let a = fn(): i32 -> { return 1; };\n"
-                               "let b = fn(): i32 -> { return 2; };"};
+  auto fixture = Parse_fixture{"let a = fn(): i32 => { return 1; };\n"
+                               "let b = fn(): i32 => { return 2; };"};
   auto const unit = fixture.parser.parse_translation_unit();
   REQUIRE(unit->function_definitions.size() == 2);
   CHECK(unit->function_definitions[0].name.text == "a");
@@ -343,7 +343,7 @@ TEST_CASE("parse_translation_unit - multiple functions")
 
 TEST_CASE("parse_function_definition")
 {
-  auto fixture = Parse_fixture{"let main = fn(): i32 -> { return 0; };"};
+  auto fixture = Parse_fixture{"let main = fn(): i32 => { return 0; };"};
   auto const fn_def = fixture.parser.parse_function_definition();
   CHECK(fn_def.kw_let.text == "let");
   CHECK(fn_def.name.text == "main");
@@ -493,17 +493,17 @@ TEST_CASE("parse_expression - nested blocks")
 
 TEST_CASE("parse_expression - block as expression statement")
 {
-  CHECK(parses("let f = fn() -> { { 42 }; };"));
+  CHECK(parses("let f = fn() => { { 42 }; };"));
 }
 
 TEST_CASE("parse_expression - block as initializer")
 {
-  CHECK(parses("let f = fn() -> { let x = { let a = 1; a + 1 }; };"));
+  CHECK(parses("let f = fn() => { let x = { let a = 1; a + 1 }; };"));
 }
 
 TEST_CASE("parse_block_expression - fn body parses tail syntactically")
 {
-  auto fixture = Parse_fixture{"fn(): i32 -> { 42 }"};
+  auto fixture = Parse_fixture{"fn(): i32 => { 42 }"};
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.body != nullptr);
   auto const body = std::get_if<basedparse::Block_expression>(&fn.body->value);
@@ -518,19 +518,19 @@ TEST_CASE("parse_block_expression - fn body parses tail syntactically")
 
 TEST_CASE("parse_fn_expression")
 {
-  auto fixture = Parse_fixture{"fn(): i32 -> { return 0; }"};
+  auto fixture = Parse_fixture{"fn(): i32 => { return 0; }"};
   auto const fn = fixture.parser.parse_fn_expression();
   CHECK(fn.kw_fn.text == "fn");
   CHECK(fn.lparen.text == "(");
   CHECK(fn.rparen.text == ")");
   REQUIRE(fn.return_type_specifier.has_value());
   CHECK(fn.return_type_specifier->colon.text == ":");
-  auto const ret_type = std::get_if<basedparse::Identifier_type_expression>(
-    &fn.return_type_specifier->type_expression.value
+  auto const ret_type = std::get_if<basedparse::Identifier_expression>(
+    &fn.return_type_specifier->type->value
   );
   REQUIRE(ret_type != nullptr);
   CHECK(ret_type->identifier.text == "i32");
-  CHECK(fn.arrow.text == "->");
+  CHECK(fn.arrow.text == "=>");
   REQUIRE(fn.body != nullptr);
   auto const body = std::get_if<basedparse::Block_expression>(&fn.body->value);
   REQUIRE(body != nullptr);
@@ -539,7 +539,7 @@ TEST_CASE("parse_fn_expression")
 
 TEST_CASE("parse_fn_expression - mut parameter")
 {
-  auto fixture = Parse_fixture{"fn(mut x: i32) -> { }"};
+  auto fixture = Parse_fixture{"fn(mut x: i32) => { }"};
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 1);
   REQUIRE(fn.parameters[0].kw_mut.has_value());
@@ -549,7 +549,7 @@ TEST_CASE("parse_fn_expression - mut parameter")
 
 TEST_CASE("parse_fn_expression - mixed mut and non-mut parameters")
 {
-  auto fixture = Parse_fixture{"fn(x: i32, mut y: i32) -> { }"};
+  auto fixture = Parse_fixture{"fn(x: i32, mut y: i32) => { }"};
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 2);
   CHECK_FALSE(fn.parameters[0].kw_mut.has_value());
@@ -560,7 +560,7 @@ TEST_CASE("parse_fn_expression - mixed mut and non-mut parameters")
 
 TEST_CASE("parse_fn_expression - no return type")
 {
-  auto fixture = Parse_fixture{"fn() -> { }"};
+  auto fixture = Parse_fixture{"fn() => { }"};
   auto const fn = fixture.parser.parse_fn_expression();
   CHECK_FALSE(fn.return_type_specifier.has_value());
   REQUIRE(fn.body != nullptr);
@@ -583,15 +583,6 @@ TEST_CASE("parse_identifier_expression")
   CHECK(expr.identifier.text == "foo");
 }
 
-TEST_CASE("parse_type_expression - identifier")
-{
-  auto fixture = Parse_fixture{"i32"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const expr =
-    std::get_if<basedparse::Identifier_type_expression>(&type->value);
-  REQUIRE(expr != nullptr);
-  CHECK(expr->identifier.text == "i32");
-}
 
 TEST_CASE("parse_paren_expression")
 {
@@ -641,7 +632,7 @@ TEST_CASE("parse_primary_expression - dispatches to identifier")
 
 TEST_CASE("parse_primary_expression - dispatches to fn")
 {
-  auto fixture = Parse_fixture{"fn(): i32 -> { }"};
+  auto fixture = Parse_fixture{"fn(): i32 => { }"};
   auto const expr = fixture.parser.parse_primary_expression();
   CHECK(std::get_if<basedparse::Fn_expression>(&expr->value) != nullptr);
 }
@@ -770,14 +761,6 @@ TEST_CASE("parse_expression - call binds tighter than binary op")
   CHECK(std::get_if<basedparse::Call_expression>(&add->left->value) != nullptr);
 }
 
-TEST_CASE("parse_type_expression - dispatches to identifier type")
-{
-  auto fixture = Parse_fixture{"void"};
-  auto const expr = fixture.parser.parse_type_expression();
-  CHECK(
-    std::get_if<basedparse::Identifier_type_expression>(&expr->value) != nullptr
-  );
-}
 
 TEST_CASE("parse_statement - dispatches to let")
 {
@@ -813,161 +796,27 @@ TEST_CASE("parse_expression - unary minus: call binds tighter")
   );
 }
 
-TEST_CASE("parse_type_expression - array")
-{
-  auto fixture = Parse_fixture{"i32[4]"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const array =
-    std::get_if<basedparse::Array_type_expression>(&type->value);
-  REQUIRE(array != nullptr);
-  auto const elem = std::get_if<basedparse::Identifier_type_expression>(
-    &array->element_type->value
-  );
-  REQUIRE(elem != nullptr);
-  CHECK(elem->identifier.text == "i32");
-  auto const size =
-    std::get_if<basedparse::Int_literal_expression>(&array->size->value);
-  REQUIRE(size != nullptr);
-  CHECK(size->literal.text == "4");
-}
-
-TEST_CASE("parse_type_expression - array with expression size")
-{
-  auto fixture = Parse_fixture{"i32[n]"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const array =
-    std::get_if<basedparse::Array_type_expression>(&type->value);
-  REQUIRE(array != nullptr);
-  auto const size =
-    std::get_if<basedparse::Identifier_expression>(&array->size->value);
-  REQUIRE(size != nullptr);
-  CHECK(size->identifier.text == "n");
-}
-
-TEST_CASE("parse_type_expression - nested array")
-{
-  // i32[4][2] parses as (i32[4])[2]
-  auto fixture = Parse_fixture{"i32[4][2]"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const outer =
-    std::get_if<basedparse::Array_type_expression>(&type->value);
-  REQUIRE(outer != nullptr);
-  auto const outer_size =
-    std::get_if<basedparse::Int_literal_expression>(&outer->size->value);
-  REQUIRE(outer_size != nullptr);
-  CHECK(outer_size->literal.text == "2");
-  auto const inner =
-    std::get_if<basedparse::Array_type_expression>(&outer->element_type->value);
-  REQUIRE(inner != nullptr);
-  auto const inner_size =
-    std::get_if<basedparse::Int_literal_expression>(&inner->size->value);
-  REQUIRE(inner_size != nullptr);
-  CHECK(inner_size->literal.text == "4");
-  auto const elem = std::get_if<basedparse::Identifier_type_expression>(
-    &inner->element_type->value
-  );
-  REQUIRE(elem != nullptr);
-  CHECK(elem->identifier.text == "i32");
-}
-
 TEST_CASE("parse_fn_expression - array parameter")
 {
-  auto fixture = Parse_fixture{"fn(buf: i32[4]) -> { }"};
+  auto fixture = Parse_fixture{"fn(buf: i32[4]) => { }"};
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 1);
   CHECK(fn.parameters[0].name.text == "buf");
-  auto const param_type = std::get_if<basedparse::Array_type_expression>(
-    &fn.parameters[0].type_expression.value
+  auto const param_type = std::get_if<basedparse::Index_expression>(
+    &fn.parameters[0].type->value
   );
   REQUIRE(param_type != nullptr);
-  auto const elem = std::get_if<basedparse::Identifier_type_expression>(
-    &param_type->element_type->value
+  auto const elem = std::get_if<basedparse::Identifier_expression>(
+    &param_type->operand->value
   );
   REQUIRE(elem != nullptr);
   CHECK(elem->identifier.text == "i32");
   auto const size =
-    std::get_if<basedparse::Int_literal_expression>(&param_type->size->value);
+    std::get_if<basedparse::Int_literal_expression>(&param_type->index->value);
   REQUIRE(size != nullptr);
   CHECK(size->literal.text == "4");
 }
 
-TEST_CASE("parse_expression - constructor: empty")
-{
-  auto fixture = Parse_fixture{"new Foo{}"};
-  auto const expr = fixture.parser.parse_expression();
-  auto const ctor =
-    std::get_if<basedparse::Constructor_expression>(&expr->value);
-  REQUIRE(ctor != nullptr);
-  CHECK(ctor->kw_new.text == "new");
-  auto const type =
-    std::get_if<basedparse::Identifier_type_expression>(&ctor->type.value);
-  REQUIRE(type != nullptr);
-  CHECK(type->identifier.text == "Foo");
-  CHECK(ctor->arguments.empty());
-}
-
-TEST_CASE("parse_expression - constructor: multiple arguments")
-{
-  auto fixture = Parse_fixture{"new Foo{1, x, 2 + 3}"};
-  auto const expr = fixture.parser.parse_expression();
-  auto const ctor =
-    std::get_if<basedparse::Constructor_expression>(&expr->value);
-  REQUIRE(ctor != nullptr);
-  REQUIRE(ctor->arguments.size() == 3);
-  auto const first =
-    std::get_if<basedparse::Int_literal_expression>(&ctor->arguments[0].value);
-  REQUIRE(first != nullptr);
-  CHECK(first->literal.text == "1");
-  auto const second =
-    std::get_if<basedparse::Identifier_expression>(&ctor->arguments[1].value);
-  REQUIRE(second != nullptr);
-  CHECK(second->identifier.text == "x");
-  CHECK(
-    std::get_if<basedparse::Binary_expression>(&ctor->arguments[2].value) !=
-    nullptr
-  );
-}
-
-TEST_CASE("parse_expression - constructor: array type")
-{
-  auto fixture = Parse_fixture{"new i32[4] { 1, 2, 3, 4 }"};
-  auto const expr = fixture.parser.parse_expression();
-  auto const ctor =
-    std::get_if<basedparse::Constructor_expression>(&expr->value);
-  REQUIRE(ctor != nullptr);
-  auto const type =
-    std::get_if<basedparse::Array_type_expression>(&ctor->type.value);
-  REQUIRE(type != nullptr);
-  auto const elem = std::get_if<basedparse::Identifier_type_expression>(
-    &type->element_type->value
-  );
-  REQUIRE(elem != nullptr);
-  CHECK(elem->identifier.text == "i32");
-  REQUIRE(ctor->arguments.size() == 4);
-}
-
-TEST_CASE("parse_expression - constructor: in full program")
-{
-  CHECK(parses("let f = fn() -> { let x = new Foo{1, 2}; };"));
-  CHECK(parses("let f = fn() -> { let x = new i32[3] { 1, 2, 3 }; };"));
-}
-
-TEST_CASE("parse_expression - constructor: trailing comma")
-{
-  auto fixture = Parse_fixture{"new Foo{1, 2,}"};
-  auto const expr = fixture.parser.parse_expression();
-  auto const ctor =
-    std::get_if<basedparse::Constructor_expression>(&expr->value);
-  REQUIRE(ctor != nullptr);
-  REQUIRE(ctor->arguments.size() == 2);
-  CHECK(ctor->argument_commas.size() == 2);
-}
-
-TEST_CASE("parse_expression - constructor: rejects")
-{
-  CHECK_FALSE(parses("let x = fn() -> { new Foo{;}; };"));
-  CHECK_FALSE(parses("let x = fn() -> { new Foo{1 2}; };"));
-}
 
 TEST_CASE("parse_expression - index: simple")
 {
@@ -1050,17 +899,16 @@ TEST_CASE("parse_expression - index: call then index")
 
 TEST_CASE("parse_expression - index: in full program")
 {
-  CHECK(parses("let f = fn(buf: i32[4]): i32 -> { return buf[0]; };"));
-  CHECK(parses("let f = fn() -> { arr[0]; };"));
-  CHECK(parses("let f = fn() -> { arr[i + 1]; };"));
-  CHECK(parses("let f = fn() -> { f()[0]; };"));
-  CHECK(parses("let f = fn() -> { arr[0][1]; };"));
+  CHECK(parses("let f = fn(buf: i32[4]): i32 => { return buf[0]; };"));
+  CHECK(parses("let f = fn() => { arr[0]; };"));
+  CHECK(parses("let f = fn() => { arr[i + 1]; };"));
+  CHECK(parses("let f = fn() => { f()[0]; };"));
+  CHECK(parses("let f = fn() => { arr[0][1]; };"));
 }
 
 TEST_CASE("parse_expression - index: rejects")
 {
-  CHECK_FALSE(parses("let f = fn() -> { arr[]; };"));
-  CHECK_FALSE(parses("let f = fn() -> { arr[0; };"));
+  CHECK_FALSE(parses("let f = fn() => { arr[0; };"));
 }
 
 TEST_CASE("parse_expression - dereference")
@@ -1109,8 +957,8 @@ TEST_CASE("parse_expression - dereference: in binary expression")
 
 TEST_CASE("parse_expression - dereference: in full program")
 {
-  CHECK(parses("let f = fn(p: i32*): i32 -> { return *p; };"));
-  CHECK(parses("let f = fn(p: i32[]*): i32 -> { return *p[0]; };"));
+  CHECK(parses("let f = fn(p: *i32): i32 => { return *p; };"));
+  CHECK(parses("let f = fn(p: *[]i32): i32 => { return *p[0]; };"));
 }
 
 TEST_CASE("parse_expression - address-of")
@@ -1159,7 +1007,7 @@ TEST_CASE("parse_expression - address-of: in binary expression")
 
 TEST_CASE("parse_expression - address-of: in full program")
 {
-  CHECK(parses("let f = fn(x: i32): i32* -> { return &x; };"));
+  CHECK(parses("let f = fn(x: i32): &i32 => { return &x; };"));
 }
 
 TEST_CASE("parse_expression - if: simple")
@@ -1211,29 +1059,29 @@ TEST_CASE("parse_expression - else if chain")
 
 TEST_CASE("parse_expression - if as expression statement")
 {
-  CHECK(parses("let f = fn() -> { if x { 1; }; };"));
+  CHECK(parses("let f = fn() => { if x { 1; }; };"));
 }
 
 TEST_CASE("parse_expression - if else as initializer")
 {
-  CHECK(parses("let f = fn() -> { let x = if cond { 1 } else { 0 }; };"));
+  CHECK(parses("let f = fn() => { let x = if cond { 1 } else { 0 }; };"));
 }
 
 TEST_CASE("parse_expression - if in full program")
 {
   CHECK(parses(
-    "let f = fn(x: i32): i32 -> {"
+    "let f = fn(x: i32): i32 => {"
     "  return if x { 1 } else { 0 };"
     "};"
   ));
   CHECK(parses(
-    "let f = fn(x: i32): i32 -> {"
+    "let f = fn(x: i32): i32 => {"
     "  if x { return 1; };"
     "  return 0;"
     "};"
   ));
   CHECK(parses(
-    "let f = fn(x: i32): i32 -> {"
+    "let f = fn(x: i32): i32 => {"
     "  return if x { 1 } else if y { 2 } else { 3 };"
     "};"
   ));
@@ -1299,142 +1147,12 @@ TEST_CASE("parse_expression - comparison before equality")
 TEST_CASE("parse_expression - comparison in full program")
 {
   CHECK(
-    parses("let f = fn(x: i32): i32 -> { return if x < 10 { 0 } else { 1 }; };")
+    parses("let f = fn(x: i32): i32 => { return if x < 10 { 0 } else { 1 }; };")
   );
-  CHECK(parses("let f = fn(a: i32, b: i32): i32 -> { return a == b; };"));
-  CHECK(parses("let f = fn(a: i32, b: i32): i32 -> { return a != b; };"));
+  CHECK(parses("let f = fn(a: i32, b: i32): i32 => { return a == b; };"));
+  CHECK(parses("let f = fn(a: i32, b: i32): i32 => { return a != b; };"));
 }
 
-TEST_CASE("parse_type_expression - pointer")
-{
-  auto fixture = Parse_fixture{"i32*"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const ptr =
-    std::get_if<basedparse::Pointer_type_expression>(&type->value);
-  REQUIRE(ptr != nullptr);
-  CHECK_FALSE(ptr->kw_mut.has_value());
-  CHECK(ptr->star.text == "*");
-  auto const pointee = std::get_if<basedparse::Identifier_type_expression>(
-    &ptr->pointee_type->value
-  );
-  REQUIRE(pointee != nullptr);
-  CHECK(pointee->identifier.text == "i32");
-}
-
-TEST_CASE("parse_type_expression - mutable pointer")
-{
-  auto fixture = Parse_fixture{"i32 mut*"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const ptr =
-    std::get_if<basedparse::Pointer_type_expression>(&type->value);
-  REQUIRE(ptr != nullptr);
-  REQUIRE(ptr->kw_mut.has_value());
-  CHECK(ptr->kw_mut->text == "mut");
-  CHECK(ptr->star.text == "*");
-  auto const pointee = std::get_if<basedparse::Identifier_type_expression>(
-    &ptr->pointee_type->value
-  );
-  REQUIRE(pointee != nullptr);
-  CHECK(pointee->identifier.text == "i32");
-}
-
-TEST_CASE("parse_type_expression - unsized array")
-{
-  auto fixture = Parse_fixture{"i32[]"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const array =
-    std::get_if<basedparse::Array_type_expression>(&type->value);
-  REQUIRE(array != nullptr);
-  CHECK(array->size == nullptr);
-  auto const elem = std::get_if<basedparse::Identifier_type_expression>(
-    &array->element_type->value
-  );
-  REQUIRE(elem != nullptr);
-  CHECK(elem->identifier.text == "i32");
-}
-
-TEST_CASE("parse_type_expression - unsized array pointer")
-{
-  // i32[]* — pointer to unsized array of i32
-  auto fixture = Parse_fixture{"i32[]*"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const ptr =
-    std::get_if<basedparse::Pointer_type_expression>(&type->value);
-  REQUIRE(ptr != nullptr);
-  CHECK_FALSE(ptr->kw_mut.has_value());
-  auto const array =
-    std::get_if<basedparse::Array_type_expression>(&ptr->pointee_type->value);
-  REQUIRE(array != nullptr);
-  CHECK(array->size == nullptr);
-}
-
-TEST_CASE("parse_type_expression - unsized array mutable pointer")
-{
-  // i32[] mut* — pointer to mutable unsized array
-  auto fixture = Parse_fixture{"i32[] mut*"};
-  auto const type = fixture.parser.parse_type_expression();
-  auto const ptr =
-    std::get_if<basedparse::Pointer_type_expression>(&type->value);
-  REQUIRE(ptr != nullptr);
-  REQUIRE(ptr->kw_mut.has_value());
-  auto const array =
-    std::get_if<basedparse::Array_type_expression>(&ptr->pointee_type->value);
-  REQUIRE(array != nullptr);
-  CHECK(array->size == nullptr);
-}
-
-TEST_CASE("parse_type_expression - nested pointer array")
-{
-  // i32[4] mut*[8]* — pointer to (array of 8 of (pointer to mutable (array of 4
-  // of i32)))
-  auto fixture = Parse_fixture{"i32[4] mut*[8]*"};
-  auto const type = fixture.parser.parse_type_expression();
-  // outermost: *
-  auto const outer_ptr =
-    std::get_if<basedparse::Pointer_type_expression>(&type->value);
-  REQUIRE(outer_ptr != nullptr);
-  CHECK_FALSE(outer_ptr->kw_mut.has_value());
-  // [8]
-  auto const array8 = std::get_if<basedparse::Array_type_expression>(
-    &outer_ptr->pointee_type->value
-  );
-  REQUIRE(array8 != nullptr);
-  auto const size8 =
-    std::get_if<basedparse::Int_literal_expression>(&array8->size->value);
-  REQUIRE(size8 != nullptr);
-  CHECK(size8->literal.text == "8");
-  // mut*
-  auto const inner_ptr = std::get_if<basedparse::Pointer_type_expression>(
-    &array8->element_type->value
-  );
-  REQUIRE(inner_ptr != nullptr);
-  REQUIRE(inner_ptr->kw_mut.has_value());
-  // [4]
-  auto const array4 = std::get_if<basedparse::Array_type_expression>(
-    &inner_ptr->pointee_type->value
-  );
-  REQUIRE(array4 != nullptr);
-  auto const size4 =
-    std::get_if<basedparse::Int_literal_expression>(&array4->size->value);
-  REQUIRE(size4 != nullptr);
-  CHECK(size4->literal.text == "4");
-  // i32
-  auto const elem = std::get_if<basedparse::Identifier_type_expression>(
-    &array4->element_type->value
-  );
-  REQUIRE(elem != nullptr);
-  CHECK(elem->identifier.text == "i32");
-}
-
-TEST_CASE("parse_type_expression - pointer in full program")
-{
-  CHECK(parses("let f = fn(x: i32*): void -> { };"));
-  CHECK(parses("let f = fn(x: i32 mut*): void -> { };"));
-  CHECK(parses("let f = fn(x: i32[]*): void -> { };"));
-  CHECK(parses("let f = fn(x: i32[] mut*): void -> { };"));
-  CHECK(parses("let f = fn(x: i32[4]*): void -> { };"));
-  CHECK(parses("let f = fn(x: i32[4] mut*[8]*): void -> { };"));
-}
 
 TEST_CASE("parse_expression - assign: simple")
 {
@@ -1491,8 +1209,8 @@ TEST_CASE("parse_expression - assign: lower precedence than equality")
 
 TEST_CASE("parse_expression - assign: in full program")
 {
-  CHECK(parses("let f = fn(mut x: i32): void -> { x = 42; };"));
-  CHECK(parses("let f = fn(mut x: i32, mut y: i32): void -> { x = y = 0; };"));
+  CHECK(parses("let f = fn(mut x: i32): void => { x = 42; };"));
+  CHECK(parses("let f = fn(mut x: i32, mut y: i32): void => { x = y = 0; };"));
 }
 
 TEST_CASE("parse_statement - while: simple")
@@ -1526,7 +1244,7 @@ TEST_CASE("parse_statement - while: with body")
 TEST_CASE("parse_statement - while: in full program")
 {
   CHECK(parses(
-    "let f = fn(mut n: i32): i32 -> {"
+    "let f = fn(mut n: i32): i32 => {"
     "  while n > 0 { n = n - 1; }"
     "  return n;"
     "};"
@@ -1555,4 +1273,89 @@ TEST_CASE("Parser - quicksort.based parses successfully")
   auto const unit = parser.parse_translation_unit();
   REQUIRE(unit != nullptr);
   CHECK(unit->function_definitions.size() == 3);
+}
+
+TEST_CASE("parse_expression - prefix bracket unsized array type")
+{
+  auto fixture = Parse_fixture{"[]i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&expr->value);
+  REQUIRE(prefix != nullptr);
+  CHECK(prefix->lbracket.text == "[");
+  CHECK(prefix->size == nullptr);
+  CHECK(prefix->rbracket.text == "]");
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&prefix->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("parse_expression - prefix bracket sized array type")
+{
+  auto fixture = Parse_fixture{"[4]i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&expr->value);
+  REQUIRE(prefix != nullptr);
+  CHECK(prefix->lbracket.text == "[");
+  REQUIRE(prefix->size != nullptr);
+  auto const size = std::get_if<basedparse::Int_literal_expression>(&prefix->size->value);
+  REQUIRE(size != nullptr);
+  CHECK(size->literal.text == "4");
+  CHECK(prefix->rbracket.text == "]");
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&prefix->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("parse_expression - pointer to unsized array type")
+{
+  auto fixture = Parse_fixture{"*[]i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "*");
+  auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&unary->operand->value);
+  REQUIRE(prefix != nullptr);
+  CHECK(prefix->size == nullptr);
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&prefix->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("parse_expression - *mut prefix")
+{
+  auto fixture = Parse_fixture{"*mut i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "*mut");
+  CHECK(unary->op.token == basedlex::Token::star_mut);
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&unary->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("parse_expression - *mut []i32 as mutable pointer to unsized array")
+{
+  auto fixture = Parse_fixture{"*mut []i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.token == basedlex::Token::star_mut);
+  auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&unary->operand->value);
+  REQUIRE(prefix != nullptr);
+  CHECK(prefix->size == nullptr);
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&prefix->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("Parser - accepts prefix type syntax")
+{
+  CHECK(parses("let f = fn(x: []i32): void => { };"));
+  CHECK(parses("let f = fn(x: [4]i32): void => { };"));
+  CHECK(parses("let f = fn(x: *i32): void => { };"));
+  CHECK(parses("let f = fn(x: *mut i32): void => { };"));
+  CHECK(parses("let f = fn(x: *mut []i32): void => { };"));
+  CHECK(parses("let f = fn(x: *[]i32): void => { };"));
+  CHECK(parses("let f = fn(x: [][4]i32): void => { };"));
 }

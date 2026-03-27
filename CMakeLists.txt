@@ -52,6 +52,7 @@ target_compile_definitions(basedparse-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURC
 add_executable(basedhlir-tests
   code/basedhlir/test/symbol_table_test.cpp
   code/basedhlir/test/type_test.cpp
+  code/basedhlir/test/compile_test.cpp
 )
 target_link_libraries(basedhlir-tests PRIVATE basedhlir Catch2::Catch2WithMain)
 target_compile_definitions(basedhlir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")

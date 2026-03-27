@@ -1048,17 +1048,46 @@ namespace basedhlir
   }
 
   bool Compilation_context::is_constant_expression(
-    basedparse::Block_expression const &
+    basedparse::Block_expression const &expr
   )
   {
-    return false;
+    // TODO: handle blocks with statements
+    if (!expr.statements.empty())
+    {
+      return false;
+    }
+    if (expr.tail)
+    {
+      return is_constant_expression(*expr.tail);
+    }
+    return true;
   }
 
   bool Compilation_context::is_constant_expression(
-    basedparse::If_expression const &
+    basedparse::If_expression const &expr
   )
   {
-    return false;
+    if (!is_constant_expression(*expr.condition))
+    {
+      return false;
+    }
+    if (!is_constant_expression(expr.then_block))
+    {
+      return false;
+    }
+    for (auto const &else_if : expr.else_if_parts)
+    {
+      if (!is_constant_expression(*else_if.condition) ||
+          !is_constant_expression(else_if.body))
+      {
+        return false;
+      }
+    }
+    if (expr.else_part.has_value())
+    {
+      return is_constant_expression(expr.else_part->body);
+    }
+    return true;
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1152,17 +1181,38 @@ namespace basedhlir
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Block_expression const &
+    basedparse::Block_expression const &expr
   )
   {
-    std::unreachable();
+    if (!expr.tail)
+    {
+      return Void_value{};
+    }
+    return evaluate_constant_expression(*expr.tail);
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::If_expression const &
+    basedparse::If_expression const &expr
   )
   {
-    std::unreachable();
+    if (!expr.else_part.has_value())
+    {
+      return Void_value{};
+    }
+    auto const condition = evaluate_constant_expression(*expr.condition);
+    if (std::get<bool>(condition))
+    {
+      return evaluate_constant_expression(expr.then_block);
+    }
+    for (auto const &else_if : expr.else_if_parts)
+    {
+      auto const else_if_condition = evaluate_constant_expression(*else_if.condition);
+      if (std::get<bool>(else_if_condition))
+      {
+        return evaluate_constant_expression(else_if.body);
+      }
+    }
+    return evaluate_constant_expression(expr.else_part->body);
   }
 
   void Compilation_context::compile_top_level_let_statement(

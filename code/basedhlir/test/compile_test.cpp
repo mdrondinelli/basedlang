@@ -131,6 +131,49 @@ TEST_CASE("evaluate_constant_expression - integer comparisons")
   }
 }
 
+TEST_CASE("evaluate_constant_expression - if expression")
+{
+  auto parse_fixture = Parse_fixture{"if 1 < 2 { 10 } else { 20 }"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+  auto const value = compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == 10);
+}
+
+TEST_CASE("evaluate_constant_expression - if expression takes else branch")
+{
+  auto parse_fixture = Parse_fixture{"if 1 > 2 { 10 } else { 20 }"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+  auto const value = compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == 20);
+}
+
+TEST_CASE("evaluate_constant_expression - if expression takes else-if branch")
+{
+  auto parse_fixture = Parse_fixture{"if 1 > 2 { 10 } else if 1 < 2 { 30 } else { 20 }"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+  auto const value = compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == 30);
+}
+
+TEST_CASE("evaluate_constant_expression - if without else is void")
+{
+  auto parse_fixture = Parse_fixture{"if 1 < 2 { 10 }"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+  auto const value = compile_fixture.compiler.evaluate_constant_expression(*expr);
+  CHECK(std::holds_alternative<basedhlir::Void_value>(value));
+}
+
 TEST_CASE("evaluate_constant_expression - bool equality")
 {
   auto compile_fixture = Compile_fixture{};

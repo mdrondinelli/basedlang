@@ -51,7 +51,11 @@ namespace basedhlir
   {
   };
 
-  using Constant_value = std::variant<std::int32_t, bool>;
+  struct Void_value
+  {
+  };
+
+  using Constant_value = std::variant<std::int32_t, bool, Void_value>;
 
   class Unary_operator_overload
   {

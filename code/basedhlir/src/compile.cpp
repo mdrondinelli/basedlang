@@ -324,6 +324,38 @@ namespace basedhlir
         return sym;
       }
 
+      Unary_operator_overload *find_unary_overload(basedparse::Operator op, Type *operand_type)
+      {
+        auto const it = _unary_overloads.find(op);
+        if (it != _unary_overloads.end())
+        {
+          for (auto const &overload : it->second)
+          {
+            if (overload->operand_type() == operand_type)
+            {
+              return overload.get();
+            }
+          }
+        }
+        return nullptr;
+      }
+
+      Binary_operator_overload *find_binary_overload(basedparse::Operator op, Type *lhs_type, Type *rhs_type)
+      {
+        auto const it = _binary_overloads.find(op);
+        if (it != _binary_overloads.end())
+        {
+          for (auto const &overload : it->second)
+          {
+            if (overload->lhs_type() == lhs_type && overload->rhs_type() == rhs_type)
+            {
+              return overload.get();
+            }
+          }
+        }
+        return nullptr;
+      }
+
       bool is_type_compatible(Type *parameter_type, Type *argument_type)
       {
         if (parameter_type == argument_type)
@@ -448,16 +480,10 @@ namespace basedhlir
         auto const op = basedparse::get_unary_operator(expr.op.token);
         assert(op.has_value());
         auto const operand_type = type_of_expression(*expr.operand);
-        auto const it = _unary_overloads.find(*op);
-        if (it != _unary_overloads.end())
+        auto const overload = find_unary_overload(*op, operand_type);
+        if (overload != nullptr)
         {
-          for (auto const &overload : it->second)
-          {
-            if (overload->operand_type() == operand_type)
-            {
-              return overload->result_type();
-            }
-          }
+          return overload->result_type();
         }
         emit_error(std::format("no matching overload for unary operator '{}'", expr.op.text), expr.op);
       }
@@ -468,16 +494,10 @@ namespace basedhlir
         assert(op.has_value());
         auto const lhs_type = type_of_expression(*expr.left);
         auto const rhs_type = type_of_expression(*expr.right);
-        auto const it = _binary_overloads.find(*op);
-        if (it != _binary_overloads.end())
+        auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
+        if (overload != nullptr)
         {
-          for (auto const &overload : it->second)
-          {
-            if (overload->lhs_type() == lhs_type && overload->rhs_type() == rhs_type)
-            {
-              return overload->result_type();
-            }
-          }
+          return overload->result_type();
         }
         emit_error(std::format("no matching overload for binary operator '{}'", expr.op.text), expr.op);
       }
@@ -639,6 +659,86 @@ namespace basedhlir
       bool is_constant_expression(basedparse::If_expression const &)
       {
         return false;
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Expression const &expr)
+      {
+        return std::visit(
+          [&](auto const &e) -> Constant_value
+          {
+            return evaluate_constant_expression(e);
+          },
+          expr.value
+        );
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Int_literal_expression const &expr)
+      {
+        return static_cast<std::int32_t>(std::stoi(expr.literal.text));
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Paren_expression const &expr)
+      {
+        return evaluate_constant_expression(*expr.inner);
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Unary_expression const &expr)
+      {
+        auto const op = basedparse::get_unary_operator(expr.op.token);
+        assert(op.has_value());
+        auto const operand_type = type_of_expression(*expr.operand);
+        auto const overload = find_unary_overload(*op, operand_type);
+        assert(overload != nullptr);
+        return overload->evaluate(evaluate_constant_expression(*expr.operand));
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Binary_expression const &expr)
+      {
+        auto const op = basedparse::get_binary_operator(expr.op.token);
+        assert(op.has_value());
+        auto const lhs_type = type_of_expression(*expr.left);
+        auto const rhs_type = type_of_expression(*expr.right);
+        auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
+        assert(overload != nullptr);
+        return overload->evaluate(
+          evaluate_constant_expression(*expr.left),
+          evaluate_constant_expression(*expr.right)
+        );
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Identifier_expression const &)
+      {
+        std::unreachable();
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Fn_expression const &)
+      {
+        std::unreachable();
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Call_expression const &)
+      {
+        std::unreachable();
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Prefix_bracket_expression const &)
+      {
+        std::unreachable();
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Index_expression const &)
+      {
+        std::unreachable();
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::Block_expression const &)
+      {
+        std::unreachable();
+      }
+
+      Constant_value evaluate_constant_expression(basedparse::If_expression const &)
+      {
+        std::unreachable();
       }
 
       void compile_top_level_let_statement(basedparse::Function_definition const &func_def)

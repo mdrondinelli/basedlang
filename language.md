@@ -52,31 +52,71 @@ type, the syntax is `fn(params) => expression`. The body after `=>` is any
 expression. Parameters support trailing commas. Parameters are immutable by
 default; prefix with `mut` for a mutable binding: `fn(mut x: Int32) => { }`.
 
-### Type expressions
+### Types as values
 
-Type expressions use prefix modifiers applied to a base type:
+In basedlang, types are ordinary compile-time values. There is no separate
+"type expression" grammar — what looks like a type annotation is just a regular
+expression that the compiler requires to evaluate to a value of type `Type` at
+compile time.
 
-| Modifier      | Syntax        | Example              | Meaning                           |
-|---------------|---------------|----------------------|-----------------------------------|
-| pointer       | `*T`          | `*Int32`             | pointer to (const) `Int32`          |
-| mut pointer   | `*mut T`      | `*mut Int32`         | pointer to mutable `Int32`          |
-| sized array   | `[expr]T`     | `[4]Int32`           | array of 4 `Int32`                 |
-| unsized array | `[]T`         | `[]Int32`            | dynamically-sized array of `Int32s` |
+The builtin type names `Int32`, `Bool`, and `Void` are not keywords. They are
+identifiers that are pre-declared in the root scope, each bound to a value of
+type `Type`. They participate in the expression grammar exactly like any other
+identifier. The compiler distinguishes them from runtime values not by syntax,
+but by checking their type: an expression is a valid type annotation if and only
+if it has type `Type` and can be evaluated at compile time.
 
-These compose right to left. `*mut` marks the pointee as mutable.
-Pointer/variable mutability comes from the binding, not the type.
+This means that the operators `*`, `*mut`, `[]`, and `[n]` are not special type
+syntax — they are ordinary prefix operators that happen to have overloads
+accepting `Type` operands and producing `Type` results. The parser does not know
+whether `*Int32` is a pointer type or a dereference; it parses both as a unary
+`*` applied to a subexpression. The distinction is made later by the compiler,
+which resolves the operator based on the type of the operand.
 
-Examples:
+For example, consider a function parameter annotated with `*mut []Int32`. The
+parser sees this as a chain of prefix operators applied to an identifier:
 
-| Type expression       | Meaning                                                              |
-|-----------------------|----------------------------------------------------------------------|
-| `Int32`               | plain integer                                                        |
-| `*Int32`              | pointer to `Int32`                                                     |
-| `*mut Int32`          | pointer to mutable `Int32`                                             |
-| `[4]Int32`            | sized array                                                          |
-| `*[]Int32`            | pointer to unsized array                                             |
-| `*mut []Int32`        | pointer to mutable unsized array                                     |
-| `*[8]*mut [4]Int32`   | pointer to array of 8 of (pointer to mutable array of 4 of `Int32`)    |
+1. Parse the identifier `Int32`
+2. Parse `[]` as a prefix bracket operator applied to `Int32`
+3. Parse `*mut` as a prefix operator applied to `[]Int32`
+
+The compiler then evaluates this expression at compile time:
+
+1. Look up `Int32` — it's a `Type` value representing the 32-bit signed integer
+2. Apply `[]` — produces a `Type` value representing an unsized array of `Int32`
+3. Apply `*mut` — produces a `Type` value representing a mutable pointer to
+   `[]Int32`
+
+Because types are values, the same expression machinery handles all type
+construction. The `[n]` operator accepts any compile-time constant integer
+expression as the size, so `[2 + 2]Int32` is a valid type meaning "array of 4
+`Int32`". No special constant-expression sublanguage is needed.
+
+The prefix operators that construct types are:
+
+| Operator | Meaning                                     |
+|----------|---------------------------------------------|
+| `*T`     | pointer to `T` (pointee is immutable)       |
+| `*mut T` | pointer to `T` (pointee is mutable)         |
+| `[n]T`   | sized array of `n` elements of type `T`     |
+| `[]T`    | unsized (dynamically-sized) array of type `T` |
+
+These compose naturally since each produces a `Type` value that can be the
+operand of another type operator:
+
+| Expression            | Meaning                                                            |
+|-----------------------|--------------------------------------------------------------------|
+| `Int32`               | 32-bit signed integer                                              |
+| `*Int32`              | pointer to `Int32`                                                 |
+| `*mut Int32`          | pointer to mutable `Int32`                                         |
+| `[4]Int32`            | array of 4 `Int32`                                                 |
+| `*[]Int32`            | pointer to unsized array of `Int32`                                |
+| `*mut []Int32`        | pointer to mutable unsized array of `Int32`                        |
+| `*[8]*mut [4]Int32`   | pointer to array of 8 of (pointer to mutable array of 4 of `Int32`) |
+
+`*mut` marks the pointee as mutable. Pointer/variable mutability comes from the
+binding, not the type — a `let mut` binding of a `*Int32` is a mutable pointer
+to an immutable `Int32`.
 
 ## Full examples
 

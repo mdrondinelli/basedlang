@@ -109,11 +109,31 @@ namespace basedlex
               .location = token_location
             };
           case '*':
-            return Lexeme{
-              .text = "*",
-              .token = Token::star,
-              .location = token_location
-            };
+            {
+              auto const p0 = _reader.peek(0);
+              auto const p1 = _reader.peek(1);
+              auto const p2 = _reader.peek(2);
+              auto const p3 = _reader.peek(3);
+              if (p0 && *p0 == 'm' && p1 && *p1 == 'u' && p2 && *p2 == 't' &&
+                  (!p3 ||
+                   !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
+              {
+                _reader.read();
+                _reader.read();
+                _reader.read();
+                _location.column += 3;
+                return Lexeme{
+                  .text = "*mut",
+                  .token = Token::star_mut,
+                  .location = token_location,
+                };
+              }
+              return Lexeme{
+                .text = "*",
+                .token = Token::star,
+                .location = token_location
+              };
+            }
           case '/':
             return Lexeme{
               .text = "/",

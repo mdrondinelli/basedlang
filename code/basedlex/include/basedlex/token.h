@@ -22,6 +22,7 @@ namespace basedlex
     plus, // +
     minus, // -
     star, // *
+    star_mut, // *mut
     ampersand, // &
     ampersand_mut, // &mut
     slash, // /

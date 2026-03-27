@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "source_location.h"
 #include "token.h"
 
 namespace basedlex
@@ -14,8 +15,7 @@ namespace basedlex
   {
     std::string text;
     Token token;
-    int line;
-    int column;
+    Source_location location;
   };
 
 } // namespace basedlex

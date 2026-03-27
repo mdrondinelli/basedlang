@@ -32,11 +32,6 @@ namespace basedparse
   /// its rightmost token.
   /// @{
 
-  Source_span span_of(Type_expression const &node);
-  Source_span span_of(Identifier_type_expression const &node);
-  Source_span span_of(Array_type_expression const &node);
-  Source_span span_of(Pointer_type_expression const &node);
-
   Source_span span_of(Expression const &node);
   Source_span span_of(Int_literal_expression const &node);
   Source_span span_of(Identifier_expression const &node);
@@ -46,9 +41,9 @@ namespace basedparse
   Source_span span_of(Binary_expression const &node);
   Source_span span_of(Call_expression const &node);
   Source_span span_of(Index_expression const &node);
+  Source_span span_of(Prefix_bracket_expression const &node);
   Source_span span_of(Block_expression const &node);
   Source_span span_of(If_expression const &node);
-  Source_span span_of(Constructor_expression const &node);
 
   Source_span span_of(Statement const &node);
   Source_span span_of(Let_statement const &node);

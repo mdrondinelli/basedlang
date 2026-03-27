@@ -1,10 +1,10 @@
-let swap = fn(arr: i32[] mut*, i: i32, j: i32): void -> {
+let swap = fn(arr: *mut []i32, i: i32, j: i32): void => {
   let tmp = (*arr)[i];
   (*arr)[i] = (*arr)[j];
   (*arr)[j] = tmp;
 };
 
-let partition = fn(arr: i32[] mut*, lo: i32, hi: i32): i32 -> {
+let partition = fn(arr: *mut []i32, lo: i32, hi: i32): i32 => {
   let pivot = (*arr)[hi];
   let mut i = lo - 1;
   let mut j = lo;
@@ -19,7 +19,7 @@ let partition = fn(arr: i32[] mut*, lo: i32, hi: i32): i32 -> {
   return i + 1;
 };
 
-let quicksort = fn(arr: i32[] mut*, lo: i32, hi: i32): void -> {
+let quicksort = fn(arr: *mut []i32, lo: i32, hi: i32): void => {
   if lo < hi {
     let p = partition(arr, lo, hi);
     quicksort(arr, lo, p - 1);

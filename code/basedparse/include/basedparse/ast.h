@@ -11,60 +11,9 @@
 namespace basedparse
 {
 
-  struct Type_expression;
   struct Expression;
   struct Statement;
   struct Block_expression;
-
-  // type expressions
-
-  struct Identifier_type_expression
-  {
-    basedlex::Lexeme identifier;
-  };
-
-  struct Array_type_expression
-  {
-    ~Array_type_expression();
-
-    Array_type_expression() = default;
-
-    Array_type_expression(Array_type_expression &&) noexcept = default;
-
-    Array_type_expression &
-    operator=(Array_type_expression &&) noexcept = default;
-
-    std::unique_ptr<Type_expression> element_type;
-    basedlex::Lexeme lbracket;
-    std::unique_ptr<Expression> size; // nullptr for unsized arrays (e.g. i32[])
-    basedlex::Lexeme rbracket;
-  };
-
-  struct Pointer_type_expression
-  {
-    ~Pointer_type_expression();
-
-    Pointer_type_expression() = default;
-
-    Pointer_type_expression(Pointer_type_expression &&) noexcept = default;
-
-    Pointer_type_expression &
-    operator=(Pointer_type_expression &&) noexcept = default;
-
-    std::unique_ptr<Type_expression> pointee_type;
-    std::optional<basedlex::Lexeme> kw_mut;
-    basedlex::Lexeme star;
-  };
-
-  struct Type_expression
-  {
-    std::variant<
-      Identifier_type_expression,
-      Array_type_expression,
-      Pointer_type_expression
-    >
-      value;
-  };
 
   // expressions
 
@@ -85,13 +34,13 @@ namespace basedparse
       std::optional<basedlex::Lexeme> kw_mut;
       basedlex::Lexeme name;
       basedlex::Lexeme colon;
-      Type_expression type_expression;
+      std::unique_ptr<Expression> type;
     };
 
     struct Return_type_specifier
     {
       basedlex::Lexeme colon;
-      Type_expression type_expression;
+      std::unique_ptr<Expression> type;
     };
 
     ~Fn_expression();
@@ -189,6 +138,22 @@ namespace basedparse
     basedlex::Lexeme rbracket;
   };
 
+  struct Prefix_bracket_expression
+  {
+    ~Prefix_bracket_expression();
+
+    Prefix_bracket_expression() = default;
+
+    Prefix_bracket_expression(Prefix_bracket_expression &&) noexcept = default;
+
+    Prefix_bracket_expression &operator=(Prefix_bracket_expression &&) noexcept = default;
+
+    basedlex::Lexeme lbracket;
+    std::unique_ptr<Expression> size;
+    basedlex::Lexeme rbracket;
+    std::unique_ptr<Expression> operand;
+  };
+
   struct Block_expression
   {
     ~Block_expression();
@@ -244,25 +209,6 @@ namespace basedparse
     std::optional<Else_part> else_part;
   };
 
-  struct Constructor_expression
-  {
-    ~Constructor_expression();
-
-    Constructor_expression() = default;
-
-    Constructor_expression(Constructor_expression &&) noexcept = default;
-
-    Constructor_expression &
-    operator=(Constructor_expression &&) noexcept = default;
-
-    basedlex::Lexeme kw_new;
-    Type_expression type;
-    basedlex::Lexeme lbrace;
-    std::vector<Expression> arguments;
-    std::vector<basedlex::Lexeme> argument_commas;
-    basedlex::Lexeme rbrace;
-  };
-
   struct Expression
   {
     std::variant<
@@ -274,9 +220,9 @@ namespace basedparse
       Binary_expression,
       Call_expression,
       Index_expression,
+      Prefix_bracket_expression,
       Block_expression,
-      If_expression,
-      Constructor_expression
+      If_expression
     >
       value;
   };

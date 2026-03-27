@@ -138,6 +138,22 @@ namespace basedparse
     basedlex::Lexeme rbracket;
   };
 
+  struct Prefix_bracket_expression
+  {
+    ~Prefix_bracket_expression();
+
+    Prefix_bracket_expression() = default;
+
+    Prefix_bracket_expression(Prefix_bracket_expression &&) noexcept = default;
+
+    Prefix_bracket_expression &operator=(Prefix_bracket_expression &&) noexcept = default;
+
+    basedlex::Lexeme lbracket;
+    std::unique_ptr<Expression> size;
+    basedlex::Lexeme rbracket;
+    std::unique_ptr<Expression> operand;
+  };
+
   struct Block_expression
   {
     ~Block_expression();
@@ -204,6 +220,7 @@ namespace basedparse
       Binary_expression,
       Call_expression,
       Index_expression,
+      Prefix_bracket_expression,
       Block_expression,
       If_expression
     >

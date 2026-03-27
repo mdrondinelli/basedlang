@@ -194,6 +194,19 @@ namespace basedparse
         unary.operand = parse_expression(get_operator_precedence(*unary_op));
         return std::make_unique<Expression>(std::move(unary));
       }
+      if (_reader->peek().token == basedlex::Token::lbracket &&
+          1 <= current_precedence)
+      {
+        auto prefix = Prefix_bracket_expression{};
+        prefix.lbracket = expect(basedlex::Token::lbracket);
+        if (_reader->peek().token != basedlex::Token::rbracket)
+        {
+          prefix.size = parse_expression();
+        }
+        prefix.rbracket = expect(basedlex::Token::rbracket);
+        prefix.operand = parse_expression(1);
+        return std::make_unique<Expression>(std::move(prefix));
+      }
       auto primary = parse_primary_expression();
       for (;;)
       {
@@ -227,10 +240,7 @@ namespace basedparse
             auto idx = Index_expression{};
             idx.operand = std::move(primary);
             idx.lbracket = expect(basedlex::Token::lbracket);
-            if (_reader->peek().token != basedlex::Token::rbracket)
-            {
-              idx.index = parse_expression();
-            }
+            idx.index = parse_expression();
             idx.rbracket = expect(basedlex::Token::rbracket);
             primary = std::make_unique<Expression>(std::move(idx));
           }
@@ -294,8 +304,9 @@ namespace basedparse
       return std::make_unique<Expression>(parse_fn_expression());
     }
     throw std::runtime_error{
-      "unexpected token '" + next.text + "' at " + std::to_string(next.location.line) +
-      ":" + std::to_string(next.location.column)
+      "unexpected token '" + next.text + "' at " +
+      std::to_string(next.location.line) + ":" +
+      std::to_string(next.location.column)
     };
   }
 
@@ -405,7 +416,6 @@ namespace basedparse
     return stmt;
   }
 
-
   basedlex::Lexeme Parser::expect(basedlex::Token token)
   {
     auto lexeme = _reader->read();
@@ -413,7 +423,8 @@ namespace basedparse
     {
       throw std::runtime_error{
         "unexpected token '" + lexeme.text + "' at " +
-        std::to_string(lexeme.location.line) + ":" + std::to_string(lexeme.location.column)
+        std::to_string(lexeme.location.line) + ":" +
+        std::to_string(lexeme.location.column)
       };
     }
     return lexeme;

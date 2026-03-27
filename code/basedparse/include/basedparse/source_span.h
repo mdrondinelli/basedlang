@@ -41,6 +41,7 @@ namespace basedparse
   Source_span span_of(Binary_expression const &node);
   Source_span span_of(Call_expression const &node);
   Source_span span_of(Index_expression const &node);
+  Source_span span_of(Prefix_bracket_expression const &node);
   Source_span span_of(Block_expression const &node);
   Source_span span_of(If_expression const &node);
 

@@ -9,7 +9,8 @@ namespace basedparse
   {
     auto const end = Source_location{
       .line = lexeme.location.line,
-      .column = lexeme.location.column + static_cast<std::int32_t>(lexeme.text.size()) - 1,
+      .column = lexeme.location.column +
+                static_cast<std::int32_t>(lexeme.text.size()) - 1,
     };
     return Source_span{.start = lexeme.location, .end = end};
   }
@@ -18,7 +19,6 @@ namespace basedparse
   {
     return Source_span{.start = begin.start, .end = end.end};
   }
-
 
   // expressions
 
@@ -71,6 +71,11 @@ namespace basedparse
   Source_span span_of(Index_expression const &node)
   {
     return hull(span_of(*node.operand), span_of(node.rbracket));
+  }
+
+  Source_span span_of(Prefix_bracket_expression const &node)
+  {
+    return hull(span_of(node.lbracket), span_of(*node.operand));
   }
 
   Source_span span_of(Block_expression const &node)

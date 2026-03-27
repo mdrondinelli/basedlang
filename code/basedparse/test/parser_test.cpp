@@ -957,8 +957,8 @@ TEST_CASE("parse_expression - dereference: in binary expression")
 
 TEST_CASE("parse_expression - dereference: in full program")
 {
-  CHECK(parses("let f = fn(p: &i32): i32 => { return *p; };"));
-  CHECK(parses("let f = fn(p: &i32[]): i32 => { return *p[0]; };"));
+  CHECK(parses("let f = fn(p: *i32): i32 => { return *p; };"));
+  CHECK(parses("let f = fn(p: *[]i32): i32 => { return *p[0]; };"));
 }
 
 TEST_CASE("parse_expression - address-of")
@@ -1262,16 +1262,100 @@ TEST_CASE("parse_let_statement - mut")
   CHECK(let_stmt->name.text == "x");
 }
 
-// TODO: enable once the parser handles &mut as a prefix unary operator
-// TEST_CASE("Parser - quicksort.based parses successfully")
-// {
-//   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/quicksort.based"};
-//   auto binary_stream = basedlex::Istream_binary_stream{&file};
-//   auto char_stream = basedlex::Utf8_char_stream{&binary_stream};
-//   auto lexeme_stream = basedlex::Lexeme_stream{&char_stream};
-//   auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
-//   auto parser = basedparse::Parser{&reader};
-//   auto const unit = parser.parse_translation_unit();
-//   REQUIRE(unit != nullptr);
-//   CHECK(unit->function_definitions.size() == 3);
-// }
+TEST_CASE("Parser - quicksort.based parses successfully")
+{
+  auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/quicksort.based"};
+  auto binary_stream = basedlex::Istream_binary_stream{&file};
+  auto char_stream = basedlex::Utf8_char_stream{&binary_stream};
+  auto lexeme_stream = basedlex::Lexeme_stream{&char_stream};
+  auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
+  auto parser = basedparse::Parser{&reader};
+  auto const unit = parser.parse_translation_unit();
+  REQUIRE(unit != nullptr);
+  CHECK(unit->function_definitions.size() == 3);
+}
+
+TEST_CASE("parse_expression - prefix bracket unsized array type")
+{
+  auto fixture = Parse_fixture{"[]i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&expr->value);
+  REQUIRE(prefix != nullptr);
+  CHECK(prefix->lbracket.text == "[");
+  CHECK(prefix->size == nullptr);
+  CHECK(prefix->rbracket.text == "]");
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&prefix->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("parse_expression - prefix bracket sized array type")
+{
+  auto fixture = Parse_fixture{"[4]i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&expr->value);
+  REQUIRE(prefix != nullptr);
+  CHECK(prefix->lbracket.text == "[");
+  REQUIRE(prefix->size != nullptr);
+  auto const size = std::get_if<basedparse::Int_literal_expression>(&prefix->size->value);
+  REQUIRE(size != nullptr);
+  CHECK(size->literal.text == "4");
+  CHECK(prefix->rbracket.text == "]");
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&prefix->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("parse_expression - pointer to unsized array type")
+{
+  auto fixture = Parse_fixture{"*[]i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "*");
+  auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&unary->operand->value);
+  REQUIRE(prefix != nullptr);
+  CHECK(prefix->size == nullptr);
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&prefix->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("parse_expression - *mut prefix")
+{
+  auto fixture = Parse_fixture{"*mut i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.text == "*mut");
+  CHECK(unary->op.token == basedlex::Token::star_mut);
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&unary->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("parse_expression - *mut []i32 as mutable pointer to unsized array")
+{
+  auto fixture = Parse_fixture{"*mut []i32"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const unary = std::get_if<basedparse::Unary_expression>(&expr->value);
+  REQUIRE(unary != nullptr);
+  CHECK(unary->op.token == basedlex::Token::star_mut);
+  auto const prefix = std::get_if<basedparse::Prefix_bracket_expression>(&unary->operand->value);
+  REQUIRE(prefix != nullptr);
+  CHECK(prefix->size == nullptr);
+  auto const operand = std::get_if<basedparse::Identifier_expression>(&prefix->operand->value);
+  REQUIRE(operand != nullptr);
+  CHECK(operand->identifier.text == "i32");
+}
+
+TEST_CASE("Parser - accepts prefix type syntax")
+{
+  CHECK(parses("let f = fn(x: []i32): void => { };"));
+  CHECK(parses("let f = fn(x: [4]i32): void => { };"));
+  CHECK(parses("let f = fn(x: *i32): void => { };"));
+  CHECK(parses("let f = fn(x: *mut i32): void => { };"));
+  CHECK(parses("let f = fn(x: *mut []i32): void => { };"));
+  CHECK(parses("let f = fn(x: *[]i32): void => { };"));
+  CHECK(parses("let f = fn(x: [][4]i32): void => { };"));
+}

@@ -24,6 +24,10 @@ namespace basedhlir
   {
   };
 
+  struct Type_type
+  {
+  };
+
   struct Pointer_type
   {
     Type *pointee;
@@ -51,7 +55,16 @@ namespace basedhlir
 
   struct Type
   {
-    std::variant<I32_type, Bool_type, Void_type, Pointer_type, Sized_array_type, Unsized_array_type, Function_type>
+    std::variant<
+      I32_type,
+      Bool_type,
+      Void_type,
+      Type_type,
+      Pointer_type,
+      Sized_array_type,
+      Unsized_array_type,
+      Function_type
+    >
       data;
 
     Type *_pointer_type{};
@@ -69,6 +82,8 @@ namespace basedhlir
 
     Type *void_type();
 
+    Type *type_type();
+
     Type *pointer_type(Type *pointee, bool is_mutable);
 
     Type *sized_array_type(Type *element, std::int64_t size);
@@ -82,13 +97,15 @@ namespace basedhlir
     Type *_i32_type{};
     Type *_bool_type{};
     Type *_void_type{};
+    Type *_type_type{};
 
     struct Function_type_hash
     {
       auto operator()(Function_type const &ft) const noexcept -> std::size_t;
     };
 
-    std::unordered_map<Function_type, Type *, Function_type_hash> _function_types;
+    std::unordered_map<Function_type, Type *, Function_type_hash>
+      _function_types;
   };
 
 } // namespace basedhlir

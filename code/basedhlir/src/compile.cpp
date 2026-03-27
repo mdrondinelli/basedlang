@@ -502,6 +502,62 @@ namespace basedhlir
     Type *_bool;
   };
 
+  class Pointer_to final: public Unary_operator_overload
+  {
+  public:
+    explicit Pointer_to(Type_pool *type_pool)
+        : _type{type_pool->type_type()}, _type_pool{type_pool}
+    {
+    }
+
+    Type *operand_type() const override
+    {
+      return _type;
+    }
+
+    Type *result_type() const override
+    {
+      return _type;
+    }
+
+    Constant_value evaluate(Constant_value operand) const override
+    {
+      return Type_value{_type_pool->pointer_type(std::get<Type_value>(operand).type, false)};
+    }
+
+  private:
+    Type *_type;
+    Type_pool *_type_pool;
+  };
+
+  class Pointer_to_mut final: public Unary_operator_overload
+  {
+  public:
+    explicit Pointer_to_mut(Type_pool *type_pool)
+        : _type{type_pool->type_type()}, _type_pool{type_pool}
+    {
+    }
+
+    Type *operand_type() const override
+    {
+      return _type;
+    }
+
+    Type *result_type() const override
+    {
+      return _type;
+    }
+
+    Constant_value evaluate(Constant_value operand) const override
+    {
+      return Type_value{_type_pool->pointer_type(std::get<Type_value>(operand).type, true)};
+    }
+
+  private:
+    Type *_type;
+    Type_pool *_type_pool;
+  };
+
   Compilation_context::Compilation_context(Type_pool *type_pool)
       : _type_pool{type_pool}
   {
@@ -514,6 +570,12 @@ namespace basedhlir
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
       std::make_unique<I32_unary_minus>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::dereference].push_back(
+      std::make_unique<Pointer_to>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::dereference_mut].push_back(
+      std::make_unique<Pointer_to_mut>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::add].push_back(
       std::make_unique<I32_add>(_type_pool)
@@ -698,70 +760,18 @@ namespace basedhlir
     basedparse::Expression const &expr
   )
   {
-    auto const ident =
-      std::get_if<basedparse::Identifier_expression>(&expr.value);
-    if (ident != nullptr)
+    auto const type = type_of_expression(expr);
+    if (type != _type_pool->type_type())
     {
-      auto const sym = lookup_identifier(ident->identifier);
-      auto const ts = std::get_if<Type_symbol>(&sym->data);
-      if (ts == nullptr)
-      {
-        emit_error(
-          std::format("'{}' is not a type", ident->identifier.text),
-          ident->identifier
-        );
-      }
-      return ts->type;
+      auto const span = basedparse::span_of(expr);
+      emit_error("expected a type expression", span.start);
     }
-    auto const prefix =
-      std::get_if<basedparse::Prefix_bracket_expression>(&expr.value);
-    if (prefix != nullptr)
+    if (!is_constant_expression(expr))
     {
-      auto const element = compile_type_expression(*prefix->operand);
-      if (prefix->size == nullptr)
-      {
-        return _type_pool->unsized_array_type(element);
-      }
-      if (!is_constant_expression(*prefix->size))
-      {
-        auto const span = basedparse::span_of(*prefix->size);
-        emit_error("array size must be a constant expression", span.start);
-      }
-      auto const size_type = type_of_expression(*prefix->size);
-      if (size_type != _type_pool->i32_type())
-      {
-        auto const span = basedparse::span_of(*prefix->size);
-        emit_error("array size must be an integer", span.start);
-      }
-      auto const size_value = evaluate_constant_expression(*prefix->size);
-      auto const size = std::get<std::int32_t>(size_value);
-      if (size <= 0)
-      {
-        auto const span = basedparse::span_of(*prefix->size);
-        emit_error("array size must be positive", span.start);
-      }
-      return _type_pool->sized_array_type(element, size);
+      auto const span = basedparse::span_of(expr);
+      emit_error("type expression must be a constant", span.start);
     }
-    auto const unary = std::get_if<basedparse::Unary_expression>(&expr.value);
-    if (unary != nullptr)
-    {
-      if (unary->op.token == basedlex::Token::star)
-      {
-        return _type_pool->pointer_type(
-          compile_type_expression(*unary->operand),
-          false
-        );
-      }
-      if (unary->op.token == basedlex::Token::star_mut)
-      {
-        return _type_pool->pointer_type(
-          compile_type_expression(*unary->operand),
-          true
-        );
-      }
-    }
-    auto const span = basedparse::span_of(expr);
-    emit_error("expected a type expression", span.start);
+    return std::get<Type_value>(evaluate_constant_expression(expr)).type;
   }
 
   Type *
@@ -792,6 +802,11 @@ namespace basedhlir
     if (vs != nullptr)
     {
       return vs->type;
+    }
+    auto const ts = std::get_if<Type_symbol>(&sym->data);
+    if (ts != nullptr)
+    {
+      return _type_pool->type_type();
     }
     auto const fs = std::get_if<Function_symbol>(&sym->data);
     if (fs != nullptr)
@@ -908,10 +923,10 @@ namespace basedhlir
   }
 
   Type *Compilation_context::type_of_expression(
-    basedparse::Prefix_bracket_expression const &expr
+    basedparse::Prefix_bracket_expression const &
   )
   {
-    emit_error("prefix bracket expression is not a value", expr.lbracket);
+    return _type_pool->type_type();
   }
 
   Type *Compilation_context::type_of_expression(
@@ -941,6 +956,7 @@ namespace basedhlir
       return _type_pool->void_type();
     }
     _symbol_table.push_scope();
+    // TODO: handle inner function definitions
     for (auto const &stmt : expr.statements)
     {
       auto const let = std::get_if<basedparse::Let_statement>(&stmt.value);
@@ -1008,9 +1024,14 @@ namespace basedhlir
   }
 
   bool Compilation_context::is_constant_expression(
-    basedparse::Identifier_expression const &
+    basedparse::Identifier_expression const &expr
   )
   {
+    auto const sym = try_lookup_identifier(expr.identifier);
+    if (sym != nullptr && std::holds_alternative<Type_symbol>(sym->data))
+    {
+      return true;
+    }
     return false;
   }
 
@@ -1051,10 +1072,14 @@ namespace basedhlir
   }
 
   bool Compilation_context::is_constant_expression(
-    basedparse::Prefix_bracket_expression const &
+    basedparse::Prefix_bracket_expression const &expr
   )
   {
-    return false;
+    if (expr.size != nullptr && !is_constant_expression(*expr.size))
+    {
+      return false;
+    }
+    return is_constant_expression(*expr.operand);
   }
 
   bool Compilation_context::is_constant_expression(
@@ -1164,10 +1189,13 @@ namespace basedhlir
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Identifier_expression const &
+    basedparse::Identifier_expression const &expr
   )
   {
-    std::unreachable();
+    auto const sym = lookup_identifier(expr.identifier);
+    auto const ts = std::get_if<Type_symbol>(&sym->data);
+    assert(ts != nullptr);
+    return Type_value{ts->type};
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1185,10 +1213,27 @@ namespace basedhlir
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Prefix_bracket_expression const &
+    basedparse::Prefix_bracket_expression const &expr
   )
   {
-    std::unreachable();
+    auto const element = std::get<Type_value>(evaluate_constant_expression(*expr.operand)).type;
+    if (expr.size == nullptr)
+    {
+      return Type_value{_type_pool->unsized_array_type(element)};
+    }
+    auto const size_type = type_of_expression(*expr.size);
+    if (size_type != _type_pool->i32_type())
+    {
+      auto const span = basedparse::span_of(*expr.size);
+      emit_error("array size must be an integer", span.start);
+    }
+    auto const size = std::get<std::int32_t>(evaluate_constant_expression(*expr.size));
+    if (size <= 0)
+    {
+      auto const span = basedparse::span_of(*expr.size);
+      emit_error("array size must be positive", span.start);
+    }
+    return Type_value{_type_pool->sized_array_type(element, size)};
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(

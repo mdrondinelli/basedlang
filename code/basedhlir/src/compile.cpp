@@ -13,11 +13,11 @@
 namespace basedhlir
 {
 
-  class I32_unary_plus final: public Unary_operator_overload
+  class Int32_unary_plus final: public Unary_operator_overload
   {
   public:
-    explicit I32_unary_plus(Type_pool *type_pool)
-        : _type{type_pool->i32_type()}
+    explicit Int32_unary_plus(Type_pool *type_pool)
+        : _type{type_pool->int32_type()}
     {
     }
 
@@ -40,11 +40,11 @@ namespace basedhlir
     Type *_type;
   };
 
-  class I32_unary_minus final: public Unary_operator_overload
+  class Int32_unary_minus final: public Unary_operator_overload
   {
   public:
-    explicit I32_unary_minus(Type_pool *type_pool)
-        : _type{type_pool->i32_type()}
+    explicit Int32_unary_minus(Type_pool *type_pool)
+        : _type{type_pool->int32_type()}
     {
     }
 
@@ -67,11 +67,11 @@ namespace basedhlir
     Type *_type;
   };
 
-  class I32_add final: public Binary_operator_overload
+  class Int32_add final: public Binary_operator_overload
   {
   public:
-    explicit I32_add(Type_pool *type_pool)
-        : _type{type_pool->i32_type()}
+    explicit Int32_add(Type_pool *type_pool)
+        : _type{type_pool->int32_type()}
     {
     }
 
@@ -100,11 +100,11 @@ namespace basedhlir
     Type *_type;
   };
 
-  class I32_subtract final: public Binary_operator_overload
+  class Int32_subtract final: public Binary_operator_overload
   {
   public:
-    explicit I32_subtract(Type_pool *type_pool)
-        : _type{type_pool->i32_type()}
+    explicit Int32_subtract(Type_pool *type_pool)
+        : _type{type_pool->int32_type()}
     {
     }
 
@@ -133,11 +133,11 @@ namespace basedhlir
     Type *_type;
   };
 
-  class I32_multiply final: public Binary_operator_overload
+  class Int32_multiply final: public Binary_operator_overload
   {
   public:
-    explicit I32_multiply(Type_pool *type_pool)
-        : _type{type_pool->i32_type()}
+    explicit Int32_multiply(Type_pool *type_pool)
+        : _type{type_pool->int32_type()}
     {
     }
 
@@ -166,11 +166,11 @@ namespace basedhlir
     Type *_type;
   };
 
-  class I32_divide final: public Binary_operator_overload
+  class Int32_divide final: public Binary_operator_overload
   {
   public:
-    explicit I32_divide(Type_pool *type_pool)
-        : _type{type_pool->i32_type()}
+    explicit Int32_divide(Type_pool *type_pool)
+        : _type{type_pool->int32_type()}
     {
     }
 
@@ -199,11 +199,11 @@ namespace basedhlir
     Type *_type;
   };
 
-  class I32_modulo final: public Binary_operator_overload
+  class Int32_modulo final: public Binary_operator_overload
   {
   public:
-    explicit I32_modulo(Type_pool *type_pool)
-        : _type{type_pool->i32_type()}
+    explicit Int32_modulo(Type_pool *type_pool)
+        : _type{type_pool->int32_type()}
     {
     }
 
@@ -232,22 +232,22 @@ namespace basedhlir
     Type *_type;
   };
 
-  class I32_equal final: public Binary_operator_overload
+  class Int32_equal final: public Binary_operator_overload
   {
   public:
-    explicit I32_equal(Type_pool *type_pool)
-        : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()}
+    explicit Int32_equal(Type_pool *type_pool)
+        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
     {
     }
 
     Type *lhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *rhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *result_type() const override
@@ -262,26 +262,26 @@ namespace basedhlir
     }
 
   private:
-    Type *_i32;
+    Type *_int32;
     Type *_bool;
   };
 
-  class I32_not_equal final: public Binary_operator_overload
+  class Int32_not_equal final: public Binary_operator_overload
   {
   public:
-    explicit I32_not_equal(Type_pool *type_pool)
-        : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()}
+    explicit Int32_not_equal(Type_pool *type_pool)
+        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
     {
     }
 
     Type *lhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *rhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *result_type() const override
@@ -296,26 +296,26 @@ namespace basedhlir
     }
 
   private:
-    Type *_i32;
+    Type *_int32;
     Type *_bool;
   };
 
-  class I32_less final: public Binary_operator_overload
+  class Int32_less final: public Binary_operator_overload
   {
   public:
-    explicit I32_less(Type_pool *type_pool)
-        : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()}
+    explicit Int32_less(Type_pool *type_pool)
+        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
     {
     }
 
     Type *lhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *rhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *result_type() const override
@@ -330,26 +330,26 @@ namespace basedhlir
     }
 
   private:
-    Type *_i32;
+    Type *_int32;
     Type *_bool;
   };
 
-  class I32_less_eq final: public Binary_operator_overload
+  class Int32_less_eq final: public Binary_operator_overload
   {
   public:
-    explicit I32_less_eq(Type_pool *type_pool)
-        : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()}
+    explicit Int32_less_eq(Type_pool *type_pool)
+        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
     {
     }
 
     Type *lhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *rhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *result_type() const override
@@ -364,26 +364,26 @@ namespace basedhlir
     }
 
   private:
-    Type *_i32;
+    Type *_int32;
     Type *_bool;
   };
 
-  class I32_greater final: public Binary_operator_overload
+  class Int32_greater final: public Binary_operator_overload
   {
   public:
-    explicit I32_greater(Type_pool *type_pool)
-        : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()}
+    explicit Int32_greater(Type_pool *type_pool)
+        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
     {
     }
 
     Type *lhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *rhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *result_type() const override
@@ -398,26 +398,26 @@ namespace basedhlir
     }
 
   private:
-    Type *_i32;
+    Type *_int32;
     Type *_bool;
   };
 
-  class I32_greater_eq final: public Binary_operator_overload
+  class Int32_greater_eq final: public Binary_operator_overload
   {
   public:
-    explicit I32_greater_eq(Type_pool *type_pool)
-        : _i32{type_pool->i32_type()}, _bool{type_pool->bool_type()}
+    explicit Int32_greater_eq(Type_pool *type_pool)
+        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
     {
     }
 
     Type *lhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *rhs_type() const override
     {
-      return _i32;
+      return _int32;
     }
 
     Type *result_type() const override
@@ -432,7 +432,7 @@ namespace basedhlir
     }
 
   private:
-    Type *_i32;
+    Type *_int32;
     Type *_bool;
   };
 
@@ -522,7 +522,9 @@ namespace basedhlir
 
     Constant_value evaluate(Constant_value operand) const override
     {
-      return Type_value{_type_pool->pointer_type(std::get<Type_value>(operand).type, false)};
+      return Type_value{
+        _type_pool->pointer_type(std::get<Type_value>(operand).type, false)
+      };
     }
 
   private:
@@ -550,7 +552,9 @@ namespace basedhlir
 
     Constant_value evaluate(Constant_value operand) const override
     {
-      return Type_value{_type_pool->pointer_type(std::get<Type_value>(operand).type, true)};
+      return Type_value{
+        _type_pool->pointer_type(std::get<Type_value>(operand).type, true)
+      };
     }
 
   private:
@@ -562,14 +566,14 @@ namespace basedhlir
       : _type_pool{type_pool}
   {
     assert(_type_pool != nullptr);
-    _symbol_table.declare_type("i32", _type_pool->i32_type());
-    _symbol_table.declare_type("bool", _type_pool->bool_type());
-    _symbol_table.declare_type("void", _type_pool->void_type());
+    _symbol_table.declare_type("Int32", _type_pool->int32_type());
+    _symbol_table.declare_type("Bool", _type_pool->bool_type());
+    _symbol_table.declare_type("Void", _type_pool->void_type());
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<I32_unary_plus>(_type_pool)
+      std::make_unique<Int32_unary_plus>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<I32_unary_minus>(_type_pool)
+      std::make_unique<Int32_unary_minus>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::dereference].push_back(
       std::make_unique<Pointer_to>(_type_pool)
@@ -578,37 +582,37 @@ namespace basedhlir
       std::make_unique<Pointer_to_mut>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::add].push_back(
-      std::make_unique<I32_add>(_type_pool)
+      std::make_unique<Int32_add>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
-      std::make_unique<I32_subtract>(_type_pool)
+      std::make_unique<Int32_subtract>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::multiply].push_back(
-      std::make_unique<I32_multiply>(_type_pool)
+      std::make_unique<Int32_multiply>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
-      std::make_unique<I32_divide>(_type_pool)
+      std::make_unique<Int32_divide>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::modulo].push_back(
-      std::make_unique<I32_modulo>(_type_pool)
+      std::make_unique<Int32_modulo>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<I32_equal>(_type_pool)
+      std::make_unique<Int32_equal>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<I32_not_equal>(_type_pool)
+      std::make_unique<Int32_not_equal>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less].push_back(
-      std::make_unique<I32_less>(_type_pool)
+      std::make_unique<Int32_less>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
-      std::make_unique<I32_less_eq>(_type_pool)
+      std::make_unique<Int32_less_eq>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
-      std::make_unique<I32_greater>(_type_pool)
+      std::make_unique<Int32_greater>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
-      std::make_unique<I32_greater_eq>(_type_pool)
+      std::make_unique<Int32_greater_eq>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
       std::make_unique<Bool_equal>(_type_pool)
@@ -790,7 +794,7 @@ namespace basedhlir
     basedparse::Int_literal_expression const &
   )
   {
-    return _type_pool->i32_type();
+    return _type_pool->int32_type();
   }
 
   Type *Compilation_context::type_of_expression(
@@ -1216,18 +1220,20 @@ namespace basedhlir
     basedparse::Prefix_bracket_expression const &expr
   )
   {
-    auto const element = std::get<Type_value>(evaluate_constant_expression(*expr.operand)).type;
+    auto const element =
+      std::get<Type_value>(evaluate_constant_expression(*expr.operand)).type;
     if (expr.size == nullptr)
     {
       return Type_value{_type_pool->unsized_array_type(element)};
     }
     auto const size_type = type_of_expression(*expr.size);
-    if (size_type != _type_pool->i32_type())
+    if (size_type != _type_pool->int32_type())
     {
       auto const span = basedparse::span_of(*expr.size);
       emit_error("array size must be an integer", span.start);
     }
-    auto const size = std::get<std::int32_t>(evaluate_constant_expression(*expr.size));
+    auto const size =
+      std::get<std::int32_t>(evaluate_constant_expression(*expr.size));
     if (size <= 0)
     {
       auto const span = basedparse::span_of(*expr.size);
@@ -1269,7 +1275,8 @@ namespace basedhlir
     }
     for (auto const &else_if : expr.else_if_parts)
     {
-      auto const else_if_condition = evaluate_constant_expression(*else_if.condition);
+      auto const else_if_condition =
+        evaluate_constant_expression(*else_if.condition);
       if (std::get<bool>(else_if_condition))
       {
         return evaluate_constant_expression(else_if.body);

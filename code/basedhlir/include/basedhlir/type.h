@@ -12,7 +12,7 @@ namespace basedhlir
 
   struct Type;
 
-  struct I32_type
+  struct Int32_type
   {
   };
 
@@ -56,7 +56,7 @@ namespace basedhlir
   struct Type
   {
     std::variant<
-      I32_type,
+      Int32_type,
       Bool_type,
       Void_type,
       Type_type,
@@ -76,7 +76,7 @@ namespace basedhlir
   class Type_pool
   {
   public:
-    Type *i32_type();
+    Type *int32_type();
 
     Type *bool_type();
 
@@ -94,7 +94,7 @@ namespace basedhlir
 
   private:
     std::vector<std::unique_ptr<Type>> _types;
-    Type *_i32_type{};
+    Type *_int32_type{};
     Type *_bool_type{};
     Type *_void_type{};
     Type *_type_type{};

@@ -6,24 +6,27 @@
 namespace basedhlir
 {
 
-  auto Type_pool::Function_type_hash::operator()(Function_type const &ft) const noexcept -> std::size_t
+  auto Type_pool::Function_type_hash::operator()(
+    Function_type const &ft
+  ) const noexcept -> std::size_t
   {
     auto seed = std::bit_cast<std::uintptr_t>(ft.return_type);
     for (auto const param : ft.parameter_types)
     {
-      seed ^= std::bit_cast<std::uintptr_t>(param) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+      seed ^= std::bit_cast<std::uintptr_t>(param) + 0x9e3779b9 + (seed << 6) +
+              (seed >> 2);
     }
     return seed;
   }
 
-  Type *Type_pool::i32_type()
+  Type *Type_pool::int32_type()
   {
-    if (_i32_type == nullptr)
+    if (_int32_type == nullptr)
     {
-      _types.push_back(std::make_unique<Type>(I32_type{}));
-      _i32_type = _types.back().get();
+      _types.push_back(std::make_unique<Type>(Int32_type{}));
+      _int32_type = _types.back().get();
     }
-    return _i32_type;
+    return _int32_type;
   }
 
   Type *Type_pool::bool_type()
@@ -58,10 +61,15 @@ namespace basedhlir
 
   Type *Type_pool::pointer_type(Type *pointee, bool is_mutable)
   {
-    auto &cached = is_mutable ? pointee->_mut_pointer_type : pointee->_pointer_type;
+    auto &cached =
+      is_mutable ? pointee->_mut_pointer_type : pointee->_pointer_type;
     if (cached == nullptr)
     {
-      _types.push_back(std::make_unique<Type>(Pointer_type{.pointee = pointee, .is_mutable = is_mutable}));
+      _types.push_back(
+        std::make_unique<Type>(
+          Pointer_type{.pointee = pointee, .is_mutable = is_mutable}
+        )
+      );
       cached = _types.back().get();
     }
     return cached;
@@ -74,7 +82,9 @@ namespace basedhlir
     {
       return it->second;
     }
-    _types.push_back(std::make_unique<Type>(Sized_array_type{.element = element, .size = size}));
+    _types.push_back(
+      std::make_unique<Type>(Sized_array_type{.element = element, .size = size})
+    );
     auto const result = _types.back().get();
     element->_sized_array_types.emplace(size, result);
     return result;
@@ -84,15 +94,23 @@ namespace basedhlir
   {
     if (element->_unsized_array_type == nullptr)
     {
-      _types.push_back(std::make_unique<Type>(Unsized_array_type{.element = element}));
+      _types.push_back(
+        std::make_unique<Type>(Unsized_array_type{.element = element})
+      );
       element->_unsized_array_type = _types.back().get();
     }
     return element->_unsized_array_type;
   }
 
-  Type *Type_pool::function_type(std::vector<Type *> parameter_types, Type *return_type)
+  Type *Type_pool::function_type(
+    std::vector<Type *> parameter_types,
+    Type *return_type
+  )
   {
-    auto ft = Function_type{.parameter_types = std::move(parameter_types), .return_type = return_type};
+    auto ft = Function_type{
+      .parameter_types = std::move(parameter_types),
+      .return_type = return_type
+    };
     auto const it = _function_types.find(ft);
     if (it != _function_types.end())
     {

@@ -30,13 +30,9 @@ namespace basedparse
 
     Expression_statement parse_expression_statement();
 
-    Block_expression parse_block_expression();
-
     std::unique_ptr<Expression> parse_expression();
 
     std::unique_ptr<Expression> parse_primary_expression();
-
-    Fn_expression parse_fn_expression();
 
     Int_literal_expression parse_int_literal_expression();
 
@@ -44,9 +40,13 @@ namespace basedparse
 
     Paren_expression parse_paren_expression();
 
+    Block_expression parse_block_expression();
+
     If_expression parse_if_expression();
 
     While_statement parse_while_statement();
+
+    Fn_expression parse_fn_expression();
 
     Fn_expression::Return_type_specifier parse_return_type_specifier();
 

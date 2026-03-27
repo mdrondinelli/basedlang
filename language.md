@@ -23,19 +23,22 @@ Statements appear inside block bodies (`{ ... }`):
 
 ## Expressions
 
+
+### Operators
+
 Precedence from tightest to loosest (all binary operators are left-associative):
 
 | Precedence | Kind           | Examples                |
 |------------|----------------|-------------------------|
-| 0          | postfix        | `f()`, `arr[i]`         |
-| 1          | unary          | `&x`, `*p`, `+x`, `-x` |
-| 2          | multiplicative | `a * b`, `a / b`, `a % b` |
-| 3          | additive       | `a + b`, `a - b`        |
-| 4          | relational     | `a < b`, `a <= b`, `a > b`, `a >= b` |
-| 5          | equality       | `a == b`, `a != b`      |
-| 6          | assignment (right-assoc) | `a = b`, `a = b = c` |
-
-Primary expressions:
+| 0          | postfix        | `f()`, `arr[i]`                                   |
+| 1          | unary          | `&x`, `&mut x`, `*p`, `* T`, `*mut T`, `+x`, `-x` |
+| 2          | multiplicative | `a * b`, `a / b`, `a % b`                         |
+| 3          | additive       | `a + b`, `a - b`                                  |
+| 4          | relational     | `a < b`, `a <= b`, `a > b`, `a >= b`              |
+| 5          | equality       | `a == b`, `a != b`                                |
+| 6          | assignment (right-assoc) | `a = b`, `a = b = c`                    |
+ 
+### Primary Expressions
 
 - Integer literals: `42`
 - Identifiers: `x`
@@ -43,24 +46,22 @@ Primary expressions:
 - Block expressions: `{ statements... tail_expr }`
 - If expressions: `if condition { } [else { }]`, `if cond { } else if cond { } else { }`
 - Function expressions: `fn(params): ReturnType => expression`
-Call and index are postfix and can chain: `f()(0)[1]`
 
 The return type (`: Type`) is optional on `fn` expressions. Without a return
 type, the syntax is `fn(params) => expression`. The body after `=>` is any
-expression, though block expressions are the most common. Parameters support
-trailing commas. Parameters are immutable by default; prefix with `mut` for a
-mutable binding: `fn(mut x: Int32) => { }`.
+expression. Parameters support trailing commas. Parameters are immutable by
+default; prefix with `mut` for a mutable binding: `fn(mut x: Int32) => { }`.
 
-## Type expressions
+### Type expressions
 
 Type expressions use prefix modifiers applied to a base type:
 
 | Modifier      | Syntax        | Example              | Meaning                           |
 |---------------|---------------|----------------------|-----------------------------------|
-| pointer       | `*T`          | `*Int32`             | pointer to (const) Int32          |
-| mut pointer   | `*mut T`      | `*mut Int32`         | pointer to mutable Int32          |
-| sized array   | `[expr]T`     | `[4]Int32`           | array of 4 Int32s                 |
-| unsized array | `[]T`         | `[]Int32`            | dynamically-sized array of Int32s |
+| pointer       | `*T`          | `*Int32`             | pointer to (const) `Int32`          |
+| mut pointer   | `*mut T`      | `*mut Int32`         | pointer to mutable `Int32`          |
+| sized array   | `[expr]T`     | `[4]Int32`           | array of 4 `Int32`                 |
+| unsized array | `[]T`         | `[]Int32`            | dynamically-sized array of `Int32s` |
 
 These compose right to left. `*mut` marks the pointee as mutable.
 Pointer/variable mutability comes from the binding, not the type.
@@ -70,12 +71,12 @@ Examples:
 | Type expression       | Meaning                                                              |
 |-----------------------|----------------------------------------------------------------------|
 | `Int32`               | plain integer                                                        |
-| `*Int32`              | pointer to Int32                                                     |
-| `*mut Int32`          | pointer to mutable Int32                                             |
+| `*Int32`              | pointer to `Int32`                                                     |
+| `*mut Int32`          | pointer to mutable `Int32`                                             |
 | `[4]Int32`            | sized array                                                          |
 | `*[]Int32`            | pointer to unsized array                                             |
 | `*mut []Int32`        | pointer to mutable unsized array                                     |
-| `*[8]*mut [4]Int32`   | pointer to array of 8 of (pointer to mutable array of 4 of Int32)    |
+| `*[8]*mut [4]Int32`   | pointer to array of 8 of (pointer to mutable array of 4 of `Int32`)    |
 
 ## Full examples
 

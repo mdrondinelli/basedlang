@@ -6,7 +6,7 @@ A program is a sequence of function definitions. Each is a `let` binding of a
 `fn` expression, terminated by a semicolon:
 
 ```
-let main = fn(): i32 -> {
+let main = fn(): Int32 => {
   return 0;
 };
 ```
@@ -42,54 +42,53 @@ Primary expressions:
 - Parenthesized: `(expr)`
 - Block expressions: `{ statements... tail_expr }`
 - If expressions: `if condition { } [else { }]`, `if cond { } else if cond { } else { }`
-- Function expressions: `fn(params): ReturnType -> expression`
-- Constructor expressions: `new Type { args }` — `Type` is a full type expression (e.g. `new i32[3]{10, 20, 30}`)
+- Function expressions: `fn(params): ReturnType => expression`
+- Constructor expressions: `new Type { args }` — `Type` is a full type expression (e.g. `new [3]Int32{10, 20, 30}`)
 
 Call and index are postfix and can chain: `f()(0)[1]`
 
 The return type (`: Type`) is optional on `fn` expressions. Without a return
-type, the syntax is `fn(params) -> expression`. The body after `->` is any
+type, the syntax is `fn(params) => expression`. The body after `=>` is any
 expression, though block expressions are the most common. Parameters support
 trailing commas. Parameters are immutable by default; prefix with `mut` for a
-mutable binding: `fn(mut x: i32) -> { }`.
+mutable binding: `fn(mut x: Int32) => { }`.
 
 ## Type expressions
 
-A type starts with an identifier and can be followed by any number of postfix
-modifiers:
+Type expressions use prefix modifiers applied to a base type:
 
-| Modifier   | Syntax       | Example             | Meaning                       |
-|------------|--------------|---------------------|-------------------------------|
-| sized array | `[expr]`    | `i32[4]`            | array of 4 i32s               |
-| unsized array | `[]`     | `i32[]`             | dynamically-sized array of i32s |
-| pointer    | `*`          | `i32*`              | pointer to (const) i32        |
-| mut pointer | `mut*`      | `i32 mut*`          | pointer to mutable i32        |
+| Modifier    | Syntax        | Example              | Meaning                          |
+|-------------|---------------|----------------------|----------------------------------|
+| pointer     | `*T`          | `*Int32`             | pointer to (const) Int32         |
+| mut pointer | `*mut T`      | `*mut Int32`         | pointer to mutable Int32         |
+| sized array | `[expr]T`     | `[4]Int32`           | array of 4 Int32s                |
+| unsized array | `[]T`      | `[]Int32`            | dynamically-sized array of Int32s |
 
-These chain left to right. `mut` only appears before `*` — it marks the pointee
-as mutable. Pointer/variable mutability comes from the binding, not the type.
+These compose right to left. `*mut` marks the pointee as mutable.
+Pointer/variable mutability comes from the binding, not the type.
 
 Examples:
 
 ```
-i32                 -- plain integer
-i32*                -- pointer to i32
-i32 mut*            -- pointer to mutable i32
-i32[4]              -- sized array
-i32[]*              -- pointer to unsized array
-i32[] mut*          -- pointer to mutable unsized array
-i32[4] mut*[8]*     -- pointer to array of 8 of (pointer to mutable array of 4 of i32)
+Int32                 -- plain integer
+*Int32                -- pointer to Int32
+*mut Int32            -- pointer to mutable Int32
+[4]Int32              -- sized array
+*[]Int32              -- pointer to unsized array
+*mut []Int32          -- pointer to mutable unsized array
+*[8]*mut [4]Int32     -- pointer to array of 8 of (pointer to mutable array of 4 of Int32)
 ```
 
 ## Full examples
 
 ```
 -- function with parameters and return type
-let add = fn(a: i32, b: i32): i32 -> {
+let add = fn(a: Int32, b: Int32): Int32 => {
   return a + b;
 };
 
 -- function taking a pointer to a mutable array
-let zero_fill = fn(buf: i32[] mut*, len: i32): void -> {
+let zero_fill = fn(buf: *mut []Int32, len: Int32): Void => {
   -- ...
 };
 
@@ -97,7 +96,7 @@ let zero_fill = fn(buf: i32[] mut*, len: i32): void -> {
 let v = new Vec3{1, 2, 3};
 
 -- constructing a sized array
-let arr = new i32[3]{10, 20, 30};
+let arr = new [3]Int32{10, 20, 30};
 
 -- nested calls and indexing
 let x = get_buffer()[i + 1];

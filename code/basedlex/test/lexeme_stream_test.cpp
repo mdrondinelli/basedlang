@@ -33,9 +33,9 @@ TEST_CASE("Lexeme_stream lexes first.based")
   expect("(", lparen, 1, 14);
   expect(")", rparen, 1, 15);
   expect(":", colon, 1, 16);
-  expect("i32", identifier, 1, 18);
-  expect("=>", fat_arrow, 1, 22);
-  expect("{", lbrace, 1, 25);
+  expect("Int32", identifier, 1, 18);
+  expect("=>", fat_arrow, 1, 24);
+  expect("{", lbrace, 1, 27);
   expect("return", kw_return, 2, 3);
   expect("0", int_literal, 2, 10);
   expect(";", semicolon, 2, 11);

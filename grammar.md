@@ -43,8 +43,6 @@ Primary expressions:
 - Block expressions: `{ statements... tail_expr }`
 - If expressions: `if condition { } [else { }]`, `if cond { } else if cond { } else { }`
 - Function expressions: `fn(params): ReturnType => expression`
-- Constructor expressions: `new Type { args }` — `Type` is a full type expression (e.g. `new [3]Int32{10, 20, 30}`)
-
 Call and index are postfix and can chain: `f()(0)[1]`
 
 The return type (`: Type`) is optional on `fn` expressions. Without a return
@@ -92,12 +90,6 @@ let zero_fill = fn(buf: *mut []Int32, len: Int32): Void => {
   -- ...
 };
 
--- constructing a value
-let v = new Vec3{1, 2, 3};
-
--- constructing a sized array
-let arr = new [3]Int32{10, 20, 30};
-
 -- nested calls and indexing
 let x = get_buffer()[i + 1];
 
@@ -135,4 +127,4 @@ let y = -x + 2 * (a - b);
 
 ## Keywords
 
-`else`, `fn`, `if`, `let`, `mut`, `new`, `return`, `while`
+`else`, `fn`, `if`, `let`, `mut`, `return`, `while`

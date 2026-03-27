@@ -55,73 +55,97 @@ mutable binding: `fn(mut x: Int32) => { }`.
 
 Type expressions use prefix modifiers applied to a base type:
 
-| Modifier    | Syntax        | Example              | Meaning                          |
-|-------------|---------------|----------------------|----------------------------------|
-| pointer     | `*T`          | `*Int32`             | pointer to (const) Int32         |
-| mut pointer | `*mut T`      | `*mut Int32`         | pointer to mutable Int32         |
-| sized array | `[expr]T`     | `[4]Int32`           | array of 4 Int32s                |
-| unsized array | `[]T`      | `[]Int32`            | dynamically-sized array of Int32s |
+| Modifier      | Syntax        | Example              | Meaning                           |
+|---------------|---------------|----------------------|-----------------------------------|
+| pointer       | `*T`          | `*Int32`             | pointer to (const) Int32          |
+| mut pointer   | `*mut T`      | `*mut Int32`         | pointer to mutable Int32          |
+| sized array   | `[expr]T`     | `[4]Int32`           | array of 4 Int32s                 |
+| unsized array | `[]T`         | `[]Int32`            | dynamically-sized array of Int32s |
 
 These compose right to left. `*mut` marks the pointee as mutable.
 Pointer/variable mutability comes from the binding, not the type.
 
 Examples:
 
-```
-Int32                 -- plain integer
-*Int32                -- pointer to Int32
-*mut Int32            -- pointer to mutable Int32
-[4]Int32              -- sized array
-*[]Int32              -- pointer to unsized array
-*mut []Int32          -- pointer to mutable unsized array
-*[8]*mut [4]Int32     -- pointer to array of 8 of (pointer to mutable array of 4 of Int32)
-```
+| Type expression       | Meaning                                                              |
+|-----------------------|----------------------------------------------------------------------|
+| `Int32`               | plain integer                                                        |
+| `*Int32`              | pointer to Int32                                                     |
+| `*mut Int32`          | pointer to mutable Int32                                             |
+| `[4]Int32`            | sized array                                                          |
+| `*[]Int32`            | pointer to unsized array                                             |
+| `*mut []Int32`        | pointer to mutable unsized array                                     |
+| `*[8]*mut [4]Int32`   | pointer to array of 8 of (pointer to mutable array of 4 of Int32)    |
 
 ## Full examples
 
+Function with parameters and return type:
+
 ```
--- function with parameters and return type
 let add = fn(a: Int32, b: Int32): Int32 => {
   return a + b;
 };
+```
 
--- function taking a pointer to a mutable array
-let zero_fill = fn(buf: *mut []Int32, len: Int32): Void => {
-  -- ...
-};
+Function taking a pointer to a mutable array:
 
--- nested calls and indexing
+```
+let zero_fill = fn(buf: *mut []Int32, len: Int32): Void => { };
+```
+
+Nested calls and indexing:
+
+```
 let x = get_buffer()[i + 1];
+```
 
--- block expression (last expression without ; is the value)
+Block expression (last expression without `;` is the value):
+
+```
 let x = {
   let a = 1;
   let b = 2;
   a + b
 };
+```
 
--- block with no tail expression (produces void)
+Block with no tail expression (produces void):
+
+```
 { do_something(); };
+```
 
--- if/else expression
+If/else expression:
+
+```
 let max = if a > b { a } else { b };
+```
 
--- if without else (evaluates to void)
+If without else (evaluates to void):
+
+```
 if done { cleanup(); };
+```
 
--- else-if chain
+Else-if chain:
+
+```
 let sign = if x > 0 { 1 } else if x < 0 { -1 } else { 0 };
+```
 
--- while loop
+While loop:
+
+```
 while n > 0 {
   n = n - 1;
 }
+```
 
--- dereference
+Dereference and unary/binary operators:
+
+```
 let val = *p;
 let first = *buf[0];
-
--- unary and binary operators
 let y = -x + 2 * (a - b);
 ```
 

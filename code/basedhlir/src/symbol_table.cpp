@@ -37,10 +37,12 @@ namespace basedhlir
     return sym;
   }
 
-  Symbol *Symbol_table::declare_function(std::string name, std::uint64_t function_handle)
+  Symbol *Symbol_table::declare_function(std::string name, Function *function)
   {
     auto const sym = _symbols.emplace_back(
-      std::make_unique<Symbol>(std::move(name), Function_symbol{.function_handle = function_handle})
+      std::make_unique<Symbol>(
+        std::move(name), Function_symbol{.function = function}
+      )
     ).get();
     if (_scopes.empty())
     {

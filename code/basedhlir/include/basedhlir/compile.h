@@ -60,7 +60,12 @@ namespace basedhlir
     Type *type;
   };
 
-  using Constant_value = std::variant<std::int32_t, bool, Void_value, Type_value>;
+  struct Function_value
+  {
+    Function *function;
+  };
+
+  using Constant_value = std::variant<std::int32_t, bool, Void_value, Type_value, Function_value>;
 
   class Unary_operator_overload
   {
@@ -95,8 +100,6 @@ namespace basedhlir
     explicit Compilation_context(Type_pool *type_pool);
 
     Translation_unit compile(basedparse::Translation_unit const &ast);
-
-    Function *get_function(std::uint64_t function_handle);
 
     [[noreturn]] void emit_error(std::string message, basedlex::Lexeme const &lexeme);
 

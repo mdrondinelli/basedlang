@@ -642,11 +642,6 @@ namespace basedhlir
     return std::move(_translation_unit);
   }
 
-  Function *Compilation_context::get_function(std::uint64_t function_handle)
-  {
-    return _translation_unit.functions[function_handle].get();
-  }
-
   [[noreturn]] void Compilation_context::emit_error(
     std::string message,
     basedlex::Lexeme const &lexeme
@@ -815,7 +810,7 @@ namespace basedhlir
     auto const fs = std::get_if<Function_symbol>(&sym->data);
     if (fs != nullptr)
     {
-      return get_function(fs->function_handle)->type;
+      return fs->function->type;
     }
     emit_error(
       std::format("'{}' is not a value", expr.identifier.text),
@@ -1310,15 +1305,13 @@ namespace basedhlir
       compile_type_expression(*fn_expr.return_type_specifier->type);
     auto const function_type =
       _type_pool->function_type(std::move(parameter_types), return_type);
-    auto const function_handle =
-      static_cast<std::uint64_t>(_translation_unit.functions.size());
-    _translation_unit.functions.push_back(
+    auto const function = _translation_unit.functions.emplace_back(
       std::make_unique<Function>(Function{
         .type = function_type,
         .parameters = std::move(parameters),
       })
-    );
-    _symbol_table.declare_function(func_def.name.text, function_handle);
+    ).get();
+    _symbol_table.declare_function(func_def.name.text, function);
   }
 
   Translation_unit

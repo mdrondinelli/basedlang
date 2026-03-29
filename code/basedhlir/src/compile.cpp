@@ -629,7 +629,7 @@ namespace basedhlir
     {
       try
       {
-        compile_top_level_let_statement(func_def);
+        compile_function_definition(func_def);
       }
       catch (Compilation_error const &)
       {
@@ -1285,7 +1285,7 @@ namespace basedhlir
     return evaluate_constant_expression(expr.else_part->body);
   }
 
-  void Compilation_context::compile_top_level_let_statement(
+  void Compilation_context::compile_function_definition(
     basedparse::Function_definition const &func_def
   )
   {

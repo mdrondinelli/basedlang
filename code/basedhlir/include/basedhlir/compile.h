@@ -186,7 +186,7 @@ namespace basedhlir
 
     Constant_value evaluate_constant_expression(basedparse::If_expression const &);
 
-    void compile_top_level_let_statement(basedparse::Function_definition const &func_def);
+    void compile_function_definition(basedparse::Function_definition const &func_def);
 
   private:
     Type_pool *_type_pool;

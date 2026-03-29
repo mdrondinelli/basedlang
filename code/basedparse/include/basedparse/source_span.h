@@ -38,7 +38,9 @@ namespace basedparse
   Source_span span_of(Recurse_expression const &node);
   Source_span span_of(Fn_expression const &node);
   Source_span span_of(Paren_expression const &node);
-  Source_span span_of(Unary_expression const &node);
+  Source_span span_of(Prefix_expression const &node);
+
+  Source_span span_of(Postfix_expression const &node);
   Source_span span_of(Binary_expression const &node);
   Source_span span_of(Call_expression const &node);
   Source_span span_of(Index_expression const &node);

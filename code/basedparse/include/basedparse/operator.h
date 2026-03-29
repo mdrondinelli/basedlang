@@ -12,10 +12,11 @@ namespace basedparse
   {
     call,
     index,
+    dereference,
     address_of,
     address_of_mut,
-    dereference,
-    dereference_mut,
+    pointer_to,
+    pointer_to_mut,
     unary_plus,
     unary_minus,
     multiply,
@@ -42,7 +43,7 @@ namespace basedparse
 
   Operator_associativity get_precedence_associativity(int precedence);
 
-  std::optional<Operator> get_unary_operator(basedlex::Token token);
+  std::optional<Operator> get_prefix_operator(basedlex::Token token);
 
   std::optional<Operator> get_postfix_operator(basedlex::Token token);
 

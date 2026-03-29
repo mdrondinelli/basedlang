@@ -81,18 +81,32 @@ namespace basedparse
     basedlex::Lexeme rparen;
   };
 
-  struct Unary_expression
+  struct Prefix_expression
   {
-    ~Unary_expression();
+    ~Prefix_expression();
 
-    Unary_expression() = default;
+    Prefix_expression() = default;
 
-    Unary_expression(Unary_expression &&) noexcept = default;
+    Prefix_expression(Prefix_expression &&) noexcept = default;
 
-    Unary_expression &operator=(Unary_expression &&) noexcept = default;
+    Prefix_expression &operator=(Prefix_expression &&) noexcept = default;
 
     basedlex::Lexeme op;
     std::unique_ptr<Expression> operand;
+  };
+
+  struct Postfix_expression
+  {
+    ~Postfix_expression();
+
+    Postfix_expression() = default;
+
+    Postfix_expression(Postfix_expression &&) noexcept = default;
+
+    Postfix_expression &operator=(Postfix_expression &&) noexcept = default;
+
+    std::unique_ptr<Expression> operand;
+    basedlex::Lexeme op;
   };
 
   struct Binary_expression
@@ -223,7 +237,8 @@ namespace basedparse
       Recurse_expression,
       Fn_expression,
       Paren_expression,
-      Unary_expression,
+      Prefix_expression,
+      Postfix_expression,
       Binary_expression,
       Call_expression,
       Index_expression,

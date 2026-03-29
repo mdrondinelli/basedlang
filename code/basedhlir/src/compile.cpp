@@ -599,10 +599,10 @@ namespace basedhlir
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
       std::make_unique<Int32_unary_minus>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::dereference].push_back(
+    _unary_overloads[basedparse::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::dereference_mut].push_back(
+    _unary_overloads[basedparse::Operator::pointer_to_mut].push_back(
       std::make_unique<Pointer_to_mut>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::add].push_back(
@@ -899,10 +899,10 @@ namespace basedhlir
   }
 
   Type *Compilation_context::type_of_expression(
-    basedparse::Unary_expression const &expr
+    basedparse::Prefix_expression const &expr
   )
   {
-    auto const op = basedparse::get_unary_operator(expr.op.token);
+    auto const op = basedparse::get_prefix_operator(expr.op.token);
     assert(op.has_value());
     auto const operand_type = type_of_expression(*expr.operand);
     auto const overload = find_unary_overload(*op, operand_type);
@@ -911,9 +911,25 @@ namespace basedhlir
       return overload->result_type();
     }
     emit_error(
-      std::format("no matching overload for unary operator '{}'", expr.op.text),
+      std::format(
+        "no matching overload for prefix operator '{}'",
+        expr.op.text
+      ),
       expr.op
     );
+  }
+
+  Type *Compilation_context::type_of_expression(
+    basedparse::Postfix_expression const &expr
+  )
+  {
+    auto const operand_type = type_of_expression(*expr.operand);
+    auto const pointer_data = std::get_if<Pointer_type>(&operand_type->data);
+    if (pointer_data != nullptr)
+    {
+      return pointer_data->pointee;
+    }
+    emit_error("cannot dereference non-pointer type", expr.op);
   }
 
   Type *Compilation_context::type_of_expression(
@@ -1086,15 +1102,22 @@ namespace basedhlir
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Unary_expression const &expr
+    basedparse::Prefix_expression const &expr
   )
   {
-    auto const op = basedparse::get_unary_operator(expr.op.token);
+    auto const op = basedparse::get_prefix_operator(expr.op.token);
     assert(op.has_value());
     auto const operand_type = type_of_expression(*expr.operand);
     auto const overload = find_unary_overload(*op, operand_type);
     assert(overload != nullptr);
     return overload->evaluate(evaluate_constant_expression(*expr.operand));
+  }
+
+  Constant_value Compilation_context::evaluate_constant_expression(
+    basedparse::Postfix_expression const &expr
+  )
+  {
+    emit_error("dereference is not a constant expression", expr.op);
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1278,7 +1301,14 @@ namespace basedhlir
   }
 
   void Compilation_context::compile_expression(
-    basedparse::Unary_expression const &
+    basedparse::Prefix_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Postfix_expression const &
   )
   {
     // TODO

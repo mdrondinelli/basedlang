@@ -139,14 +139,13 @@ namespace basedparse
   ///
   /// The algorithm works in three phases:
   ///
-  /// 1. **Prefix/unary**: If the next token is a unary operator (e.g. `-`,
-  /// `*`),
+  /// 1. **Prefix**: If the next token is a prefix operator (e.g. `-`, `^`),
   ///    consume it and recursively parse the operand at a tighter precedence
-  ///    (one below the unary op's level). Otherwise fall through to primary.
+  ///    (one below the prefix op's level). Otherwise fall through to primary.
   ///
   /// 2. **Postfix**: Repeatedly consume postfix operators (call `()`, index
-  /// `[]`)
-  ///    that bind tighter than the current precedence level.
+  /// `[]`,
+  ///    dereference `^`) that bind tighter than the current precedence level.
   ///
   /// 3. **Binary infix**: Repeatedly consume binary operators (e.g. `+`, `<`,
   ///    `==`) whose precedence fits within `current_precedence`. For each one,
@@ -154,8 +153,8 @@ namespace basedparse
   ///    enforces left-associativity (operators at the same level fold left).
   ///
   /// **Precedence table** (lower number = binds tighter):
-  /// - 0: postfix call `()`, index `[]`
-  /// - 1: prefix `&` (address-of), `*` (dereference), unary `+`, unary `-`
+  /// - 0: postfix call `()`, index `[]`, dereference `^`
+  /// - 1: prefix `&` (address-of), `^` (pointer-to), unary `+`, unary `-`
   /// - 2: `*`, `/`, `%`
   /// - 3: `+`, `-`
   /// - 4: `<`, `<=`, `>`, `>=`
@@ -169,19 +168,20 @@ namespace basedparse
   /// 3. Assign it a precedence in `get_operator_precedence` (operator.cpp).
   /// 4. Map the token to the operator in the appropriate get_*_operator
   /// function
-  ///    (operator.cpp): `get_unary_operator`, `get_postfix_operator`, or
+  ///    (operator.cpp): `get_prefix_operator`, `get_postfix_operator`, or
   ///    `get_binary_operator`. No changes to the parser itself are needed.
   std::unique_ptr<Expression> Parser::parse_expression(int current_precedence)
   {
     auto expr = [&]() -> std::unique_ptr<Expression>
     {
-      if (auto const unary_op = get_unary_operator(_reader->peek().token);
-          unary_op && get_operator_precedence(*unary_op) <= current_precedence)
+      if (auto const prefix_op = get_prefix_operator(_reader->peek().token);
+          prefix_op &&
+          get_operator_precedence(*prefix_op) <= current_precedence)
       {
-        auto unary = Unary_expression{};
-        unary.op = _reader->read();
-        unary.operand = parse_expression(get_operator_precedence(*unary_op));
-        return std::make_unique<Expression>(std::move(unary));
+        auto prefix = Prefix_expression{};
+        prefix.op = _reader->read();
+        prefix.operand = parse_expression(get_operator_precedence(*prefix_op));
+        return std::make_unique<Expression>(std::move(prefix));
       }
       if (_reader->peek().token == basedlex::Token::lbracket &&
           1 <= current_precedence)
@@ -224,7 +224,7 @@ namespace basedparse
             call.rparen = expect(basedlex::Token::rparen);
             primary = std::make_unique<Expression>(std::move(call));
           }
-          else
+          else if (*postfix_op == Operator::index)
           {
             auto idx = Index_expression{};
             idx.operand = std::move(primary);
@@ -232,6 +232,13 @@ namespace basedparse
             idx.index = parse_expression();
             idx.rbracket = expect(basedlex::Token::rbracket);
             primary = std::make_unique<Expression>(std::move(idx));
+          }
+          else
+          {
+            auto postfix = Postfix_expression{};
+            postfix.operand = std::move(primary);
+            postfix.op = _reader->read();
+            primary = std::make_unique<Expression>(std::move(postfix));
           }
         }
         else

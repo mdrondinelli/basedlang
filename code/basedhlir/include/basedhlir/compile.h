@@ -121,7 +121,9 @@ namespace basedhlir
 
     Type *type_of_expression(basedparse::Paren_expression const &expr);
 
-    Type *type_of_expression(basedparse::Unary_expression const &expr);
+    Type *type_of_expression(basedparse::Prefix_expression const &expr);
+
+    Type *type_of_expression(basedparse::Postfix_expression const &expr);
 
     Type *type_of_expression(basedparse::Binary_expression const &expr);
 
@@ -146,7 +148,10 @@ namespace basedhlir
     evaluate_constant_expression(basedparse::Paren_expression const &expr);
 
     Constant_value
-    evaluate_constant_expression(basedparse::Unary_expression const &expr);
+    evaluate_constant_expression(basedparse::Prefix_expression const &expr);
+
+    Constant_value
+    evaluate_constant_expression(basedparse::Postfix_expression const &expr);
 
     Constant_value
     evaluate_constant_expression(basedparse::Binary_expression const &expr);
@@ -189,7 +194,9 @@ namespace basedhlir
 
     void compile_expression(basedparse::Paren_expression const &expr);
 
-    void compile_expression(basedparse::Unary_expression const &expr);
+    void compile_expression(basedparse::Prefix_expression const &expr);
+
+    void compile_expression(basedparse::Postfix_expression const &expr);
 
     void compile_expression(basedparse::Binary_expression const &expr);
 

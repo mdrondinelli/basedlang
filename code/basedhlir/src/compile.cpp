@@ -566,9 +566,9 @@ namespace basedhlir
       : _type_pool{type_pool}
   {
     assert(_type_pool != nullptr);
-    _symbol_table.declare_type("Int32", _type_pool->int32_type());
-    _symbol_table.declare_type("Bool", _type_pool->bool_type());
-    _symbol_table.declare_type("Void", _type_pool->void_type());
+    _symbol_table.declare_value("Int32", Type_value{_type_pool->int32_type()});
+    _symbol_table.declare_value("Bool", Type_value{_type_pool->bool_type()});
+    _symbol_table.declare_value("Void", Type_value{_type_pool->void_type()});
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
       std::make_unique<Int32_unary_plus>(_type_pool)
     );
@@ -640,6 +640,37 @@ namespace basedhlir
       throw Compilation_failure{std::move(_diagnostics)};
     }
     return std::move(_translation_unit);
+  }
+
+  Type *Compilation_context::type_of_constant(Constant_value const &value)
+  {
+    return std::visit(
+      [this](auto const &v) -> Type *
+      {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::int32_t>)
+        {
+          return _type_pool->int32_type();
+        }
+        else if constexpr (std::is_same_v<T, bool>)
+        {
+          return _type_pool->bool_type();
+        }
+        else if constexpr (std::is_same_v<T, Void_value>)
+        {
+          return _type_pool->void_type();
+        }
+        else if constexpr (std::is_same_v<T, Type_value>)
+        {
+          return _type_pool->type_type();
+        }
+        else if constexpr (std::is_same_v<T, Function_value>)
+        {
+          return v.function->type;
+        }
+      },
+      value
+    );
   }
 
   [[noreturn]] void Compilation_context::emit_error(
@@ -797,20 +828,15 @@ namespace basedhlir
   )
   {
     auto const sym = lookup_identifier(expr.identifier);
-    auto const vs = std::get_if<Value_symbol>(&sym->data);
-    if (vs != nullptr)
+    auto const ob = std::get_if<Object_binding>(&sym->data);
+    if (ob != nullptr)
     {
-      return vs->type;
+      return ob->type;
     }
-    auto const ts = std::get_if<Type_symbol>(&sym->data);
-    if (ts != nullptr)
+    auto const cv = std::get_if<Constant_value>(&sym->data);
+    if (cv != nullptr)
     {
-      return _type_pool->type_type();
-    }
-    auto const fs = std::get_if<Function_symbol>(&sym->data);
-    if (fs != nullptr)
-    {
-      return fs->function->type;
+      return type_of_constant(*cv);
     }
     emit_error(
       std::format("'{}' is not a value", expr.identifier.text),
@@ -963,7 +989,7 @@ namespace basedhlir
       {
         auto const type = type_of_expression(let->initializer);
         _symbol_table
-          .declare_value(let->name.text, type, let->kw_mut.has_value());
+          .declare_object(let->name.text, type, let->kw_mut.has_value());
       }
     }
     auto const result = type_of_expression(*expr.tail);
@@ -1027,11 +1053,7 @@ namespace basedhlir
   )
   {
     auto const sym = try_lookup_identifier(expr.identifier);
-    if (sym != nullptr && std::holds_alternative<Type_symbol>(sym->data))
-    {
-      return true;
-    }
-    return false;
+    return sym != nullptr && std::holds_alternative<Constant_value>(sym->data);
   }
 
   bool Compilation_context::is_constant_expression(
@@ -1192,9 +1214,9 @@ namespace basedhlir
   )
   {
     auto const sym = lookup_identifier(expr.identifier);
-    auto const ts = std::get_if<Type_symbol>(&sym->data);
-    assert(ts != nullptr);
-    return Type_value{ts->type};
+    auto const cv = std::get_if<Constant_value>(&sym->data);
+    assert(cv != nullptr);
+    return *cv;
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1305,13 +1327,15 @@ namespace basedhlir
       compile_type_expression(*fn_expr.return_type_specifier->type);
     auto const function_type =
       _type_pool->function_type(std::move(parameter_types), return_type);
-    auto const function = _translation_unit.functions.emplace_back(
-      std::make_unique<Function>(Function{
-        .type = function_type,
-        .parameters = std::move(parameters),
-      })
-    ).get();
-    _symbol_table.declare_function(func_def.name.text, function);
+    auto const function = _translation_unit.functions
+                            .emplace_back(
+                              std::make_unique<Function>(Function{
+                                .type = function_type,
+                                .parameters = std::move(parameters),
+                              })
+                            )
+                            .get();
+    _symbol_table.declare_value(func_def.name.text, Function_value{function});
   }
 
   Translation_unit

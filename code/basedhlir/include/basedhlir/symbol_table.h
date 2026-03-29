@@ -8,43 +8,30 @@
 #include <variant>
 #include <vector>
 
+#include "constant_value.h"
 #include "type.h"
 
 namespace basedhlir
 {
 
-  struct Function;
-
-  struct Value_symbol
+  struct Object_binding
   {
     Type *type;
     bool is_mutable;
   };
 
-  struct Type_symbol
-  {
-    Type *type;
-  };
-
-  struct Function_symbol
-  {
-    Function *function;
-  };
-
   struct Symbol
   {
     std::string name;
-    std::variant<Value_symbol, Type_symbol, Function_symbol> data;
+    std::variant<Object_binding, Constant_value> data;
   };
 
   class Symbol_table
   {
   public:
-    Symbol *declare_value(std::string name, Type *type, bool is_mutable);
+    Symbol *declare_object(std::string name, Type *type, bool is_mutable);
 
-    Symbol *declare_type(std::string name, Type *type);
-
-    Symbol *declare_function(std::string name, Function *function);
+    Symbol *declare_value(std::string name, Constant_value const &value);
 
     Symbol *lookup(std::string_view name) const;
 

@@ -5,11 +5,18 @@
 namespace basedhlir
 {
 
-  Symbol *Symbol_table::declare_value(std::string name, Type *type, bool is_mutable)
+  Symbol *
+  Symbol_table::declare_object(std::string name, Type *type, bool is_mutable)
   {
-    auto const sym = _symbols.emplace_back(
-      std::make_unique<Symbol>(std::move(name), Value_symbol{.type = type, .is_mutable = is_mutable})
-    ).get();
+    auto const sym =
+      _symbols
+        .emplace_back(
+          std::make_unique<Symbol>(
+            std::move(name),
+            Object_binding{.type = type, .is_mutable = is_mutable}
+          )
+        )
+        .get();
     if (_scopes.empty())
     {
       _global_scope.insert_or_assign(sym->name, sym);
@@ -21,29 +28,12 @@ namespace basedhlir
     return sym;
   }
 
-  Symbol *Symbol_table::declare_type(std::string name, Type *type)
+  Symbol *
+  Symbol_table::declare_value(std::string name, Constant_value const &value)
   {
-    auto const sym = _symbols.emplace_back(
-      std::make_unique<Symbol>(std::move(name), Type_symbol{.type = type})
-    ).get();
-    if (_scopes.empty())
-    {
-      _global_scope.insert_or_assign(sym->name, sym);
-    }
-    else
-    {
-      _scopes.back().symbols.insert_or_assign(sym->name, sym);
-    }
-    return sym;
-  }
-
-  Symbol *Symbol_table::declare_function(std::string name, Function *function)
-  {
-    auto const sym = _symbols.emplace_back(
-      std::make_unique<Symbol>(
-        std::move(name), Function_symbol{.function = function}
-      )
-    ).get();
+    auto const sym =
+      _symbols.emplace_back(std::make_unique<Symbol>(std::move(name), value))
+        .get();
     if (_scopes.empty())
     {
       _global_scope.insert_or_assign(sym->name, sym);

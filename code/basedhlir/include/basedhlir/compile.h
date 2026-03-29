@@ -1,7 +1,6 @@
 #ifndef BASEDHLIR_COMPILE_H
 #define BASEDHLIR_COMPILE_H
 
-#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -11,6 +10,7 @@
 #include <basedparse/ast.h>
 #include <basedparse/operator.h>
 
+#include "constant_value.h"
 #include "hlir.h"
 #include "source_location.h"
 #include "symbol_table.h"
@@ -25,11 +25,11 @@ namespace basedhlir
     Source_location location;
   };
 
-  class Compilation_failure : public std::exception
+  class Compilation_failure: public std::exception
   {
   public:
     explicit Compilation_failure(std::vector<Diagnostic> diagnostics)
-      : _diagnostics{std::move(diagnostics)}
+        : _diagnostics{std::move(diagnostics)}
     {
     }
 
@@ -50,22 +50,6 @@ namespace basedhlir
   struct Compilation_error
   {
   };
-
-  struct Void_value
-  {
-  };
-
-  struct Type_value
-  {
-    Type *type;
-  };
-
-  struct Function_value
-  {
-    Function *function;
-  };
-
-  using Constant_value = std::variant<std::int32_t, bool, Void_value, Type_value, Function_value>;
 
   class Unary_operator_overload
   {
@@ -101,7 +85,10 @@ namespace basedhlir
 
     Translation_unit compile(basedparse::Translation_unit const &ast);
 
-    [[noreturn]] void emit_error(std::string message, basedlex::Lexeme const &lexeme);
+    Type *type_of_constant(Constant_value const &value);
+
+    [[noreturn]] void
+    emit_error(std::string message, basedlex::Lexeme const &lexeme);
 
     [[noreturn]] void emit_error(std::string message, Source_location location);
 
@@ -109,9 +96,14 @@ namespace basedhlir
 
     Symbol *lookup_identifier(basedlex::Lexeme const &identifier);
 
-    Unary_operator_overload *find_unary_overload(basedparse::Operator op, Type *operand_type);
+    Unary_operator_overload *
+    find_unary_overload(basedparse::Operator op, Type *operand_type);
 
-    Binary_operator_overload *find_binary_overload(basedparse::Operator op, Type *lhs_type, Type *rhs_type);
+    Binary_operator_overload *find_binary_overload(
+      basedparse::Operator op,
+      Type *lhs_type,
+      Type *rhs_type
+    );
 
     bool is_type_compatible(Type *parameter_type, Type *argument_type);
 
@@ -165,42 +157,66 @@ namespace basedhlir
 
     bool is_constant_expression(basedparse::If_expression const &);
 
-    Constant_value evaluate_constant_expression(basedparse::Expression const &expr);
+    Constant_value
+    evaluate_constant_expression(basedparse::Expression const &expr);
 
-    Constant_value evaluate_constant_expression(basedparse::Int_literal_expression const &expr);
+    Constant_value evaluate_constant_expression(
+      basedparse::Int_literal_expression const &expr
+    );
 
-    Constant_value evaluate_constant_expression(basedparse::Paren_expression const &expr);
+    Constant_value
+    evaluate_constant_expression(basedparse::Paren_expression const &expr);
 
-    Constant_value evaluate_constant_expression(basedparse::Unary_expression const &expr);
+    Constant_value
+    evaluate_constant_expression(basedparse::Unary_expression const &expr);
 
-    Constant_value evaluate_constant_expression(basedparse::Binary_expression const &expr);
+    Constant_value
+    evaluate_constant_expression(basedparse::Binary_expression const &expr);
 
-    Constant_value evaluate_constant_expression(basedparse::Identifier_expression const &);
+    Constant_value
+    evaluate_constant_expression(basedparse::Identifier_expression const &);
 
-    Constant_value evaluate_constant_expression(basedparse::Fn_expression const &);
+    Constant_value
+    evaluate_constant_expression(basedparse::Fn_expression const &);
 
-    Constant_value evaluate_constant_expression(basedparse::Call_expression const &);
+    Constant_value
+    evaluate_constant_expression(basedparse::Call_expression const &);
 
-    Constant_value evaluate_constant_expression(basedparse::Prefix_bracket_expression const &);
+    Constant_value
+    evaluate_constant_expression(basedparse::Prefix_bracket_expression const &);
 
-    Constant_value evaluate_constant_expression(basedparse::Index_expression const &);
+    Constant_value
+    evaluate_constant_expression(basedparse::Index_expression const &);
 
-    Constant_value evaluate_constant_expression(basedparse::Block_expression const &);
+    Constant_value
+    evaluate_constant_expression(basedparse::Block_expression const &);
 
-    Constant_value evaluate_constant_expression(basedparse::If_expression const &);
+    Constant_value
+    evaluate_constant_expression(basedparse::If_expression const &);
 
-    void compile_function_definition(basedparse::Function_definition const &func_def);
+    void compile_function_definition(
+      basedparse::Function_definition const &func_def
+    );
 
   private:
     Type_pool *_type_pool;
     Translation_unit _translation_unit;
     Symbol_table _symbol_table;
     std::vector<Diagnostic> _diagnostics;
-    std::unordered_map<basedparse::Operator, std::vector<std::unique_ptr<Unary_operator_overload>>> _unary_overloads;
-    std::unordered_map<basedparse::Operator, std::vector<std::unique_ptr<Binary_operator_overload>>> _binary_overloads;
+    std::unordered_map<
+      basedparse::Operator,
+      std::vector<std::unique_ptr<Unary_operator_overload>>
+    >
+      _unary_overloads;
+    std::unordered_map<
+      basedparse::Operator,
+      std::vector<std::unique_ptr<Binary_operator_overload>>
+    >
+      _binary_overloads;
   };
 
-  Translation_unit compile(basedparse::Translation_unit const &ast, Type_pool *type_pool);
+  Translation_unit
+  compile(basedparse::Translation_unit const &ast, Type_pool *type_pool);
 
 } // namespace basedhlir
 

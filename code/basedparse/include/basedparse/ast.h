@@ -27,6 +27,11 @@ namespace basedparse
     basedlex::Lexeme identifier;
   };
 
+  struct Recurse_expression
+  {
+    basedlex::Lexeme kw_recurse;
+  };
+
   struct Fn_expression
   {
     struct Parameter_declaration
@@ -146,7 +151,8 @@ namespace basedparse
 
     Prefix_bracket_expression(Prefix_bracket_expression &&) noexcept = default;
 
-    Prefix_bracket_expression &operator=(Prefix_bracket_expression &&) noexcept = default;
+    Prefix_bracket_expression &
+    operator=(Prefix_bracket_expression &&) noexcept = default;
 
     basedlex::Lexeme lbracket;
     std::unique_ptr<Expression> size;
@@ -214,6 +220,7 @@ namespace basedparse
     std::variant<
       Int_literal_expression,
       Identifier_expression,
+      Recurse_expression,
       Fn_expression,
       Paren_expression,
       Unary_expression,
@@ -267,23 +274,13 @@ namespace basedparse
     basedlex::Lexeme semicolon;
   };
 
-  struct Function_definition
-  {
-    basedlex::Lexeme kw_let;
-    basedlex::Lexeme name;
-    basedlex::Lexeme eq;
-    Fn_expression function;
-    basedlex::Lexeme semicolon;
-  };
-
   struct Statement
   {
     std::variant<
       Let_statement,
       While_statement,
       Return_statement,
-      Expression_statement,
-      Function_definition
+      Expression_statement
     >
       value;
   };
@@ -292,7 +289,7 @@ namespace basedparse
 
   struct Translation_unit
   {
-    std::vector<Function_definition> function_definitions;
+    std::vector<Let_statement> let_statements;
   };
 
 } // namespace basedparse

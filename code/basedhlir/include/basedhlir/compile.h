@@ -115,6 +115,8 @@ namespace basedhlir
 
     Type *type_of_expression(basedparse::Identifier_expression const &expr);
 
+    Type *type_of_expression(basedparse::Recurse_expression const &expr);
+
     Type *type_of_expression(basedparse::Fn_expression const &expr);
 
     Type *type_of_expression(basedparse::Paren_expression const &expr);
@@ -138,6 +140,8 @@ namespace basedhlir
     bool is_constant_expression(basedparse::Int_literal_expression const &);
 
     bool is_constant_expression(basedparse::Identifier_expression const &);
+
+    bool is_constant_expression(basedparse::Recurse_expression const &);
 
     bool is_constant_expression(basedparse::Fn_expression const &);
 
@@ -177,6 +181,9 @@ namespace basedhlir
     evaluate_constant_expression(basedparse::Identifier_expression const &);
 
     Constant_value
+    evaluate_constant_expression(basedparse::Recurse_expression const &);
+
+    Constant_value
     evaluate_constant_expression(basedparse::Fn_expression const &);
 
     Constant_value
@@ -194,14 +201,49 @@ namespace basedhlir
     Constant_value
     evaluate_constant_expression(basedparse::If_expression const &);
 
-    void compile_function_definition(
-      basedparse::Function_definition const &func_def
-    );
+    bool is_top_level() const;
+
+    void compile_expression(basedparse::Expression const &expr);
+
+    void compile_expression(basedparse::Int_literal_expression const &expr);
+
+    void compile_expression(basedparse::Identifier_expression const &expr);
+
+    void compile_expression(basedparse::Recurse_expression const &expr);
+
+    void compile_expression(basedparse::Fn_expression const &expr);
+
+    void compile_expression(basedparse::Paren_expression const &expr);
+
+    void compile_expression(basedparse::Unary_expression const &expr);
+
+    void compile_expression(basedparse::Binary_expression const &expr);
+
+    void compile_expression(basedparse::Call_expression const &expr);
+
+    void compile_expression(basedparse::Index_expression const &expr);
+
+    void compile_expression(basedparse::Prefix_bracket_expression const &expr);
+
+    void compile_expression(basedparse::Block_expression const &expr);
+
+    void compile_expression(basedparse::If_expression const &expr);
+
+    void compile_statement(basedparse::Statement const &stmt);
+
+    void compile_statement(basedparse::Let_statement const &stmt);
+
+    void compile_statement(basedparse::While_statement const &stmt);
+
+    void compile_statement(basedparse::Return_statement const &stmt);
+
+    void compile_statement(basedparse::Expression_statement const &stmt);
 
   private:
     Type_pool *_type_pool;
     Translation_unit _translation_unit;
     Symbol_table _symbol_table;
+    Function *_current_function{};
     std::vector<Diagnostic> _diagnostics;
     std::unordered_map<
       basedparse::Operator,

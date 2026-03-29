@@ -306,6 +306,10 @@ namespace basedlex
             {
               return Token::kw_mut;
             }
+            if (text == "recurse")
+            {
+              return Token::kw_recurse;
+            }
             if (text == "return")
             {
               return Token::kw_return;

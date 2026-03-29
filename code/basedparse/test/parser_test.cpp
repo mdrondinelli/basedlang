@@ -46,7 +46,7 @@ static bool parses(std::string const &source)
   }
 }
 
-TEST_CASE("Parser - first.based produces a Function_definition")
+TEST_CASE("Parser - first.based produces a declaration")
 {
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/first.based"};
   auto binary_stream = basedlex::Istream_binary_stream{&file};
@@ -55,25 +55,27 @@ TEST_CASE("Parser - first.based produces a Function_definition")
   auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
   auto parser = basedparse::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit->function_definitions.size() == 1);
-  auto const &fn_def = unit->function_definitions[0];
-  CHECK(fn_def.kw_let.text == "let");
-  CHECK(fn_def.name.text == "main");
-  CHECK(fn_def.eq.text == "=");
-  CHECK(fn_def.function.kw_fn.text == "fn");
-  CHECK(fn_def.function.lparen.text == "(");
-  CHECK(fn_def.function.rparen.text == ")");
-  REQUIRE(fn_def.function.return_type_specifier.has_value());
-  CHECK(fn_def.function.return_type_specifier->colon.text == ":");
+  REQUIRE(unit->let_statements.size() == 1);
+  auto const &decl = unit->let_statements[0];
+  CHECK(decl.kw_let.text == "let");
+  CHECK(decl.name.text == "main");
+  CHECK(decl.eq.text == "=");
+  auto const fn =
+    std::get_if<basedparse::Fn_expression>(&decl.initializer.value);
+  REQUIRE(fn != nullptr);
+  CHECK(fn->kw_fn.text == "fn");
+  CHECK(fn->lparen.text == "(");
+  CHECK(fn->rparen.text == ")");
+  REQUIRE(fn->return_type_specifier.has_value());
+  CHECK(fn->return_type_specifier->colon.text == ":");
   auto const return_type = std::get_if<basedparse::Identifier_expression>(
-    &fn_def.function.return_type_specifier->type->value
+    &fn->return_type_specifier->type->value
   );
   REQUIRE(return_type != nullptr);
   CHECK(return_type->identifier.text == "Int32");
-  CHECK(fn_def.function.arrow.text == "=>");
-  REQUIRE(fn_def.function.body != nullptr);
-  auto const body =
-    std::get_if<basedparse::Block_expression>(&fn_def.function.body->value);
+  CHECK(fn->arrow.text == "=>");
+  REQUIRE(fn->body != nullptr);
+  auto const body = std::get_if<basedparse::Block_expression>(&fn->body->value);
   REQUIRE(body != nullptr);
   CHECK(body->lbrace.text == "{");
   REQUIRE(body->statements.size() == 1);
@@ -98,29 +100,38 @@ TEST_CASE("Parser - parameters.based parses successfully")
   auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
   auto parser = basedparse::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit->function_definitions.size() == 3);
-  auto const &id_def = unit->function_definitions[0];
-  auto const &first_def = unit->function_definitions[1];
-  auto const &main_def = unit->function_definitions[2];
-  CHECK(id_def.name.text == "id");
-  CHECK(first_def.name.text == "first");
-  CHECK(main_def.name.text == "main");
+  REQUIRE(unit->let_statements.size() == 3);
+  auto const &id_decl = unit->let_statements[0];
+  auto const &first_decl = unit->let_statements[1];
+  auto const &main_decl = unit->let_statements[2];
+  CHECK(id_decl.name.text == "id");
+  CHECK(first_decl.name.text == "first");
+  CHECK(main_decl.name.text == "main");
+  auto const id_fn =
+    std::get_if<basedparse::Fn_expression>(&id_decl.initializer.value);
+  REQUIRE(id_fn != nullptr);
+  auto const first_fn =
+    std::get_if<basedparse::Fn_expression>(&first_decl.initializer.value);
+  REQUIRE(first_fn != nullptr);
+  auto const main_fn =
+    std::get_if<basedparse::Fn_expression>(&main_decl.initializer.value);
+  REQUIRE(main_fn != nullptr);
   // id: fn(x: Int32): Int32 => { return x; }
-  REQUIRE(id_def.function.parameters.size() == 1);
-  CHECK(id_def.function.parameters[0].name.text == "x");
+  REQUIRE(id_fn->parameters.size() == 1);
+  CHECK(id_fn->parameters[0].name.text == "x");
   auto const id_param_type = std::get_if<basedparse::Identifier_expression>(
-    &id_def.function.parameters[0].type->value
+    &id_fn->parameters[0].type->value
   );
   REQUIRE(id_param_type != nullptr);
   CHECK(id_param_type->identifier.text == "Int32");
-  REQUIRE(id_def.function.return_type_specifier.has_value());
+  REQUIRE(id_fn->return_type_specifier.has_value());
   auto const id_ret_type = std::get_if<basedparse::Identifier_expression>(
-    &id_def.function.return_type_specifier->type->value
+    &id_fn->return_type_specifier->type->value
   );
   REQUIRE(id_ret_type != nullptr);
   CHECK(id_ret_type->identifier.text == "Int32");
   auto const id_body =
-    std::get_if<basedparse::Block_expression>(&id_def.function.body->value);
+    std::get_if<basedparse::Block_expression>(&id_fn->body->value);
   REQUIRE(id_body != nullptr);
   REQUIRE(id_body->statements.size() == 1);
   auto const id_ret =
@@ -131,27 +142,27 @@ TEST_CASE("Parser - parameters.based parses successfully")
   REQUIRE(id_ret_val != nullptr);
   CHECK(id_ret_val->identifier.text == "x");
   // first: fn(x: Int32, y: Int32): Int32 => { return x; }
-  REQUIRE(first_def.function.parameters.size() == 2);
-  CHECK(first_def.function.parameters[0].name.text == "x");
+  REQUIRE(first_fn->parameters.size() == 2);
+  CHECK(first_fn->parameters[0].name.text == "x");
   auto const first_param0_type = std::get_if<basedparse::Identifier_expression>(
-    &first_def.function.parameters[0].type->value
+    &first_fn->parameters[0].type->value
   );
   REQUIRE(first_param0_type != nullptr);
   CHECK(first_param0_type->identifier.text == "Int32");
-  CHECK(first_def.function.parameters[1].name.text == "y");
+  CHECK(first_fn->parameters[1].name.text == "y");
   auto const first_param1_type = std::get_if<basedparse::Identifier_expression>(
-    &first_def.function.parameters[1].type->value
+    &first_fn->parameters[1].type->value
   );
   REQUIRE(first_param1_type != nullptr);
   CHECK(first_param1_type->identifier.text == "Int32");
-  REQUIRE(first_def.function.return_type_specifier.has_value());
+  REQUIRE(first_fn->return_type_specifier.has_value());
   auto const first_ret_type = std::get_if<basedparse::Identifier_expression>(
-    &first_def.function.return_type_specifier->type->value
+    &first_fn->return_type_specifier->type->value
   );
   REQUIRE(first_ret_type != nullptr);
   CHECK(first_ret_type->identifier.text == "Int32");
   auto const first_body =
-    std::get_if<basedparse::Block_expression>(&first_def.function.body->value);
+    std::get_if<basedparse::Block_expression>(&first_fn->body->value);
   REQUIRE(first_body != nullptr);
   REQUIRE(first_body->statements.size() == 1);
   auto const first_ret =
@@ -162,14 +173,14 @@ TEST_CASE("Parser - parameters.based parses successfully")
   REQUIRE(first_ret_val != nullptr);
   CHECK(first_ret_val->identifier.text == "x");
   // main: fn(): Int32 => { return first(id(42), 0); }
-  REQUIRE(main_def.function.return_type_specifier.has_value());
+  REQUIRE(main_fn->return_type_specifier.has_value());
   auto const main_ret_type = std::get_if<basedparse::Identifier_expression>(
-    &main_def.function.return_type_specifier->type->value
+    &main_fn->return_type_specifier->type->value
   );
   REQUIRE(main_ret_type != nullptr);
   CHECK(main_ret_type->identifier.text == "Int32");
   auto const main_body =
-    std::get_if<basedparse::Block_expression>(&main_def.function.body->value);
+    std::get_if<basedparse::Block_expression>(&main_fn->body->value);
   REQUIRE(main_body != nullptr);
   REQUIRE(main_body->statements.size() == 1);
   auto const main_ret =
@@ -214,15 +225,21 @@ TEST_CASE("Parser - call_expression.based parses successfully")
   auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
   auto parser = basedparse::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit->function_definitions.size() == 2);
-  auto const &foo = unit->function_definitions[0];
-  auto const &main = unit->function_definitions[1];
-  CHECK(foo.name.text == "foo");
-  CHECK(main.name.text == "main");
+  REQUIRE(unit->let_statements.size() == 2);
+  auto const &foo_decl = unit->let_statements[0];
+  auto const &main_decl = unit->let_statements[1];
+  CHECK(foo_decl.name.text == "foo");
+  CHECK(main_decl.name.text == "main");
+  auto const foo_fn =
+    std::get_if<basedparse::Fn_expression>(&foo_decl.initializer.value);
+  REQUIRE(foo_fn != nullptr);
+  auto const main_fn =
+    std::get_if<basedparse::Fn_expression>(&main_decl.initializer.value);
+  REQUIRE(main_fn != nullptr);
   // foo returns (fn(): Int32 => { return 0; })() — a call with a paren-wrapped
   // fn expression callee
   auto const foo_body =
-    std::get_if<basedparse::Block_expression>(&foo.function.body->value);
+    std::get_if<basedparse::Block_expression>(&foo_fn->body->value);
   REQUIRE(foo_body != nullptr);
   REQUIRE(foo_body->statements.size() == 1);
   auto const foo_ret =
@@ -241,7 +258,7 @@ TEST_CASE("Parser - call_expression.based parses successfully")
   );
   // main returns foo() — a call with an identifier callee
   auto const main_body =
-    std::get_if<basedparse::Block_expression>(&main.function.body->value);
+    std::get_if<basedparse::Block_expression>(&main_fn->body->value);
   REQUIRE(main_body != nullptr);
   REQUIRE(main_body->statements.size() == 1);
   auto const main_ret =
@@ -279,6 +296,7 @@ TEST_CASE("Parser - accepts valid code")
   CHECK(parses("let main = fn(): Void => { f(1); };"));
   CHECK(parses("let main = fn(): Void => { f(1, 2); };"));
   CHECK(parses("let main = fn(): Void => { f(1,); };"));
+  CHECK(parses("let x = 42;"));
 }
 
 TEST_CASE("Parser - rejects invalid code")
@@ -286,7 +304,6 @@ TEST_CASE("Parser - rejects invalid code")
   CHECK_FALSE(parses("let"));
   CHECK_FALSE(parses("let x"));
   CHECK_FALSE(parses("let x ="));
-  CHECK_FALSE(parses("let x = 42;"));
   CHECK_FALSE(parses("let x = fn()"));
   CHECK_FALSE(parses("let x = fn() =>"));
   CHECK_FALSE(parses("let x = fn() => Int32"));
@@ -323,30 +340,32 @@ TEST_CASE("parse_translation_unit - empty")
 {
   auto fixture = Parse_fixture{""};
   auto const unit = fixture.parser.parse_translation_unit();
-  CHECK(unit->function_definitions.empty());
+  CHECK(unit->let_statements.empty());
 }
 
-TEST_CASE("parse_translation_unit - multiple functions")
+TEST_CASE("parse_translation_unit - multiple let statements")
 {
   auto fixture = Parse_fixture{"let a = fn(): Int32 => { return 1; };\n"
                                "let b = fn(): Int32 => { return 2; };"};
   auto const unit = fixture.parser.parse_translation_unit();
-  REQUIRE(unit->function_definitions.size() == 2);
-  CHECK(unit->function_definitions[0].name.text == "a");
-  CHECK(unit->function_definitions[1].name.text == "b");
+  REQUIRE(unit->let_statements.size() == 2);
+  CHECK(unit->let_statements[0].name.text == "a");
+  CHECK(unit->let_statements[1].name.text == "b");
 }
 
-TEST_CASE("parse_function_definition")
+TEST_CASE("parse_let_statement - function declaration")
 {
   auto fixture = Parse_fixture{"let main = fn(): Int32 => { return 0; };"};
-  auto const fn_def = fixture.parser.parse_function_definition();
-  CHECK(fn_def.kw_let.text == "let");
-  CHECK(fn_def.name.text == "main");
-  CHECK(fn_def.eq.text == "=");
-  CHECK(fn_def.function.kw_fn.text == "fn");
-  REQUIRE(fn_def.function.body != nullptr);
-  auto const body =
-    std::get_if<basedparse::Block_expression>(&fn_def.function.body->value);
+  auto const stmt = fixture.parser.parse_let_statement();
+  CHECK(stmt.kw_let.text == "let");
+  CHECK(stmt.name.text == "main");
+  CHECK(stmt.eq.text == "=");
+  auto const fn =
+    std::get_if<basedparse::Fn_expression>(&stmt.initializer.value);
+  REQUIRE(fn != nullptr);
+  CHECK(fn->kw_fn.text == "fn");
+  REQUIRE(fn->body != nullptr);
+  auto const body = std::get_if<basedparse::Block_expression>(&fn->body->value);
   REQUIRE(body != nullptr);
   CHECK(body->statements.size() == 1);
 }
@@ -1263,7 +1282,7 @@ TEST_CASE("Parser - quicksort.based parses successfully")
   auto parser = basedparse::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
   REQUIRE(unit != nullptr);
-  CHECK(unit->function_definitions.size() == 3);
+  CHECK(unit->let_statements.size() == 3);
 }
 
 TEST_CASE("parse_expression - prefix bracket unsized array type")

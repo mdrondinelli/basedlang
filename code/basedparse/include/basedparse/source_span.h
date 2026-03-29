@@ -13,7 +13,7 @@ namespace basedparse
   struct Source_span
   {
     Source_location start; ///< Position of the first character (inclusive).
-    Source_location end;   ///< Position of the last character (inclusive).
+    Source_location end; ///< Position of the last character (inclusive).
   };
 
   /// Returns the source span of a lexeme.
@@ -35,6 +35,7 @@ namespace basedparse
   Source_span span_of(Expression const &node);
   Source_span span_of(Int_literal_expression const &node);
   Source_span span_of(Identifier_expression const &node);
+  Source_span span_of(Recurse_expression const &node);
   Source_span span_of(Fn_expression const &node);
   Source_span span_of(Paren_expression const &node);
   Source_span span_of(Unary_expression const &node);
@@ -50,7 +51,6 @@ namespace basedparse
   Source_span span_of(While_statement const &node);
   Source_span span_of(Return_statement const &node);
   Source_span span_of(Expression_statement const &node);
-  Source_span span_of(Function_definition const &node);
 
   /// @}
 

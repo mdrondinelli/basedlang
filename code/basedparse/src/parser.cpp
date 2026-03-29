@@ -28,20 +28,9 @@ namespace basedparse
     auto unit = std::make_unique<Translation_unit>();
     while (_reader->peek().token != basedlex::Token::eof)
     {
-      unit->function_definitions.push_back(parse_function_definition());
+      unit->let_statements.push_back(parse_let_statement());
     }
     return unit;
-  }
-
-  Function_definition Parser::parse_function_definition()
-  {
-    auto stmt = Function_definition{};
-    stmt.kw_let = expect(basedlex::Token::kw_let);
-    stmt.name = expect(basedlex::Token::identifier);
-    stmt.eq = expect(basedlex::Token::eq);
-    stmt.function = parse_fn_expression();
-    stmt.semicolon = expect(basedlex::Token::semicolon);
-    return stmt;
   }
 
   Statement Parser::parse_statement()
@@ -286,6 +275,12 @@ namespace basedparse
     if (next.token == basedlex::Token::identifier)
     {
       return std::make_unique<Expression>(parse_identifier_expression());
+    }
+    if (next.token == basedlex::Token::kw_recurse)
+    {
+      return std::make_unique<Expression>(
+        Recurse_expression{.kw_recurse = _reader->read()}
+      );
     }
     if (next.token == basedlex::Token::kw_if)
     {

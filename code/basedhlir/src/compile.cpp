@@ -13,6 +13,30 @@
 namespace basedhlir
 {
 
+  template <typename T>
+  class Scoped_assign
+  {
+  public:
+    Scoped_assign(T &target, T value)
+        : _target{target}, _previous{target}
+    {
+      _target = value;
+    }
+
+    ~Scoped_assign()
+    {
+      _target = _previous;
+    }
+
+    Scoped_assign(Scoped_assign const &) = delete;
+
+    Scoped_assign &operator=(Scoped_assign const &) = delete;
+
+  private:
+    T &_target;
+    T _previous;
+  };
+
   class Int32_unary_plus final: public Unary_operator_overload
   {
   public:
@@ -625,11 +649,11 @@ namespace basedhlir
   Translation_unit
   Compilation_context::compile(basedparse::Translation_unit const &ast)
   {
-    for (auto const &func_def : ast.function_definitions)
+    for (auto const &decl : ast.let_statements)
     {
       try
       {
-        compile_function_definition(func_def);
+        compile_statement(decl);
       }
       catch (Compilation_error const &)
       {
@@ -842,6 +866,17 @@ namespace basedhlir
       std::format("'{}' is not a value", expr.identifier.text),
       expr.identifier
     );
+  }
+
+  Type *Compilation_context::type_of_expression(
+    basedparse::Recurse_expression const &expr
+  )
+  {
+    if (_current_function == nullptr)
+    {
+      emit_error("'recurse' used outside of a function body", expr.kw_recurse);
+    }
+    return type_of_constant(Function_value{.function = _current_function});
   }
 
   Type *
@@ -1057,6 +1092,13 @@ namespace basedhlir
   }
 
   bool Compilation_context::is_constant_expression(
+    basedparse::Recurse_expression const &
+  )
+  {
+    return false;
+  }
+
+  bool Compilation_context::is_constant_expression(
     basedparse::Fn_expression const &
   )
   {
@@ -1220,6 +1262,13 @@ namespace basedhlir
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
+    basedparse::Recurse_expression const &
+  )
+  {
+    std::unreachable();
+  }
+
+  Constant_value Compilation_context::evaluate_constant_expression(
     basedparse::Fn_expression const &
   )
   {
@@ -1302,40 +1351,165 @@ namespace basedhlir
     return evaluate_constant_expression(expr.else_part->body);
   }
 
-  void Compilation_context::compile_function_definition(
-    basedparse::Function_definition const &func_def
+  bool Compilation_context::is_top_level() const
+  {
+    return _current_function == nullptr;
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Expression const &expr
   )
   {
-    auto const &fn_expr = func_def.function;
-    if (!fn_expr.return_type_specifier.has_value())
+    std::visit(
+      [this](auto const &e)
+      {
+        compile_expression(e);
+      },
+      expr.value
+    );
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Int_literal_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Identifier_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Recurse_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Fn_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Paren_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Unary_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Binary_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Call_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Index_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Prefix_bracket_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::Block_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_expression(
+    basedparse::If_expression const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_statement(basedparse::Statement const &stmt)
+  {
+    std::visit(
+      [this](auto const &s)
+      {
+        compile_statement(s);
+      },
+      stmt.value
+    );
+  }
+
+  void Compilation_context::compile_statement(
+    basedparse::Let_statement const &stmt
+  )
+  {
+    auto const is_mutable = stmt.kw_mut.has_value();
+    auto const type = type_of_expression(stmt.initializer);
+    auto const is_object = is_object_type(type);
+    auto const requires_const_eval = is_top_level() || !is_object;
+    if (is_mutable && !is_object)
     {
-      throw std::runtime_error{"return type deduction not yet supported"};
+      emit_error("mutable binding requires an object type", *stmt.kw_mut);
     }
-    auto parameter_types = std::vector<Type *>{};
-    auto parameters = std::vector<Parameter>{};
-    for (auto const &param : fn_expr.parameters)
+    if (is_mutable && is_top_level())
     {
-      parameter_types.push_back(compile_type_expression(*param.type));
-      parameters.push_back(
-        Parameter{
-          .name = param.name.text,
-          .is_mutable = param.kw_mut.has_value(),
-        }
-      );
+      emit_error("top-level bindings cannot be mutable", *stmt.kw_mut);
     }
-    auto const return_type =
-      compile_type_expression(*fn_expr.return_type_specifier->type);
-    auto const function_type =
-      _type_pool->function_type(std::move(parameter_types), return_type);
-    auto const function = _translation_unit.functions
-                            .emplace_back(
-                              std::make_unique<Function>(Function{
-                                .type = function_type,
-                                .parameters = std::move(parameters),
-                              })
-                            )
-                            .get();
-    _symbol_table.declare_value(func_def.name.text, Function_value{function});
+    if (requires_const_eval)
+    {
+      auto const value = evaluate_constant_expression(stmt.initializer);
+      _symbol_table.declare_value(stmt.name.text, value);
+    }
+    else
+    {
+      _symbol_table.declare_object(stmt.name.text, type, is_mutable);
+    }
+  }
+
+  void Compilation_context::compile_statement(
+    basedparse::While_statement const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_statement(
+    basedparse::Return_statement const &
+  )
+  {
+    // TODO
+  }
+
+  void Compilation_context::compile_statement(
+    basedparse::Expression_statement const &
+  )
+  {
+    // TODO
   }
 
   Translation_unit

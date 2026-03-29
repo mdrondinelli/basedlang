@@ -43,6 +43,11 @@ namespace basedparse
     return span_of(node.identifier);
   }
 
+  Source_span span_of(Recurse_expression const &node)
+  {
+    return span_of(node.kw_recurse);
+  }
+
   Source_span span_of(Fn_expression const &node)
   {
     return hull(span_of(node.kw_fn), span_of(*node.body));
@@ -131,11 +136,6 @@ namespace basedparse
   Source_span span_of(Expression_statement const &node)
   {
     return hull(span_of(node.expression), span_of(node.semicolon));
-  }
-
-  Source_span span_of(Function_definition const &node)
-  {
-    return hull(span_of(node.kw_let), span_of(node.semicolon));
   }
 
 } // namespace basedparse

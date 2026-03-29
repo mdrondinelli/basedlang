@@ -6,6 +6,12 @@
 namespace basedhlir
 {
 
+  bool is_object_type(Type const *type)
+  {
+    return !std::holds_alternative<Type_type>(type->data) &&
+           !std::holds_alternative<Function_type>(type->data);
+  }
+
   auto Type_pool::Function_type_hash::operator()(
     Function_type const &ft
   ) const noexcept -> std::size_t

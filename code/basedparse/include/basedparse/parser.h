@@ -20,8 +20,6 @@ namespace basedparse
     // `std::unique_ptr<..>`
     std::unique_ptr<Translation_unit> parse_translation_unit();
 
-    Function_definition parse_function_definition();
-
     Statement parse_statement();
 
     Let_statement parse_let_statement();

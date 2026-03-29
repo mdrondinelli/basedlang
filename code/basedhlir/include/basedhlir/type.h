@@ -73,6 +73,8 @@ namespace basedhlir
     std::unordered_map<std::int64_t, Type *> _sized_array_types;
   };
 
+  bool is_object_type(Type const *type);
+
   class Type_pool
   {
   public:

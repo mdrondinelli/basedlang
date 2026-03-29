@@ -59,7 +59,7 @@ TEST_CASE("evaluate_constant_expression - integer literal")
   auto parse_fixture = Parse_fixture{"1"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
@@ -71,7 +71,7 @@ TEST_CASE("evaluate_constant_expression - integer arithmetic")
   auto parse_fixture = Parse_fixture{"3 % 2 / (3 - 4) * 5 + 6"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
@@ -83,7 +83,7 @@ TEST_CASE("evaluate_constant_expression - unary plus")
   auto parse_fixture = Parse_fixture{"+42"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
@@ -95,7 +95,7 @@ TEST_CASE("evaluate_constant_expression - unary minus")
   auto parse_fixture = Parse_fixture{"-42"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
@@ -107,7 +107,7 @@ TEST_CASE("evaluate_constant_expression - nested arithmetic")
   auto parse_fixture = Parse_fixture{"(1 + 2) * 3"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
@@ -129,7 +129,7 @@ TEST_CASE("evaluate_constant_expression - integer comparisons")
   {
     auto const &expr =
       *expressions.emplace_back(parse_fixture->parser.parse_expression());
-    REQUIRE(compile_fixture.compiler.is_constant_expression(expr));
+
     auto const value =
       compile_fixture.compiler.evaluate_constant_expression(expr);
     REQUIRE(std::holds_alternative<bool>(value));
@@ -142,7 +142,7 @@ TEST_CASE("evaluate_constant_expression - if expression")
   auto parse_fixture = Parse_fixture{"if 1 < 2 { 10 } else { 20 }"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
@@ -154,7 +154,7 @@ TEST_CASE("evaluate_constant_expression - if expression takes else branch")
   auto parse_fixture = Parse_fixture{"if 1 > 2 { 10 } else { 20 }"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
@@ -167,7 +167,7 @@ TEST_CASE("evaluate_constant_expression - if expression takes else-if branch")
     Parse_fixture{"if 1 > 2 { 10 } else if 1 < 2 { 30 } else { 20 }"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
@@ -179,7 +179,7 @@ TEST_CASE("evaluate_constant_expression - if without else is void")
   auto parse_fixture = Parse_fixture{"if 1 < 2 { 10 }"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
-  REQUIRE(compile_fixture.compiler.is_constant_expression(*expr));
+
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   CHECK(std::holds_alternative<basedhlir::Void_value>(value));
@@ -254,7 +254,7 @@ TEST_CASE("evaluate_constant_expression - bool equality")
   {
     auto const &expr =
       *expressions.emplace_back(parse_fixture->parser.parse_expression());
-    REQUIRE(compile_fixture.compiler.is_constant_expression(expr));
+
     auto const value =
       compile_fixture.compiler.evaluate_constant_expression(expr);
     REQUIRE(std::holds_alternative<bool>(value));

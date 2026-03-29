@@ -820,11 +820,6 @@ namespace basedhlir
       auto const span = basedparse::span_of(expr);
       emit_error("expected a type expression", span.start);
     }
-    if (!is_constant_expression(expr))
-    {
-      auto const span = basedparse::span_of(expr);
-      emit_error("type expression must be a constant", span.start);
-    }
     return std::get<Type_value>(evaluate_constant_expression(expr)).type;
   }
 
@@ -1063,139 +1058,6 @@ namespace basedhlir
     return then_type;
   }
 
-  bool Compilation_context::is_constant_expression(
-    basedparse::Expression const &expr
-  )
-  {
-    return std::visit(
-      [&](auto const &e) -> bool
-      {
-        return is_constant_expression(e);
-      },
-      expr.value
-    );
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Int_literal_expression const &
-  )
-  {
-    return true;
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Identifier_expression const &expr
-  )
-  {
-    auto const sym = try_lookup_identifier(expr.identifier);
-    return sym != nullptr && std::holds_alternative<Constant_value>(sym->data);
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Recurse_expression const &
-  )
-  {
-    return false;
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Fn_expression const &
-  )
-  {
-    return false;
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Paren_expression const &expr
-  )
-  {
-    return is_constant_expression(*expr.inner);
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Unary_expression const &expr
-  )
-  {
-    return is_constant_expression(*expr.operand);
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Binary_expression const &expr
-  )
-  {
-    return is_constant_expression(*expr.left) &&
-           is_constant_expression(*expr.right);
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Call_expression const &
-  )
-  {
-    return false;
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Prefix_bracket_expression const &expr
-  )
-  {
-    if (expr.size != nullptr && !is_constant_expression(*expr.size))
-    {
-      return false;
-    }
-    return is_constant_expression(*expr.operand);
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Index_expression const &expr
-  )
-  {
-    return is_constant_expression(*expr.operand) &&
-           is_constant_expression(*expr.index);
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::Block_expression const &expr
-  )
-  {
-    // TODO: handle blocks with statements
-    if (!expr.statements.empty())
-    {
-      return false;
-    }
-    if (expr.tail)
-    {
-      return is_constant_expression(*expr.tail);
-    }
-    return true;
-  }
-
-  bool Compilation_context::is_constant_expression(
-    basedparse::If_expression const &expr
-  )
-  {
-    if (!is_constant_expression(*expr.condition))
-    {
-      return false;
-    }
-    if (!is_constant_expression(expr.then_block))
-    {
-      return false;
-    }
-    for (auto const &else_if : expr.else_if_parts)
-    {
-      if (!is_constant_expression(*else_if.condition) ||
-          !is_constant_expression(else_if.body))
-      {
-        return false;
-      }
-    }
-    if (expr.else_part.has_value())
-    {
-      return is_constant_expression(expr.else_part->body);
-    }
-    return true;
-  }
-
   Constant_value Compilation_context::evaluate_constant_expression(
     basedparse::Expression const &expr
   )
@@ -1257,29 +1119,39 @@ namespace basedhlir
   {
     auto const sym = lookup_identifier(expr.identifier);
     auto const cv = std::get_if<Constant_value>(&sym->data);
-    assert(cv != nullptr);
+    if (cv == nullptr)
+    {
+      emit_error("expression is not a compile-time constant", expr.identifier);
+    }
     return *cv;
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Recurse_expression const &
+    basedparse::Recurse_expression const &expr
   )
   {
-    std::unreachable();
+    emit_error(
+      "expression is not a compile-time constant",
+      expr.kw_recurse.location
+    );
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Fn_expression const &
+    basedparse::Fn_expression const &expr
   )
   {
-    std::unreachable();
+    emit_error(
+      "expression is not a compile-time constant",
+      expr.kw_fn.location
+    );
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Call_expression const &
+    basedparse::Call_expression const &expr
   )
   {
-    std::unreachable();
+    auto const span = basedparse::span_of(expr);
+    emit_error("expression is not a compile-time constant", span.start);
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1309,10 +1181,11 @@ namespace basedhlir
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Index_expression const &
+    basedparse::Index_expression const &expr
   )
   {
-    std::unreachable();
+    auto const span = basedparse::span_of(expr);
+    emit_error("expression is not a compile-time constant", span.start);
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(

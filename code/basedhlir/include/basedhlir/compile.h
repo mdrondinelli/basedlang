@@ -135,32 +135,6 @@ namespace basedhlir
 
     Type *type_of_expression(basedparse::If_expression const &expr);
 
-    bool is_constant_expression(basedparse::Expression const &expr);
-
-    bool is_constant_expression(basedparse::Int_literal_expression const &);
-
-    bool is_constant_expression(basedparse::Identifier_expression const &);
-
-    bool is_constant_expression(basedparse::Recurse_expression const &);
-
-    bool is_constant_expression(basedparse::Fn_expression const &);
-
-    bool is_constant_expression(basedparse::Paren_expression const &expr);
-
-    bool is_constant_expression(basedparse::Unary_expression const &expr);
-
-    bool is_constant_expression(basedparse::Binary_expression const &expr);
-
-    bool is_constant_expression(basedparse::Call_expression const &);
-
-    bool is_constant_expression(basedparse::Prefix_bracket_expression const &);
-
-    bool is_constant_expression(basedparse::Index_expression const &expr);
-
-    bool is_constant_expression(basedparse::Block_expression const &);
-
-    bool is_constant_expression(basedparse::If_expression const &);
-
     Constant_value
     evaluate_constant_expression(basedparse::Expression const &expr);
 

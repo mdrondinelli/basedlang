@@ -30,8 +30,8 @@ Precedence from tightest to loosest (all binary operators are left-associative):
 
 | Precedence | Kind           | Examples                |
 |------------|----------------|-------------------------|
-| 0          | postfix        | `f()`, `arr[i]`                                   |
-| 1          | unary          | `&x`, `&mut x`, `*p`, `* T`, `*mut T`, `+x`, `-x` |
+| 0          | postfix        | `f()`, `arr[i]`, `p^`                             |
+| 1          | prefix         | `&x`, `&mut x`, `^T`, `^mut T`, `+x`, `-x`       |
 | 2          | multiplicative | `a * b`, `a / b`, `a % b`                         |
 | 3          | additive       | `a + b`, `a - b`                                  |
 | 4          | relational     | `a < b`, `a <= b`, `a > b`, `a >= b`              |
@@ -66,25 +66,27 @@ identifier. The compiler distinguishes them from runtime values not by syntax,
 but by checking their type: an expression is a valid type annotation if and only
 if it has type `Type` and can be evaluated at compile time.
 
-This means that the operators `*`, `*mut`, `[]`, and `[n]` are not special type
+This means that the operators `^`, `^mut`, `[]`, and `[n]` are not special type
 syntax — they are ordinary prefix operators that happen to have overloads
-accepting `Type` operands and producing `Type` results. The parser does not know
-whether `*Int32` is a pointer type or a dereference; it parses both as a unary
-`*` applied to a subexpression. The distinction is made later by the compiler,
-which resolves the operator based on the type of the operand.
+accepting `Type` operands and producing `Type` results. The parser treats
+`^Int32` the same way it treats `-x`: a prefix operator applied to a
+subexpression. It is the compiler that gives `^` its type-constructing meaning,
+by resolving the operator overload based on the operand's type. Separately, `^`
+also appears as a postfix dereference operator (`p^`); the parser distinguishes
+the two by position.
 
-For example, consider a function parameter annotated with `*mut []Int32`. The
+For example, consider a function parameter annotated with `^mut []Int32`. The
 parser sees this as a chain of prefix operators applied to an identifier:
 
 1. Parse the identifier `Int32`
 2. Parse `[]` as a prefix bracket operator applied to `Int32`
-3. Parse `*mut` as a prefix operator applied to `[]Int32`
+3. Parse `^mut` as a prefix operator applied to `[]Int32`
 
 The compiler then evaluates this expression at compile time:
 
 1. Look up `Int32` — it's a `Type` value representing the 32-bit signed integer
 2. Apply `[]` — produces a `Type` value representing an unsized array of `Int32`
-3. Apply `*mut` — produces a `Type` value representing a mutable pointer to
+3. Apply `^mut` — produces a `Type` value representing a mutable pointer to
    `[]Int32`
 
 Because types are values, the same expression machinery handles all type
@@ -96,8 +98,8 @@ The prefix operators that construct types are:
 
 | Operator | Meaning                                     |
 |----------|---------------------------------------------|
-| `*T`     | pointer to `T` (pointee is immutable)       |
-| `*mut T` | pointer to `T` (pointee is mutable)         |
+| `^T`     | pointer to `T` (pointee is immutable)       |
+| `^mut T` | pointer to `T` (pointee is mutable)         |
 | `[n]T`   | sized array of `n` elements of type `T`     |
 | `[]T`    | unsized (dynamically-sized) array of type `T` |
 
@@ -107,15 +109,15 @@ operand of another type operator:
 | Expression            | Meaning                                                            |
 |-----------------------|--------------------------------------------------------------------|
 | `Int32`               | 32-bit signed integer                                              |
-| `*Int32`              | pointer to `Int32`                                                 |
-| `*mut Int32`          | pointer to mutable `Int32`                                         |
+| `^Int32`              | pointer to `Int32`                                                 |
+| `^mut Int32`          | pointer to mutable `Int32`                                         |
 | `[4]Int32`            | array of 4 `Int32`                                                 |
-| `*[]Int32`            | pointer to unsized array of `Int32`                                |
-| `*mut []Int32`        | pointer to mutable unsized array of `Int32`                        |
-| `*[8]*mut [4]Int32`   | pointer to array of 8 of (pointer to mutable array of 4 of `Int32`) |
+| `^[]Int32`            | pointer to unsized array of `Int32`                                |
+| `^mut []Int32`        | pointer to mutable unsized array of `Int32`                        |
+| `^[8]^mut [4]Int32`   | pointer to array of 8 of (pointer to mutable array of 4 of `Int32`) |
 
-`*mut` marks the pointee as mutable. Pointer/variable mutability comes from the
-binding, not the type — a `let mut` binding of a `*Int32` is a mutable pointer
+`^mut` marks the pointee as mutable. Pointer/variable mutability comes from the
+binding, not the type — a `let mut` binding of a `^Int32` is a mutable pointer
 to an immutable `Int32`.
 
 ## Full examples
@@ -131,7 +133,7 @@ let add = fn(a: Int32, b: Int32): Int32 => {
 Function taking a pointer to a mutable array:
 
 ```
-let zero_fill = fn(buf: *mut []Int32, len: Int32): Void => { };
+let zero_fill = fn(buf: ^mut []Int32, len: Int32): Void => { };
 ```
 
 Nested calls and indexing:
@@ -185,8 +187,8 @@ while n > 0 {
 Dereference and unary/binary operators:
 
 ```
-let val = *p;
-let first = *buf[0];
+let val = p^;
+let first = buf[0]^;
 let y = -x + 2 * (a - b);
 ```
 

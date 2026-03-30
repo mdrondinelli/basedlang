@@ -108,12 +108,6 @@ namespace basedlex
               .token = Token::plus,
               .location = token_location
             };
-          case '*':
-            return Lexeme{
-              .text = "*",
-              .token = Token::star,
-              .location = token_location
-            };
           case '^':
             {
               auto const p0 = _reader.peek(0);
@@ -140,6 +134,12 @@ namespace basedlex
                 .location = token_location
               };
             }
+          case '*':
+            return Lexeme{
+              .text = "*",
+              .token = Token::star,
+              .location = token_location
+            };
           case '/':
             return Lexeme{
               .text = "/",

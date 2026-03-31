@@ -108,7 +108,7 @@ namespace basedlex
               .token = Token::plus,
               .location = token_location
             };
-          case '*':
+          case '^':
             {
               auto const p0 = _reader.peek(0);
               auto const p1 = _reader.peek(1);
@@ -123,17 +123,23 @@ namespace basedlex
                 _reader.read();
                 _location.column += 3;
                 return Lexeme{
-                  .text = "*mut",
-                  .token = Token::star_mut,
+                  .text = "^mut",
+                  .token = Token::caret_mut,
                   .location = token_location,
                 };
               }
               return Lexeme{
-                .text = "*",
-                .token = Token::star,
+                .text = "^",
+                .token = Token::caret,
                 .location = token_location
               };
             }
+          case '*':
+            return Lexeme{
+              .text = "*",
+              .token = Token::star,
+              .location = token_location
+            };
           case '/':
             return Lexeme{
               .text = "/",

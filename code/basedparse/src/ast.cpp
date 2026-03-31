@@ -5,7 +5,8 @@ namespace basedparse
 
   Fn_expression::~Fn_expression() = default;
   Paren_expression::~Paren_expression() = default;
-  Unary_expression::~Unary_expression() = default;
+  Prefix_expression::~Prefix_expression() = default;
+  Postfix_expression::~Postfix_expression() = default;
   Binary_expression::~Binary_expression() = default;
   Call_expression::~Call_expression() = default;
   Index_expression::~Index_expression() = default;

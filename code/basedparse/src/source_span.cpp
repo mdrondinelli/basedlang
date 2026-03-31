@@ -58,9 +58,14 @@ namespace basedparse
     return hull(span_of(node.lparen), span_of(node.rparen));
   }
 
-  Source_span span_of(Unary_expression const &node)
+  Source_span span_of(Prefix_expression const &node)
   {
     return hull(span_of(node.op), span_of(*node.operand));
+  }
+
+  Source_span span_of(Postfix_expression const &node)
+  {
+    return hull(span_of(*node.operand), span_of(node.op));
   }
 
   Source_span span_of(Binary_expression const &node)

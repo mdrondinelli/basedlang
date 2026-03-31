@@ -970,7 +970,7 @@ TEST_CASE("parse_expression - dereference: in binary expression")
 TEST_CASE("parse_expression - dereference: in full program")
 {
   CHECK(parses("let f = fn(p: ^Int32): Int32 => { return p^; };"));
-  CHECK(parses("let f = fn(p: ^[]Int32): Int32 => { return p[0]^; };"));
+  CHECK(parses("let f = fn(p: ^[]Int32): Int32 => { return p^[0]; };"));
 }
 
 TEST_CASE("parse_expression - address-of")

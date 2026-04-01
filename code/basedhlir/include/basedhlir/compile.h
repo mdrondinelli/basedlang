@@ -12,6 +12,7 @@
 
 #include "constant_value.h"
 #include "hlir.h"
+#include "operator_overload.h"
 #include "source_location.h"
 #include "symbol_table.h"
 #include "type.h"
@@ -49,33 +50,6 @@ namespace basedhlir
 
   struct Compilation_error
   {
-  };
-
-  class Unary_operator_overload
-  {
-  public:
-    virtual ~Unary_operator_overload() = default;
-
-    virtual bool matches(Type *operand_type) const = 0;
-
-    virtual Type *result_type(Type *operand_type) const = 0;
-
-    virtual Constant_value evaluate(Constant_value operand) const = 0;
-  };
-
-  class Binary_operator_overload
-  {
-  public:
-    virtual ~Binary_operator_overload() = default;
-
-    virtual Type *lhs_type() const = 0;
-
-    virtual Type *rhs_type() const = 0;
-
-    virtual Type *result_type() const = 0;
-
-    virtual Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const = 0;
   };
 
   class Compilation_context
@@ -182,33 +156,38 @@ namespace basedhlir
 
     bool is_top_level() const;
 
-    void compile_expression(basedparse::Expression const &expr);
+    Register allocate_register();
 
-    void compile_expression(basedparse::Int_literal_expression const &expr);
+    void emit(Instruction instruction);
 
-    void compile_expression(basedparse::Identifier_expression const &expr);
+    Register compile_expression(basedparse::Expression const &expr);
 
-    void compile_expression(basedparse::Recurse_expression const &expr);
+    Register compile_expression(basedparse::Int_literal_expression const &expr);
 
-    void compile_expression(basedparse::Fn_expression const &expr);
+    Register compile_expression(basedparse::Identifier_expression const &expr);
 
-    void compile_expression(basedparse::Paren_expression const &expr);
+    Register compile_expression(basedparse::Recurse_expression const &expr);
 
-    void compile_expression(basedparse::Prefix_expression const &expr);
+    Register compile_expression(basedparse::Fn_expression const &expr);
 
-    void compile_expression(basedparse::Postfix_expression const &expr);
+    Register compile_expression(basedparse::Paren_expression const &expr);
 
-    void compile_expression(basedparse::Binary_expression const &expr);
+    Register compile_expression(basedparse::Prefix_expression const &expr);
 
-    void compile_expression(basedparse::Call_expression const &expr);
+    Register compile_expression(basedparse::Postfix_expression const &expr);
 
-    void compile_expression(basedparse::Index_expression const &expr);
+    Register compile_expression(basedparse::Binary_expression const &expr);
 
-    void compile_expression(basedparse::Prefix_bracket_expression const &expr);
+    Register compile_expression(basedparse::Call_expression const &expr);
 
-    void compile_expression(basedparse::Block_expression const &expr);
+    Register compile_expression(basedparse::Index_expression const &expr);
 
-    void compile_expression(basedparse::If_expression const &expr);
+    Register
+    compile_expression(basedparse::Prefix_bracket_expression const &expr);
+
+    Register compile_expression(basedparse::Block_expression const &expr);
+
+    Register compile_expression(basedparse::If_expression const &expr);
 
     void compile_statement(basedparse::Statement const &stmt);
 
@@ -220,11 +199,16 @@ namespace basedhlir
 
     void compile_statement(basedparse::Expression_statement const &stmt);
 
+    Function *
+    compile_function(std::string name, basedparse::Fn_expression const &expr);
+
   private:
     Type_pool *_type_pool;
     Translation_unit _translation_unit;
     Symbol_table _symbol_table;
     Function *_current_function{};
+    std::int32_t _next_register{};
+    std::vector<Instruction> *_current_body{};
     std::vector<Diagnostic> _diagnostics;
     std::unordered_map<
       basedparse::Operator,

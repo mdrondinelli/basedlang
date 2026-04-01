@@ -5,15 +5,19 @@
 namespace basedhlir
 {
 
-  Symbol *
-  Symbol_table::declare_object(std::string name, Type *type, bool is_mutable)
+  Symbol *Symbol_table::declare_object(
+    std::string name,
+    Type *type,
+    bool is_mutable,
+    Register reg
+  )
   {
     auto const sym =
       _symbols
         .emplace_back(
           std::make_unique<Symbol>(
             std::move(name),
-            Object_binding{.type = type, .is_mutable = is_mutable}
+            Object_binding{.type = type, .is_mutable = is_mutable, .reg = reg}
           )
         )
         .get();

@@ -9,6 +9,7 @@
 #include <basedparse/source_span.h>
 
 #include "basedhlir/compile.h"
+#include "basedhlir/interpret.h"
 
 namespace basedhlir
 {
@@ -687,6 +688,20 @@ namespace basedhlir
     {
       throw Compilation_failure{std::move(_diagnostics)};
     }
+    for (auto &[op, overloads] : _unary_overloads)
+    {
+      for (auto &overload : overloads)
+      {
+        _translation_unit.unary_overloads.push_back(std::move(overload));
+      }
+    }
+    for (auto &[op, overloads] : _binary_overloads)
+    {
+      for (auto &overload : overloads)
+      {
+        _translation_unit.binary_overloads.push_back(std::move(overload));
+      }
+    }
     return std::move(_translation_unit);
   }
 
@@ -1185,10 +1200,11 @@ namespace basedhlir
     basedparse::Recurse_expression const &expr
   )
   {
-    emit_error(
-      "expression is not a compile-time constant",
-      expr.kw_recurse.location
-    );
+    if (_current_function == nullptr)
+    {
+      emit_error("'recurse' used outside of a function body", expr.kw_recurse);
+    }
+    return Function_value{.function = _current_function};
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1205,8 +1221,19 @@ namespace basedhlir
     basedparse::Call_expression const &expr
   )
   {
-    auto const span = basedparse::span_of(expr);
-    emit_error("expression is not a compile-time constant", span.start);
+    auto const callee = evaluate_constant_expression(*expr.callee);
+    auto const fv = std::get_if<Function_value>(&callee);
+    if (fv == nullptr)
+    {
+      auto const span = basedparse::span_of(*expr.callee);
+      emit_error("expression is not callable at compile time", span.start);
+    }
+    auto args = std::vector<Constant_value>{};
+    for (auto const &arg : expr.arguments)
+    {
+      args.push_back(evaluate_constant_expression(arg));
+    }
+    return interpret(*fv->function, args);
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1284,108 +1311,363 @@ namespace basedhlir
     return _current_function == nullptr;
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Expression const &expr
-  )
+  Register Compilation_context::allocate_register()
   {
-    std::visit(
-      [this](auto const &e)
+    return Register{.id = _next_register++};
+  }
+
+  void Compilation_context::emit(Instruction instruction)
+  {
+    _current_body->push_back(std::move(instruction));
+  }
+
+  Register
+  Compilation_context::compile_expression(basedparse::Expression const &expr)
+  {
+    return std::visit(
+      [this](auto const &e) -> Register
       {
-        compile_expression(e);
+        return compile_expression(e);
       },
       expr.value
     );
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Int_literal_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Int_literal_expression const &expr
   )
   {
-    // TODO
+    auto const result = allocate_register();
+    auto const value = std::stoi(expr.literal.text);
+    emit(
+      Instruction{
+        .data = Int32_constant_instruction{.result = result, .value = value}
+      }
+    );
+    return result;
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Identifier_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Identifier_expression const &expr
   )
   {
-    // TODO
+    auto const sym = lookup_identifier(expr.identifier);
+    auto const ob = std::get_if<Object_binding>(&sym->data);
+    if (ob != nullptr)
+    {
+      return ob->reg;
+    }
+    auto const cv = std::get_if<Constant_value>(&sym->data);
+    assert(cv != nullptr);
+    auto const result = allocate_register();
+    std::visit(
+      [&](auto const &v)
+      {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::int32_t>)
+        {
+          emit(
+            Instruction{
+              .data = Int32_constant_instruction{.result = result, .value = v}
+            }
+          );
+        }
+        else if constexpr (std::is_same_v<T, bool>)
+        {
+          emit(
+            Instruction{
+              .data = Bool_constant_instruction{.result = result, .value = v}
+            }
+          );
+        }
+        else if constexpr (std::is_same_v<T, Void_value>)
+        {
+          emit(
+            Instruction{.data = Void_constant_instruction{.result = result}}
+          );
+        }
+        else
+        {
+          emit_error(
+            "cannot compile this constant as a runtime value",
+            expr.identifier
+          );
+        }
+      },
+      *cv
+    );
+    return result;
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Recurse_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Recurse_expression const &expr
   )
   {
-    // TODO
+    if (_current_function == nullptr)
+    {
+      emit_error("'recurse' used outside of a function body", expr.kw_recurse);
+    }
+    // recurse is not a runtime value — it's resolved at call sites
+    emit_error(
+      "'recurse' cannot be used as a value; use it in a call expression",
+      expr.kw_recurse
+    );
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Fn_expression const &
-  )
+  Register
+  Compilation_context::compile_expression(basedparse::Fn_expression const &expr)
   {
-    // TODO
+    emit_error(
+      "function expressions cannot appear in this position",
+      expr.kw_fn
+    );
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Paren_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Paren_expression const &expr
   )
   {
-    // TODO
+    return compile_expression(*expr.inner);
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Prefix_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Prefix_expression const &expr
   )
   {
-    // TODO
+    auto const operand_type = type_of_expression(*expr.operand);
+    auto const op = basedparse::get_prefix_operator(expr.op.token);
+    auto const overload = find_unary_overload(*op, operand_type);
+    auto const operand = compile_expression(*expr.operand);
+    auto const result = allocate_register();
+    emit(
+      Instruction{
+        .data = Unary_instruction{
+          .result = result,
+          .overload = overload,
+          .operand = operand,
+        }
+      }
+    );
+    return result;
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Postfix_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Postfix_expression const &expr
   )
   {
-    // TODO
+    emit_error("dereference is not supported in this context", expr.op);
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Binary_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Binary_expression const &expr
   )
   {
-    // TODO
+    auto const lhs_type = type_of_expression(*expr.left);
+    auto const rhs_type = type_of_expression(*expr.right);
+    auto const op = basedparse::get_binary_operator(expr.op.token);
+    auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
+    auto const lhs = compile_expression(*expr.left);
+    auto const rhs = compile_expression(*expr.right);
+    auto const result = allocate_register();
+    emit(
+      Instruction{
+        .data = Binary_instruction{
+          .result = result,
+          .overload = overload,
+          .lhs = lhs,
+          .rhs = rhs,
+        }
+      }
+    );
+    return result;
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Call_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Call_expression const &expr
   )
   {
-    // TODO
+    // Resolve callee to a Function* — must be a compile-time constant
+    auto const callee_type = type_of_expression(*expr.callee);
+    auto const ft = std::get_if<Function_type>(&callee_type->data);
+    if (ft == nullptr)
+    {
+      emit_error("expression is not callable", expr.lparen);
+    }
+    Function *callee = nullptr;
+    if (auto const ident =
+          std::get_if<basedparse::Identifier_expression>(&expr.callee->value))
+    {
+      auto const sym = lookup_identifier(ident->identifier);
+      auto const cv = std::get_if<Constant_value>(&sym->data);
+      if (cv != nullptr)
+      {
+        auto const fv = std::get_if<Function_value>(cv);
+        if (fv != nullptr)
+        {
+          callee = fv->function;
+        }
+      }
+    }
+    else if (std::holds_alternative<basedparse::Recurse_expression>(
+               expr.callee->value
+             ))
+    {
+      callee = _current_function;
+    }
+    if (callee == nullptr)
+    {
+      auto const span = basedparse::span_of(*expr.callee);
+      emit_error("callee must be a known function", span.start);
+    }
+    if (expr.arguments.size() != ft->parameter_types.size())
+    {
+      emit_error(
+        std::format(
+          "expected {} arguments, got {}",
+          ft->parameter_types.size(),
+          expr.arguments.size()
+        ),
+        expr.lparen
+      );
+    }
+    for (auto i = std::size_t{}; i < expr.arguments.size(); ++i)
+    {
+      auto const arg_type = type_of_expression(expr.arguments[i]);
+      if (!is_type_compatible(ft->parameter_types[i], arg_type))
+      {
+        auto const span = basedparse::span_of(expr.arguments[i]);
+        emit_error(
+          std::format(
+            "argument {} is not compatible with parameter type",
+            i + 1
+          ),
+          span.start
+        );
+      }
+    }
+    auto args = std::vector<Register>{};
+    for (auto const &arg : expr.arguments)
+    {
+      args.push_back(compile_expression(arg));
+    }
+    auto const result = allocate_register();
+    emit(
+      Instruction{
+        .data = Call_instruction{
+          .result = result,
+          .callee = callee,
+          .arguments = std::move(args),
+        }
+      }
+    );
+    return result;
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Index_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Index_expression const &expr
   )
   {
-    // TODO
+    auto const span = basedparse::span_of(expr);
+    emit_error("index expressions are not supported", span.start);
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Prefix_bracket_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Prefix_bracket_expression const &expr
   )
   {
-    // TODO
+    emit_error("array type expressions are not supported here", expr.lbracket);
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::Block_expression const &
+  Register Compilation_context::compile_expression(
+    basedparse::Block_expression const &expr
   )
   {
-    // TODO
+    _symbol_table.push_scope();
+    for (auto const &stmt : expr.statements)
+    {
+      compile_statement(stmt);
+    }
+    auto const result = expr.tail ? compile_expression(*expr.tail) : [this]
+    {
+      auto const r = allocate_register();
+      emit(Instruction{.data = Void_constant_instruction{.result = r}});
+      return r;
+    }();
+    _symbol_table.pop_scope();
+    return result;
   }
 
-  void Compilation_context::compile_expression(
-    basedparse::If_expression const &
-  )
+  Register
+  Compilation_context::compile_expression(basedparse::If_expression const &expr)
   {
-    // TODO
+    auto const result = allocate_register();
+    auto const compile_block = [this](auto compile_fn) -> std::unique_ptr<Block>
+    {
+      auto const saved_body = _current_body;
+      auto instructions = std::vector<Instruction>{};
+      _current_body = &instructions;
+      auto const block_result = compile_fn();
+      _current_body = saved_body;
+      return std::make_unique<Block>(
+        Block{.result = block_result, .instructions = std::move(instructions)}
+      );
+    };
+    auto condition = compile_block(
+      [&]
+      {
+        return compile_expression(*expr.condition);
+      }
+    );
+    auto then_body = compile_block(
+      [&]
+      {
+        return compile_expression(expr.then_block);
+      }
+    );
+    auto else_ifs = std::vector<If_instruction::Else_if>{};
+    for (auto const &part : expr.else_if_parts)
+    {
+      auto ei_condition = compile_block(
+        [&]
+        {
+          return compile_expression(*part.condition);
+        }
+      );
+      auto ei_body = compile_block(
+        [&]
+        {
+          return compile_expression(part.body);
+        }
+      );
+      else_ifs.push_back(
+        If_instruction::Else_if{
+          .condition = std::move(ei_condition),
+          .body = std::move(ei_body),
+        }
+      );
+    }
+    auto else_body = std::unique_ptr<Block>{};
+    if (expr.else_part.has_value())
+    {
+      else_body = compile_block(
+        [&]
+        {
+          return compile_expression(expr.else_part->body);
+        }
+      );
+    }
+    emit(
+      Instruction{
+        .data = If_instruction{
+          .result = result,
+          .condition = std::move(condition),
+          .then_body = std::move(then_body),
+          .else_ifs = std::move(else_ifs),
+          .else_body = std::move(else_body),
+        }
+      }
+    );
+    return result;
   }
 
   void Compilation_context::compile_statement(basedparse::Statement const &stmt)
@@ -1406,7 +1688,6 @@ namespace basedhlir
     auto const is_mutable = stmt.kw_mut.has_value();
     auto const type = type_of_expression(stmt.initializer);
     auto const is_object = is_object_type(type);
-    auto const requires_const_eval = is_top_level() || !is_object;
     if (is_mutable && !is_object)
     {
       emit_error("mutable binding requires an object type", *stmt.kw_mut);
@@ -1415,6 +1696,18 @@ namespace basedhlir
     {
       emit_error("top-level bindings cannot be mutable", *stmt.kw_mut);
     }
+    // Handle fn expressions: compile to a Function and store as constant
+    if (auto const fn =
+          std::get_if<basedparse::Fn_expression>(&stmt.initializer.value))
+    {
+      auto const func = compile_function(stmt.name.text, *fn);
+      _symbol_table.declare_value(
+        stmt.name.text,
+        Function_value{.function = func}
+      );
+      return;
+    }
+    auto const requires_const_eval = is_top_level() || !is_object;
     if (requires_const_eval)
     {
       auto const value = evaluate_constant_expression(stmt.initializer);
@@ -1422,29 +1715,99 @@ namespace basedhlir
     }
     else
     {
-      _symbol_table.declare_object(stmt.name.text, type, is_mutable);
+      auto const reg = compile_expression(stmt.initializer);
+      _symbol_table.declare_object(stmt.name.text, type, is_mutable, reg);
     }
   }
 
   void Compilation_context::compile_statement(
-    basedparse::While_statement const &
+    basedparse::While_statement const &stmt
   )
   {
-    // TODO
+    emit_error(
+      "while statements are not supported without mutation",
+      stmt.kw_while
+    );
   }
 
   void Compilation_context::compile_statement(
-    basedparse::Return_statement const &
+    basedparse::Return_statement const &stmt
   )
   {
-    // TODO
+    auto const value = compile_expression(stmt.value);
+    emit(Instruction{.data = Return_instruction{.value = value}});
   }
 
   void Compilation_context::compile_statement(
-    basedparse::Expression_statement const &
+    basedparse::Expression_statement const &stmt
   )
   {
-    // TODO
+    compile_expression(stmt.expression);
+  }
+
+  Function *Compilation_context::compile_function(
+    std::string name,
+    basedparse::Fn_expression const &expr
+  )
+  {
+    auto const fn_type = type_of_expression(expr);
+    auto const ft = std::get<Function_type>(fn_type->data);
+    auto params = std::vector<Parameter>{};
+    for (auto const &param : expr.parameters)
+    {
+      params.push_back(
+        Parameter{
+          .name = param.name.text,
+          .type = compile_type_expression(*param.type)
+        }
+      );
+    }
+    auto func = std::make_unique<Function>(Function{
+      .name = std::move(name),
+      .type = fn_type,
+      .parameters = std::move(params),
+      .body = {},
+      .register_count = 0,
+    });
+    auto const func_ptr = func.get();
+    _translation_unit.functions.push_back(std::move(func));
+    auto const saved_function = Scoped_assign{_current_function, func_ptr};
+    auto const saved_next_register =
+      Scoped_assign{_next_register, std::int32_t{}};
+    auto const saved_body = Scoped_assign{_current_body, &func_ptr->body};
+    _symbol_table.push_scope(true);
+    for (auto i = std::size_t{}; i < func_ptr->parameters.size(); ++i)
+    {
+      auto const reg = allocate_register();
+      _symbol_table.declare_object(
+        func_ptr->parameters[i].name,
+        ft.parameter_types[i],
+        false,
+        reg
+      );
+    }
+    // Compile the body
+    if (auto const block =
+          std::get_if<basedparse::Block_expression>(&expr.body->value))
+    {
+      for (auto const &stmt : block->statements)
+      {
+        compile_statement(stmt);
+      }
+      if (block->tail)
+      {
+        auto const tail_reg = compile_expression(*block->tail);
+        emit(Instruction{.data = Return_instruction{.value = tail_reg}});
+      }
+    }
+    else
+    {
+      auto const body_reg = compile_expression(*expr.body);
+      emit(Instruction{.data = Return_instruction{.value = body_reg}});
+    }
+    _symbol_table.pop_scope();
+    func_ptr->register_count = _next_register;
+    return func_ptr;
   }
 
   Translation_unit

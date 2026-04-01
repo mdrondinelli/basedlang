@@ -8,6 +8,7 @@
 #include "basedparse/parser.h"
 
 #include "basedhlir/compile.h"
+#include "basedhlir/interpret.h"
 #include "basedhlir/type.h"
 
 struct Parse_fixture
@@ -260,4 +261,186 @@ TEST_CASE("evaluate_constant_expression - bool equality")
     REQUIRE(std::holds_alternative<bool>(value));
     CHECK(std::get<bool>(value) == expected);
   }
+}
+
+// --- Function compilation and interpretation tests ---
+
+basedhlir::Translation_unit compile_program(std::string source)
+{
+  auto parse_fixture = Parse_fixture{std::move(source)};
+  auto const ast = parse_fixture.parser.parse_translation_unit();
+  auto types = basedhlir::Type_pool{};
+  return basedhlir::compile(*ast, &types);
+}
+
+TEST_CASE("compile - function returning literal")
+{
+  auto const tu = compile_program("let f = fn(): Int32 => { return 0; };");
+  REQUIRE(tu.functions.size() == 1);
+  auto const &f = *tu.functions[0];
+  CHECK(f.name == "f");
+  CHECK(f.parameters.empty());
+  CHECK(f.register_count > 0);
+  auto const result = basedhlir::interpret(f, {});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 0);
+}
+
+TEST_CASE("compile - function with parameter")
+{
+  auto const tu =
+    compile_program("let id = fn(x: Int32): Int32 => { return x; };");
+  REQUIRE(tu.functions.size() == 1);
+  auto const &f = *tu.functions[0];
+  CHECK(f.name == "id");
+  CHECK(f.parameters.size() == 1);
+  auto const result = basedhlir::interpret(f, {std::int32_t{42}});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 42);
+}
+
+TEST_CASE("compile - function with arithmetic")
+{
+  auto const tu =
+    compile_program("let add1 = fn(x: Int32): Int32 => { return x + 1; };");
+  REQUIRE(tu.functions.size() == 1);
+  auto const result =
+    basedhlir::interpret(*tu.functions[0], {std::int32_t{41}});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 42);
+}
+
+TEST_CASE("compile - function with multiple parameters")
+{
+  auto const tu = compile_program(
+    "let first = fn(x: Int32, y: Int32): Int32 => { return x; };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const result =
+    basedhlir::interpret(*tu.functions[0], {std::int32_t{1}, std::int32_t{2}});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 1);
+}
+
+TEST_CASE("compile - function with if expression")
+{
+  auto const tu = compile_program(
+    "let abs = fn(x: Int32): Int32 => "
+    "{ return if x < 0 { 0 - x } else { x }; };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const &f = *tu.functions[0];
+  auto const r1 = basedhlir::interpret(f, {std::int32_t{-5}});
+  CHECK(std::get<std::int32_t>(r1) == 5);
+  auto const r2 = basedhlir::interpret(f, {std::int32_t{3}});
+  CHECK(std::get<std::int32_t>(r2) == 3);
+}
+
+TEST_CASE("compile - function with block and let bindings")
+{
+  auto const tu = compile_program(
+    "let f = fn(): Int32 => { let x = 5; let y = 10; return x + y; };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const result = basedhlir::interpret(*tu.functions[0], {});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 15);
+}
+
+TEST_CASE("compile - function with tail expression")
+{
+  auto const tu = compile_program("let f = fn(): Int32 => { 42 };");
+  REQUIRE(tu.functions.size() == 1);
+  auto const result = basedhlir::interpret(*tu.functions[0], {});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 42);
+}
+
+TEST_CASE("compile - function calling another function")
+{
+  auto const tu = compile_program(
+    "let id = fn(x: Int32): Int32 => { return x; };"
+    "let main = fn(): Int32 => { return id(42); };"
+  );
+  REQUIRE(tu.functions.size() == 2);
+  auto const result = basedhlir::interpret(*tu.functions[1], {});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 42);
+}
+
+TEST_CASE("compile - nested function calls")
+{
+  auto const tu = compile_program(
+    "let id = fn(x: Int32): Int32 => { return x; };"
+    "let first = fn(x: Int32, y: Int32): Int32 => { return x; };"
+    "let main = fn(): Int32 => { return first(id(42), 0); };"
+  );
+  REQUIRE(tu.functions.size() == 3);
+  auto const result = basedhlir::interpret(*tu.functions[2], {});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 42);
+}
+
+TEST_CASE("compile - recursive function")
+{
+  auto const tu = compile_program(
+    "let fib = fn(n: Int32): Int32 => "
+    "{ return if n == 0 { 0 } else if n == 1 { 1 } "
+    "else { recurse(n - 1) + recurse(n - 2) }; };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const result =
+    basedhlir::interpret(*tu.functions[0], {std::int32_t{10}});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 55);
+}
+
+TEST_CASE("compile - recurse keyword")
+{
+  auto const tu = compile_program(
+    "let factorial = fn(n: Int32): Int32 => "
+    "{ return if n == 0 { 1 } else { n * recurse(n - 1) }; };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const result = basedhlir::interpret(*tu.functions[0], {std::int32_t{5}});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 120);
+}
+
+TEST_CASE("compile - compile-time function call evaluation")
+{
+  auto const tu = compile_program(
+    "let add = fn(x: Int32, y: Int32): Int32 => { return x + y; };"
+    "let result = add(3, 4);"
+  );
+  // add is compiled as a function, result is evaluated at compile time
+  CHECK(tu.functions.size() == 1);
+}
+
+TEST_CASE("compile - fuel exhaustion")
+{
+  auto const tu = compile_program(
+    "let loop = fn(n: Int32): Int32 => { return recurse(n); };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  CHECK_THROWS(basedhlir::interpret(*tu.functions[0], {std::int32_t{0}}, 100));
+}
+
+TEST_CASE("compile - pure expression body")
+{
+  auto const tu = compile_program("let pi = fn(): Int32 => 3;");
+  REQUIRE(tu.functions.size() == 1);
+  auto const result = basedhlir::interpret(*tu.functions[0], {});
+  REQUIRE(std::holds_alternative<std::int32_t>(result));
+  CHECK(std::get<std::int32_t>(result) == 3);
+}
+
+TEST_CASE("compile - return type mismatch")
+{
+  CHECK_THROWS_AS(
+    compile_program(
+      "let f = fn(): Int32 => { return true; };"
+    ),
+    basedhlir::Compilation_failure
+  );
 }

@@ -15,14 +15,6 @@ namespace basedhlir
     Constant_value value;
   };
 
-  struct Fuel_exhausted: std::runtime_error
-  {
-    Fuel_exhausted()
-        : std::runtime_error{"compile-time evaluation ran out of fuel"}
-    {
-    }
-  };
-
   static void execute_instructions(
     std::vector<Constant_value> &registers,
     std::vector<Instruction> const &instructions,
@@ -46,7 +38,7 @@ namespace basedhlir
   {
     if (fuel <= 0)
     {
-      throw Fuel_exhausted{};
+      throw Fuel_exhausted_error{};
     }
     --fuel;
     std::visit(

@@ -1,4 +1,5 @@
 #include <array>
+#include <utility>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -267,17 +268,19 @@ TEST_CASE("evaluate_constant_expression - bool equality")
 
 // --- Function compilation and interpretation tests ---
 
-basedhlir::Translation_unit compile_program(std::string source)
+std::pair<basedhlir::Type_pool, basedhlir::Translation_unit>
+compile_program(std::string source)
 {
   auto parse_fixture = Parse_fixture{std::move(source)};
   auto const ast = parse_fixture.parser.parse_translation_unit();
   auto types = basedhlir::Type_pool{};
-  return basedhlir::compile(*ast, &types);
+  auto tu = basedhlir::compile(*ast, &types);
+  return {std::move(types), std::move(tu)};
 }
 
 TEST_CASE("compile - function returning literal")
 {
-  auto const tu = compile_program("let f = fn(): Int32 => { return 0; };");
+  auto const [types, tu] = compile_program("let f = fn(): Int32 => { return 0; };");
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
   CHECK(f.parameters.empty());
@@ -289,7 +292,7 @@ TEST_CASE("compile - function returning literal")
 
 TEST_CASE("compile - function with parameter")
 {
-  auto const tu =
+  auto const [types, tu] =
     compile_program("let id = fn(x: Int32): Int32 => { return x; };");
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
@@ -302,7 +305,7 @@ TEST_CASE("compile - function with parameter")
 
 TEST_CASE("compile - function with arithmetic")
 {
-  auto const tu =
+  auto const [types, tu] =
     compile_program("let add1 = fn(x: Int32): Int32 => { return x + 1; };");
   REQUIRE(tu.functions.size() == 1);
   auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{41}};
@@ -313,7 +316,7 @@ TEST_CASE("compile - function with arithmetic")
 
 TEST_CASE("compile - function with multiple parameters")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let first = fn(x: Int32, y: Int32): Int32 => { return x; };"
   );
   REQUIRE(tu.functions.size() == 1);
@@ -326,7 +329,7 @@ TEST_CASE("compile - function with multiple parameters")
 
 TEST_CASE("compile - function with if expression")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let abs = fn(x: Int32): Int32 => "
     "{ return if x < 0 { 0 - x } else { x }; };"
   );
@@ -342,7 +345,7 @@ TEST_CASE("compile - function with if expression")
 
 TEST_CASE("compile - function with block and let bindings")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let f = fn(): Int32 => { let x = 5; let y = 10; return x + y; };"
   );
   REQUIRE(tu.functions.size() == 1);
@@ -353,7 +356,7 @@ TEST_CASE("compile - function with block and let bindings")
 
 TEST_CASE("compile - function with tail expression")
 {
-  auto const tu = compile_program("let f = fn(): Int32 => { 42 };");
+  auto const [types, tu] = compile_program("let f = fn(): Int32 => { 42 };");
   REQUIRE(tu.functions.size() == 1);
   auto const result = basedhlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
@@ -362,7 +365,7 @@ TEST_CASE("compile - function with tail expression")
 
 TEST_CASE("compile - function calling another function")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let id = fn(x: Int32): Int32 => { return x; };"
     "let main = fn(): Int32 => { return id(42); };"
   );
@@ -374,7 +377,7 @@ TEST_CASE("compile - function calling another function")
 
 TEST_CASE("compile - nested function calls")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let id = fn(x: Int32): Int32 => { return x; };"
     "let first = fn(x: Int32, y: Int32): Int32 => { return x; };"
     "let main = fn(): Int32 => { return first(id(42), 0); };"
@@ -387,7 +390,7 @@ TEST_CASE("compile - nested function calls")
 
 TEST_CASE("compile - recursive function")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let fib = fn(n: Int32): Int32 => "
     "{ return if n == 0 { 0 } else if n == 1 { 1 } "
     "else { recurse(n - 1) + recurse(n - 2) }; };"
@@ -402,7 +405,7 @@ TEST_CASE("compile - recursive function")
 
 TEST_CASE("compile - recurse keyword")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let factorial = fn(n: Int32): Int32 => "
     "{ return if n == 0 { 1 } else { n * recurse(n - 1) }; };"
   );
@@ -415,7 +418,7 @@ TEST_CASE("compile - recurse keyword")
 
 TEST_CASE("compile - compile-time function call evaluation")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let add = fn(x: Int32, y: Int32): Int32 => { return x + y; };"
     "let result = add(3, 4);"
   );
@@ -425,7 +428,7 @@ TEST_CASE("compile - compile-time function call evaluation")
 
 TEST_CASE("compile - fuel exhaustion")
 {
-  auto const tu = compile_program(
+  auto const [types, tu] = compile_program(
     "let loop = fn(n: Int32): Int32 => { return recurse(n); };"
   );
   REQUIRE(tu.functions.size() == 1);
@@ -435,7 +438,7 @@ TEST_CASE("compile - fuel exhaustion")
 
 TEST_CASE("compile - pure expression body")
 {
-  auto const tu = compile_program("let pi = fn(): Int32 => 3;");
+  auto const [types, tu] = compile_program("let pi = fn(): Int32 => 3;");
   REQUIRE(tu.functions.size() == 1);
   auto const result = basedhlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));

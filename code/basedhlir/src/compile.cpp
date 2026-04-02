@@ -736,16 +736,8 @@ namespace basedhlir
     );
   }
 
-  [[noreturn]] void Compilation_context::emit_error(
-    std::string message,
-    basedlex::Lexeme const &lexeme
-  )
-  {
-    emit_error(std::move(message), lexeme.location);
-  }
-
   [[noreturn]] void
-  Compilation_context::emit_error(std::string message, Source_location location)
+  Compilation_context::emit_error(std::string message, Source_span location)
   {
     _diagnostics.push_back(
       Diagnostic{
@@ -856,8 +848,7 @@ namespace basedhlir
     auto const type = type_of_expression(expr);
     if (type != _type_pool->type_type())
     {
-      auto const span = basedparse::span_of(expr);
-      emit_error("expected a type expression", span.start);
+      emit_error("expected a type expression", expr);
     }
     return std::get<Type_value>(evaluate_constant_expression(expr)).type;
   }
@@ -1027,13 +1018,12 @@ namespace basedhlir
       auto const arg_type = type_of_expression(expr.arguments[i]);
       if (!is_type_compatible(ft->parameter_types[i], arg_type))
       {
-        auto const span = basedparse::span_of(expr.arguments[i]);
         emit_error(
           std::format(
             "argument {} is not compatible with parameter type",
             i + 1
           ),
-          span.start
+          expr.arguments[i]
         );
       }
     }
@@ -1222,8 +1212,7 @@ namespace basedhlir
     auto const fv = std::get_if<Function_value>(&callee);
     if (fv == nullptr)
     {
-      auto const span = basedparse::span_of(*expr.callee);
-      emit_error("expression is not callable at compile time", span.start);
+      emit_error("expression is not callable at compile time", *expr.callee);
     }
     auto args = std::vector<Constant_value>{};
     for (auto const &arg : expr.arguments)
@@ -1246,15 +1235,13 @@ namespace basedhlir
     auto const size_type = type_of_expression(*expr.size);
     if (size_type != _type_pool->int32_type())
     {
-      auto const span = basedparse::span_of(*expr.size);
-      emit_error("array size must be an integer", span.start);
+      emit_error("array size must be an integer", *expr.size);
     }
     auto const size =
       std::get<std::int32_t>(evaluate_constant_expression(*expr.size));
     if (size <= 0)
     {
-      auto const span = basedparse::span_of(*expr.size);
-      emit_error("array size must be positive", span.start);
+      emit_error("array size must be positive", *expr.size);
     }
     return Type_value{_type_pool->sized_array_type(element, size)};
   }
@@ -1263,8 +1250,7 @@ namespace basedhlir
     basedparse::Index_expression const &expr
   )
   {
-    auto const span = basedparse::span_of(expr);
-    emit_error("expression is not a compile-time constant", span.start);
+    emit_error("expression is not a compile-time constant", expr);
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1515,8 +1501,7 @@ namespace basedhlir
     }
     if (callee == nullptr)
     {
-      auto const span = basedparse::span_of(*expr.callee);
-      emit_error("callee must be a known function", span.start);
+      emit_error("callee must be a known function", *expr.callee);
     }
     if (expr.arguments.size() != ft->parameter_types.size())
     {
@@ -1534,13 +1519,12 @@ namespace basedhlir
       auto const arg_type = type_of_expression(expr.arguments[i]);
       if (!is_type_compatible(ft->parameter_types[i], arg_type))
       {
-        auto const span = basedparse::span_of(expr.arguments[i]);
         emit_error(
           std::format(
             "argument {} is not compatible with parameter type",
             i + 1
           ),
-          span.start
+          expr.arguments[i]
         );
       }
     }

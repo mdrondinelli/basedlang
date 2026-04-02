@@ -13,7 +13,7 @@
 #include "constant_value.h"
 #include "hlir.h"
 #include "operator_overload.h"
-#include "source_location.h"
+#include "source_span.h"
 #include "symbol_table.h"
 #include "type.h"
 
@@ -23,7 +23,7 @@ namespace basedhlir
   struct Diagnostic
   {
     std::string message;
-    Source_location location;
+    Source_span location;
   };
 
   class Compilation_failure: public std::exception
@@ -61,10 +61,13 @@ namespace basedhlir
 
     Type *type_of_constant(Constant_value const &value);
 
-    [[noreturn]] void
-    emit_error(std::string message, basedlex::Lexeme const &lexeme);
+    [[noreturn]] void emit_error(std::string message, Source_span location);
 
-    [[noreturn]] void emit_error(std::string message, Source_location location);
+    template<typename T>
+    [[noreturn]] void emit_error(std::string message, T const &node)
+    {
+      emit_error(std::move(message), basedparse::span_of(node));
+    }
 
     Symbol *try_lookup_identifier(basedlex::Lexeme const &identifier);
 

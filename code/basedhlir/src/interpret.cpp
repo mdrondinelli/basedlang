@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <span>
 #include <stdexcept>
 #include <variant>
@@ -25,13 +26,13 @@ namespace basedhlir
   static void execute_instructions(
     std::vector<Constant_value> &registers,
     std::vector<Instruction> const &instructions,
-    int &fuel
+    std::int32_t &fuel
   );
 
   static void execute_block(
     std::vector<Constant_value> &registers,
     Block const &block,
-    int &fuel
+    std::int32_t &fuel
   )
   {
     execute_instructions(registers, block.instructions, fuel);
@@ -40,7 +41,7 @@ namespace basedhlir
   static void execute_instruction(
     std::vector<Constant_value> &registers,
     Instruction const &instruction,
-    int &fuel
+    std::int32_t &fuel
   )
   {
     if (fuel <= 0)
@@ -138,7 +139,7 @@ namespace basedhlir
   static void execute_instructions(
     std::vector<Constant_value> &registers,
     std::vector<Instruction> const &instructions,
-    int &fuel
+    std::int32_t &fuel
   )
   {
     for (auto const &inst : instructions)
@@ -150,7 +151,7 @@ namespace basedhlir
   Constant_value interpret(
     Function const &function,
     std::span<Constant_value const> arguments,
-    int fuel
+    std::int32_t fuel
   )
   {
     auto registers =

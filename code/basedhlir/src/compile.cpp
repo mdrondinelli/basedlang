@@ -1313,11 +1313,13 @@ namespace basedhlir
 
   Register Compilation_context::allocate_register()
   {
+    assert(!is_top_level());
     return Register{_next_register++};
   }
 
   void Compilation_context::emit(Instruction instruction)
   {
+    assert(_current_body != nullptr);
     _current_body->push_back(std::move(instruction));
   }
 

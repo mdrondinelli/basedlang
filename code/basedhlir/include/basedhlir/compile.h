@@ -199,8 +199,7 @@ namespace basedhlir
 
     void compile_statement(basedparse::Expression_statement const &stmt);
 
-    Function *
-    compile_function(std::string name, basedparse::Fn_expression const &expr);
+    Function *compile_function(basedparse::Fn_expression const &expr);
 
   private:
     Type_pool *_type_pool;

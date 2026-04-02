@@ -1700,7 +1700,7 @@ namespace basedhlir
     if (auto const fn =
           std::get_if<basedparse::Fn_expression>(&stmt.initializer.value))
     {
-      auto const func = compile_function(stmt.name.text, *fn);
+      auto const func = compile_function(*fn);
       _symbol_table.declare_value(
         stmt.name.text,
         Function_value{.function = func}
@@ -1746,7 +1746,6 @@ namespace basedhlir
   }
 
   Function *Compilation_context::compile_function(
-    std::string name,
     basedparse::Fn_expression const &expr
   )
   {
@@ -1756,14 +1755,10 @@ namespace basedhlir
     for (auto const &param : expr.parameters)
     {
       params.push_back(
-        Parameter{
-          .name = param.name.text,
-          .type = compile_type_expression(*param.type)
-        }
+        Parameter{.type = compile_type_expression(*param.type)}
       );
     }
     auto func = std::make_unique<Function>(Function{
-      .name = std::move(name),
       .type = fn_type,
       .parameters = std::move(params),
       .body = {},
@@ -1780,7 +1775,7 @@ namespace basedhlir
     {
       auto const reg = allocate_register();
       _symbol_table.declare_object(
-        func_ptr->parameters[i].name,
+        expr.parameters[i].name.text,
         ft.parameter_types[i],
         false,
         reg

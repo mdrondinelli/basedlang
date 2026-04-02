@@ -280,7 +280,6 @@ TEST_CASE("compile - function returning literal")
   auto const tu = compile_program("let f = fn(): Int32 => { return 0; };");
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
-  CHECK(f.name == "f");
   CHECK(f.parameters.empty());
   CHECK(f.register_count > 0);
   auto const result = basedhlir::interpret(f, {});
@@ -294,7 +293,6 @@ TEST_CASE("compile - function with parameter")
     compile_program("let id = fn(x: Int32): Int32 => { return x; };");
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
-  CHECK(f.name == "id");
   CHECK(f.parameters.size() == 1);
   auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{42}};
   auto const result = basedhlir::interpret(f, args);

@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <string>
 #include <variant>
 #include <vector>
 
@@ -118,13 +117,11 @@ namespace basedhlir
 
   struct Parameter
   {
-    std::string name;
     Type *type;
   };
 
   struct Function
   {
-    std::string name;
     Type *type;
     std::vector<Parameter> parameters;
     std::vector<Instruction> body;

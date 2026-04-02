@@ -150,11 +150,17 @@ namespace basedhlir
     std::int32_t fuel
   )
   {
-    auto registers =
-      std::vector<Constant_value>(function.register_count, Void_value{});
-    for (auto i = std::size_t{}; i < arguments.size(); ++i)
+    auto registers = std::vector<Constant_value>{};
+    registers.reserve(function.register_count);
+    for (auto const &arg : arguments)
     {
-      registers[i] = arguments[i];
+      registers.emplace_back(arg);
+    }
+    for (auto i = static_cast<std::int32_t>(arguments.size());
+         i < function.register_count;
+         ++i)
+    {
+      registers.emplace_back(Void_value{});
     }
     try
     {

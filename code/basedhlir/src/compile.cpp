@@ -1211,10 +1211,7 @@ namespace basedhlir
     basedparse::Fn_expression const &expr
   )
   {
-    emit_error(
-      "expression is not a compile-time constant",
-      expr.kw_fn.location
-    );
+    return Function_value{.function = compile_function(expr)};
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
@@ -1694,17 +1691,6 @@ namespace basedhlir
     if (is_mutable && is_top_level())
     {
       emit_error("top-level bindings cannot be mutable", *stmt.kw_mut);
-    }
-    // Handle fn expressions: compile to a Function and store as constant
-    if (auto const fn =
-          std::get_if<basedparse::Fn_expression>(&stmt.initializer.value))
-    {
-      auto const func = compile_function(*fn);
-      _symbol_table.declare_value(
-        stmt.name.text,
-        Function_value{.function = func}
-      );
-      return;
     }
     auto const requires_const_eval = is_top_level() || !is_object;
     if (requires_const_eval)

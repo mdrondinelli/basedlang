@@ -1313,7 +1313,7 @@ namespace basedhlir
 
   Register Compilation_context::allocate_register()
   {
-    return Register{.id = _next_register++};
+    return Register{_next_register++};
   }
 
   void Compilation_context::emit(Instruction instruction)

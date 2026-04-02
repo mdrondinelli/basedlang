@@ -55,30 +55,30 @@ namespace basedhlir
         using T = std::decay_t<decltype(inst)>;
         if constexpr (std::is_same_v<T, Int32_constant_instruction>)
         {
-          registers[inst.result.id] = inst.value;
+          registers[*inst.result] = inst.value;
         }
         else if constexpr (std::is_same_v<T, Bool_constant_instruction>)
         {
-          registers[inst.result.id] = inst.value;
+          registers[*inst.result] = inst.value;
         }
         else if constexpr (std::is_same_v<T, Void_constant_instruction>)
         {
-          registers[inst.result.id] = Void_value{};
+          registers[*inst.result] = Void_value{};
         }
         else if constexpr (std::is_same_v<T, Copy_instruction>)
         {
-          registers[inst.result.id] = registers[inst.source.id];
+          registers[*inst.result] = registers[*inst.source];
         }
         else if constexpr (std::is_same_v<T, Unary_instruction>)
         {
-          auto const operand = registers[inst.operand.id];
-          registers[inst.result.id] = inst.overload->evaluate(operand);
+          auto const operand = registers[*inst.operand];
+          registers[*inst.result] = inst.overload->evaluate(operand);
         }
         else if constexpr (std::is_same_v<T, Binary_instruction>)
         {
-          auto const lhs = registers[inst.lhs.id];
-          auto const rhs = registers[inst.rhs.id];
-          registers[inst.result.id] = inst.overload->evaluate(lhs, rhs);
+          auto const lhs = registers[*inst.lhs];
+          auto const rhs = registers[*inst.rhs];
+          registers[*inst.result] = inst.overload->evaluate(lhs, rhs);
         }
         else if constexpr (std::is_same_v<T, Call_instruction>)
         {
@@ -86,28 +86,28 @@ namespace basedhlir
           args.reserve(inst.arguments.size());
           for (auto const &arg : inst.arguments)
           {
-            args.push_back(registers[arg.id]);
+            args.push_back(registers[*arg]);
           }
-          registers[inst.result.id] = interpret(*inst.callee, args, fuel);
+          registers[*inst.result] = interpret(*inst.callee, args, fuel);
         }
         else if constexpr (std::is_same_v<T, If_instruction>)
         {
           execute_block(registers, *inst.condition, fuel);
-          if (std::get<bool>(registers[inst.condition->result.id]))
+          if (std::get<bool>(registers[*inst.condition->result]))
           {
             execute_block(registers, *inst.then_body, fuel);
-            registers[inst.result.id] = registers[inst.then_body->result.id];
+            registers[*inst.result] = registers[*inst.then_body->result];
           }
           else
           {
             auto matched = false;
-            for (auto const &ei : inst.else_ifs)
+            for (auto const &else_if : inst.else_ifs)
             {
-              execute_block(registers, *ei.condition, fuel);
-              if (std::get<bool>(registers[ei.condition->result.id]))
+              execute_block(registers, *else_if.condition, fuel);
+              if (std::get<bool>(registers[*else_if.condition->result]))
               {
-                execute_block(registers, *ei.body, fuel);
-                registers[inst.result.id] = registers[ei.body->result.id];
+                execute_block(registers, *else_if.body, fuel);
+                registers[*inst.result] = registers[*else_if.body->result];
                 matched = true;
                 break;
               }
@@ -117,19 +117,19 @@ namespace basedhlir
               if (inst.else_body)
               {
                 execute_block(registers, *inst.else_body, fuel);
-                registers[inst.result.id] =
-                  registers[inst.else_body->result.id];
+                registers[*inst.result] =
+                  registers[*inst.else_body->result];
               }
               else
               {
-                registers[inst.result.id] = Void_value{};
+                registers[*inst.result] = Void_value{};
               }
             }
           }
         }
         else if constexpr (std::is_same_v<T, Return_instruction>)
         {
-          throw Return_value{.value = registers[inst.value.id]};
+          throw Return_value{.value = registers[*inst.value]};
         }
       },
       instruction.data

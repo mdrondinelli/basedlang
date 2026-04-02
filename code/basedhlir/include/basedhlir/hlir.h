@@ -16,11 +16,35 @@ namespace basedhlir
   class Unary_operator_overload;
   class Binary_operator_overload;
 
-  struct Register
+  class Register
   {
-    std::int32_t id;
+  public:
+    Register() = default;
+
+    explicit Register(std::int32_t id)
+        : _id{id}
+    {
+    }
+
+    bool has_value() const
+    {
+      return _id >= 0;
+    }
+
+    explicit operator bool() const
+    {
+      return has_value();
+    }
+
+    std::int32_t operator*() const
+    {
+      return _id;
+    }
 
     bool operator==(Register const &) const = default;
+
+  private:
+    std::int32_t _id{-1};
   };
 
   struct Int32_constant_instruction

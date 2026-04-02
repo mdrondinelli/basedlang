@@ -1,3 +1,5 @@
+#include <array>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include "basedlex/istream_binary_stream.h"
@@ -294,7 +296,8 @@ TEST_CASE("compile - function with parameter")
   auto const &f = *tu.functions[0];
   CHECK(f.name == "id");
   CHECK(f.parameters.size() == 1);
-  auto const result = basedhlir::interpret(f, {std::int32_t{42}});
+  auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{42}};
+  auto const result = basedhlir::interpret(f, args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 42);
 }
@@ -304,8 +307,8 @@ TEST_CASE("compile - function with arithmetic")
   auto const tu =
     compile_program("let add1 = fn(x: Int32): Int32 => { return x + 1; };");
   REQUIRE(tu.functions.size() == 1);
-  auto const result =
-    basedhlir::interpret(*tu.functions[0], {std::int32_t{41}});
+  auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{41}};
+  auto const result = basedhlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 42);
 }
@@ -316,8 +319,9 @@ TEST_CASE("compile - function with multiple parameters")
     "let first = fn(x: Int32, y: Int32): Int32 => { return x; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const result =
-    basedhlir::interpret(*tu.functions[0], {std::int32_t{1}, std::int32_t{2}});
+  auto const args =
+    std::array<basedhlir::Constant_value, 2>{std::int32_t{1}, std::int32_t{2}};
+  auto const result = basedhlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 1);
 }
@@ -330,9 +334,11 @@ TEST_CASE("compile - function with if expression")
   );
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
-  auto const r1 = basedhlir::interpret(f, {std::int32_t{-5}});
+  auto const args1 = std::array<basedhlir::Constant_value, 1>{std::int32_t{-5}};
+  auto const r1 = basedhlir::interpret(f, args1);
   CHECK(std::get<std::int32_t>(r1) == 5);
-  auto const r2 = basedhlir::interpret(f, {std::int32_t{3}});
+  auto const args2 = std::array<basedhlir::Constant_value, 1>{std::int32_t{3}};
+  auto const r2 = basedhlir::interpret(f, args2);
   CHECK(std::get<std::int32_t>(r2) == 3);
 }
 
@@ -389,8 +395,9 @@ TEST_CASE("compile - recursive function")
     "else { recurse(n - 1) + recurse(n - 2) }; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const result =
-    basedhlir::interpret(*tu.functions[0], {std::int32_t{10}});
+  auto const args =
+    std::array<basedhlir::Constant_value, 1>{std::int32_t{10}};
+  auto const result = basedhlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 55);
 }
@@ -402,7 +409,8 @@ TEST_CASE("compile - recurse keyword")
     "{ return if n == 0 { 1 } else { n * recurse(n - 1) }; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const result = basedhlir::interpret(*tu.functions[0], {std::int32_t{5}});
+  auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{5}};
+  auto const result = basedhlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 120);
 }
@@ -423,7 +431,8 @@ TEST_CASE("compile - fuel exhaustion")
     "let loop = fn(n: Int32): Int32 => { return recurse(n); };"
   );
   REQUIRE(tu.functions.size() == 1);
-  CHECK_THROWS(basedhlir::interpret(*tu.functions[0], {std::int32_t{0}}, 100));
+  auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{0}};
+  CHECK_THROWS(basedhlir::interpret(*tu.functions[0], args, 100));
 }
 
 TEST_CASE("compile - pure expression body")

@@ -1,3 +1,4 @@
+#include <span>
 #include <stdexcept>
 #include <variant>
 #include <vector>
@@ -148,7 +149,7 @@ namespace basedhlir
 
   Constant_value interpret(
     Function const &function,
-    std::vector<Constant_value> const &arguments,
+    std::span<Constant_value const> arguments,
     int fuel
   )
   {

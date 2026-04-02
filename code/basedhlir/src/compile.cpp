@@ -1566,18 +1566,17 @@ namespace basedhlir
   }
 
   Register Compilation_context::compile_expression(
-    basedparse::Index_expression const &expr
+    basedparse::Index_expression const &
   )
   {
-    auto const span = basedparse::span_of(expr);
-    emit_error("index expressions are not supported", span.start);
+    throw std::runtime_error{"index expressions are not implemented"};
   }
 
   Register Compilation_context::compile_expression(
-    basedparse::Prefix_bracket_expression const &expr
+    basedparse::Prefix_bracket_expression const &
   )
   {
-    emit_error("array type expressions are not supported here", expr.lbracket);
+    std::unreachable();
   }
 
   Register Compilation_context::compile_expression(

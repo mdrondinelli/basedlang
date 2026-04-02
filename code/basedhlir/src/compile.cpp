@@ -1605,11 +1605,9 @@ namespace basedhlir
     auto const result = allocate_register();
     auto const compile_block = [this](auto compile_fn) -> std::unique_ptr<Block>
     {
-      auto const saved_body = _current_body;
       auto instructions = std::vector<Instruction>{};
-      _current_body = &instructions;
+      auto const saved_body = Scoped_assign{_current_body, &instructions};
       auto const block_result = compile_fn();
-      _current_body = saved_body;
       return std::make_unique<Block>(
         Block{.result = block_result, .instructions = std::move(instructions)}
       );

@@ -906,7 +906,7 @@ namespace basedhlir
     basedparse::Recurse_expression const &expr
   )
   {
-    if (_current_function == nullptr)
+    if (is_top_level())
     {
       emit_error("'recurse' used outside of a function body", expr.kw_recurse);
     }
@@ -1200,7 +1200,7 @@ namespace basedhlir
     basedparse::Recurse_expression const &expr
   )
   {
-    if (_current_function == nullptr)
+    if (is_top_level())
     {
       emit_error("'recurse' used outside of a function body", expr.kw_recurse);
     }
@@ -1403,7 +1403,7 @@ namespace basedhlir
     basedparse::Recurse_expression const &expr
   )
   {
-    if (_current_function == nullptr)
+    if (is_top_level())
     {
       emit_error("'recurse' used outside of a function body", expr.kw_recurse);
     }

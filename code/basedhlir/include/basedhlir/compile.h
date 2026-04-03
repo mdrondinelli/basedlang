@@ -20,6 +20,9 @@
 namespace basedhlir
 {
 
+  using Expression_compile_result =
+    std::variant<Typed_register, Constant_value>;
+
   struct Diagnostic
   {
     std::string message;
@@ -117,46 +120,6 @@ namespace basedhlir
     Constant_value
     evaluate_constant_expression(basedparse::Expression const &expr);
 
-    Constant_value evaluate_constant_expression(
-      basedparse::Int_literal_expression const &expr
-    );
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Paren_expression const &expr);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Prefix_expression const &expr);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Postfix_expression const &expr);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Binary_expression const &expr);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Identifier_expression const &);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Recurse_expression const &);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Fn_expression const &);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Call_expression const &);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Prefix_bracket_expression const &);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Index_expression const &);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::Block_expression const &);
-
-    Constant_value
-    evaluate_constant_expression(basedparse::If_expression const &);
-
     Basic_block *new_block();
 
     void set_current_block(Basic_block *block);
@@ -167,40 +130,47 @@ namespace basedhlir
 
     void emit(Instruction instruction);
 
-    Typed_register compile_expression(basedparse::Expression const &expr);
+    Expression_compile_result
+    compile_expression(basedparse::Expression const &expr);
 
-    Typed_register
+    Expression_compile_result
     compile_expression(basedparse::Int_literal_expression const &expr);
 
-    Typed_register
+    Expression_compile_result
     compile_expression(basedparse::Identifier_expression const &expr);
 
-    Typed_register
+    Expression_compile_result
     compile_expression(basedparse::Recurse_expression const &expr);
 
-    Typed_register compile_expression(basedparse::Fn_expression const &expr);
+    Expression_compile_result
+    compile_expression(basedparse::Fn_expression const &expr);
 
-    Typed_register compile_expression(basedparse::Paren_expression const &expr);
+    Expression_compile_result
+    compile_expression(basedparse::Paren_expression const &expr);
 
-    Typed_register
+    Expression_compile_result
     compile_expression(basedparse::Prefix_expression const &expr);
 
-    Typed_register
+    Expression_compile_result
     compile_expression(basedparse::Postfix_expression const &expr);
 
-    Typed_register
+    Expression_compile_result
     compile_expression(basedparse::Binary_expression const &expr);
 
-    Typed_register compile_expression(basedparse::Call_expression const &expr);
+    Expression_compile_result
+    compile_expression(basedparse::Call_expression const &expr);
 
-    Typed_register compile_expression(basedparse::Index_expression const &expr);
+    Expression_compile_result
+    compile_expression(basedparse::Index_expression const &expr);
 
-    Typed_register
+    Expression_compile_result
     compile_expression(basedparse::Prefix_bracket_expression const &expr);
 
-    Typed_register compile_expression(basedparse::Block_expression const &expr);
+    Expression_compile_result
+    compile_expression(basedparse::Block_expression const &expr);
 
-    Typed_register compile_expression(basedparse::If_expression const &expr);
+    Expression_compile_result
+    compile_expression(basedparse::If_expression const &expr);
 
     void compile_statement(basedparse::Statement const &stmt);
 

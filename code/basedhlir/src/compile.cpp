@@ -1308,7 +1308,7 @@ namespace basedhlir
     _current_block = block;
   }
 
-  void Compilation_context::emit_terminator(Terminator terminator)
+  void Compilation_context::emit(Terminator terminator)
   {
     assert(_current_block != nullptr);
     _current_block->terminator = std::move(terminator);
@@ -1606,7 +1606,7 @@ namespace basedhlir
     }
     auto const jump_to_merge = [&](Register result)
     {
-      emit_terminator(
+      emit(
         Terminator{
           .data = Jump_terminator{
             .target = merge_block,
@@ -1631,7 +1631,7 @@ namespace basedhlir
       }
       return merge_block;
     }();
-    emit_terminator(
+    emit(
       Terminator{
         .data = Branch_terminator{
           .condition = cond_reg,
@@ -1667,7 +1667,7 @@ namespace basedhlir
         }
         return merge_block;
       }();
-      emit_terminator(
+      emit(
         Terminator{
           .data = Branch_terminator{
             .condition = ei_cond_reg,
@@ -1770,7 +1770,7 @@ namespace basedhlir
   )
   {
     auto const [value, value_type] = compile_expression(stmt.value);
-    emit_terminator(Terminator{.data = Return_terminator{.value = value}});
+    emit(Terminator{.data = Return_terminator{.value = value}});
     // Start a new (dead) block for any subsequent code
     set_current_block(new_block());
   }
@@ -1824,7 +1824,7 @@ namespace basedhlir
       if (block->tail)
       {
         auto const [tail_reg, tail_type] = compile_expression(*block->tail);
-        emit_terminator(
+        emit(
           Terminator{.data = Return_terminator{.value = tail_reg}}
         );
       }
@@ -1832,7 +1832,7 @@ namespace basedhlir
     else
     {
       auto const [body_reg, body_type] = compile_expression(*expr.body);
-      emit_terminator(Terminator{.data = Return_terminator{.value = body_reg}});
+      emit(Terminator{.data = Return_terminator{.value = body_reg}});
     }
     _symbol_table.pop_scope();
     func_ptr->register_count = _next_register;

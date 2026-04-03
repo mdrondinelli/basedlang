@@ -161,7 +161,7 @@ namespace basedhlir
 
     void set_current_block(Basic_block *block);
 
-    void emit_terminator(Terminator terminator);
+    void emit(Terminator terminator);
 
     Register allocate_register();
 

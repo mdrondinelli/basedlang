@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "basedhlir/interpret.h"
-#include "basedhlir/operator_overload.h"
 
 namespace basedhlir
 {

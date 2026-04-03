@@ -12,6 +12,28 @@ namespace basedhlir
   namespace
   {
 
+    Constant_value eval_operand(
+      Operand const &operand,
+      std::vector<Constant_value> const &registers
+    )
+    {
+      return std::visit(
+        [&](auto const &op) -> Constant_value
+        {
+          using T = std::decay_t<decltype(op)>;
+          if constexpr (std::is_same_v<T, Register>)
+          {
+            return registers[*op];
+          }
+          else
+          {
+            return op;
+          }
+        },
+        operand
+      );
+    }
+
     void execute_instruction(
       std::vector<Constant_value> &register_values,
       Instruction const &instruction,
@@ -41,17 +63,18 @@ namespace basedhlir
           }
           else if constexpr (std::is_same_v<T, Copy_instruction>)
           {
-            register_values[*inst.result] = register_values[*inst.source];
+            register_values[*inst.result] =
+              eval_operand(inst.source, register_values);
           }
           else if constexpr (std::is_same_v<T, Unary_instruction>)
           {
-            auto const operand = register_values[*inst.operand];
+            auto const operand = eval_operand(inst.operand, register_values);
             register_values[*inst.result] = inst.overload->evaluate(operand);
           }
           else if constexpr (std::is_same_v<T, Binary_instruction>)
           {
-            auto const lhs = register_values[*inst.lhs];
-            auto const rhs = register_values[*inst.rhs];
+            auto const lhs = eval_operand(inst.lhs, register_values);
+            auto const rhs = eval_operand(inst.rhs, register_values);
             register_values[*inst.result] = inst.overload->evaluate(lhs, rhs);
           }
           else if constexpr (std::is_same_v<T, Call_instruction>)
@@ -60,7 +83,7 @@ namespace basedhlir
             args.reserve(inst.arguments.size());
             for (auto const &arg : inst.arguments)
             {
-              args.push_back(register_values[*arg]);
+              args.push_back(eval_operand(arg, register_values));
             }
             register_values[*inst.result] = interpret(*inst.callee, args, fuel);
           }
@@ -94,7 +117,7 @@ namespace basedhlir
       }
       auto const result = std::visit(
         [&](auto const &t)
-          -> std::pair<Basic_block const *, std::vector<Register> const *>
+          -> std::pair<Basic_block const *, std::vector<Operand> const *>
         {
           using T = std::decay_t<decltype(t)>;
           if constexpr (std::is_same_v<T, std::monostate>)
@@ -107,7 +130,7 @@ namespace basedhlir
           }
           else if constexpr (std::is_same_v<T, Branch_terminator>)
           {
-            if (std::get<bool>(registers[*t.condition]))
+            if (std::get<bool>(eval_operand(t.condition, registers)))
             {
               return {t.then_target, &t.then_arguments};
             }
@@ -115,10 +138,7 @@ namespace basedhlir
           }
           else
           {
-            if (t.value.has_value())
-            {
-              return_value = registers[*t.value];
-            }
+            return_value = eval_operand(t.value, registers);
             return {nullptr, nullptr};
           }
         },
@@ -131,7 +151,7 @@ namespace basedhlir
       for (auto i = std::size_t{}; i < result.second->size(); ++i)
       {
         registers[*result.first->parameters[i]] =
-          registers[*(*result.second)[i]];
+          eval_operand((*result.second)[i], registers);
       }
       block = result.first;
     }

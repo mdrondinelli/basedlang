@@ -6,6 +6,7 @@
 #include <variant>
 #include <vector>
 
+#include "constant_value.h"
 #include "operator_overload.h"
 #include "type.h"
 
@@ -52,6 +53,8 @@ namespace basedhlir
     Type *type;
   };
 
+  using Operand = std::variant<Register, Constant_value>;
+
   struct Int32_constant_instruction
   {
     Register result;
@@ -72,22 +75,22 @@ namespace basedhlir
   struct Copy_instruction
   {
     Register result;
-    Register source;
+    Operand source;
   };
 
   struct Unary_instruction
   {
     Register result;
     Unary_operator_overload *overload;
-    Register operand;
+    Operand operand;
   };
 
   struct Binary_instruction
   {
     Register result;
     Binary_operator_overload *overload;
-    Register lhs;
-    Register rhs;
+    Operand lhs;
+    Operand rhs;
   };
 
   struct Function;
@@ -96,7 +99,7 @@ namespace basedhlir
   {
     Register result;
     Function *callee;
-    std::vector<Register> arguments;
+    std::vector<Operand> arguments;
   };
 
   using Instruction = std::variant<
@@ -114,21 +117,21 @@ namespace basedhlir
   struct Jump_terminator
   {
     Basic_block *target;
-    std::vector<Register> arguments;
+    std::vector<Operand> arguments;
   };
 
   struct Branch_terminator
   {
-    Register condition;
+    Operand condition;
     Basic_block *then_target;
-    std::vector<Register> then_arguments;
+    std::vector<Operand> then_arguments;
     Basic_block *else_target;
-    std::vector<Register> else_arguments;
+    std::vector<Operand> else_arguments;
   };
 
   struct Return_terminator
   {
-    Register value;
+    Operand value;
   };
 
   using Terminator = std::variant<

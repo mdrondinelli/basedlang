@@ -12,7 +12,7 @@ namespace basedhlir
   {
 
     void execute_instruction(
-      std::vector<Constant_value> &registers,
+      std::vector<Constant_value> &register_values,
       Instruction const &instruction,
       std::int32_t &fuel
     )
@@ -28,30 +28,30 @@ namespace basedhlir
           using T = std::decay_t<decltype(inst)>;
           if constexpr (std::is_same_v<T, Int32_constant_instruction>)
           {
-            registers[*inst.result] = inst.value;
+            register_values[*inst.result] = inst.value;
           }
           else if constexpr (std::is_same_v<T, Bool_constant_instruction>)
           {
-            registers[*inst.result] = inst.value;
+            register_values[*inst.result] = inst.value;
           }
           else if constexpr (std::is_same_v<T, Void_constant_instruction>)
           {
-            registers[*inst.result] = Void_value{};
+            register_values[*inst.result] = Void_value{};
           }
           else if constexpr (std::is_same_v<T, Copy_instruction>)
           {
-            registers[*inst.result] = registers[*inst.source];
+            register_values[*inst.result] = register_values[*inst.source];
           }
           else if constexpr (std::is_same_v<T, Unary_instruction>)
           {
-            auto const operand = registers[*inst.operand];
-            registers[*inst.result] = inst.overload->evaluate(operand);
+            auto const operand = register_values[*inst.operand];
+            register_values[*inst.result] = inst.overload->evaluate(operand);
           }
           else if constexpr (std::is_same_v<T, Binary_instruction>)
           {
-            auto const lhs = registers[*inst.lhs];
-            auto const rhs = registers[*inst.rhs];
-            registers[*inst.result] = inst.overload->evaluate(lhs, rhs);
+            auto const lhs = register_values[*inst.lhs];
+            auto const rhs = register_values[*inst.rhs];
+            register_values[*inst.result] = inst.overload->evaluate(lhs, rhs);
           }
           else if constexpr (std::is_same_v<T, Call_instruction>)
           {
@@ -59,9 +59,9 @@ namespace basedhlir
             args.reserve(inst.arguments.size());
             for (auto const &arg : inst.arguments)
             {
-              args.push_back(registers[*arg]);
+              args.push_back(register_values[*arg]);
             }
-            registers[*inst.result] = interpret(*inst.callee, args, fuel);
+            register_values[*inst.result] = interpret(*inst.callee, args, fuel);
           }
         },
         instruction.data

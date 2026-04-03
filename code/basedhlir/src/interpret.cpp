@@ -77,7 +77,8 @@ namespace basedhlir
     std::int32_t fuel
   )
   {
-    auto registers = std::vector<Constant_value>(function.register_count, Void_value{});
+    auto registers =
+      std::vector<Constant_value>(function.register_count, Void_value{});
     auto const &entry = *function.blocks[0];
     for (auto i = std::size_t{}; i < arguments.size(); ++i)
     {

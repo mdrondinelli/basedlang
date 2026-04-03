@@ -1346,7 +1346,9 @@ namespace basedhlir
   {
     auto const result = allocate_register();
     auto const value = std::stoi(expr.literal.text);
-    emit(Instruction{Int32_constant_instruction{.result = result, .value = value}});
+    emit(
+      Instruction{Int32_constant_instruction{.result = result, .value = value}}
+    );
     return {result, _type_pool->int32_type()};
   }
 
@@ -1370,11 +1372,17 @@ namespace basedhlir
         using T = std::decay_t<decltype(v)>;
         if constexpr (std::is_same_v<T, std::int32_t>)
         {
-          emit(Instruction{Int32_constant_instruction{.result = result, .value = v}});
+          emit(
+            Instruction{
+              Int32_constant_instruction{.result = result, .value = v}
+            }
+          );
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
-          emit(Instruction{Bool_constant_instruction{.result = result, .value = v}});
+          emit(
+            Instruction{Bool_constant_instruction{.result = result, .value = v}}
+          );
         }
         else if constexpr (std::is_same_v<T, Void_value>)
         {
@@ -1800,9 +1808,7 @@ namespace basedhlir
       if (block->tail)
       {
         auto const [tail_reg, tail_type] = compile_expression(*block->tail);
-        emit(
-          Terminator{Return_terminator{.value = tail_reg}}
-        );
+        emit(Terminator{Return_terminator{.value = tail_reg}});
       }
       else if (!_current_block->has_terminator())
       {

@@ -1588,24 +1588,7 @@ namespace basedhlir
   Typed_register
   Compilation_context::compile_expression(basedparse::If_expression const &expr)
   {
-    auto const is_void = !expr.else_part.has_value();
     auto const merge_block = new_block();
-    auto merge_param = Register{};
-    if (!is_void)
-    {
-      merge_param = allocate_register();
-      merge_block->parameters.push_back(merge_param);
-    }
-    auto const jump_to_merge = [&](Register result)
-    {
-      emit(
-        Terminator{Jump_terminator{
-          .target = merge_block,
-          .arguments =
-            is_void ? std::vector<Register>{} : std::vector<Register>{result},
-        }}
-      );
-    };
     // Compile condition in current block
     auto const [cond_reg, cond_type] = compile_expression(*expr.condition);
     auto const then_block = new_block();
@@ -1633,6 +1616,26 @@ namespace basedhlir
     // Compile then block
     set_current_block(then_block);
     auto const [then_reg, then_type] = compile_expression(expr.then_block);
+    auto const merge_param = [&]() -> Register
+    {
+      if (then_type == _type_pool->void_type())
+      {
+        return Register{};
+      }
+      auto const r = allocate_register();
+      merge_block->parameters.push_back(r);
+      return r;
+    }();
+    auto const jump_to_merge = [&](Register result)
+    {
+      emit(
+        Terminator{Jump_terminator{
+          .target = merge_block,
+          .arguments =
+            merge_param ? std::vector<Register>{result} : std::vector<Register>{},
+        }}
+      );
+    };
     jump_to_merge(then_reg);
     // Compile else-if chain
     auto current_else_block = first_else_target;
@@ -1692,13 +1695,16 @@ namespace basedhlir
       jump_to_merge(else_reg);
     }
     set_current_block(merge_block);
-    if (is_void)
+    if (merge_param)
+    {
+      return {merge_param, then_type};
+    }
+    else
     {
       auto const void_reg = allocate_register();
       emit(Instruction{Void_constant_instruction{.result = void_reg}});
       return {void_reg, _type_pool->void_type()};
     }
-    return {merge_param, then_type};
   }
 
   void Compilation_context::compile_statement(basedparse::Statement const &stmt)

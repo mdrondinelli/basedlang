@@ -1311,7 +1311,7 @@ namespace basedhlir
   Register Compilation_context::allocate_register()
   {
     assert(_current_function != nullptr);
-    return Register{_next_register++};
+    return Register{_current_function->register_count++};
   }
 
   void Compilation_context::emit(Instruction instruction)
@@ -1779,8 +1779,6 @@ namespace basedhlir
     auto const func_ptr = func.get();
     _translation_unit.functions.push_back(std::move(func));
     auto const saved_function = Scoped_assign{_current_function, func_ptr};
-    auto const saved_next_register =
-      Scoped_assign{_next_register, std::int32_t{}};
     auto const saved_block =
       Scoped_assign{_current_block, static_cast<Basic_block *>(nullptr)};
     auto const entry = new_block();
@@ -1825,7 +1823,6 @@ namespace basedhlir
     {
       assert(block->has_terminator());
     }
-    func_ptr->register_count = _next_register;
     return func_ptr;
   }
 

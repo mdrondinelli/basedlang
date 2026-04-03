@@ -221,7 +221,6 @@ namespace basedhlir
     Translation_unit _translation_unit;
     Symbol_table _symbol_table;
     Function *_current_function{};
-    std::int32_t _next_register{};
     Basic_block *_current_block{};
     std::vector<Diagnostic> _diagnostics;
     std::unordered_map<

@@ -1,6 +1,5 @@
 #include <cstdint>
 #include <span>
-#include <stdexcept>
 #include <variant>
 #include <vector>
 
@@ -12,26 +11,6 @@ namespace basedhlir
 
   namespace
   {
-
-    struct Return_value
-    {
-      Constant_value value;
-    };
-
-    void execute_instructions(
-      std::vector<Constant_value> &registers,
-      std::vector<Instruction> const &instructions,
-      std::int32_t &fuel
-    );
-
-    void execute_block(
-      std::vector<Constant_value> &registers,
-      Block const &block,
-      std::int32_t &fuel
-    )
-    {
-      execute_instructions(registers, block.instructions, fuel);
-    }
 
     void execute_instruction(
       std::vector<Constant_value> &registers,
@@ -85,61 +64,9 @@ namespace basedhlir
             }
             registers[*inst.result] = interpret(*inst.callee, args, fuel);
           }
-          else if constexpr (std::is_same_v<T, If_instruction>)
-          {
-            execute_block(registers, *inst.condition, fuel);
-            if (std::get<bool>(registers[*inst.condition->result]))
-            {
-              execute_block(registers, *inst.then_body, fuel);
-              registers[*inst.result] = registers[*inst.then_body->result];
-            }
-            else
-            {
-              auto matched = false;
-              for (auto const &else_if : inst.else_ifs)
-              {
-                execute_block(registers, *else_if.condition, fuel);
-                if (std::get<bool>(registers[*else_if.condition->result]))
-                {
-                  execute_block(registers, *else_if.body, fuel);
-                  registers[*inst.result] = registers[*else_if.body->result];
-                  matched = true;
-                  break;
-                }
-              }
-              if (!matched)
-              {
-                if (inst.else_body)
-                {
-                  execute_block(registers, *inst.else_body, fuel);
-                  registers[*inst.result] = registers[*inst.else_body->result];
-                }
-                else
-                {
-                  registers[*inst.result] = Void_value{};
-                }
-              }
-            }
-          }
-          else if constexpr (std::is_same_v<T, Return_instruction>)
-          {
-            throw Return_value{.value = registers[*inst.value]};
-          }
         },
         instruction.data
       );
-    }
-
-    void execute_instructions(
-      std::vector<Constant_value> &registers,
-      std::vector<Instruction> const &instructions,
-      std::int32_t &fuel
-    )
-    {
-      for (auto const &inst : instructions)
-      {
-        execute_instruction(registers, inst, fuel);
-      }
     }
 
   } // namespace
@@ -150,27 +77,60 @@ namespace basedhlir
     std::int32_t fuel
   )
   {
-    auto registers = std::vector<Constant_value>{};
-    registers.reserve(function.register_count);
-    for (auto const &arg : arguments)
+    auto registers = std::vector<Constant_value>(function.register_count, Void_value{});
+    auto const &entry = *function.blocks[0];
+    for (auto i = std::size_t{}; i < arguments.size(); ++i)
     {
-      registers.emplace_back(arg);
+      registers[*entry.parameters[i]] = arguments[i];
     }
-    for (auto i = static_cast<std::int32_t>(arguments.size());
-         i < function.register_count;
-         ++i)
+    auto const *block = &entry;
+    auto return_value = Constant_value{Void_value{}};
+    for (;;)
     {
-      registers.emplace_back(Void_value{});
+      for (auto const &inst : block->instructions)
+      {
+        execute_instruction(registers, inst, fuel);
+      }
+      auto const result = std::visit(
+        [&](auto const &t)
+          -> std::pair<Basic_block const *, std::vector<Register> const *>
+        {
+          using T = std::decay_t<decltype(t)>;
+          if constexpr (std::is_same_v<T, Jump_terminator>)
+          {
+            return {t.target, &t.arguments};
+          }
+          else if constexpr (std::is_same_v<T, Branch_terminator>)
+          {
+            if (std::get<bool>(registers[*t.condition]))
+            {
+              return {t.then_target, &t.then_arguments};
+            }
+            return {t.else_target, &t.else_arguments};
+          }
+          else
+          {
+            if (t.value.has_value())
+            {
+              return_value = registers[*t.value];
+            }
+            return {nullptr, nullptr};
+          }
+        },
+        block->terminator.data
+      );
+      if (result.first == nullptr)
+      {
+        break;
+      }
+      for (auto i = std::size_t{}; i < result.second->size(); ++i)
+      {
+        registers[*result.first->parameters[i]] =
+          registers[*(*result.second)[i]];
+      }
+      block = result.first;
     }
-    try
-    {
-      execute_instructions(registers, function.body, fuel);
-      return Void_value{};
-    }
-    catch (Return_value &rv)
-    {
-      return std::move(rv.value);
-    }
+    return return_value;
   }
 
 } // namespace basedhlir

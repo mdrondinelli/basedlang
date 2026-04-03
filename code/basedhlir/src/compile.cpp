@@ -1294,23 +1294,43 @@ namespace basedhlir
     return _current_function == nullptr;
   }
 
+  Basic_block *Compilation_context::new_block()
+  {
+    assert(_current_function != nullptr);
+    auto block = std::make_unique<Basic_block>();
+    auto const ptr = block.get();
+    _current_function->blocks.push_back(std::move(block));
+    return ptr;
+  }
+
+  void Compilation_context::set_current_block(Basic_block *block)
+  {
+    _current_block = block;
+  }
+
+  void Compilation_context::emit_terminator(Terminator terminator)
+  {
+    assert(_current_block != nullptr);
+    _current_block->terminator = std::move(terminator);
+  }
+
   Register Compilation_context::allocate_register()
   {
-    assert(!is_top_level());
+    assert(_current_function != nullptr);
     return Register{_next_register++};
   }
 
   void Compilation_context::emit(Instruction instruction)
   {
-    assert(_current_body != nullptr);
-    _current_body->push_back(std::move(instruction));
+    assert(_current_block != nullptr);
+    _current_block->instructions.push_back(std::move(instruction));
   }
 
-  Register
+  Typed_register
   Compilation_context::compile_expression(basedparse::Expression const &expr)
   {
     return std::visit(
-      [this](auto const &e) -> Register
+      [this](auto const &e) -> Typed_register
       {
         return compile_expression(e);
       },
@@ -1318,7 +1338,7 @@ namespace basedhlir
     );
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Int_literal_expression const &expr
   )
   {
@@ -1329,10 +1349,10 @@ namespace basedhlir
         .data = Int32_constant_instruction{.result = result, .value = value}
       }
     );
-    return result;
+    return {result, _type_pool->int32_type()};
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Identifier_expression const &expr
   )
   {
@@ -1340,11 +1360,12 @@ namespace basedhlir
     auto const ob = std::get_if<Object_binding>(&sym->data);
     if (ob != nullptr)
     {
-      return ob->reg;
+      return {ob->reg, ob->type};
     }
     auto const cv = std::get_if<Constant_value>(&sym->data);
     assert(cv != nullptr);
     auto const result = allocate_register();
+    auto const type = type_of_constant(*cv);
     std::visit(
       [&](auto const &v)
       {
@@ -1381,10 +1402,10 @@ namespace basedhlir
       },
       *cv
     );
-    return result;
+    return {result, type};
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Recurse_expression const &expr
   )
   {
@@ -1399,7 +1420,7 @@ namespace basedhlir
     );
   }
 
-  Register
+  Typed_register
   Compilation_context::compile_expression(basedparse::Fn_expression const &expr)
   {
     emit_error(
@@ -1408,21 +1429,20 @@ namespace basedhlir
     );
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Paren_expression const &expr
   )
   {
     return compile_expression(*expr.inner);
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Prefix_expression const &expr
   )
   {
-    auto const operand_type = type_of_expression(*expr.operand);
+    auto const [operand, operand_type] = compile_expression(*expr.operand);
     auto const op = basedparse::get_prefix_operator(expr.op.token);
     auto const overload = find_unary_overload(*op, operand_type);
-    auto const operand = compile_expression(*expr.operand);
     auto const result = allocate_register();
     emit(
       Instruction{
@@ -1433,26 +1453,24 @@ namespace basedhlir
         }
       }
     );
-    return result;
+    return {result, overload->result_type(operand_type)};
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Postfix_expression const &expr
   )
   {
     emit_error("dereference is not supported in this context", expr.op);
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Binary_expression const &expr
   )
   {
-    auto const lhs_type = type_of_expression(*expr.left);
-    auto const rhs_type = type_of_expression(*expr.right);
+    auto const [lhs, lhs_type] = compile_expression(*expr.left);
+    auto const [rhs, rhs_type] = compile_expression(*expr.right);
     auto const op = basedparse::get_binary_operator(expr.op.token);
     auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
-    auto const lhs = compile_expression(*expr.left);
-    auto const rhs = compile_expression(*expr.right);
     auto const result = allocate_register();
     emit(
       Instruction{
@@ -1464,10 +1482,10 @@ namespace basedhlir
         }
       }
     );
-    return result;
+    return {result, overload->result_type()};
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Call_expression const &expr
   )
   {
@@ -1514,9 +1532,10 @@ namespace basedhlir
         expr.lparen
       );
     }
+    auto args = std::vector<Register>{};
     for (auto i = std::size_t{}; i < expr.arguments.size(); ++i)
     {
-      auto const arg_type = type_of_expression(expr.arguments[i]);
+      auto const [arg_reg, arg_type] = compile_expression(expr.arguments[i]);
       if (!is_type_compatible(ft->parameter_types[i], arg_type))
       {
         emit_error(
@@ -1527,11 +1546,7 @@ namespace basedhlir
           expr.arguments[i]
         );
       }
-    }
-    auto args = std::vector<Register>{};
-    for (auto const &arg : expr.arguments)
-    {
-      args.push_back(compile_expression(arg));
+      args.push_back(arg_reg);
     }
     auto const result = allocate_register();
     emit(
@@ -1543,24 +1558,23 @@ namespace basedhlir
         }
       }
     );
-    return result;
+    return {result, ft->return_type};
   }
 
-  Register Compilation_context::compile_expression(
-    basedparse::Index_expression const &
-  )
+  Typed_register
+  Compilation_context::compile_expression(basedparse::Index_expression const &)
   {
     throw std::runtime_error{"index expressions are not implemented"};
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Prefix_bracket_expression const &
   )
   {
     std::unreachable();
   }
 
-  Register Compilation_context::compile_expression(
+  Typed_register Compilation_context::compile_expression(
     basedparse::Block_expression const &expr
   )
   {
@@ -1573,81 +1587,132 @@ namespace basedhlir
     {
       auto const r = allocate_register();
       emit(Instruction{.data = Void_constant_instruction{.result = r}});
-      return r;
+      return Typed_register{r, _type_pool->void_type()};
     }();
     _symbol_table.pop_scope();
     return result;
   }
 
-  Register
+  Typed_register
   Compilation_context::compile_expression(basedparse::If_expression const &expr)
   {
-    auto const result = allocate_register();
-    auto const compile_block = [this](auto compile_fn) -> std::unique_ptr<Block>
+    auto const is_void = !expr.else_part.has_value();
+    auto const merge_block = new_block();
+    auto merge_param = Register{};
+    if (!is_void)
     {
-      auto instructions = std::vector<Instruction>{};
-      auto const saved_body = Scoped_assign{_current_body, &instructions};
-      auto const block_result = compile_fn();
-      return std::make_unique<Block>(
-        Block{.result = block_result, .instructions = std::move(instructions)}
+      merge_param = allocate_register();
+      merge_block->parameters.push_back(merge_param);
+    }
+    auto const jump_to_merge = [&](Register result)
+    {
+      emit_terminator(
+        Terminator{
+          .data = Jump_terminator{
+            .target = merge_block,
+            .arguments =
+              is_void ? std::vector<Register>{} : std::vector<Register>{result},
+          }
+        }
       );
     };
-    auto condition = compile_block(
-      [&]
-      {
-        return compile_expression(*expr.condition);
-      }
-    );
-    auto then_body = compile_block(
-      [&]
-      {
-        return compile_expression(expr.then_block);
-      }
-    );
-    auto else_ifs = std::vector<If_instruction::Else_if>{};
-    for (auto const &part : expr.else_if_parts)
+    // Compile condition in current block
+    auto const [cond_reg, cond_type] = compile_expression(*expr.condition);
+    auto const then_block = new_block();
+    auto const first_else_target = [&]() -> Basic_block *
     {
-      auto ei_condition = compile_block(
-        [&]
+      if (!expr.else_if_parts.empty())
+      {
+        return new_block();
+      }
+      if (expr.else_part.has_value())
+      {
+        return new_block();
+      }
+      return merge_block;
+    }();
+    emit_terminator(
+      Terminator{
+        .data = Branch_terminator{
+          .condition = cond_reg,
+          .then_target = then_block,
+          .then_arguments = {},
+          .else_target = first_else_target,
+          .else_arguments = {},
+        }
+      }
+    );
+    // Compile then block
+    set_current_block(then_block);
+    auto const [then_reg, then_type] = compile_expression(expr.then_block);
+    jump_to_merge(then_reg);
+    // Compile else-if chain
+    auto current_else_block = first_else_target;
+    for (auto i = std::size_t{}; i < expr.else_if_parts.size(); ++i)
+    {
+      auto const &part = expr.else_if_parts[i];
+      set_current_block(current_else_block);
+      auto const [ei_cond_reg, ei_cond_type] =
+        compile_expression(*part.condition);
+      auto const ei_then = new_block();
+      auto const ei_else = [&]() -> Basic_block *
+      {
+        if (i + 1 < expr.else_if_parts.size())
         {
-          return compile_expression(*part.condition);
+          return new_block();
         }
-      );
-      auto ei_body = compile_block(
-        [&]
+        if (expr.else_part.has_value())
         {
-          return compile_expression(part.body);
+          return new_block();
+        }
+        return merge_block;
+      }();
+      emit_terminator(
+        Terminator{
+          .data = Branch_terminator{
+            .condition = ei_cond_reg,
+            .then_target = ei_then,
+            .then_arguments = {},
+            .else_target = ei_else,
+            .else_arguments = {},
+          }
         }
       );
-      else_ifs.push_back(
-        If_instruction::Else_if{
-          .condition = std::move(ei_condition),
-          .body = std::move(ei_body),
-        }
-      );
+      set_current_block(ei_then);
+      auto const [ei_reg, ei_type] = compile_expression(part.body);
+      if (ei_type != then_type)
+      {
+        emit_error(
+          "else-if branch type does not match then branch type",
+          part.body.lbrace
+        );
+      }
+      jump_to_merge(ei_reg);
+      current_else_block = ei_else;
     }
-    auto else_body = std::unique_ptr<Block>{};
+    // Compile else block
     if (expr.else_part.has_value())
     {
-      else_body = compile_block(
-        [&]
-        {
-          return compile_expression(expr.else_part->body);
-        }
-      );
-    }
-    emit(
-      Instruction{
-        .data = If_instruction{
-          .result = result,
-          .condition = std::move(condition),
-          .then_body = std::move(then_body),
-          .else_ifs = std::move(else_ifs),
-          .else_body = std::move(else_body),
-        }
+      set_current_block(current_else_block);
+      auto const [else_reg, else_type] =
+        compile_expression(expr.else_part->body);
+      if (else_type != then_type)
+      {
+        emit_error(
+          "else branch type does not match then branch type",
+          expr.else_part->body.lbrace
+        );
       }
-    );
-    return result;
+      jump_to_merge(else_reg);
+    }
+    set_current_block(merge_block);
+    if (is_void)
+    {
+      auto const void_reg = allocate_register();
+      emit(Instruction{.data = Void_constant_instruction{.result = void_reg}});
+      return {void_reg, _type_pool->void_type()};
+    }
+    return {merge_param, then_type};
   }
 
   void Compilation_context::compile_statement(basedparse::Statement const &stmt)
@@ -1684,8 +1749,9 @@ namespace basedhlir
     }
     else
     {
-      auto const reg = compile_expression(stmt.initializer);
-      _symbol_table.declare_object(stmt.name.text, type, is_mutable, reg);
+      auto const [reg, compiled_type] = compile_expression(stmt.initializer);
+      _symbol_table
+        .declare_object(stmt.name.text, compiled_type, is_mutable, reg);
     }
   }
 
@@ -1703,8 +1769,10 @@ namespace basedhlir
     basedparse::Return_statement const &stmt
   )
   {
-    auto const value = compile_expression(stmt.value);
-    emit(Instruction{.data = Return_instruction{.value = value}});
+    auto const [value, value_type] = compile_expression(stmt.value);
+    emit_terminator(Terminator{.data = Return_terminator{.value = value}});
+    // Start a new (dead) block for any subsequent code
+    set_current_block(new_block());
   }
 
   void Compilation_context::compile_statement(
@@ -1714,23 +1782,14 @@ namespace basedhlir
     compile_expression(stmt.expression);
   }
 
-  Function *Compilation_context::compile_function(
-    basedparse::Fn_expression const &expr
-  )
+  Function *
+  Compilation_context::compile_function(basedparse::Fn_expression const &expr)
   {
     auto const fn_type = type_of_expression(expr);
     auto const ft = std::get<Function_type>(fn_type->data);
-    auto params = std::vector<Parameter>{};
-    for (auto const &param : expr.parameters)
-    {
-      params.push_back(
-        Parameter{.type = compile_type_expression(*param.type)}
-      );
-    }
     auto func = std::make_unique<Function>(Function{
       .type = fn_type,
-      .parameters = std::move(params),
-      .body = {},
+      .blocks = {},
       .register_count = 0,
     });
     auto const func_ptr = func.get();
@@ -1738,11 +1797,15 @@ namespace basedhlir
     auto const saved_function = Scoped_assign{_current_function, func_ptr};
     auto const saved_next_register =
       Scoped_assign{_next_register, std::int32_t{}};
-    auto const saved_body = Scoped_assign{_current_body, &func_ptr->body};
+    auto const saved_block =
+      Scoped_assign{_current_block, static_cast<Basic_block *>(nullptr)};
+    auto const entry = new_block();
+    set_current_block(entry);
     _symbol_table.push_scope(true);
-    for (auto i = std::size_t{}; i < func_ptr->parameters.size(); ++i)
+    for (auto i = std::size_t{}; i < expr.parameters.size(); ++i)
     {
       auto const reg = allocate_register();
+      entry->parameters.push_back(reg);
       _symbol_table.declare_object(
         expr.parameters[i].name.text,
         ft.parameter_types[i],
@@ -1760,14 +1823,16 @@ namespace basedhlir
       }
       if (block->tail)
       {
-        auto const tail_reg = compile_expression(*block->tail);
-        emit(Instruction{.data = Return_instruction{.value = tail_reg}});
+        auto const [tail_reg, tail_type] = compile_expression(*block->tail);
+        emit_terminator(
+          Terminator{.data = Return_terminator{.value = tail_reg}}
+        );
       }
     }
     else
     {
-      auto const body_reg = compile_expression(*expr.body);
-      emit(Instruction{.data = Return_instruction{.value = body_reg}});
+      auto const [body_reg, body_type] = compile_expression(*expr.body);
+      emit_terminator(Terminator{.data = Return_terminator{.value = body_reg}});
     }
     _symbol_table.pop_scope();
     func_ptr->register_count = _next_register;

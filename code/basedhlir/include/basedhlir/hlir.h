@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <variant>
 #include <vector>
 
@@ -45,6 +44,12 @@ namespace basedhlir
 
   private:
     std::int32_t _id{-1};
+  };
+
+  struct Typed_register
+  {
+    Register reg;
+    Type *type;
   };
 
   struct Int32_constant_instruction
@@ -94,35 +99,6 @@ namespace basedhlir
     std::vector<Register> arguments;
   };
 
-  struct Block;
-  struct Instruction;
-
-  struct If_instruction
-  {
-    struct Else_if
-    {
-      std::unique_ptr<Block> condition;
-      std::unique_ptr<Block> body;
-    };
-
-    Register result;
-    std::unique_ptr<Block> condition;
-    std::unique_ptr<Block> then_body;
-    std::vector<Else_if> else_ifs;
-    std::unique_ptr<Block> else_body;
-  };
-
-  struct Block
-  {
-    Register result;
-    std::vector<Instruction> instructions;
-  };
-
-  struct Return_instruction
-  {
-    Register value;
-  };
-
   struct Instruction
   {
     std::variant<
@@ -132,23 +108,49 @@ namespace basedhlir
       Copy_instruction,
       Unary_instruction,
       Binary_instruction,
-      Call_instruction,
-      If_instruction,
-      Return_instruction
+      Call_instruction
     >
       data;
   };
 
-  struct Parameter
+  struct Basic_block;
+
+  struct Jump_terminator
   {
-    Type *type;
+    Basic_block *target;
+    std::vector<Register> arguments;
+  };
+
+  struct Branch_terminator
+  {
+    Register condition;
+    Basic_block *then_target;
+    std::vector<Register> then_arguments;
+    Basic_block *else_target;
+    std::vector<Register> else_arguments;
+  };
+
+  struct Return_terminator
+  {
+    Register value;
+  };
+
+  struct Terminator
+  {
+    std::variant<Jump_terminator, Branch_terminator, Return_terminator> data;
+  };
+
+  struct Basic_block
+  {
+    std::vector<Register> parameters;
+    std::vector<Instruction> instructions;
+    Terminator terminator;
   };
 
   struct Function
   {
     Type *type;
-    std::vector<Parameter> parameters;
-    std::vector<Instruction> body;
+    std::vector<std::unique_ptr<Basic_block>> blocks;
     std::int32_t register_count;
   };
 

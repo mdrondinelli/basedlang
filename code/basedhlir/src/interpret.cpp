@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <span>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -95,7 +96,11 @@ namespace basedhlir
           -> std::pair<Basic_block const *, std::vector<Register> const *>
         {
           using T = std::decay_t<decltype(t)>;
-          if constexpr (std::is_same_v<T, Jump_terminator>)
+          if constexpr (std::is_same_v<T, std::monostate>)
+          {
+            std::unreachable();
+          }
+          else if constexpr (std::is_same_v<T, Jump_terminator>)
           {
             return {t.target, &t.arguments};
           }

@@ -137,7 +137,7 @@ namespace basedhlir
 
   struct Terminator
   {
-    std::variant<Jump_terminator, Branch_terminator, Return_terminator> data;
+    std::variant<std::monostate, Jump_terminator, Branch_terminator, Return_terminator> data;
   };
 
   struct Basic_block
@@ -145,6 +145,8 @@ namespace basedhlir
     std::vector<Register> parameters;
     std::vector<Instruction> instructions;
     Terminator terminator;
+
+    bool has_terminator() const { return !std::holds_alternative<std::monostate>(terminator.data); }
   };
 
   struct Function

@@ -1308,12 +1308,6 @@ namespace basedhlir
     _current_block = block;
   }
 
-  void Compilation_context::emit(Terminator terminator)
-  {
-    assert(_current_block != nullptr);
-    _current_block->terminator = std::move(terminator);
-  }
-
   Register Compilation_context::allocate_register()
   {
     assert(_current_function != nullptr);
@@ -1324,6 +1318,13 @@ namespace basedhlir
   {
     assert(_current_block != nullptr);
     _current_block->instructions.push_back(std::move(instruction));
+  }
+
+  void Compilation_context::emit(Terminator terminator)
+  {
+    assert(_current_block != nullptr);
+    assert(!_current_block->has_terminator());
+    _current_block->terminator = std::move(terminator);
   }
 
   Typed_register
@@ -1828,6 +1829,10 @@ namespace basedhlir
           Terminator{.data = Return_terminator{.value = tail_reg}}
         );
       }
+      else if (!_current_block->has_terminator())
+      {
+        emit(Terminator{.data = Return_terminator{}});
+      }
     }
     else
     {
@@ -1835,6 +1840,10 @@ namespace basedhlir
       emit(Terminator{.data = Return_terminator{.value = body_reg}});
     }
     _symbol_table.pop_scope();
+    for (auto const &block : func_ptr->blocks)
+    {
+      assert(block->has_terminator());
+    }
     func_ptr->register_count = _next_register;
     return func_ptr;
   }

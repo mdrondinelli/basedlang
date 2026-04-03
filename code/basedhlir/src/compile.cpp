@@ -1331,13 +1331,15 @@ namespace basedhlir
   Typed_register
   Compilation_context::compile_expression(basedparse::Expression const &expr)
   {
-    return std::visit(
+    auto const result = std::visit(
       [this](auto const &e) -> Typed_register
       {
         return compile_expression(e);
       },
       expr.value
     );
+    assert(!_current_block->has_terminator());
+    return result;
   }
 
   Typed_register Compilation_context::compile_expression(
@@ -1796,26 +1798,13 @@ namespace basedhlir
       );
     }
     // Compile the body
-    if (auto const block =
-          std::get_if<basedparse::Block_expression>(&expr.body->value))
+    auto const [body_reg, body_type] = compile_expression(*expr.body);
+    if (body_type == _type_pool->void_type())
     {
-      for (auto const &stmt : block->statements)
-      {
-        compile_statement(stmt);
-      }
-      if (block->tail)
-      {
-        auto const [tail_reg, tail_type] = compile_expression(*block->tail);
-        emit(Terminator{Return_terminator{.value = tail_reg}});
-      }
-      else if (!_current_block->has_terminator())
-      {
-        emit(Terminator{Return_terminator{}});
-      }
+      emit(Terminator{Return_terminator{}});
     }
     else
     {
-      auto const [body_reg, body_type] = compile_expression(*expr.body);
       emit(Terminator{Return_terminator{.value = body_reg}});
     }
     _symbol_table.pop_scope();

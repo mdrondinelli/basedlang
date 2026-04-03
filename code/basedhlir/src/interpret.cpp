@@ -65,7 +65,7 @@ namespace basedhlir
             register_values[*inst.result] = interpret(*inst.callee, args, fuel);
           }
         },
-        instruction.data
+        instruction
       );
     }
 

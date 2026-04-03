@@ -99,19 +99,15 @@ namespace basedhlir
     std::vector<Register> arguments;
   };
 
-  struct Instruction
-  {
-    std::variant<
-      Int32_constant_instruction,
-      Bool_constant_instruction,
-      Void_constant_instruction,
-      Copy_instruction,
-      Unary_instruction,
-      Binary_instruction,
-      Call_instruction
-    >
-      data;
-  };
+  using Instruction = std::variant<
+    Int32_constant_instruction,
+    Bool_constant_instruction,
+    Void_constant_instruction,
+    Copy_instruction,
+    Unary_instruction,
+    Binary_instruction,
+    Call_instruction
+  >;
 
   struct Basic_block;
 

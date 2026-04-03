@@ -1346,11 +1346,7 @@ namespace basedhlir
   {
     auto const result = allocate_register();
     auto const value = std::stoi(expr.literal.text);
-    emit(
-      Instruction{
-        .data = Int32_constant_instruction{.result = result, .value = value}
-      }
-    );
+    emit(Instruction{Int32_constant_instruction{.result = result, .value = value}});
     return {result, _type_pool->int32_type()};
   }
 
@@ -1374,25 +1370,15 @@ namespace basedhlir
         using T = std::decay_t<decltype(v)>;
         if constexpr (std::is_same_v<T, std::int32_t>)
         {
-          emit(
-            Instruction{
-              .data = Int32_constant_instruction{.result = result, .value = v}
-            }
-          );
+          emit(Instruction{Int32_constant_instruction{.result = result, .value = v}});
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
-          emit(
-            Instruction{
-              .data = Bool_constant_instruction{.result = result, .value = v}
-            }
-          );
+          emit(Instruction{Bool_constant_instruction{.result = result, .value = v}});
         }
         else if constexpr (std::is_same_v<T, Void_value>)
         {
-          emit(
-            Instruction{.data = Void_constant_instruction{.result = result}}
-          );
+          emit(Instruction{Void_constant_instruction{.result = result}});
         }
         else
         {
@@ -1447,13 +1433,11 @@ namespace basedhlir
     auto const overload = find_unary_overload(*op, operand_type);
     auto const result = allocate_register();
     emit(
-      Instruction{
-        .data = Unary_instruction{
-          .result = result,
-          .overload = overload,
-          .operand = operand,
-        }
-      }
+      Instruction{Unary_instruction{
+        .result = result,
+        .overload = overload,
+        .operand = operand,
+      }}
     );
     return {result, overload->result_type(operand_type)};
   }
@@ -1475,14 +1459,12 @@ namespace basedhlir
     auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
     auto const result = allocate_register();
     emit(
-      Instruction{
-        .data = Binary_instruction{
-          .result = result,
-          .overload = overload,
-          .lhs = lhs,
-          .rhs = rhs,
-        }
-      }
+      Instruction{Binary_instruction{
+        .result = result,
+        .overload = overload,
+        .lhs = lhs,
+        .rhs = rhs,
+      }}
     );
     return {result, overload->result_type()};
   }
@@ -1552,13 +1534,11 @@ namespace basedhlir
     }
     auto const result = allocate_register();
     emit(
-      Instruction{
-        .data = Call_instruction{
-          .result = result,
-          .callee = callee,
-          .arguments = std::move(args),
-        }
-      }
+      Instruction{Call_instruction{
+        .result = result,
+        .callee = callee,
+        .arguments = std::move(args),
+      }}
     );
     return {result, ft->return_type};
   }
@@ -1588,7 +1568,7 @@ namespace basedhlir
     auto const result = expr.tail ? compile_expression(*expr.tail) : [this]
     {
       auto const r = allocate_register();
-      emit(Instruction{.data = Void_constant_instruction{.result = r}});
+      emit(Instruction{Void_constant_instruction{.result = r}});
       return Typed_register{r, _type_pool->void_type()};
     }();
     _symbol_table.pop_scope();
@@ -1711,7 +1691,7 @@ namespace basedhlir
     if (is_void)
     {
       auto const void_reg = allocate_register();
-      emit(Instruction{.data = Void_constant_instruction{.result = void_reg}});
+      emit(Instruction{Void_constant_instruction{.result = void_reg}});
       return {void_reg, _type_pool->void_type()};
     }
     return {merge_param, then_type};

@@ -1317,6 +1317,7 @@ namespace basedhlir
   void Compilation_context::emit(Instruction instruction)
   {
     assert(_current_block != nullptr);
+    assert(!_current_block->has_terminator());
     _current_block->instructions.push_back(std::move(instruction));
   }
 

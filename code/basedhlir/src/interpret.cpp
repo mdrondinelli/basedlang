@@ -121,7 +121,7 @@ namespace basedhlir
             return {nullptr, nullptr};
           }
         },
-        block->terminator.data
+        block->terminator
       );
       if (result.first == nullptr)
       {

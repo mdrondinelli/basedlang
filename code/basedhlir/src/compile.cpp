@@ -1589,13 +1589,11 @@ namespace basedhlir
     auto const jump_to_merge = [&](Register result)
     {
       emit(
-        Terminator{
-          .data = Jump_terminator{
-            .target = merge_block,
-            .arguments =
-              is_void ? std::vector<Register>{} : std::vector<Register>{result},
-          }
-        }
+        Terminator{Jump_terminator{
+          .target = merge_block,
+          .arguments =
+            is_void ? std::vector<Register>{} : std::vector<Register>{result},
+        }}
       );
     };
     // Compile condition in current block
@@ -1614,15 +1612,13 @@ namespace basedhlir
       return merge_block;
     }();
     emit(
-      Terminator{
-        .data = Branch_terminator{
-          .condition = cond_reg,
-          .then_target = then_block,
-          .then_arguments = {},
-          .else_target = first_else_target,
-          .else_arguments = {},
-        }
-      }
+      Terminator{Branch_terminator{
+        .condition = cond_reg,
+        .then_target = then_block,
+        .then_arguments = {},
+        .else_target = first_else_target,
+        .else_arguments = {},
+      }}
     );
     // Compile then block
     set_current_block(then_block);
@@ -1650,15 +1646,13 @@ namespace basedhlir
         return merge_block;
       }();
       emit(
-        Terminator{
-          .data = Branch_terminator{
-            .condition = ei_cond_reg,
-            .then_target = ei_then,
-            .then_arguments = {},
-            .else_target = ei_else,
-            .else_arguments = {},
-          }
-        }
+        Terminator{Branch_terminator{
+          .condition = ei_cond_reg,
+          .then_target = ei_then,
+          .then_arguments = {},
+          .else_target = ei_else,
+          .else_arguments = {},
+        }}
       );
       set_current_block(ei_then);
       auto const [ei_reg, ei_type] = compile_expression(part.body);
@@ -1752,7 +1746,7 @@ namespace basedhlir
   )
   {
     auto const [value, value_type] = compile_expression(stmt.value);
-    emit(Terminator{.data = Return_terminator{.value = value}});
+    emit(Terminator{Return_terminator{.value = value}});
     // Start a new (dead) block for any subsequent code
     set_current_block(new_block());
   }
@@ -1807,18 +1801,18 @@ namespace basedhlir
       {
         auto const [tail_reg, tail_type] = compile_expression(*block->tail);
         emit(
-          Terminator{.data = Return_terminator{.value = tail_reg}}
+          Terminator{Return_terminator{.value = tail_reg}}
         );
       }
       else if (!_current_block->has_terminator())
       {
-        emit(Terminator{.data = Return_terminator{}});
+        emit(Terminator{Return_terminator{}});
       }
     }
     else
     {
       auto const [body_reg, body_type] = compile_expression(*expr.body);
-      emit(Terminator{.data = Return_terminator{.value = body_reg}});
+      emit(Terminator{Return_terminator{.value = body_reg}});
     }
     _symbol_table.pop_scope();
     for (auto const &block : func_ptr->blocks)

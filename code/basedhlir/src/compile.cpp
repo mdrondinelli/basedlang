@@ -1157,6 +1157,15 @@ namespace basedhlir
     return _register_types[*r];
   }
 
+  Type *Compilation_context::type_of_operand(Operand const &operand)
+  {
+    if (auto const r = std::get_if<Register>(&operand))
+    {
+      return type_of_register(*r);
+    }
+    return type_of_constant(std::get<Constant_value>(operand));
+  }
+
   void Compilation_context::emit(Instruction instruction)
   {
     assert(_current_block != nullptr);
@@ -1244,8 +1253,10 @@ namespace basedhlir
   {
     auto const operand_result = compile_expression(*expr.operand);
     auto const op = basedparse::get_prefix_operator(expr.op.token);
-    auto const operand_type = type_of_expression(*expr.operand);
+    assert(op.has_value());
+    auto const operand_type = type_of_operand(operand_result);
     auto const overload = find_unary_overload(*op, operand_type);
+    assert(overload != nullptr);
     if (auto const cv = std::get_if<Constant_value>(&operand_result))
     {
       return overload->evaluate(*cv);

@@ -127,6 +127,8 @@ namespace basedhlir
 
     Type *type_of_register(Register r) const;
 
+    Type *type_of_operand(Operand const &operand);
+
     void emit(Instruction instruction);
 
     Operand compile_expression(basedparse::Expression const &expr);

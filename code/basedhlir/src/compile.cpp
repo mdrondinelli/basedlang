@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cctype>
 #include <cstdint>
 #include <format>
 #include <memory>
@@ -13,6 +14,23 @@
 
 namespace basedhlir
 {
+
+  namespace
+  {
+
+    std::int32_t parse_int32(std::string_view digits)
+    {
+      auto value = std::uint32_t{0};
+      for (auto const ch : digits)
+      {
+        assert(std::isdigit(static_cast<unsigned char>(ch)) != 0);
+        value =
+          (value * 10u) + static_cast<std::uint32_t>(static_cast<unsigned char>(ch) - '0');
+      }
+      return static_cast<std::int32_t>(value);
+    }
+
+  } // namespace
 
   template <typename T>
   class Scoped_assign
@@ -995,9 +1013,7 @@ namespace basedhlir
     basedparse::Int_literal_expression const &expr
   )
   {
-    return Constant_value{
-      static_cast<std::int32_t>(std::stoi(expr.literal.text))
-    };
+    return Constant_value{parse_int32(expr.literal.text)};
   }
 
   Operand Compilation_context::compile_expression(

@@ -1,4 +1,5 @@
 #include <array>
+#include <limits>
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
@@ -61,6 +62,33 @@ struct Compile_fixture
 TEST_CASE("evaluate_constant_expression - integer literal")
 {
   auto parse_fixture = Parse_fixture{"1"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == 1);
+}
+
+TEST_CASE("evaluate_constant_expression - integer literal wraps above int32 max")
+{
+  auto parse_fixture = Parse_fixture{"2147483648"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == std::numeric_limits<std::int32_t>::min());
+}
+
+TEST_CASE(
+  "evaluate_constant_expression - integer literal keeps low 32 bits at "
+  "arbitrary length"
+)
+{
+  auto parse_fixture = Parse_fixture{"18446744073709551617"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
 

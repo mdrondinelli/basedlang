@@ -4,7 +4,9 @@ This page explains how information moves through the system and which abstractio
 
 ## Input and command-line layer
 
-The `based` executable is thin on purpose. Its job is to:
+The `based` executable is thin on purpose, and at this point it is basically a throwaway tool. It is useful for wiring the current pipeline together and exercising the language, but it should not be treated as a stable architectural center.
+
+Its job today is to:
 
 - load source text
 - build the lexer, parser, and compiler pipeline
@@ -12,7 +14,9 @@ The `based` executable is thin on purpose. Its job is to:
 - find the requested function by name
 - interpret it with command-line arguments
 
-If this layer gets complicated, that is usually a smell. Most behavior belongs in one of the libraries.
+This is mainly a convenience path for development. We probably will not keep executing HLIR directly in this form as the long-term product direction.
+
+If this layer gets complicated, that is usually a smell. Most behavior belongs in one of the libraries, not in the executable wrapper.
 
 ## Lexing
 
@@ -29,12 +33,40 @@ If this layer gets complicated, that is usually a smell. Most behavior belongs i
 
 The parser depends on lexeme lookahead, so the lexer layer is built around readers rather than one-shot tokenization.
 
-### Reviewer questions
+### How lexing is coded
 
-- Does the tokenization decision belong in lexing rather than parsing?
-- Are source locations still precise?
-- If a token was added or changed, were parser expectations updated consistently?
-- If lookahead behavior changed, is buffering still correct and stable?
+The lexer implementation is very direct. `Lexeme_stream` is the core piece: each time the parser asks for another token, it runs a lexing routine that looks at the next character, decides what kind of token starts there, consumes the needed input, and returns one `Lexeme`.
+
+The shape is basically:
+
+1. skip over trivia such as whitespace while updating source location
+2. look at the next character
+3. enter a large branch or switch-style dispatch based on that character
+4. consume as many following characters as belong to that token
+5. build a `Lexeme` from the token kind, captured text, and starting location
+
+So in practice the lexer is not a table-driven system or a separate generated state machine. It is hand-written control flow with a central tokenization loop and a big token-classification dispatch.
+
+Identifier-like text is read by consuming characters until the identifier stops, then the resulting text is checked to decide whether it is:
+
+- a keyword
+- a plain identifier
+- a composite keyword-like token such as `&mut` or `^mut`
+
+Punctuation-heavy tokens are recognized by peeking ahead and taking the longest valid match, which is how the lexer distinguishes things like:
+
+- `=` from `==`
+- `!`-started sequences such as `!=`
+- `<` from `<=`
+- `>` from `>=`
+- `=`/`>` combinations such as `=>`
+
+The reader types support that implementation style:
+
+- `Char_stream_reader` gives the lexer cheap character lookahead while it is inside that loop and dispatch logic
+- `Lexeme_stream_reader` gives the parser token lookahead on top of the lexer
+
+That means the parser never works with raw characters. By the time parsing starts, token boundaries and token kinds have already been decided by the hand-written logic in `Lexeme_stream`.
 
 ## Parsing
 
@@ -51,11 +83,27 @@ The parser depends on lexeme lookahead, so the lexer layer is built around reade
 The AST is intentionally explicit:
 
 - every syntax form has its own struct
-- punctuation is usually retained as `Lexeme`
+- lexemes are preserved throughout the tree
 - recursive relationships are represented with `std::unique_ptr`
 - sum types are represented with `std::variant`
 
 This design makes diagnostics and source-span recovery easier, and it keeps later compiler stages close to source syntax.
+
+### Parsing algorithm
+
+Parsing is hand-written recursive descent on top of `Lexeme_stream_reader`.
+
+At a high level, the parser works like this:
+
+1. inspect the next lexeme
+2. choose the parse function for the syntactic form that can start there
+3. consume required lexemes with `expect(...)`
+4. recurse into child nodes
+5. build explicit AST structs that retain the consumed lexemes
+
+Expression parsing uses precedence climbing rather than one function per precedence level. The parser first reads a primary expression, then repeatedly checks whether the next token is a postfix or binary operator with enough precedence to continue. That is what lets it parse combinations like calls, indexing, prefix operators, and binary operators without a huge tower of nearly identical functions.
+
+So the parser is still very direct code, but the expression parser uses precedence-driven looping to handle operator structure cleanly.
 
 ### Important expression families
 
@@ -122,12 +170,8 @@ The block-argument design means values flow between blocks explicitly instead of
 
 ### Reviewer questions
 
-- Is name resolution correct across scopes and barriers?
-- Are type identities canonicalized through `Type_pool` rather than recreated ad hoc?
-- Is a compile-time value being treated as an object, or vice versa?
 - Does the emitted HLIR preserve the semantics of the AST form being compiled?
 - Are diagnostics emitted at the right source span?
-- If operator behavior changed, did both typing and evaluation change consistently?
 
 ## Interpretation
 
@@ -153,4 +197,3 @@ Interpretation uses a fuel counter to prevent runaway compile-time execution.
 - Does the interpreter match the HLIR contract exactly?
 - If a new instruction or terminator is added, is interpretation updated?
 - Is fuel consumed consistently for executable work?
-

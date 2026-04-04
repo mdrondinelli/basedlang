@@ -23,12 +23,12 @@ namespace basedparse
   {
   }
 
-  std::unique_ptr<Translation_unit> Parser::parse_translation_unit()
+  Translation_unit Parser::parse_translation_unit()
   {
-    auto unit = std::make_unique<Translation_unit>();
+    auto unit = Translation_unit{};
     while (_reader->peek().token != basedlex::Token::eof)
     {
-      unit->let_statements.push_back(parse_let_statement());
+      unit.let_statements.push_back(parse_let_statement());
     }
     return unit;
   }

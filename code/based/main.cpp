@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
   auto types = basedhlir::Type_pool{};
   try
   {
-    auto const tu = basedhlir::compile(*ast, &types);
+    auto const tu = basedhlir::compile(ast, &types);
     auto const it = tu.function_table.find(function_name);
     if (it == tu.function_table.end())
     {

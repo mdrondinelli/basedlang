@@ -55,8 +55,8 @@ TEST_CASE("Parser - first.based produces a declaration")
   auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
   auto parser = basedparse::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit->let_statements.size() == 1);
-  auto const &decl = unit->let_statements[0];
+  REQUIRE(unit.let_statements.size() == 1);
+  auto const &decl = unit.let_statements[0];
   CHECK(decl.kw_let.text == "let");
   CHECK(decl.name.text == "main");
   CHECK(decl.eq.text == "=");
@@ -99,10 +99,10 @@ TEST_CASE("Parser - parameters.based parses successfully")
   auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
   auto parser = basedparse::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit->let_statements.size() == 3);
-  auto const &id_decl = unit->let_statements[0];
-  auto const &first_decl = unit->let_statements[1];
-  auto const &main_decl = unit->let_statements[2];
+  REQUIRE(unit.let_statements.size() == 3);
+  auto const &id_decl = unit.let_statements[0];
+  auto const &first_decl = unit.let_statements[1];
+  auto const &main_decl = unit.let_statements[2];
   CHECK(id_decl.name.text == "id");
   CHECK(first_decl.name.text == "first");
   CHECK(main_decl.name.text == "main");
@@ -221,9 +221,9 @@ TEST_CASE("Parser - call_expression.based parses successfully")
   auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
   auto parser = basedparse::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit->let_statements.size() == 2);
-  auto const &foo_decl = unit->let_statements[0];
-  auto const &main_decl = unit->let_statements[1];
+  REQUIRE(unit.let_statements.size() == 2);
+  auto const &foo_decl = unit.let_statements[0];
+  auto const &main_decl = unit.let_statements[1];
   CHECK(foo_decl.name.text == "foo");
   CHECK(main_decl.name.text == "main");
   auto const foo_fn =
@@ -336,7 +336,7 @@ TEST_CASE("parse_translation_unit - empty")
 {
   auto fixture = Parse_fixture{""};
   auto const unit = fixture.parser.parse_translation_unit();
-  CHECK(unit->let_statements.empty());
+  CHECK(unit.let_statements.empty());
 }
 
 TEST_CASE("parse_translation_unit - multiple let statements")
@@ -344,9 +344,9 @@ TEST_CASE("parse_translation_unit - multiple let statements")
   auto fixture = Parse_fixture{"let a = fn(): Int32 => { return 1; };\n"
                                "let b = fn(): Int32 => { return 2; };"};
   auto const unit = fixture.parser.parse_translation_unit();
-  REQUIRE(unit->let_statements.size() == 2);
-  CHECK(unit->let_statements[0].name.text == "a");
-  CHECK(unit->let_statements[1].name.text == "b");
+  REQUIRE(unit.let_statements.size() == 2);
+  CHECK(unit.let_statements[0].name.text == "a");
+  CHECK(unit.let_statements[1].name.text == "b");
 }
 
 TEST_CASE("parse_let_statement - function declaration")
@@ -1274,8 +1274,7 @@ TEST_CASE("Parser - quicksort.based parses successfully")
   auto reader = basedlex::Lexeme_stream_reader{&lexeme_stream};
   auto parser = basedparse::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit != nullptr);
-  CHECK(unit->let_statements.size() == 3);
+  CHECK(unit.let_statements.size() == 3);
 }
 
 TEST_CASE("parse_expression - prefix bracket unsized array type")

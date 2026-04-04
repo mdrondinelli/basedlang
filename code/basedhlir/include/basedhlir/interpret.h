@@ -11,6 +11,7 @@
 namespace basedhlir
 {
 
+  // TODO: use std::exception as the base class
   class Fuel_exhausted_error: public std::runtime_error
   {
   public:
@@ -23,7 +24,12 @@ namespace basedhlir
   Constant_value interpret(
     Function const &function,
     std::span<Constant_value const> arguments,
-    std::int32_t fuel = 100000
+    std::int32_t &fuel
+  );
+
+  Constant_value interpret(
+    Function const &function,
+    std::span<Constant_value const> arguments
   );
 
 } // namespace basedhlir

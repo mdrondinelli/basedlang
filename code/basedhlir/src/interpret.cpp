@@ -97,7 +97,7 @@ namespace basedhlir
   Constant_value interpret(
     Function const &function,
     std::span<Constant_value const> arguments,
-    std::int32_t fuel
+    std::int32_t &fuel
   )
   {
     auto registers =
@@ -156,6 +156,13 @@ namespace basedhlir
       block = result.first;
     }
     return return_value;
+  }
+
+  Constant_value
+  interpret(Function const &function, std::span<Constant_value const> arguments)
+  {
+    auto fuel = std::int32_t{100000};
+    return interpret(function, arguments, fuel);
   }
 
 } // namespace basedhlir

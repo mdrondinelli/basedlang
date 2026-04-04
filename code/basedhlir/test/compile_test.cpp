@@ -434,7 +434,8 @@ TEST_CASE("compile - fuel exhaustion")
   );
   REQUIRE(tu.functions.size() == 1);
   auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{0}};
-  CHECK_THROWS(basedhlir::interpret(*tu.functions[0], args, 100));
+  auto fuel = std::int32_t{100};
+  CHECK_THROWS(basedhlir::interpret(*tu.functions[0], args, fuel));
 }
 
 TEST_CASE("compile - pure expression body")
@@ -519,6 +520,18 @@ TEST_CASE("compile - top-level mutable binding")
 {
   CHECK_THROWS_AS(
     compile_program("let mut x = 1;"),
+    basedhlir::Compilation_failure
+  );
+}
+
+TEST_CASE("compile - top-level fuel exhaustion")
+{
+  CHECK_THROWS_AS(
+    compile_program(
+      "let f = fn(x: Int32): Int32 =>"
+      "{ return if x < 1 { 0 } else { recurse(x - 1) + recurse(x - 1) }; };"
+      "let y = f(30);"
+    ),
     basedhlir::Compilation_failure
   );
 }

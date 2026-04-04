@@ -130,11 +130,9 @@ namespace basedhlir
           }
           else if constexpr (std::is_same_v<T, Branch_terminator>)
           {
-            if (std::get<bool>(eval_operand(t.condition, registers)))
-            {
-              return {t.then_target, &t.then_arguments};
-            }
-            return {t.else_target, &t.else_arguments};
+            return std::get<bool>(eval_operand(t.condition, registers))
+                     ? std::pair{t.then_target, &t.then_arguments}
+                     : std::pair{t.else_target, &t.else_arguments};
           }
           else
           {

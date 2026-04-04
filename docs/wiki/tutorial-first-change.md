@@ -84,6 +84,25 @@ Your test strategy should match the abstraction you changed.
 - Semantic change: test compilation behavior, diagnostics, and HLIR-facing semantics.
 - Interpreter change: test executed results and control-flow behavior.
 
+### Build and run tests
+
+This repo builds Catch2 test executables with CMake.
+
+Configure and build:
+
+```sh
+cmake -S . -B build
+cmake --build build
+```
+
+Run the relevant test binary directly:
+
+```sh
+./build/basedlex-tests
+./build/basedparse-tests
+./build/basedhlir-tests
+```
+
 ## Step 6: Update the wiki in the same PR
 
 The wiki is not optional process overhead. It is part of keeping reviewer context fresh.

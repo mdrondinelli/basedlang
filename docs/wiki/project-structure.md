@@ -49,6 +49,8 @@ Tests live next to the libraries they validate. This is important because most c
 - syntax behavior belongs with parser tests
 - semantic and lowering behavior belongs with HLIR tests
 
+For the local build and test workflow, see [Tutorial: first change](./tutorial-first-change.md).
+
 ## Mental map for contributors
 
 When deciding where a change belongs, ask this in order:

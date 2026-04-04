@@ -6,15 +6,23 @@ This page is for maintainers who need to review changes quickly without re-deriv
 
 Use this order for most PRs:
 
-1. Identify the layer being changed.
-2. Identify the invariant that layer is supposed to preserve.
+1. Identify which module owns the behavior being changed.
+2. Open the matching module page and recall its invariants.
 3. Check whether tests exist at the same layer.
 4. Check whether the change leaked responsibility into the wrong module.
 5. Check whether the wiki should have changed.
 
-## Layer-specific review heuristics
+## Which page to open
 
-### Lexer PRs
+- Lexer changes: [`basedlex`](./basedlex.md)
+- Parser changes: [`basedparse`](./basedparse.md)
+- Semantic, lowering, or interpreter changes: [`basedhlir`](./basedhlir.md)
+- CLI wiring changes: [`based`](./based.md)
+- Cross-cutting changes: [Architecture and pipeline overview](./overview.md)
+
+## Module-specific review heuristics
+
+### `basedlex`
 
 Look for:
 
@@ -27,7 +35,7 @@ Common reviewer question:
 
 "Did this change alter the token stream in a way the parser is actually prepared to consume?"
 
-### Parser PRs
+### `basedparse`
 
 Look for:
 
@@ -40,7 +48,7 @@ Common reviewer question:
 
 "Did syntax handling change without the semantic compiler being updated for the new AST shape?"
 
-### Semantic compiler / HLIR PRs
+### `basedhlir`
 
 Look for:
 
@@ -50,23 +58,24 @@ Look for:
 - constant-evaluation behavior
 - correct HLIR emission
 - diagnostic quality
+- interpreter consistency if executable semantics changed
 
 Common reviewer question:
 
 "Is this actually a semantic change, or is the compiler compensating for a bug that belongs in parsing?"
 
-### Interpreter PRs
+### `based`
 
 Look for:
 
-- instruction semantics matching the compiler's assumptions
-- correct branch and block-argument behavior
-- argument/result handling
-- fuel accounting
+- thin orchestration only
+- correct pipeline wiring
+- argument parsing consistent with current executable expectations
+- no compiler logic creeping into the executable
 
 Common reviewer question:
 
-"Did the interpreter grow logic that should instead be represented explicitly in HLIR?"
+"Did this executable change introduce logic that really belongs in one of the libraries?"
 
 ## Key invariants to keep in your head
 
@@ -94,6 +103,7 @@ User-facing errors should still point to the syntax the user thinks they wrote, 
 ## What to ask for in a PR
 
 - tests at the changed abstraction layer
+- module-page updates when the key abstraction or algorithm changed
 - doc updates when maintainers need a new mental model
 - a short explanation when multiple layers changed
 - clear justification for any new cross-layer dependency
@@ -109,4 +119,3 @@ Every PR should update the wiki when it changes any of the following:
 - maintainer expectations around invariants
 
 If a PR changes how a reviewer should reason about correctness, it is not fully documented until the wiki reflects that change.
-

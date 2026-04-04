@@ -12,10 +12,12 @@ The pages below are organized to support fast navigation rather than linear read
 ## Start here
 
 - [Tutorial: first change](./tutorial-first-change.md)
+- [Architecture and pipeline overview](./overview.md)
+- [`basedlex`](./basedlex.md)
+- [`basedparse`](./basedparse.md)
+- [`basedhlir`](./basedhlir.md)
+- [`based`](./based.md)
 - [Project structure](./project-structure.md)
-- [Architecture overview](./architecture-overview.md)
-- [Compiler pipeline](./compiler-pipeline.md)
-- [Core data model](./core-data-model.md)
 - [PR review guide](./pr-review-guide.md)
 - [Antipatterns for reviewers](./antipatterns.md)
 - [Wiki maintenance](./wiki-maintenance.md)
@@ -27,30 +29,28 @@ The pages below are organized to support fast navigation rather than linear read
 Read these first:
 
 - [PR review guide](./pr-review-guide.md)
-- [Architecture overview](./architecture-overview.md)
-- [Core data model](./core-data-model.md)
+- [Architecture and pipeline overview](./overview.md)
+- [`basedhlir`](./basedhlir.md)
 
-Then use the module-specific sections in [Compiler pipeline](./compiler-pipeline.md) to sanity-check the layer being changed.
+Then jump to the module page for the code being changed.
 
 ### I need to make a change
 
 Read these first:
 
 - [Tutorial: first change](./tutorial-first-change.md)
+- [Architecture and pipeline overview](./overview.md)
 - [Project structure](./project-structure.md)
-- [Architecture overview](./architecture-overview.md)
 
-Then jump to the relevant module section in [Compiler pipeline](./compiler-pipeline.md).
+Then jump to the module page for the area you are editing.
 
 ### I need to understand how a concept flows end to end
 
 Use this sequence:
 
-1. [Architecture overview](./architecture-overview.md)
-2. [Compiler pipeline](./compiler-pipeline.md)
-3. [Core data model](./core-data-model.md)
+1. [Architecture and pipeline overview](./overview.md)
+2. [`basedlex`](./basedlex.md), [`basedparse`](./basedparse.md), [`basedhlir`](./basedhlir.md), or [`based`](./based.md)
 
 ## External source of truth
 
 The language surface area is described in [`language.md`](../../language.md). This wiki focuses on implementation and review, not language syntax duplication.
-

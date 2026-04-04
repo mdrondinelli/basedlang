@@ -8,9 +8,13 @@ This page describes the repository in stable conceptual terms. It intentionally 
 
 The lexer library. Owns character input, buffering/lookahead, tokenization, and source-location tracking at the token level.
 
+See [`basedlex`](./basedlex.md).
+
 ### `code/basedparse`
 
 The parser library. Owns AST construction, expression precedence, statement parsing, and source-span recovery over the AST.
+
+See [`basedparse`](./basedparse.md).
 
 ### `code/basedhlir`
 
@@ -23,9 +27,13 @@ The semantic and execution core. Owns:
 - lowering to HLIR
 - interpretation of HLIR
 
+See [`basedhlir`](./basedhlir.md).
+
 ### `code/based`
 
 The CLI entrypoint. It should stay thin.
+
+See [`based`](./based.md).
 
 ## Supporting areas
 
@@ -65,5 +73,4 @@ The repo may be reorganized internally over time. The stable structure to preser
 - semantic compiler / HLIR
 - executable wrapper
 
-If that structure changes, this page and the architecture pages should change in the same PR.
-
+If that structure changes, this page and the overview/module pages should change in the same PR.

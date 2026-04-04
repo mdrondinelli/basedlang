@@ -14,7 +14,7 @@ Build a reliable mental model before touching code:
 
 Read:
 
-1. [Architecture overview](./architecture-overview.md)
+1. [Architecture and pipeline overview](./overview.md)
 2. [`language.md`](../../language.md)
 3. [Project structure](./project-structure.md)
 
@@ -40,38 +40,31 @@ Do not start from "where can I force the current tests to pass?" Start from "whi
 
 Understand:
 
-- `Token`
-- `Lexeme`
-- stream readers and lookahead behavior
+- [`basedlex`](./basedlex.md)
 
 ### If you are changing parsing
 
 Understand:
 
-- `Parser`
-- `Expression`
-- `Statement`
-- `Operator`
+- [`basedparse`](./basedparse.md)
 
 ### If you are changing semantics or lowering
 
 Understand:
 
-- `Compilation_context`
-- `Symbol_table`
-- `Constant_value`
-- `Type`
-- `Type_pool`
-- `Function`, `Basic_block`, `Instruction`, `Terminator`
+- [`basedhlir`](./basedhlir.md)
 
 ### If you are changing interpretation
 
 Understand:
 
-- `Operand`
-- instruction execution
-- block transitions
-- fuel accounting
+- [`basedhlir`](./basedhlir.md)
+
+### If you are changing executable wiring
+
+Understand:
+
+- [`based`](./based.md)
 
 ## Step 4: Make the smallest coherent change
 
@@ -118,4 +111,3 @@ Before opening the PR, confirm:
 - tests moved with behavior
 - docs moved with reviewer mental model
 - cross-layer fallout was handled explicitly
-

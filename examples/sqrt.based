@@ -1,0 +1,14 @@
+let sqrt_with_bounds = fn(x: Int32, lo: Int32, hi: Int32, prev_estimate: Int32): Int32 => {
+  let estimate = (lo + hi) / 2;
+  if estimate == prev_estimate {
+    estimate
+  } else if estimate > x / estimate {
+    recurse(x, lo, estimate, estimate)
+  } else if estimate < x / estimate {
+    recurse(x, estimate, hi, estimate)
+  } else {
+    estimate
+  }
+};
+
+let sqrt = fn(x: Int32): Int32 => sqrt_with_bounds(x, 0, x + 1, x);

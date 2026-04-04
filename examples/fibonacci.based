@@ -1,6 +1,6 @@
 let fib = fn(n: Int32): Int32 =>
 {
-  return if n { if n - 1 { fib(n - 1) + fib(n - 2) } else { 1 } } else { 0 };
+  return if n > 1 { recurse(n - 1) + recurse(n - 2) } else { n };
 };
 
 let main = fn(): Int32 =>

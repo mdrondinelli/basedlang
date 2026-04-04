@@ -4,15 +4,22 @@ This page is the current language-surface reference.
 
 ## Status
 
-### Implemented today
+### Fully implemented today
 
-Everything in the sections below is implemented in the current parser and semantic pipeline.
+The features marked as implemented below are supported by the current parser and by `basedhlir`.
 
-### Design / not yet committed
+### Parsed or designed, but not fully implemented in `basedhlir`
 
-There is no additional design-only language material captured here yet.
+These surface forms exist in the parser or language design, but are not fully supported semantically yet:
 
-When future language work is still in flux, keep it separate from the implemented reference and label it clearly.
+- `let mut` bindings parse, but mutable bindings are not implemented
+- `while` statements parse, but are rejected in `basedhlir`
+- postfix dereference `p^` parses, but dereference is rejected in expression compilation
+- index expressions `arr[i]` parse, but index expression compilation is not implemented
+- assignment expressions parse as operators, but are not implemented semantically
+- omitted function return types parse, but return type deduction is not implemented
+
+When future language work is still in flux, keep it separate from the fully implemented reference and label it clearly.
 
 ## Program structure
 
@@ -31,10 +38,13 @@ Top-level constant evaluation is also implemented, so a top-level binding does n
 Statements appear inside block bodies:
 
 - `let x = <expr>;`
-- `let mut x = <expr>;`
 - `return <expr>;`
-- `while <expr> { ... }`
 - `<expr>;`
+
+Parsed but not fully implemented in `basedhlir`:
+
+- `let mut x = <expr>;`
+- `while <expr> { ... }`
 
 ## Expressions
 
@@ -49,15 +59,19 @@ Implemented primary expression forms:
 - parenthesized expressions: `(expr)`
 - block expressions: `{ statements... tail_expr }`
 - `if` expressions: `if condition { ... } else { ... }`
-- function expressions: `fn(params): ReturnType => expression`
+- function expressions with explicit return type: `fn(params): ReturnType => expression`
 
-Function return types are optional:
+Parsed but not fully implemented in `basedhlir`:
+
+- function expressions without an explicit return type
+
+For example, this parses but return type deduction is not implemented yet:
 
 ```based
 let id = fn(x: Int32) => x;
 ```
 
-Function parameters are immutable by default. Use `mut` for a mutable binding:
+Function parameters are immutable by default. Parameter bindings may be written with `mut`:
 
 ```based
 let f = fn(mut x: Int32): Void => { };
@@ -81,6 +95,10 @@ Precedence from tightest to loosest:
 
 Binary operators are left-associative except assignment, which is right-associative.
 
+Parsed but not fully implemented in `basedhlir`:
+
+- assignment expressions such as `a = b`
+
 ## Types as values
 
 Types are ordinary compile-time values in the language.
@@ -101,7 +119,7 @@ The compiler gives these forms type-construction meaning by resolving the releva
 
 ### Type construction operators
 
-Implemented type-construction operators:
+Fully implemented type-construction operators:
 
 | Operator | Meaning |
 |---|---|
@@ -136,16 +154,16 @@ let add = fn(a: Int32, b: Int32): Int32 => {
 };
 ```
 
-Function taking a pointer to a mutable array:
+Function taking a pointer to a mutable array type:
 
 ```based
 let zero_fill = fn(buf: ^mut []Int32, len: Int32): Void => { };
 ```
 
-Nested calls and indexing:
+Nested calls:
 
 ```based
-let x = get_buffer()[i + 1];
+let x = first(id(42), 0);
 ```
 
 Block expression:
@@ -184,6 +202,8 @@ while n > 0 {
 }
 ```
 
+This syntax parses, but `while` is not fully implemented in `basedhlir` yet.
+
 Recursive call with `recurse`:
 
 ```based
@@ -199,6 +219,8 @@ let val = p^;
 let first = buf[0]^;
 let y = -x + 2 * (a - b);
 ```
+
+Only the arithmetic and comparison forms here are fully implemented today. Dereference and indexing syntax exist, but are not fully implemented in `basedhlir`.
 
 ## Keywords
 

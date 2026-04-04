@@ -1286,9 +1286,11 @@ namespace basedhlir
     auto const lhs_result = compile_expression(*expr.left);
     auto const rhs_result = compile_expression(*expr.right);
     auto const op = basedparse::get_binary_operator(expr.op.token);
-    auto const lhs_type = type_of_expression(*expr.left);
-    auto const rhs_type = type_of_expression(*expr.right);
+    assert(op.has_value());
+    auto const lhs_type = type_of_operand(lhs_result);
+    auto const rhs_type = type_of_operand(rhs_result);
     auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
+    assert(overload != nullptr);
     auto const lhs_cv = std::get_if<Constant_value>(&lhs_result);
     auto const rhs_cv = std::get_if<Constant_value>(&rhs_result);
     if (lhs_cv != nullptr && rhs_cv != nullptr)

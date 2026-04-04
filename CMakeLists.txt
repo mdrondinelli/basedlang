@@ -27,6 +27,15 @@ add_library(basedparse
 target_include_directories(basedparse PUBLIC code/basedparse/include)
 target_link_libraries(basedparse PUBLIC basedlex)
 
+add_library(basedhlir
+  code/basedhlir/src/compile.cpp
+  code/basedhlir/src/interpret.cpp
+  code/basedhlir/src/symbol_table.cpp
+  code/basedhlir/src/type.cpp
+)
+target_include_directories(basedhlir PUBLIC code/basedhlir/include)
+target_link_libraries(basedhlir PUBLIC basedparse)
+
 add_executable(basedlex-tests
   code/basedlex/test/lexeme_stream_test.cpp
   code/basedlex/test/ring_buffer_test.cpp
@@ -40,3 +49,11 @@ add_executable(basedparse-tests
 )
 target_link_libraries(basedparse-tests PRIVATE basedparse Catch2::Catch2WithMain)
 target_compile_definitions(basedparse-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+
+add_executable(basedhlir-tests
+  code/basedhlir/test/symbol_table_test.cpp
+  code/basedhlir/test/type_test.cpp
+  code/basedhlir/test/compile_test.cpp
+)
+target_link_libraries(basedhlir-tests PRIVATE basedhlir Catch2::Catch2WithMain)
+target_compile_definitions(basedhlir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")

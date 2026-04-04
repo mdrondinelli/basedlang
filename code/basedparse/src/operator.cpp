@@ -9,9 +9,12 @@ namespace basedparse
     {
     case Operator::call:
     case Operator::index:
+    case Operator::dereference:
       return 0;
     case Operator::address_of:
-    case Operator::dereference:
+    case Operator::address_of_mut:
+    case Operator::pointer_to:
+    case Operator::pointer_to_mut:
     case Operator::unary_plus:
     case Operator::unary_minus:
       return 1;
@@ -46,14 +49,18 @@ namespace basedparse
     }
   }
 
-  std::optional<Operator> get_unary_operator(basedlex::Token token)
+  std::optional<Operator> get_prefix_operator(basedlex::Token token)
   {
     switch (token)
     {
     case basedlex::Token::ampersand:
       return Operator::address_of;
-    case basedlex::Token::star:
-      return Operator::dereference;
+    case basedlex::Token::ampersand_mut:
+      return Operator::address_of_mut;
+    case basedlex::Token::caret:
+      return Operator::pointer_to;
+    case basedlex::Token::caret_mut:
+      return Operator::pointer_to_mut;
     case basedlex::Token::plus:
       return Operator::unary_plus;
     case basedlex::Token::minus:
@@ -71,6 +78,8 @@ namespace basedparse
       return Operator::call;
     case basedlex::Token::lbracket:
       return Operator::index;
+    case basedlex::Token::caret:
+      return Operator::dereference;
     default:
       return std::nullopt;
     }

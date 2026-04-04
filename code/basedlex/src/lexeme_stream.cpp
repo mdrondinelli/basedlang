@@ -7,15 +7,14 @@ namespace basedlex
 {
 
   Lexeme_stream::Lexeme_stream(Char_stream *stream) noexcept
-      : _reader{stream}, _line{1}, _column{1}
+      : _reader{stream}, _location{.line = 1, .column = 1}
   {
   }
 
   Lexeme Lexeme_stream::lex()
   {
     auto text = std::string{};
-    auto token_line = int{};
-    auto token_column = int{};
+    auto token_location = Source_location{};
     auto state = 0;
     for (;;)
     {
@@ -28,26 +27,23 @@ namespace basedlex
             return Lexeme{
               .text = "",
               .token = Token::eof,
-              .line = _line,
-              .column = _column
+              .location = _location,
             };
           }
           auto const c = *_reader.read();
-          auto const c_line = _line;
-          auto const c_col = _column;
+          auto const c_location = _location;
           if (c == '\n')
           {
-            ++_line;
-            _column = 1;
+            ++_location.line;
+            _location.column = 1;
             break;
           }
-          ++_column;
+          ++_location.column;
           if (c == ' ' || c == '\t' || c == '\r')
           {
             break;
           }
-          token_line = c_line;
-          token_column = c_col;
+          token_location = c_location;
           if (c <= 0x7F && (std::isalpha((int) c) || c == '_'))
           {
             text += (char) c;
@@ -65,19 +61,17 @@ namespace basedlex
             if (_reader.peek() && *_reader.peek() == '>')
             {
               _reader.read();
-              ++_column;
+              ++_location.column;
               return Lexeme{
                 .text = "->",
                 .token = Token::arrow,
-                .line = token_line,
-                .column = token_column
+                .location = token_location,
               };
             }
             return Lexeme{
               .text = "-",
               .token = Token::minus,
-              .line = token_line,
-              .column = token_column
+              .location = token_location,
             };
           }
           switch (c)
@@ -95,181 +89,195 @@ namespace basedlex
                 _reader.read();
                 _reader.read();
                 _reader.read();
-                _column += 3;
+                _location.column += 3;
                 return Lexeme{
                   .text = "&mut",
                   .token = Token::ampersand_mut,
-                  .line = token_line,
-                  .column = token_column
+                  .location = token_location,
                 };
               }
               return Lexeme{
                 .text = "&",
                 .token = Token::ampersand,
-                .line = token_line,
-                .column = token_column
+                .location = token_location
               };
             }
           case '+':
             return Lexeme{
               .text = "+",
               .token = Token::plus,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
+          case '^':
+            {
+              auto const p0 = _reader.peek(0);
+              auto const p1 = _reader.peek(1);
+              auto const p2 = _reader.peek(2);
+              auto const p3 = _reader.peek(3);
+              if (p0 && *p0 == 'm' && p1 && *p1 == 'u' && p2 && *p2 == 't' &&
+                  (!p3 ||
+                   !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
+              {
+                _reader.read();
+                _reader.read();
+                _reader.read();
+                _location.column += 3;
+                return Lexeme{
+                  .text = "^mut",
+                  .token = Token::caret_mut,
+                  .location = token_location,
+                };
+              }
+              return Lexeme{
+                .text = "^",
+                .token = Token::caret,
+                .location = token_location
+              };
+            }
           case '*':
             return Lexeme{
               .text = "*",
               .token = Token::star,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case '/':
             return Lexeme{
               .text = "/",
               .token = Token::slash,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case '%':
             return Lexeme{
               .text = "%",
               .token = Token::percent,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case '=':
             if (_reader.peek() && *_reader.peek() == '=')
             {
               _reader.read();
-              ++_column;
+              ++_location.column;
               return Lexeme{
                 .text = "==",
                 .token = Token::eq_eq,
-                .line = token_line,
-                .column = token_column
+                .location = token_location,
+              };
+            }
+            if (_reader.peek() && *_reader.peek() == '>')
+            {
+              _reader.read();
+              ++_location.column;
+              return Lexeme{
+                .text = "=>",
+                .token = Token::fat_arrow,
+                .location = token_location,
               };
             }
             return Lexeme{
               .text = "=",
               .token = Token::eq,
-              .line = token_line,
-              .column = token_column
+              .location = token_location,
             };
           case '!':
             if (_reader.peek() && *_reader.peek() == '=')
             {
               _reader.read();
-              ++_column;
+              ++_location.column;
               return Lexeme{
                 .text = "!=",
                 .token = Token::bang_eq,
-                .line = token_line,
-                .column = token_column
+                .location = token_location
               };
             }
-            throw Lex_error{token_line, token_column};
+            throw Lex_error{token_location};
           case '<':
             if (_reader.peek() && *_reader.peek() == '=')
             {
               _reader.read();
-              ++_column;
+              ++_location.column;
               return Lexeme{
                 .text = "<=",
                 .token = Token::le,
-                .line = token_line,
-                .column = token_column
+                .location = token_location
               };
             }
             return Lexeme{
               .text = "<",
               .token = Token::lt,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case '>':
             if (_reader.peek() && *_reader.peek() == '=')
             {
               _reader.read();
-              ++_column;
+              ++_location.column;
               return Lexeme{
                 .text = ">=",
                 .token = Token::ge,
-                .line = token_line,
-                .column = token_column
+                .location = token_location
               };
             }
             return Lexeme{
               .text = ">",
               .token = Token::gt,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case '{':
             return Lexeme{
               .text = "{",
               .token = Token::lbrace,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case '[':
             return Lexeme{
               .text = "[",
               .token = Token::lbracket,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case '}':
             return Lexeme{
               .text = "}",
               .token = Token::rbrace,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case ']':
             return Lexeme{
               .text = "]",
               .token = Token::rbracket,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case '(':
             return Lexeme{
               .text = "(",
               .token = Token::lparen,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case ')':
             return Lexeme{
               .text = ")",
               .token = Token::rparen,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case ':':
             return Lexeme{
               .text = ":",
               .token = Token::colon,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case ',':
             return Lexeme{
               .text = ",",
               .token = Token::comma,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           case ';':
             return Lexeme{
               .text = ";",
               .token = Token::semicolon,
-              .line = token_line,
-              .column = token_column
+              .location = token_location
             };
           default:
-            throw Lex_error{token_line, token_column};
+            throw Lex_error{token_location};
           }
         }
       case 1:
@@ -279,7 +287,7 @@ namespace basedlex
           {
             text += (char) *p;
             _reader.read();
-            ++_column;
+            ++_location.column;
             break;
           }
           auto const token = [&]() -> Token
@@ -304,9 +312,9 @@ namespace basedlex
             {
               return Token::kw_mut;
             }
-            if (text == "new")
+            if (text == "recurse")
             {
-              return Token::kw_new;
+              return Token::kw_recurse;
             }
             if (text == "return")
             {
@@ -321,8 +329,7 @@ namespace basedlex
           return Lexeme{
             .text = text,
             .token = token,
-            .line = token_line,
-            .column = token_column
+            .location = token_location,
           };
         }
       case 2:
@@ -332,14 +339,13 @@ namespace basedlex
           {
             text += (char) *p;
             _reader.read();
-            ++_column;
+            ++_location.column;
             break;
           }
           return Lexeme{
             .text = text,
             .token = Token::int_literal,
-            .line = token_line,
-            .column = token_column
+            .location = token_location,
           };
         }
       }

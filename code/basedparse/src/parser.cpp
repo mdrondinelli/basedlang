@@ -28,20 +28,9 @@ namespace basedparse
     auto unit = std::make_unique<Translation_unit>();
     while (_reader->peek().token != basedlex::Token::eof)
     {
-      unit->function_definitions.push_back(parse_function_definition());
+      unit->let_statements.push_back(parse_let_statement());
     }
     return unit;
-  }
-
-  Function_definition Parser::parse_function_definition()
-  {
-    auto stmt = Function_definition{};
-    stmt.kw_let = expect(basedlex::Token::kw_let);
-    stmt.name = expect(basedlex::Token::identifier);
-    stmt.eq = expect(basedlex::Token::eq);
-    stmt.function = parse_fn_expression();
-    stmt.semicolon = expect(basedlex::Token::semicolon);
-    return stmt;
   }
 
   Statement Parser::parse_statement()
@@ -150,14 +139,13 @@ namespace basedparse
   ///
   /// The algorithm works in three phases:
   ///
-  /// 1. **Prefix/unary**: If the next token is a unary operator (e.g. `-`,
-  /// `*`),
+  /// 1. **Prefix**: If the next token is a prefix operator (e.g. `-`, `^`),
   ///    consume it and recursively parse the operand at a tighter precedence
-  ///    (one below the unary op's level). Otherwise fall through to primary.
+  ///    (one below the prefix op's level). Otherwise fall through to primary.
   ///
   /// 2. **Postfix**: Repeatedly consume postfix operators (call `()`, index
-  /// `[]`)
-  ///    that bind tighter than the current precedence level.
+  /// `[]`,
+  ///    dereference `^`) that bind tighter than the current precedence level.
   ///
   /// 3. **Binary infix**: Repeatedly consume binary operators (e.g. `+`, `<`,
   ///    `==`) whose precedence fits within `current_precedence`. For each one,
@@ -165,8 +153,8 @@ namespace basedparse
   ///    enforces left-associativity (operators at the same level fold left).
   ///
   /// **Precedence table** (lower number = binds tighter):
-  /// - 0: postfix call `()`, index `[]`
-  /// - 1: prefix `&` (address-of), `*` (dereference), unary `+`, unary `-`
+  /// - 0: postfix call `()`, index `[]`, dereference `^`
+  /// - 1: prefix `&` (address-of), `^` (pointer-to), unary `+`, unary `-`
   /// - 2: `*`, `/`, `%`
   /// - 3: `+`, `-`
   /// - 4: `<`, `<=`, `>`, `>=`
@@ -180,19 +168,33 @@ namespace basedparse
   /// 3. Assign it a precedence in `get_operator_precedence` (operator.cpp).
   /// 4. Map the token to the operator in the appropriate get_*_operator
   /// function
-  ///    (operator.cpp): `get_unary_operator`, `get_postfix_operator`, or
+  ///    (operator.cpp): `get_prefix_operator`, `get_postfix_operator`, or
   ///    `get_binary_operator`. No changes to the parser itself are needed.
   std::unique_ptr<Expression> Parser::parse_expression(int current_precedence)
   {
     auto expr = [&]() -> std::unique_ptr<Expression>
     {
-      if (auto const unary_op = get_unary_operator(_reader->peek().token);
-          unary_op && get_operator_precedence(*unary_op) <= current_precedence)
+      if (auto const prefix_op = get_prefix_operator(_reader->peek().token);
+          prefix_op &&
+          get_operator_precedence(*prefix_op) <= current_precedence)
       {
-        auto unary = Unary_expression{};
-        unary.op = _reader->read();
-        unary.operand = parse_expression(get_operator_precedence(*unary_op));
-        return std::make_unique<Expression>(std::move(unary));
+        auto prefix = Prefix_expression{};
+        prefix.op = _reader->read();
+        prefix.operand = parse_expression(get_operator_precedence(*prefix_op));
+        return std::make_unique<Expression>(std::move(prefix));
+      }
+      if (_reader->peek().token == basedlex::Token::lbracket &&
+          1 <= current_precedence)
+      {
+        auto prefix = Prefix_bracket_expression{};
+        prefix.lbracket = expect(basedlex::Token::lbracket);
+        if (_reader->peek().token != basedlex::Token::rbracket)
+        {
+          prefix.size = parse_expression();
+        }
+        prefix.rbracket = expect(basedlex::Token::rbracket);
+        prefix.operand = parse_expression(1);
+        return std::make_unique<Expression>(std::move(prefix));
       }
       auto primary = parse_primary_expression();
       for (;;)
@@ -222,7 +224,7 @@ namespace basedparse
             call.rparen = expect(basedlex::Token::rparen);
             primary = std::make_unique<Expression>(std::move(call));
           }
-          else
+          else if (*postfix_op == Operator::index)
           {
             auto idx = Index_expression{};
             idx.operand = std::move(primary);
@@ -230,6 +232,13 @@ namespace basedparse
             idx.index = parse_expression();
             idx.rbracket = expect(basedlex::Token::rbracket);
             primary = std::make_unique<Expression>(std::move(idx));
+          }
+          else
+          {
+            auto postfix = Postfix_expression{};
+            postfix.operand = std::move(primary);
+            postfix.op = _reader->read();
+            primary = std::make_unique<Expression>(std::move(postfix));
           }
         }
         else
@@ -274,9 +283,11 @@ namespace basedparse
     {
       return std::make_unique<Expression>(parse_identifier_expression());
     }
-    if (next.token == basedlex::Token::kw_new)
+    if (next.token == basedlex::Token::kw_recurse)
     {
-      return std::make_unique<Expression>(parse_constructor_expression());
+      return std::make_unique<Expression>(
+        Recurse_expression{.kw_recurse = _reader->read()}
+      );
     }
     if (next.token == basedlex::Token::kw_if)
     {
@@ -295,8 +306,9 @@ namespace basedparse
       return std::make_unique<Expression>(parse_fn_expression());
     }
     throw std::runtime_error{
-      "unexpected token '" + next.text + "' at " + std::to_string(next.line) +
-      ":" + std::to_string(next.column)
+      "unexpected token '" + next.text + "' at " +
+      std::to_string(next.location.line) + ":" +
+      std::to_string(next.location.column)
     };
   }
 
@@ -318,7 +330,7 @@ namespace basedparse
       }
       param.name = expect(basedlex::Token::identifier);
       param.colon = expect(basedlex::Token::colon);
-      param.type_expression = std::move(*parse_type_expression());
+      param.type = parse_expression();
       fn.parameters.push_back(std::move(param));
       if (_reader->peek().token != basedlex::Token::comma)
       {
@@ -331,7 +343,7 @@ namespace basedparse
     {
       fn.return_type_specifier = parse_return_type_specifier();
     }
-    fn.arrow = expect(basedlex::Token::arrow);
+    fn.arrow = expect(basedlex::Token::fat_arrow);
     fn.body = parse_expression();
     return fn;
   }
@@ -340,7 +352,7 @@ namespace basedparse
   {
     auto spec = Fn_expression::Return_type_specifier{};
     spec.colon = expect(basedlex::Token::colon);
-    spec.type_expression = std::move(*parse_type_expression());
+    spec.type = parse_expression();
     return spec;
   }
 
@@ -406,80 +418,6 @@ namespace basedparse
     return stmt;
   }
 
-  Constructor_expression Parser::parse_constructor_expression()
-  {
-    auto ctor = Constructor_expression{};
-    ctor.kw_new = expect(basedlex::Token::kw_new);
-    ctor.type = std::move(*parse_type_expression());
-    ctor.lbrace = expect(basedlex::Token::lbrace);
-    for (;;)
-    {
-      if (_reader->peek().token == basedlex::Token::rbrace)
-      {
-        break;
-      }
-      ctor.arguments.push_back(std::move(*parse_expression()));
-      if (_reader->peek().token != basedlex::Token::comma)
-      {
-        break;
-      }
-      ctor.argument_commas.push_back(expect(basedlex::Token::comma));
-    }
-    ctor.rbrace = expect(basedlex::Token::rbrace);
-    return ctor;
-  }
-
-  std::unique_ptr<Type_expression> Parser::parse_type_expression()
-  {
-    auto const &next = _reader->peek();
-    if (next.token != basedlex::Token::identifier)
-    {
-      throw std::runtime_error{
-        "expected type, got '" + next.text + "' at " +
-        std::to_string(next.line) + ":" + std::to_string(next.column)
-      };
-    }
-    auto type = std::make_unique<Type_expression>(Identifier_type_expression{
-      .identifier = expect(basedlex::Token::identifier)
-    });
-    for (;;)
-    {
-      if (_reader->peek().token == basedlex::Token::lbracket)
-      {
-        auto array = Array_type_expression{};
-        array.element_type = std::move(type);
-        array.lbracket = expect(basedlex::Token::lbracket);
-        if (_reader->peek().token != basedlex::Token::rbracket)
-        {
-          array.size = parse_expression();
-        }
-        array.rbracket = expect(basedlex::Token::rbracket);
-        type = std::make_unique<Type_expression>(std::move(array));
-      }
-      else if (_reader->peek().token == basedlex::Token::kw_mut &&
-               _reader->peek(1).token == basedlex::Token::star)
-      {
-        auto ptr = Pointer_type_expression{};
-        ptr.pointee_type = std::move(type);
-        ptr.kw_mut = expect(basedlex::Token::kw_mut);
-        ptr.star = expect(basedlex::Token::star);
-        type = std::make_unique<Type_expression>(std::move(ptr));
-      }
-      else if (_reader->peek().token == basedlex::Token::star)
-      {
-        auto ptr = Pointer_type_expression{};
-        ptr.pointee_type = std::move(type);
-        ptr.star = expect(basedlex::Token::star);
-        type = std::make_unique<Type_expression>(std::move(ptr));
-      }
-      else
-      {
-        break;
-      }
-    }
-    return type;
-  }
-
   basedlex::Lexeme Parser::expect(basedlex::Token token)
   {
     auto lexeme = _reader->read();
@@ -487,7 +425,8 @@ namespace basedparse
     {
       throw std::runtime_error{
         "unexpected token '" + lexeme.text + "' at " +
-        std::to_string(lexeme.line) + ":" + std::to_string(lexeme.column)
+        std::to_string(lexeme.location.line) + ":" +
+        std::to_string(lexeme.location.column)
       };
     }
     return lexeme;

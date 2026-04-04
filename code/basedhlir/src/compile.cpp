@@ -1409,12 +1409,11 @@ namespace basedhlir
         Type_value{_type_pool->unsized_array_type(tv->type)}
       };
     }
-    auto const size_type = type_of_expression(*expr.size);
-    if (size_type != _type_pool->int32_type())
+    auto const size_result = compile_expression(*expr.size);
+    if (type_of_operand(size_result) != _type_pool->int32_type())
     {
       emit_error("array size must be an integer", *expr.size);
     }
-    auto const size_result = compile_expression(*expr.size);
     auto const size_cv = std::get_if<Constant_value>(&size_result);
     if (size_cv == nullptr)
     {

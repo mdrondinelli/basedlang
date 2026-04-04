@@ -15,7 +15,7 @@ Build a reliable mental model before touching code:
 Read:
 
 1. [Architecture and pipeline overview](./overview.md)
-2. [`language.md`](../../language.md)
+2. [Language reference](./language.md)
 3. [Project structure](./project-structure.md)
 
 After that, you should be able to answer:

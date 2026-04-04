@@ -12,6 +12,7 @@ The pages below are organized to support fast navigation rather than linear read
 ## Start here
 
 - [Tutorial: first change](./tutorial-first-change.md)
+- [Language reference](./language.md)
 - [Architecture and pipeline overview](./overview.md)
 - [`basedlex`](./basedlex.md)
 - [`basedparse`](./basedparse.md)
@@ -50,7 +51,3 @@ Use this sequence:
 
 1. [Architecture and pipeline overview](./overview.md)
 2. [`basedlex`](./basedlex.md), [`basedparse`](./basedparse.md), [`basedhlir`](./basedhlir.md), or [`based`](./based.md)
-
-## Related docs
-
-For now, language-surface details still live in [`language.md`](../../language.md).

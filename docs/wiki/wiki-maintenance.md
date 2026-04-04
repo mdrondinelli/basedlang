@@ -37,4 +37,4 @@ Split a page when one of these becomes true:
 
 ## Relationship to other docs
 
-`language.md` and the relevant wiki pages should usually move together when the language changes.
+The language reference now lives in [language.md](./language.md).

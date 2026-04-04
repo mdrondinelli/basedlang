@@ -36,6 +36,11 @@ add_library(basedhlir
 target_include_directories(basedhlir PUBLIC code/basedhlir/include)
 target_link_libraries(basedhlir PUBLIC basedparse)
 
+add_executable(based
+  code/based/main.cpp
+)
+target_link_libraries(based PRIVATE basedhlir)
+
 add_executable(basedlex-tests
   code/basedlex/test/lexeme_stream_test.cpp
   code/basedlex/test/ring_buffer_test.cpp

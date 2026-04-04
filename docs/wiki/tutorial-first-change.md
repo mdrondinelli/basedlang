@@ -103,6 +103,8 @@ Run the relevant test binary directly:
 ./build/basedhlir-tests
 ```
 
+Before committing, format the changed code. See [Formatting](./formatting.md).
+
 ## Step 6: Update the wiki in the same PR
 
 The wiki is not optional process overhead. It is part of keeping reviewer context fresh.
@@ -121,4 +123,5 @@ Before opening the PR, confirm:
 - the changed module is the correct owner
 - tests moved with behavior
 - docs moved with reviewer mental model
+- changed code was formatted before committing
 - cross-layer fallout was handled explicitly

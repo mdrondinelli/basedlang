@@ -1313,13 +1313,13 @@ namespace basedhlir
     basedparse::Call_expression const &expr
   )
   {
-    auto const callee_type = type_of_expression(*expr.callee);
+    auto const callee_result = compile_expression(*expr.callee);
+    auto const callee_type = type_of_operand(callee_result);
     auto const ft = std::get_if<Function_type>(&callee_type->data);
     if (ft == nullptr)
     {
       emit_error("expression is not callable", expr.lparen);
     }
-    auto const callee_result = compile_expression(*expr.callee);
     auto const callee_cv = std::get_if<Constant_value>(&callee_result);
     auto const fv =
       callee_cv != nullptr ? std::get_if<Function_value>(callee_cv) : nullptr;
@@ -1344,7 +1344,7 @@ namespace basedhlir
     for (auto i = std::size_t{}; i < expr.arguments.size(); ++i)
     {
       auto const arg_result = compile_expression(expr.arguments[i]);
-      auto const arg_type = type_of_expression(expr.arguments[i]);
+      auto const arg_type = type_of_operand(arg_result);
       if (!is_type_compatible(ft->parameter_types[i], arg_type))
       {
         emit_error(

@@ -17,7 +17,6 @@ These surface forms exist in the parser or language design, but are not fully su
 - postfix dereference `p^` parses, but dereference is rejected in expression compilation
 - index expressions `arr[i]` parse, but index expression compilation is not implemented
 - assignment expressions parse as operators, but are not implemented semantically
-- omitted function return types parse, but return type deduction is not implemented
 
 When future language work is still in flux, keep it separate from the fully implemented reference and label it clearly.
 
@@ -62,14 +61,6 @@ Implemented primary expression forms:
 - function expressions with explicit return type: `fn(params): ReturnType => expression`
 
 Parsed but not fully implemented in `basedhlir`:
-
-- function expressions without an explicit return type
-
-For example, this parses but return type deduction is not implemented yet:
-
-```based
-let id = fn(x: Int32) => x;
-```
 
 Function parameters are immutable by default. Parameter bindings may be written with `mut`:
 

@@ -1,5 +1,7 @@
 #include <array>
+#include <exception>
 #include <limits>
+#include <string_view>
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
@@ -68,9 +70,7 @@ TEST_CASE("parse_int_literal")
 
 TEST_CASE("parse_int_literal - uint64 overflow")
 {
-  CHECK_FALSE(
-    basedhlir::parse_int_literal("18446744073709551616").has_value()
-  );
+  CHECK_FALSE(basedhlir::parse_int_literal("18446744073709551616").has_value());
 }
 
 TEST_CASE("evaluate_constant_expression - integer literal")
@@ -491,7 +491,34 @@ TEST_CASE("compile - fuel exhaustion")
   REQUIRE(tu.functions.size() == 1);
   auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{0}};
   auto fuel = std::int32_t{100};
-  CHECK_THROWS(basedhlir::interpret(*tu.functions[0], args, fuel));
+  CHECK_THROWS_AS(
+    basedhlir::interpret(*tu.functions[0], args, fuel),
+    basedhlir::Fuel_exhausted_error
+  );
+}
+
+TEST_CASE("Fuel_exhausted_error - std::exception contract")
+{
+  auto const error = basedhlir::Fuel_exhausted_error{};
+
+  CHECK(
+    std::string_view{error.what()} == "compile-time evaluation ran out of fuel"
+  );
+
+  try
+  {
+    throw error;
+  }
+  catch (std::exception const &caught)
+  {
+    CHECK(
+      std::string_view{caught.what()} ==
+      "compile-time evaluation ran out of fuel"
+    );
+    return;
+  }
+
+  FAIL("Fuel_exhausted_error was not catchable as std::exception");
 }
 
 TEST_CASE("compile - pure expression body")

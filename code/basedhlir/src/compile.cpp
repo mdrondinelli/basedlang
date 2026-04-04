@@ -18,10 +18,10 @@ namespace basedhlir
   class Scoped_assign
   {
   public:
-    Scoped_assign(T &target, T value)
+    explicit Scoped_assign(T &target, T value)
         : _target{target}, _previous{target}
     {
-      _target = value;
+      _target = std::move(value);
     }
 
     ~Scoped_assign()
@@ -1143,10 +1143,18 @@ namespace basedhlir
     _current_block = block;
   }
 
-  Register Compilation_context::allocate_register()
+  Register Compilation_context::allocate_register(Type *type)
   {
     assert(_current_function != nullptr);
-    return Register{_current_function->register_count++};
+    auto const reg = Register{_current_function->register_count++};
+    _register_types.push_back(type);
+    return reg;
+  }
+
+  Type *Compilation_context::type_of_register(Register r) const
+  {
+    assert(*r >= 0 && *r < static_cast<std::int32_t>(_register_types.size()));
+    return _register_types[*r];
   }
 
   void Compilation_context::emit(Instruction instruction)
@@ -1163,30 +1171,11 @@ namespace basedhlir
     _current_block->terminator = std::move(terminator);
   }
 
-  Operand to_operand(Expression_compile_result const &result)
-  {
-    return std::visit(
-      [](auto const &r) -> Operand
-      {
-        using T = std::decay_t<decltype(r)>;
-        if constexpr (std::is_same_v<T, Typed_register>)
-        {
-          return r.reg;
-        }
-        else
-        {
-          return r;
-        }
-      },
-      result
-    );
-  }
-
-  Expression_compile_result
+  Operand
   Compilation_context::compile_expression(basedparse::Expression const &expr)
   {
     auto const result = std::visit(
-      [this](auto const &e) -> Expression_compile_result
+      [this](auto const &e) -> Operand
       {
         return compile_expression(e);
       },
@@ -1199,7 +1188,7 @@ namespace basedhlir
     return result;
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Int_literal_expression const &expr
   )
   {
@@ -1208,7 +1197,7 @@ namespace basedhlir
     };
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Identifier_expression const &expr
   )
   {
@@ -1216,14 +1205,14 @@ namespace basedhlir
     auto const ob = std::get_if<Object_binding>(&sym->data);
     if (ob != nullptr)
     {
-      return Typed_register{ob->reg, ob->type};
+      return ob->reg;
     }
     auto const cv = std::get_if<Constant_value>(&sym->data);
     assert(cv != nullptr);
     return *cv;
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Recurse_expression const &expr
   )
   {
@@ -1234,20 +1223,20 @@ namespace basedhlir
     return Constant_value{Function_value{.function = _current_function}};
   }
 
-  Expression_compile_result
+  Operand
   Compilation_context::compile_expression(basedparse::Fn_expression const &expr)
   {
     return Constant_value{Function_value{.function = compile_function(expr)}};
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Paren_expression const &expr
   )
   {
     return compile_expression(*expr.inner);
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Prefix_expression const &expr
   )
   {
@@ -1259,25 +1248,25 @@ namespace basedhlir
     {
       return overload->evaluate(*cv);
     }
-    auto const result = allocate_register();
+    auto const result = allocate_register(overload->result_type(operand_type));
     emit(
       Instruction{Unary_instruction{
         .result = result,
         .overload = overload,
-        .operand = to_operand(operand_result),
+        .operand = operand_result,
       }}
     );
-    return Typed_register{result, overload->result_type(operand_type)};
+    return result;
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Postfix_expression const &expr
   )
   {
     emit_error("dereference is not supported in this context", expr.op);
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Binary_expression const &expr
   )
   {
@@ -1293,19 +1282,19 @@ namespace basedhlir
     {
       return overload->evaluate(*lhs_cv, *rhs_cv);
     }
-    auto const result = allocate_register();
+    auto const result = allocate_register(overload->result_type());
     emit(
       Instruction{Binary_instruction{
         .result = result,
         .overload = overload,
-        .lhs = to_operand(lhs_result),
-        .rhs = to_operand(rhs_result),
+        .lhs = lhs_result,
+        .rhs = rhs_result,
       }}
     );
-    return Typed_register{result, overload->result_type()};
+    return result;
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Call_expression const &expr
   )
   {
@@ -1334,7 +1323,7 @@ namespace basedhlir
         expr.lparen
       );
     }
-    auto arg_results = std::vector<Expression_compile_result>{};
+    auto arg_results = std::vector<Operand>{};
     arg_results.reserve(expr.arguments.size());
     auto all_constant = bool{true};
     for (auto i = std::size_t{}; i < expr.arguments.size(); ++i)
@@ -1367,30 +1356,24 @@ namespace basedhlir
       }
       return interpret(*fv->function, const_args);
     }
-    auto runtime_args = std::vector<Operand>{};
-    runtime_args.reserve(arg_results.size());
-    for (auto const &r : arg_results)
-    {
-      runtime_args.push_back(to_operand(r));
-    }
-    auto const result = allocate_register();
+    auto const result = allocate_register(ft->return_type);
     emit(
       Instruction{Call_instruction{
         .result = result,
         .callee = fv->function,
-        .arguments = std::move(runtime_args),
+        .arguments = std::move(arg_results),
       }}
     );
-    return Typed_register{result, ft->return_type};
+    return result;
   }
 
-  Expression_compile_result
+  Operand
   Compilation_context::compile_expression(basedparse::Index_expression const &)
   {
     throw std::runtime_error{"index expressions are not implemented"};
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Prefix_bracket_expression const &expr
   )
   {
@@ -1432,7 +1415,7 @@ namespace basedhlir
     };
   }
 
-  Expression_compile_result Compilation_context::compile_expression(
+  Operand Compilation_context::compile_expression(
     basedparse::Block_expression const &expr
   )
   {
@@ -1443,12 +1426,12 @@ namespace basedhlir
     }
     auto const result =
       expr.tail ? compile_expression(*expr.tail)
-                : Expression_compile_result{Constant_value{Void_value{}}};
+                : Operand{Constant_value{Void_value{}}};
     _symbol_table.pop_scope();
     return result;
   }
 
-  Expression_compile_result
+  Operand
   Compilation_context::compile_expression(basedparse::If_expression const &expr)
   {
     auto const cond_result = compile_expression(*expr.condition);
@@ -1507,7 +1490,7 @@ namespace basedhlir
     }();
     emit(
       Terminator{Branch_terminator{
-        .condition = to_operand(cond_result),
+        .condition = cond_result,
         .then_target = then_block,
         .then_arguments = {},
         .else_target = first_else_target,
@@ -1524,16 +1507,16 @@ namespace basedhlir
       {
         return Register{};
       }
-      auto const r = allocate_register();
+      auto const r = allocate_register(then_type);
       merge_block->parameters.push_back(r);
       return r;
     }();
-    auto const jump_to_merge = [&](Expression_compile_result const &result)
+    auto const jump_to_merge = [&](Operand const &result)
     {
       emit(
         Terminator{Jump_terminator{
           .target = merge_block,
-          .arguments = merge_param ? std::vector<Operand>{to_operand(result)}
+          .arguments = merge_param ? std::vector<Operand>{result}
                                    : std::vector<Operand>{},
         }}
       );
@@ -1561,7 +1544,7 @@ namespace basedhlir
       }();
       emit(
         Terminator{Branch_terminator{
-          .condition = to_operand(ei_cond_result),
+          .condition = ei_cond_result,
           .then_target = ei_then,
           .then_arguments = {},
           .else_target = ei_else,
@@ -1599,7 +1582,7 @@ namespace basedhlir
     set_current_block(merge_block);
     if (merge_param)
     {
-      return Typed_register{merge_param, then_type};
+      return merge_param;
     }
     return Constant_value{Void_value{}};
   }
@@ -1655,8 +1638,8 @@ namespace basedhlir
       }
       else
       {
-        auto const tr = std::get<Typed_register>(result);
-        _symbol_table.declare_object(stmt.name.text, tr.type, false, tr.reg);
+        auto const reg = std::get<Register>(result);
+        _symbol_table.declare_object(stmt.name.text, type, false, reg);
       }
     }
   }
@@ -1676,7 +1659,7 @@ namespace basedhlir
   )
   {
     auto const result = compile_expression(stmt.value);
-    emit(Terminator{Return_terminator{.value = to_operand(result)}});
+    emit(Terminator{Return_terminator{.value = result}});
     // Start a new (dead) block for any subsequent code
     set_current_block(new_block());
   }
@@ -1703,12 +1686,14 @@ namespace basedhlir
     auto const saved_function = Scoped_assign{_current_function, func_ptr};
     auto const saved_block =
       Scoped_assign{_current_block, static_cast<Basic_block *>(nullptr)};
+    auto const saved_register_types =
+      Scoped_assign{_register_types, std::vector<Type *>{}};
     auto const entry = new_block();
     set_current_block(entry);
     _symbol_table.push_scope(true);
     for (auto i = std::size_t{}; i < expr.parameters.size(); ++i)
     {
-      auto const reg = allocate_register();
+      auto const reg = allocate_register(ft.parameter_types[i]);
       entry->parameters.push_back(reg);
       _symbol_table.declare_object(
         expr.parameters[i].name.text,
@@ -1719,7 +1704,7 @@ namespace basedhlir
     }
     // Compile the body
     auto const body_result = compile_expression(*expr.body);
-    emit(Terminator{Return_terminator{.value = to_operand(body_result)}});
+    emit(Terminator{Return_terminator{.value = body_result}});
     _symbol_table.pop_scope();
     for (auto const &block : func_ptr->blocks)
     {

@@ -47,12 +47,6 @@ namespace basedhlir
     std::int32_t _id{-1};
   };
 
-  struct Typed_register
-  {
-    Register reg;
-    Type *type;
-  };
-
   using Operand = std::variant<Register, Constant_value>;
 
   struct Int32_constant_instruction

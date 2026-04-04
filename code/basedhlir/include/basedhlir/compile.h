@@ -20,9 +20,6 @@
 namespace basedhlir
 {
 
-  using Expression_compile_result =
-    std::variant<Typed_register, Constant_value>;
-
   struct Diagnostic
   {
     std::string message;
@@ -126,51 +123,39 @@ namespace basedhlir
 
     void emit(Terminator terminator);
 
-    Register allocate_register();
+    Register allocate_register(Type *type);
+
+    Type *type_of_register(Register r) const;
 
     void emit(Instruction instruction);
 
-    Expression_compile_result
-    compile_expression(basedparse::Expression const &expr);
+    Operand compile_expression(basedparse::Expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Int_literal_expression const &expr);
+    Operand compile_expression(basedparse::Int_literal_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Identifier_expression const &expr);
+    Operand compile_expression(basedparse::Identifier_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Recurse_expression const &expr);
+    Operand compile_expression(basedparse::Recurse_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Fn_expression const &expr);
+    Operand compile_expression(basedparse::Fn_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Paren_expression const &expr);
+    Operand compile_expression(basedparse::Paren_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Prefix_expression const &expr);
+    Operand compile_expression(basedparse::Prefix_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Postfix_expression const &expr);
+    Operand compile_expression(basedparse::Postfix_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Binary_expression const &expr);
+    Operand compile_expression(basedparse::Binary_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Call_expression const &expr);
+    Operand compile_expression(basedparse::Call_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Index_expression const &expr);
+    Operand compile_expression(basedparse::Index_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Prefix_bracket_expression const &expr);
+    Operand compile_expression(basedparse::Prefix_bracket_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::Block_expression const &expr);
+    Operand compile_expression(basedparse::Block_expression const &expr);
 
-    Expression_compile_result
-    compile_expression(basedparse::If_expression const &expr);
+    Operand compile_expression(basedparse::If_expression const &expr);
 
     void compile_statement(basedparse::Statement const &stmt);
 
@@ -192,6 +177,7 @@ namespace basedhlir
     Symbol_table _symbol_table;
     Function *_current_function{};
     Basic_block *_current_block{};
+    std::vector<Type *> _register_types;
     std::vector<Diagnostic> _diagnostics;
     std::unordered_map<
       basedparse::Operator,

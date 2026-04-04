@@ -12,7 +12,8 @@
 
 #include "constant_value.h"
 #include "hlir.h"
-#include "source_location.h"
+#include "operator_overload.h"
+#include "source_span.h"
 #include "symbol_table.h"
 #include "type.h"
 
@@ -22,7 +23,7 @@ namespace basedhlir
   struct Diagnostic
   {
     std::string message;
-    Source_location location;
+    Source_span location;
   };
 
   class Compilation_failure: public std::exception
@@ -51,33 +52,6 @@ namespace basedhlir
   {
   };
 
-  class Unary_operator_overload
-  {
-  public:
-    virtual ~Unary_operator_overload() = default;
-
-    virtual bool matches(Type *operand_type) const = 0;
-
-    virtual Type *result_type(Type *operand_type) const = 0;
-
-    virtual Constant_value evaluate(Constant_value operand) const = 0;
-  };
-
-  class Binary_operator_overload
-  {
-  public:
-    virtual ~Binary_operator_overload() = default;
-
-    virtual Type *lhs_type() const = 0;
-
-    virtual Type *rhs_type() const = 0;
-
-    virtual Type *result_type() const = 0;
-
-    virtual Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const = 0;
-  };
-
   class Compilation_context
   {
   public:
@@ -87,10 +61,13 @@ namespace basedhlir
 
     Type *type_of_constant(Constant_value const &value);
 
-    [[noreturn]] void
-    emit_error(std::string message, basedlex::Lexeme const &lexeme);
+    [[noreturn]] void emit_error(std::string message, Source_span location);
 
-    [[noreturn]] void emit_error(std::string message, Source_location location);
+    template <typename T>
+    [[noreturn]] void emit_error(std::string message, T const &node)
+    {
+      emit_error(std::move(message), basedparse::span_of(node));
+    }
 
     Symbol *try_lookup_identifier(basedlex::Lexeme const &identifier);
 
@@ -140,75 +117,47 @@ namespace basedhlir
     Constant_value
     evaluate_constant_expression(basedparse::Expression const &expr);
 
-    Constant_value evaluate_constant_expression(
-      basedparse::Int_literal_expression const &expr
-    );
+    Basic_block *new_block();
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Paren_expression const &expr);
+    void set_current_block(Basic_block *block);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Prefix_expression const &expr);
+    void emit(Terminator terminator);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Postfix_expression const &expr);
+    Register allocate_register(Type *type);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Binary_expression const &expr);
+    Type *type_of_register(Register r) const;
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Identifier_expression const &);
+    Type *type_of_operand(Operand const &operand);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Recurse_expression const &);
+    void emit(Instruction instruction);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Fn_expression const &);
+    Operand compile_expression(basedparse::Expression const &expr);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Call_expression const &);
+    Operand compile_expression(basedparse::Int_literal_expression const &expr);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Prefix_bracket_expression const &);
+    Operand compile_expression(basedparse::Identifier_expression const &expr);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Index_expression const &);
+    Operand compile_expression(basedparse::Recurse_expression const &expr);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::Block_expression const &);
+    Operand compile_expression(basedparse::Fn_expression const &expr);
 
-    Constant_value
-    evaluate_constant_expression(basedparse::If_expression const &);
+    Operand compile_expression(basedparse::Paren_expression const &expr);
 
-    bool is_top_level() const;
+    Operand compile_expression(basedparse::Prefix_expression const &expr);
 
-    void compile_expression(basedparse::Expression const &expr);
+    Operand compile_expression(basedparse::Postfix_expression const &expr);
 
-    void compile_expression(basedparse::Int_literal_expression const &expr);
+    Operand compile_expression(basedparse::Binary_expression const &expr);
 
-    void compile_expression(basedparse::Identifier_expression const &expr);
+    Operand compile_expression(basedparse::Call_expression const &expr);
 
-    void compile_expression(basedparse::Recurse_expression const &expr);
+    Operand compile_expression(basedparse::Index_expression const &expr);
 
-    void compile_expression(basedparse::Fn_expression const &expr);
+    Operand compile_expression(basedparse::Prefix_bracket_expression const &expr);
 
-    void compile_expression(basedparse::Paren_expression const &expr);
+    Operand compile_expression(basedparse::Block_expression const &expr);
 
-    void compile_expression(basedparse::Prefix_expression const &expr);
-
-    void compile_expression(basedparse::Postfix_expression const &expr);
-
-    void compile_expression(basedparse::Binary_expression const &expr);
-
-    void compile_expression(basedparse::Call_expression const &expr);
-
-    void compile_expression(basedparse::Index_expression const &expr);
-
-    void compile_expression(basedparse::Prefix_bracket_expression const &expr);
-
-    void compile_expression(basedparse::Block_expression const &expr);
-
-    void compile_expression(basedparse::If_expression const &expr);
+    Operand compile_expression(basedparse::If_expression const &expr);
 
     void compile_statement(basedparse::Statement const &stmt);
 
@@ -220,11 +169,17 @@ namespace basedhlir
 
     void compile_statement(basedparse::Expression_statement const &stmt);
 
+    Function *compile_function(basedparse::Fn_expression const &expr);
+
+    bool is_top_level() const;
+
   private:
     Type_pool *_type_pool;
     Translation_unit _translation_unit;
     Symbol_table _symbol_table;
     Function *_current_function{};
+    Basic_block *_current_block{};
+    std::vector<Type *> _register_types;
     std::vector<Diagnostic> _diagnostics;
     std::unordered_map<
       basedparse::Operator,

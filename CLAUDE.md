@@ -82,3 +82,13 @@ clang-format-21 -i <file>
 - Private member variables: `_snake_case` with underscore prefix (e.g., `_header`, `_object`)
 - Enum values: `snake_case`
 - Template arguments: `PascaleCase`
+- Error types: suffix with `_error` (e.g., `Fuel_exhausted_error`, `Lex_error`, `Decode_error`)
+
+**Error handling in the compiler:**
+- `emit_error`: user-facing compilation errors (caught and recovered as diagnostics)
+- `std::runtime_error`: internal errors for unimplemented features
+- `std::unreachable()`: truly unreachable code paths
+
+**Parameters at interfaces:**
+- Prefer `std::span` over `const std::vector&` for read-only array parameters
+- Prefer `std::int32_t` over `int` — care about int sizes at interfaces

@@ -29,6 +29,7 @@ target_link_libraries(basedparse PUBLIC basedlex)
 
 add_library(basedhlir
   code/basedhlir/src/compile.cpp
+  code/basedhlir/src/interpret.cpp
   code/basedhlir/src/symbol_table.cpp
   code/basedhlir/src/type.cpp
 )

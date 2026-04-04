@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "constant_value.h"
+#include "hlir.h"
 #include "type.h"
 
 namespace basedhlir
@@ -18,6 +19,7 @@ namespace basedhlir
   {
     Type *type;
     bool is_mutable;
+    Register reg;
   };
 
   struct Symbol
@@ -29,7 +31,12 @@ namespace basedhlir
   class Symbol_table
   {
   public:
-    Symbol *declare_object(std::string name, Type *type, bool is_mutable);
+    Symbol *declare_object(
+      std::string name,
+      Type *type,
+      bool is_mutable,
+      Register reg = {}
+    );
 
     Symbol *declare_value(std::string name, Constant_value const &value);
 

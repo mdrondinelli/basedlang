@@ -1,10 +1,12 @@
 #ifndef BASEDHLIR_COMPILE_H
 #define BASEDHLIR_COMPILE_H
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -21,7 +23,6 @@
 
 namespace basedhlir
 {
-
   struct Diagnostic_note
   {
     std::string message;
@@ -193,8 +194,26 @@ namespace basedhlir
       _binary_overloads;
   };
 
+  auto constexpr int8_max_magnitude =
+    static_cast<std::uint64_t>(std::numeric_limits<std::int8_t>::max()) +
+    1u;
+
+  auto constexpr int16_max_magnitude =
+    static_cast<std::uint64_t>(std::numeric_limits<std::int16_t>::max()) +
+    1u;
+
+  auto constexpr int32_max_magnitude =
+    static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()) +
+    1u;
+
+  auto constexpr int64_max_magnitude =
+    static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()) +
+    1u;
+
   Translation_unit
   compile(basedparse::Translation_unit const &ast, Type_pool *type_pool);
+
+  std::optional<std::uint64_t> parse_int_literal(std::string_view digits);
 
 } // namespace basedhlir
 

@@ -330,7 +330,7 @@ compile_program(std::string source)
   auto parse_fixture = Parse_fixture{std::move(source)};
   auto const ast = parse_fixture.parser.parse_translation_unit();
   auto types = basedhlir::Type_pool{};
-  auto tu = basedhlir::compile(*ast, &types);
+  auto tu = basedhlir::compile(ast, &types);
   return {std::move(types), std::move(tu)};
 }
 

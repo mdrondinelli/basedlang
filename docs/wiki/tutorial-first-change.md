@@ -8,7 +8,21 @@ Build a reliable mental model before touching code:
 
 1. understand the layer you are changing
 2. understand the key data structures in that layer
-3. update tests and docs with the behavior change
+3. do the work on a dedicated branch
+4. update tests and docs with the behavior change
+
+## Step 0: Start from a branch
+
+Before editing tracked files, create a dedicated branch for the change.
+
+This keeps unrelated work off `main` and makes it possible to open a focused
+PR without cleanup later.
+
+Example:
+
+```sh
+git switch -c short-description-of-change
+```
 
 ## Step 1: Understand the product shape
 
@@ -120,6 +134,7 @@ Update it when your change affects:
 
 Before opening the PR, confirm:
 
+- the change was done on a dedicated branch, not `main`
 - the changed module is the correct owner
 - tests moved with behavior
 - docs moved with reviewer mental model

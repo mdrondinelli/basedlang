@@ -1449,63 +1449,57 @@ namespace basedhlir
   {
     auto const cond_result = compile_expression(*expr.condition);
     // Constant condition folding
-    // TODO: When mutation/side effects are added, untaken branches can no
-    // longer be skipped — their side effects must still be evaluated.
-    if (auto const cond_cv = std::get_if<Constant_value>(&cond_result))
+    auto const cond_cv = std::get_if<Constant_value>(&cond_result);
+    if (cond_cv != nullptr && std::get<bool>(*cond_cv))
     {
-      if (!expr.else_part.has_value())
+      return compile_expression(expr.then_block);
+    }
+    // If condition is constant false, fold greedily through else-if chain
+    // until a non-constant condition is hit, then fall through to runtime.
+    auto runtime_cond = cond_result;
+    auto runtime_then = &expr.then_block;
+    auto runtime_else_if_start = std::size_t{};
+    if (cond_cv != nullptr)
+    {
+      auto folded_all = bool{true};
+      for (auto i = std::size_t{}; i < expr.else_if_parts.size(); ++i)
       {
-        return Constant_value{Void_value{}};
-      }
-      if (std::get<bool>(*cond_cv))
-      {
-        return compile_expression(expr.then_block);
-      }
-      if (expr.else_if_parts.empty())
-      {
-        return compile_expression(expr.else_part->body);
-      }
-      // Constant false with else-if parts: fold at top level (where emitting
-      // instructions isn't possible), fall through to runtime path otherwise
-      if (is_top_level())
-      {
-        for (auto const &part : expr.else_if_parts)
+        auto const &part = expr.else_if_parts[i];
+        auto const ei_result = compile_expression(*part.condition);
+        if (auto const ei_cv = std::get_if<Constant_value>(&ei_result))
         {
-          auto const ei_result = compile_expression(*part.condition);
-          auto const ei_cv = std::get_if<Constant_value>(&ei_result);
-          if (ei_cv == nullptr)
-          {
-            emit_error(
-              "else-if condition is not a compile-time constant",
-              *part.condition
-            );
-          }
           if (std::get<bool>(*ei_cv))
           {
             return compile_expression(part.body);
           }
         }
-        return compile_expression(expr.else_part->body);
+        else
+        {
+          runtime_cond = ei_result;
+          runtime_then = &part.body;
+          runtime_else_if_start = i + 1;
+          folded_all = false;
+          break;
+        }
+      }
+      if (folded_all)
+      {
+        return expr.else_part.has_value()
+                 ? compile_expression(expr.else_part->body)
+                 : Operand{Constant_value{Void_value{}}};
       }
     }
     // Runtime condition path
     auto const merge_block = new_block();
     auto const then_block = new_block();
-    auto const first_else_target = [&]() -> Basic_block *
-    {
-      if (!expr.else_if_parts.empty())
-      {
-        return new_block();
-      }
-      if (expr.else_part.has_value())
-      {
-        return new_block();
-      }
-      return merge_block;
-    }();
+    auto const first_else_target =
+      runtime_else_if_start < expr.else_if_parts.size() ||
+          expr.else_part.has_value()
+        ? new_block()
+        : merge_block;
     emit(
       Terminator{Branch_terminator{
-        .condition = cond_result,
+        .condition = runtime_cond,
         .then_target = then_block,
         .then_arguments = {},
         .else_target = first_else_target,
@@ -1514,19 +1508,13 @@ namespace basedhlir
     );
     // Compile then block
     set_current_block(then_block);
-    auto const then_result = compile_expression(expr.then_block);
+    auto const then_result = compile_expression(*runtime_then);
     auto const then_type = type_of_operand(then_result);
-    auto const merge_param = [&]() -> Register
-    {
-      if (then_type == _type_pool->void_type())
-      {
-        return Register{};
-      }
-      auto const r = allocate_register(then_type);
-      merge_block->parameters.push_back(r);
-      return r;
-    }();
-    auto const jump_to_merge = [&](Operand const &result)
+    auto const merge_param =
+      then_type != _type_pool->void_type()
+        ? merge_block->parameters.emplace_back(allocate_register(then_type))
+        : Register{};
+    auto const emit_jump_to_merge = [&](Operand const &result)
     {
       emit(
         Terminator{Jump_terminator{
@@ -1536,27 +1524,19 @@ namespace basedhlir
         }}
       );
     };
-    jump_to_merge(then_result);
+    emit_jump_to_merge(then_result);
     // Compile else-if chain
     auto current_else_block = first_else_target;
-    for (auto i = std::size_t{}; i < expr.else_if_parts.size(); ++i)
+    for (auto i = runtime_else_if_start; i < expr.else_if_parts.size(); ++i)
     {
       auto const &part = expr.else_if_parts[i];
       set_current_block(current_else_block);
       auto const ei_cond_result = compile_expression(*part.condition);
       auto const ei_then = new_block();
-      auto const ei_else = [&]() -> Basic_block *
-      {
-        if (i + 1 < expr.else_if_parts.size())
-        {
-          return new_block();
-        }
-        if (expr.else_part.has_value())
-        {
-          return new_block();
-        }
-        return merge_block;
-      }();
+      auto const ei_else =
+        i + 1 < expr.else_if_parts.size() || expr.else_part.has_value()
+          ? new_block()
+          : merge_block;
       emit(
         Terminator{Branch_terminator{
           .condition = ei_cond_result,
@@ -1576,7 +1556,7 @@ namespace basedhlir
           part.body.lbrace
         );
       }
-      jump_to_merge(ei_result);
+      emit_jump_to_merge(ei_result);
       current_else_block = ei_else;
     }
     // Compile else block
@@ -1592,7 +1572,7 @@ namespace basedhlir
           expr.else_part->body.lbrace
         );
       }
-      jump_to_merge(else_result);
+      emit_jump_to_merge(else_result);
     }
     set_current_block(merge_block);
     if (merge_param)

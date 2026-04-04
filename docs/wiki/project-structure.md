@@ -31,7 +31,7 @@ See [`basedhlir`](./basedhlir.md).
 
 ### `code/based`
 
-The CLI entrypoint. It should stay thin.
+The CLI entrypoint.
 
 See [`based`](./based.md).
 
@@ -48,10 +48,6 @@ Tests live next to the libraries they validate. This is important because most c
 - lexical behavior belongs with lexer tests
 - syntax behavior belongs with parser tests
 - semantic and lowering behavior belongs with HLIR tests
-
-### `extern`
-
-Third-party dependencies. This should not be part of the maintainer mental model for ordinary language work beyond build awareness.
 
 ## Mental map for contributors
 

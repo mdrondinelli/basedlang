@@ -67,7 +67,5 @@ Identifier-like sequences are consumed first and then classified as keywords or 
 
 ## What to keep stable
 
-- token boundaries are decided here, not in the parser
 - source locations must stay precise
 - lexing stays incremental rather than tokenizing the whole file up front
-

@@ -29,8 +29,6 @@ A resolved name that holds either:
 - an `Object_binding`
 - a `Constant_value`
 
-That split is the semantic center of gravity of the compiler.
-
 ### `Type` and `Type_pool`
 
 The canonical type system representation and the interning pool that makes pointer identity meaningful.
@@ -95,8 +93,6 @@ It uses fuel accounting to stop runaway compile-time execution.
 
 ## What to keep stable
 
-- resolved names must stay clearly split between object bindings and constant values
 - type identity must come from `Type_pool`
 - diagnostics should point at user-facing syntax
-- the interpreter should execute valid HLIR, not compensate for invalid HLIR
-
+- the interpreter may assume HLIR is valid except for explicit safety mechanisms like fuel exhaustion

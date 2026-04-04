@@ -9,8 +9,7 @@ Use this order for most PRs:
 1. Identify which module owns the behavior being changed.
 2. Open the matching module page and recall its invariants.
 3. Check whether tests exist at the same layer.
-4. Check whether the change leaked responsibility into the wrong module.
-5. Check whether the wiki should have changed.
+4. Check whether the wiki should have changed.
 
 ## Which page to open
 
@@ -79,32 +78,12 @@ Common reviewer question:
 
 ## Key invariants to keep in your head
 
-### Name resolution invariant
-
-Identifiers resolve through `Symbol_table` to either:
-
-- a compile-time value
-- a runtime object binding
-
-If that distinction gets blurred, later logic becomes fragile fast.
-
-### Type identity invariant
-
-Semantic equality of types should be represented by canonical `Type *` identity from `Type_pool`.
-
-### HLIR validity invariant
-
-The compiler should emit valid HLIR; the interpreter should not have to defend against structurally impossible states except for obvious safety guards like fuel exhaustion.
-
-### Diagnostics invariant
-
-User-facing errors should still point to the syntax the user thinks they wrote, not a distant derived artifact.
+- the interpreter may assume HLIR is valid except for explicit safety mechanisms like fuel exhaustion
 
 ## What to ask for in a PR
 
 - tests at the changed abstraction layer
 - module-page updates when the key abstraction or algorithm changed
-- doc updates when maintainers need a new mental model
 - a short explanation when multiple layers changed
 - clear justification for any new cross-layer dependency
 
@@ -113,7 +92,6 @@ User-facing errors should still point to the syntax the user thinks they wrote, 
 Every PR should update the wiki when it changes any of the following:
 
 - the architectural split between modules
-- the meaning of a key class or struct
 - review heuristics
 - contributor workflow
 - maintainer expectations around invariants

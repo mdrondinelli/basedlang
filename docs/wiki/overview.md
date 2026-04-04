@@ -38,16 +38,7 @@ Owns semantics:
 
 ### `based`
 
-Owns command-line wiring only. It is intentionally thin and is basically a throwaway tool at this point.
-
-## The main semantic split
-
-The most important concept to keep in your head while reading the compiler is this:
-
-- some names resolve to runtime objects
-- some names resolve to compile-time values
-
-That split drives most of the behavior in `basedhlir`, including typing, constant evaluation, and lowering.
+Owns command-line wiring. It is basically a throwaway tool at this point.
 
 ## The main type-system fact
 
@@ -68,4 +59,3 @@ HLIR is the executable representation produced by compilation. Today it is direc
 - Start here for the overall shape.
 - Then read the module page for the code you are changing or reviewing.
 - Use [Tutorial: first change](./tutorial-first-change.md) if you are starting from zero.
-

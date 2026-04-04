@@ -32,7 +32,7 @@ Use this shortcut:
 - New typing rule, mutability rule, constant rule, or lowering rule: semantic compiler
 - New executable behavior around invoking compiled code: CLI or interpreter
 
-Do not start from "where can I force the current tests to pass?" Start from "which layer owns this behavior?"
+Start from "which layer owns this behavior?"
 
 ## Step 3: Load the key concepts for that layer
 
@@ -68,20 +68,12 @@ Understand:
 
 ## Step 4: Make the smallest coherent change
 
-A good first change is narrow and keeps ownership clear.
-
 Good examples:
 
 - adding one operator and its tests
 - extending one syntax form and its lowering
 - improving one diagnostic path
 - adding one review-oriented wiki clarification
-
-Risky first changes:
-
-- mixing parser refactors with semantic changes without a strong reason
-- changing type identity logic casually
-- adding special cases in the interpreter to paper over compile bugs
 
 ## Step 5: Validate at the right layer
 

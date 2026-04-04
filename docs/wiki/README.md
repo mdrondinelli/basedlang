@@ -51,6 +51,6 @@ Use this sequence:
 1. [Architecture and pipeline overview](./overview.md)
 2. [`basedlex`](./basedlex.md), [`basedparse`](./basedparse.md), [`basedhlir`](./basedhlir.md), or [`based`](./based.md)
 
-## External source of truth
+## Related docs
 
-The language surface area is described in [`language.md`](../../language.md). This wiki focuses on implementation and review, not language syntax duplication.
+For now, language-surface details still live in [`language.md`](../../language.md).

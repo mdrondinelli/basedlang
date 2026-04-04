@@ -14,7 +14,7 @@ It then prints the interpreted result.
 
 ## Core responsibility
 
-This module should stay thin. Its job is to:
+Its job is to:
 
 1. load source text
 2. build the lexer, parser, and compiler pipeline
@@ -47,7 +47,4 @@ The executable performs straightforward orchestration:
 
 ## What to keep stable
 
-- keep it as a wrapper, not a new semantic layer
-- avoid pushing compiler logic into the executable
 - do not treat direct HLIR execution here as a permanent architectural commitment
-

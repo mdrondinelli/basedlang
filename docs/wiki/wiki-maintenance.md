@@ -24,8 +24,7 @@ Every PR should update the wiki when it changes how a maintainer should understa
 ## Preferred maintenance style
 
 - document concepts, not filenames
-- document invariants, not transient implementation details
-- document why a layer owns behavior, not just where behavior currently lives
+- document only stable, important, or subtle invariants, not transient implementation details
 - keep navigation obvious enough that a reviewer can jump directly to the right page
 
 ## When pages should be split
@@ -38,8 +37,4 @@ Split a page when one of these becomes true:
 
 ## Relationship to other docs
 
-- [`language.md`](../../language.md) is the language-surface reference
-- the wiki is the maintainer and reviewer reference
-
-If the language changes, `language.md` and the relevant wiki pages should usually move together.
-
+`language.md` and the relevant wiki pages should usually move together when the language changes.

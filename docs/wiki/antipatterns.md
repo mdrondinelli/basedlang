@@ -22,4 +22,3 @@ When you add a new antipattern:
 2. explain why it is dangerous in this codebase specifically
 3. describe what a better implementation usually looks like
 4. mention what tests or docs should accompany the fix
-

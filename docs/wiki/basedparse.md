@@ -69,6 +69,4 @@ Expression parsing uses precedence climbing. The parser reads a primary expressi
 ## What to keep stable
 
 - parsing stays syntax-only
-- precedence and associativity changes must stay coherent
-- AST nodes must preserve the lexemes needed for diagnostics
-
+- AST nodes must preserve all lexemes

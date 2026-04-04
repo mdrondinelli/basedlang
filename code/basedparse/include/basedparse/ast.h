@@ -61,7 +61,7 @@ namespace basedparse
     std::vector<Parameter_declaration> parameters;
     std::vector<basedlex::Lexeme> parameter_commas;
     basedlex::Lexeme rparen;
-    std::optional<Return_type_specifier> return_type_specifier;
+    Return_type_specifier return_type_specifier;
     basedlex::Lexeme arrow;
     std::unique_ptr<Expression> body;
   };

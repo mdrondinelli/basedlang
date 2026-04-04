@@ -339,10 +339,7 @@ namespace basedparse
       fn.parameter_commas.push_back(expect(basedlex::Token::comma));
     }
     fn.rparen = expect(basedlex::Token::rparen);
-    if (_reader->peek().token == basedlex::Token::colon)
-    {
-      fn.return_type_specifier = parse_return_type_specifier();
-    }
+    fn.return_type_specifier = parse_return_type_specifier();
     fn.arrow = expect(basedlex::Token::fat_arrow);
     fn.body = parse_expression();
     return fn;

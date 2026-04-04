@@ -1526,12 +1526,8 @@ namespace basedhlir
     {
       parameter_types.push_back(compile_type_expression(*param.type));
     }
-    if (!expr.return_type_specifier.has_value())
-    {
-      throw std::runtime_error{"return type deduction not yet supported"};
-    }
     auto const return_type =
-      compile_type_expression(*expr.return_type_specifier->type);
+      compile_type_expression(*expr.return_type_specifier.type);
     auto const fn_type =
       _type_pool->function_type(std::move(parameter_types), return_type);
     auto const ft = std::get<Function_type>(fn_type->data);

@@ -178,7 +178,10 @@ TEST_CASE("evaluate_constant_expression - if expression takes else-if branch")
   CHECK(std::get<int32_t>(value) == 30);
 }
 
-TEST_CASE("evaluate_constant_expression - if without else is void")
+TEST_CASE(
+  "evaluate_constant_expression - if with constant true condition folds to "
+  "then branch"
+)
 {
   auto parse_fixture = Parse_fixture{"if 1 < 2 { 10 }"};
   auto compile_fixture = Compile_fixture{};
@@ -186,7 +189,21 @@ TEST_CASE("evaluate_constant_expression - if without else is void")
 
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
-  CHECK(std::holds_alternative<basedhlir::Void_value>(value));
+  CHECK(std::get<std::int32_t>(value) == 10);
+}
+
+TEST_CASE(
+  "evaluate_constant_expression - if with constant true condition "
+  "allows different branch types"
+)
+{
+  auto parse_fixture = Parse_fixture{"if true { 10 } else { false }"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  CHECK(std::get<std::int32_t>(value) == 10);
 }
 
 TEST_CASE("compile_type_expression - sized array")
@@ -461,7 +478,7 @@ TEST_CASE("compile - branch type mismatch")
 {
   CHECK_THROWS_AS(
     compile_program(
-      "let f = fn(): Int32 => { return if true { 1 } else { true }; };"
+      "let f = fn(b: Bool): Int32 => { return if b { 1 } else { b }; };"
     ),
     basedhlir::Compilation_failure
   );
@@ -471,8 +488,8 @@ TEST_CASE("compile - else-if branch type mismatch")
 {
   CHECK_THROWS_AS(
     compile_program(
-      "let f = fn(): Int32 => "
-      "{ return if true { 1 } else if false { true } else { 2 }; };"
+      "let f = fn(b: Bool): Int32 => "
+      "{ return if b { 1 } else if b { b } else { 2 }; };"
     ),
     basedhlir::Compilation_failure
   );
@@ -484,6 +501,17 @@ TEST_CASE("compile - wrong argument count")
     compile_program(
       "let f = fn(x: Int32): Int32 => { return x; };"
       "let g = fn(): Int32 => { return f(1, 2); };"
+    ),
+    basedhlir::Compilation_failure
+  );
+}
+
+TEST_CASE("compile - non-bool if condition")
+{
+  CHECK_THROWS_AS(
+    compile_program(
+      "let f = fn(n: Int32): Int32 =>"
+      "{ return if n { 1 } else { 0 }; };"
     ),
     basedhlir::Compilation_failure
   );

@@ -2,6 +2,8 @@
 #define BASEDHLIR_COMPILE_H
 
 #include <memory>
+#include <optional>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -20,10 +22,17 @@
 namespace basedhlir
 {
 
+  struct Diagnostic_note
+  {
+    std::string message;
+    Source_span location;
+  };
+
   struct Diagnostic
   {
     std::string message;
     Source_span location;
+    std::vector<Diagnostic_note> notes;
   };
 
   class Compilation_failure: public std::exception
@@ -32,6 +41,18 @@ namespace basedhlir
     explicit Compilation_failure(std::vector<Diagnostic> diagnostics)
         : _diagnostics{std::move(diagnostics)}
     {
+      auto os = std::ostringstream{};
+      for (auto const &diag : _diagnostics)
+      {
+        os << diag.location.start.line << ':' << diag.location.start.column
+           << ": " << diag.message << '\n';
+        for (auto const &note : diag.notes)
+        {
+          os << note.location.start.line << ':' << note.location.start.column
+             << ": note: " << note.message << '\n';
+        }
+      }
+      _what = os.str();
     }
 
     std::vector<Diagnostic> const &diagnostics() const
@@ -41,15 +62,21 @@ namespace basedhlir
 
     char const *what() const noexcept override
     {
-      return "compilation failed";
+      return _what.c_str();
     }
 
   private:
     std::vector<Diagnostic> _diagnostics;
+    std::string _what;
   };
 
   struct Compilation_error
   {
+  };
+
+  struct Not_a_constant_error
+  {
+    std::optional<Source_span> expression_location;
   };
 
   class Compilation_context
@@ -85,34 +112,6 @@ namespace basedhlir
     bool is_type_compatible(Type *parameter_type, Type *argument_type);
 
     Type *compile_type_expression(basedparse::Expression const &expr);
-
-    Type *type_of_expression(basedparse::Expression const &expr);
-
-    Type *type_of_expression(basedparse::Int_literal_expression const &);
-
-    Type *type_of_expression(basedparse::Identifier_expression const &expr);
-
-    Type *type_of_expression(basedparse::Recurse_expression const &expr);
-
-    Type *type_of_expression(basedparse::Fn_expression const &expr);
-
-    Type *type_of_expression(basedparse::Paren_expression const &expr);
-
-    Type *type_of_expression(basedparse::Prefix_expression const &expr);
-
-    Type *type_of_expression(basedparse::Postfix_expression const &expr);
-
-    Type *type_of_expression(basedparse::Binary_expression const &expr);
-
-    Type *type_of_expression(basedparse::Call_expression const &expr);
-
-    Type *type_of_expression(basedparse::Prefix_bracket_expression const &expr);
-
-    Type *type_of_expression(basedparse::Index_expression const &expr);
-
-    Type *type_of_expression(basedparse::Block_expression const &expr);
-
-    Type *type_of_expression(basedparse::If_expression const &expr);
 
     Constant_value
     evaluate_constant_expression(basedparse::Expression const &expr);
@@ -153,7 +152,8 @@ namespace basedhlir
 
     Operand compile_expression(basedparse::Index_expression const &expr);
 
-    Operand compile_expression(basedparse::Prefix_bracket_expression const &expr);
+    Operand
+    compile_expression(basedparse::Prefix_bracket_expression const &expr);
 
     Operand compile_expression(basedparse::Block_expression const &expr);
 

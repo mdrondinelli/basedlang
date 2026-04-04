@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
+#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -157,6 +159,7 @@ namespace basedhlir
   struct Translation_unit
   {
     std::vector<std::unique_ptr<Function>> functions;
+    std::unordered_map<std::string, Function *> function_table;
     std::vector<std::unique_ptr<Unary_operator_overload>> unary_overloads;
     std::vector<std::unique_ptr<Binary_operator_overload>> binary_overloads;
   };

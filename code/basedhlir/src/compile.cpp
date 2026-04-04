@@ -615,6 +615,8 @@ namespace basedhlir
     _symbol_table.declare_value("Int32", Type_value{_type_pool->int32_type()});
     _symbol_table.declare_value("Bool", Type_value{_type_pool->bool_type()});
     _symbol_table.declare_value("Void", Type_value{_type_pool->void_type()});
+    _symbol_table.declare_value("true", true);
+    _symbol_table.declare_value("false", false);
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
       std::make_unique<Int32_unary_plus>(_type_pool)
     );
@@ -743,6 +745,7 @@ namespace basedhlir
       Diagnostic{
         .message = std::move(message),
         .location = location,
+        .notes = {},
       }
     );
     throw Compilation_error{};
@@ -845,277 +848,46 @@ namespace basedhlir
     basedparse::Expression const &expr
   )
   {
-    auto const type = type_of_expression(expr);
-    if (type != _type_pool->type_type())
+    auto const value = evaluate_constant_expression(expr);
+    auto const tv = std::get_if<Type_value>(&value);
+    if (tv == nullptr)
     {
       emit_error("expected a type expression", expr);
     }
-    return std::get<Type_value>(evaluate_constant_expression(expr)).type;
-  }
-
-  Type *
-  Compilation_context::type_of_expression(basedparse::Expression const &expr)
-  {
-    return std::visit(
-      [&](auto const &e) -> Type *
-      {
-        return type_of_expression(e);
-      },
-      expr.value
-    );
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Int_literal_expression const &
-  )
-  {
-    return _type_pool->int32_type();
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Identifier_expression const &expr
-  )
-  {
-    auto const sym = lookup_identifier(expr.identifier);
-    auto const ob = std::get_if<Object_binding>(&sym->data);
-    if (ob != nullptr)
-    {
-      return ob->type;
-    }
-    auto const cv = std::get_if<Constant_value>(&sym->data);
-    if (cv != nullptr)
-    {
-      return type_of_constant(*cv);
-    }
-    emit_error(
-      std::format("'{}' is not a value", expr.identifier.text),
-      expr.identifier
-    );
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Recurse_expression const &expr
-  )
-  {
-    if (is_top_level())
-    {
-      emit_error("'recurse' used outside of a function body", expr.kw_recurse);
-    }
-    return type_of_constant(Function_value{.function = _current_function});
-  }
-
-  Type *
-  Compilation_context::type_of_expression(basedparse::Fn_expression const &expr)
-  {
-    auto parameter_types = std::vector<Type *>{};
-    for (auto const &param : expr.parameters)
-    {
-      parameter_types.push_back(compile_type_expression(*param.type));
-    }
-    if (!expr.return_type_specifier.has_value())
-    {
-      throw std::runtime_error{"return type deduction not yet supported"};
-    }
-    auto const return_type =
-      compile_type_expression(*expr.return_type_specifier->type);
-    return _type_pool->function_type(std::move(parameter_types), return_type);
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Paren_expression const &expr
-  )
-  {
-    return type_of_expression(*expr.inner);
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Prefix_expression const &expr
-  )
-  {
-    auto const op = basedparse::get_prefix_operator(expr.op.token);
-    assert(op.has_value());
-    auto const operand_type = type_of_expression(*expr.operand);
-    auto const overload = find_unary_overload(*op, operand_type);
-    if (overload != nullptr)
-    {
-      return overload->result_type(operand_type);
-    }
-    emit_error(
-      std::format(
-        "no matching overload for prefix operator '{}'",
-        expr.op.text
-      ),
-      expr.op
-    );
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Postfix_expression const &expr
-  )
-  {
-    auto const op = basedparse::get_postfix_operator(expr.op.token);
-    assert(op.has_value());
-    auto const operand_type = type_of_expression(*expr.operand);
-    auto const overload = find_unary_overload(*op, operand_type);
-    if (overload != nullptr)
-    {
-      return overload->result_type(operand_type);
-    }
-    emit_error(
-      std::format(
-        "no matching overload for postfix operator '{}'",
-        expr.op.text
-      ),
-      expr.op
-    );
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Binary_expression const &expr
-  )
-  {
-    auto const op = basedparse::get_binary_operator(expr.op.token);
-    assert(op.has_value());
-    auto const lhs_type = type_of_expression(*expr.left);
-    auto const rhs_type = type_of_expression(*expr.right);
-    auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
-    if (overload != nullptr)
-    {
-      return overload->result_type();
-    }
-    emit_error(
-      std::format(
-        "no matching overload for binary operator '{}'",
-        expr.op.text
-      ),
-      expr.op
-    );
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Call_expression const &expr
-  )
-  {
-    auto const callee_type = type_of_expression(*expr.callee);
-    auto const ft = std::get_if<Function_type>(&callee_type->data);
-    if (ft == nullptr)
-    {
-      emit_error("expression is not callable", expr.lparen);
-    }
-    if (expr.arguments.size() != ft->parameter_types.size())
-    {
-      emit_error(
-        std::format(
-          "expected {} arguments, got {}",
-          ft->parameter_types.size(),
-          expr.arguments.size()
-        ),
-        expr.lparen
-      );
-    }
-    for (auto i = std::size_t{}; i < expr.arguments.size(); ++i)
-    {
-      auto const arg_type = type_of_expression(expr.arguments[i]);
-      if (!is_type_compatible(ft->parameter_types[i], arg_type))
-      {
-        emit_error(
-          std::format(
-            "argument {} is not compatible with parameter type",
-            i + 1
-          ),
-          expr.arguments[i]
-        );
-      }
-    }
-    return ft->return_type;
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Prefix_bracket_expression const &
-  )
-  {
-    return _type_pool->type_type();
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Index_expression const &expr
-  )
-  {
-    auto const operand_type = type_of_expression(*expr.operand);
-    auto const sa = std::get_if<Sized_array_type>(&operand_type->data);
-    if (sa != nullptr)
-    {
-      return sa->element;
-    }
-    auto const ua = std::get_if<Unsized_array_type>(&operand_type->data);
-    if (ua != nullptr)
-    {
-      return ua->element;
-    }
-    emit_error("expression is not indexable", expr.lbracket);
-  }
-
-  Type *Compilation_context::type_of_expression(
-    basedparse::Block_expression const &expr
-  )
-  {
-    if (!expr.tail)
-    {
-      return _type_pool->void_type();
-    }
-    _symbol_table.push_scope();
-    // TODO: handle inner function definitions
-    for (auto const &stmt : expr.statements)
-    {
-      auto const let = std::get_if<basedparse::Let_statement>(&stmt.value);
-      if (let != nullptr)
-      {
-        auto const type = type_of_expression(let->initializer);
-        _symbol_table
-          .declare_object(let->name.text, type, let->kw_mut.has_value());
-      }
-    }
-    auto const result = type_of_expression(*expr.tail);
-    _symbol_table.pop_scope();
-    return result;
-  }
-
-  // TODO: consider what to do when branch types differ only in mutability
-  Type *
-  Compilation_context::type_of_expression(basedparse::If_expression const &expr)
-  {
-    if (!expr.else_part.has_value())
-    {
-      return _type_pool->void_type();
-    }
-    auto const then_type = type_of_expression(expr.then_block);
-    for (auto const &else_if : expr.else_if_parts)
-    {
-      auto const else_if_type = type_of_expression(else_if.body);
-      if (else_if_type != then_type)
-      {
-        emit_error(
-          "else-if branch type does not match then branch type",
-          else_if.body.lbrace
-        );
-      }
-    }
-    auto const else_type = type_of_expression(expr.else_part->body);
-    if (else_type != then_type)
-    {
-      emit_error(
-        "else branch type does not match then branch type",
-        expr.else_part->body.lbrace
-      );
-    }
-    return then_type;
+    return tv->type;
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
     basedparse::Expression const &expr
   )
   {
-    auto const result = compile_expression(expr);
+    auto result = Operand{};
+    try
+    {
+      result = compile_expression(expr);
+    }
+    catch (Not_a_constant_error const &e)
+    {
+      _diagnostics.push_back(
+        Diagnostic{
+          .message = "expression is not a compile-time constant",
+          .location = e.expression_location.value_or(basedparse::span_of(expr)),
+          .notes = {},
+        }
+      );
+      throw Compilation_error{};
+    }
+    catch (Fuel_exhausted_error const &)
+    {
+      _diagnostics.push_back(
+        Diagnostic{
+          .message = "compile-time evaluation ran out of fuel",
+          .location = basedparse::span_of(expr),
+          .notes = {},
+        }
+      );
+      throw Compilation_error{};
+    }
     auto const cv = std::get_if<Constant_value>(&result);
     if (cv == nullptr)
     {
@@ -1145,7 +917,10 @@ namespace basedhlir
 
   Register Compilation_context::allocate_register(Type *type)
   {
-    assert(_current_function != nullptr);
+    if (_current_function == nullptr)
+    {
+      throw Not_a_constant_error{};
+    }
     auto const reg = Register{_current_function->register_count++};
     _register_types.push_back(type);
     return reg;
@@ -1168,14 +943,20 @@ namespace basedhlir
 
   void Compilation_context::emit(Instruction instruction)
   {
-    assert(_current_block != nullptr);
+    if (_current_block == nullptr)
+    {
+      throw Not_a_constant_error{};
+    }
     assert(!_current_block->has_terminator());
     _current_block->instructions.push_back(std::move(instruction));
   }
 
   void Compilation_context::emit(Terminator terminator)
   {
-    assert(_current_block != nullptr);
+    if (_current_block == nullptr)
+    {
+      throw Not_a_constant_error{};
+    }
     assert(!_current_block->has_terminator());
     _current_block->terminator = std::move(terminator);
   }
@@ -1183,20 +964,31 @@ namespace basedhlir
   Operand
   Compilation_context::compile_expression(basedparse::Expression const &expr)
   {
-    auto const result = std::visit(
-      [this](auto const &e) -> Operand
-      {
-        return compile_expression(e);
-      },
-      expr.value
-    );
-    if (_current_block != nullptr)
+    try
     {
-      // Postcondition: compiling an expression should not leave the current
-      // block in a terminated state
-      assert(!_current_block->has_terminator());
+      auto const result = std::visit(
+        [this](auto const &e) -> Operand
+        {
+          return compile_expression(e);
+        },
+        expr.value
+      );
+      if (_current_block != nullptr)
+      {
+        // Postcondition: compiling an expression should not leave the current
+        // block in a terminated state
+        assert(!_current_block->has_terminator());
+      }
+      return result;
     }
-    return result;
+    catch (Not_a_constant_error &e)
+    {
+      if (!e.expression_location.has_value())
+      {
+        e.expression_location = basedparse::span_of(expr);
+      }
+      throw;
+    }
   }
 
   Operand Compilation_context::compile_expression(
@@ -1448,6 +1240,11 @@ namespace basedhlir
   Compilation_context::compile_expression(basedparse::If_expression const &expr)
   {
     auto const cond_result = compile_expression(*expr.condition);
+    auto const cond_type = type_of_operand(cond_result);
+    if (cond_type != _type_pool->bool_type())
+    {
+      emit_error("condition must be a Bool", *expr.condition);
+    }
     // Constant condition folding
     auto const cond_cv = std::get_if<Constant_value>(&cond_result);
     if (cond_cv != nullptr && std::get<bool>(*cond_cv))
@@ -1598,28 +1395,73 @@ namespace basedhlir
   )
   {
     auto const is_mutable = stmt.kw_mut.has_value();
-    auto const type = type_of_expression(stmt.initializer);
+    if (is_mutable && is_top_level())
+    {
+      emit_error("top-level bindings cannot be mutable", *stmt.kw_mut);
+    }
+    auto result = Operand{};
+    try
+    {
+      result = compile_expression(stmt.initializer);
+    }
+    catch (Not_a_constant_error const &e)
+    {
+      _diagnostics.push_back(
+        Diagnostic{
+          .message = "expression is not a compile-time constant",
+          .location = e.expression_location.value_or(
+            basedparse::span_of(stmt.initializer)
+          ),
+          .notes = {Diagnostic_note{
+            .message = "required by this top-level binding",
+            .location = basedparse::span_of(stmt),
+          }},
+        }
+      );
+      throw Compilation_error{};
+    }
+    catch (Fuel_exhausted_error const &)
+    {
+      _diagnostics.push_back(
+        Diagnostic{
+          .message = "compile-time evaluation ran out of fuel",
+          .location = basedparse::span_of(stmt.initializer),
+          .notes = {Diagnostic_note{
+            .message = "required by this top-level binding",
+            .location = basedparse::span_of(stmt),
+          }},
+        }
+      );
+      throw Compilation_error{};
+    }
+    auto const type = type_of_operand(result);
     auto const is_object = is_object_type(type);
     if (is_mutable && !is_object)
     {
       emit_error("mutable binding requires an object type", *stmt.kw_mut);
     }
-    if (is_mutable && is_top_level())
-    {
-      emit_error("top-level bindings cannot be mutable", *stmt.kw_mut);
-    }
-    auto const result = compile_expression(stmt.initializer);
     if (is_top_level() || !is_object)
     {
       auto const cv = std::get_if<Constant_value>(&result);
       if (cv == nullptr)
       {
-        emit_error(
-          "expression is not a compile-time constant",
-          stmt.initializer
+        _diagnostics.push_back(
+          Diagnostic{
+            .message = "expression is not a compile-time constant",
+            .location = basedparse::span_of(stmt.initializer),
+            .notes = {Diagnostic_note{
+              .message = "required by this top-level binding",
+              .location = basedparse::span_of(stmt),
+            }},
+          }
         );
+        throw Compilation_error{};
       }
       _symbol_table.declare_value(stmt.name.text, *cv);
+      if (auto const fv = std::get_if<Function_value>(cv))
+      {
+        _translation_unit.function_table[stmt.name.text] = fv->function;
+      }
     }
     else if (is_mutable)
     {
@@ -1654,6 +1496,16 @@ namespace basedhlir
   )
   {
     auto const result = compile_expression(stmt.value);
+    auto const result_type = type_of_operand(result);
+    auto const return_type =
+      std::get<Function_type>(_current_function->type->data).return_type;
+    if (!is_type_compatible(return_type, result_type))
+    {
+      emit_error(
+        "return value type does not match function return type",
+        stmt.value
+      );
+    }
     emit(Terminator{Return_terminator{.value = result}});
     // Start a new (dead) block for any subsequent code
     set_current_block(new_block());
@@ -1669,7 +1521,19 @@ namespace basedhlir
   Function *
   Compilation_context::compile_function(basedparse::Fn_expression const &expr)
   {
-    auto const fn_type = type_of_expression(expr);
+    auto parameter_types = std::vector<Type *>{};
+    for (auto const &param : expr.parameters)
+    {
+      parameter_types.push_back(compile_type_expression(*param.type));
+    }
+    if (!expr.return_type_specifier.has_value())
+    {
+      throw std::runtime_error{"return type deduction not yet supported"};
+    }
+    auto const return_type =
+      compile_type_expression(*expr.return_type_specifier->type);
+    auto const fn_type =
+      _type_pool->function_type(std::move(parameter_types), return_type);
     auto const ft = std::get<Function_type>(fn_type->data);
     auto func = std::make_unique<Function>(Function{
       .type = fn_type,
@@ -1699,6 +1563,12 @@ namespace basedhlir
     }
     // Compile the body
     auto const body_result = compile_expression(*expr.body);
+    auto const body_type = type_of_operand(body_result);
+    if (body_type != _type_pool->void_type() &&
+        !is_type_compatible(ft.return_type, body_type))
+    {
+      emit_error("body type does not match return type", *expr.body);
+    }
     emit(Terminator{Return_terminator{.value = body_result}});
     _symbol_table.pop_scope();
     for (auto const &block : func_ptr->blocks)

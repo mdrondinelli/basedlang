@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstdint>
 #include <format>
+#include <limits>
 #include <memory>
 #include <utility>
 #include <variant>
@@ -995,9 +996,14 @@ namespace basedhlir
     basedparse::Int_literal_expression const &expr
   )
   {
-    return Constant_value{
-      static_cast<std::int32_t>(std::stoi(expr.literal.text))
-    };
+    auto const value = parse_int_literal(expr.literal.text);
+    if (!value.has_value() ||
+        *value >
+          static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()))
+    {
+      emit_error("integer literal is out of range for Int32", expr.literal);
+    }
+    return Constant_value{static_cast<std::int32_t>(*value)};
   }
 
   Operand Compilation_context::compile_expression(
@@ -1043,25 +1049,51 @@ namespace basedhlir
     basedparse::Prefix_expression const &expr
   )
   {
-    auto const operand_result = compile_expression(*expr.operand);
     auto const op = basedparse::get_prefix_operator(expr.op.token);
     assert(op.has_value());
-    auto const operand_type = type_of_operand(operand_result);
-    auto const overload = find_unary_overload(*op, operand_type);
-    assert(overload != nullptr);
-    if (auto const cv = std::get_if<Constant_value>(&operand_result))
+    // Special case: unary minus before int literal expression
+    if (*op == basedparse::Operator::unary_minus &&
+        std::holds_alternative<basedparse::Int_literal_expression>(
+          expr.operand->value
+        ))
     {
-      return overload->evaluate(*cv);
+      auto const &literal =
+        std::get<basedparse::Int_literal_expression>(expr.operand->value);
+      auto const value = parse_int_literal(literal.literal.text);
+      if (!value.has_value() || *value > int32_max_magnitude)
+      {
+        emit_error(
+          "integer literal is out of range for Int32",
+          literal.literal
+        );
+      }
+      return Constant_value{
+        *value < int32_max_magnitude ? -static_cast<std::int32_t>(*value)
+                                     : std::numeric_limits<std::int32_t>::min()
+      };
     }
-    auto const result = allocate_register(overload->result_type(operand_type));
-    emit(
-      Instruction{Unary_instruction{
-        .result = result,
-        .overload = overload,
-        .operand = operand_result,
-      }}
-    );
-    return result;
+    // General case
+    else
+    {
+      auto const operand_result = compile_expression(*expr.operand);
+      auto const operand_type = type_of_operand(operand_result);
+      auto const overload = find_unary_overload(*op, operand_type);
+      assert(overload != nullptr);
+      if (auto const cv = std::get_if<Constant_value>(&operand_result))
+      {
+        return overload->evaluate(*cv);
+      }
+      auto const result =
+        allocate_register(overload->result_type(operand_type));
+      emit(
+        Instruction{Unary_instruction{
+          .result = result,
+          .overload = overload,
+          .operand = operand_result,
+        }}
+      );
+      return result;
+    }
   }
 
   Operand Compilation_context::compile_expression(
@@ -1579,6 +1611,22 @@ namespace basedhlir
   {
     auto ctx = Compilation_context{type_pool};
     return ctx.compile(ast);
+  }
+
+  std::optional<std::uint64_t> parse_int_literal(std::string_view digits)
+  {
+    auto value = std::uint64_t{0};
+    for (auto const ch : digits)
+    {
+      assert(ch >= '0' && ch <= '9');
+      auto const digit = static_cast<std::uint64_t>(ch - '0');
+      if (value > (std::numeric_limits<std::uint64_t>::max() - digit) / 10u)
+      {
+        return std::nullopt;
+      }
+      value = value * 10u + digit;
+    }
+    return value;
   }
 
 } // namespace basedhlir

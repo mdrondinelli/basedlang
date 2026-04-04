@@ -1,4 +1,5 @@
 #include <array>
+#include <limits>
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
@@ -58,6 +59,20 @@ struct Compile_fixture
   Compile_fixture &operator=(Compile_fixture const &other) = delete;
 };
 
+TEST_CASE("parse_int_literal")
+{
+  auto const value = basedhlir::parse_int_literal("42");
+  REQUIRE(value.has_value());
+  CHECK(*value == 42);
+}
+
+TEST_CASE("parse_int_literal - uint64 overflow")
+{
+  CHECK_FALSE(
+    basedhlir::parse_int_literal("18446744073709551616").has_value()
+  );
+}
+
 TEST_CASE("evaluate_constant_expression - integer literal")
 {
   auto parse_fixture = Parse_fixture{"1"};
@@ -68,6 +83,30 @@ TEST_CASE("evaluate_constant_expression - integer literal")
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == 1);
+}
+
+TEST_CASE("evaluate_constant_expression - integer literal above int32 max")
+{
+  auto parse_fixture = Parse_fixture{"2147483648"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+
+  CHECK_THROWS_AS(
+    compile_fixture.compiler.evaluate_constant_expression(*expr),
+    basedhlir::Compilation_error
+  );
+}
+
+TEST_CASE("evaluate_constant_expression - unary minus allows int32 minimum")
+{
+  auto parse_fixture = Parse_fixture{"-2147483648"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<int32_t>(value));
+  CHECK(std::get<int32_t>(value) == std::numeric_limits<std::int32_t>::min());
 }
 
 TEST_CASE("evaluate_constant_expression - integer arithmetic")
@@ -548,6 +587,22 @@ TEST_CASE("compile - top-level mutable binding")
 {
   CHECK_THROWS_AS(
     compile_program("let mut x = 1;"),
+    basedhlir::Compilation_failure
+  );
+}
+
+TEST_CASE("compile - positive integer literal above int32 max")
+{
+  CHECK_THROWS_AS(
+    compile_program("let f = fn(): Int32 => { return 2147483648; };"),
+    basedhlir::Compilation_failure
+  );
+}
+
+TEST_CASE("compile - unary minus integer literal below int32 min")
+{
+  CHECK_THROWS_AS(
+    compile_program("let f = fn(): Int32 => { return -2147483649; };"),
     basedhlir::Compilation_failure
   );
 }

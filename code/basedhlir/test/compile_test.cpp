@@ -280,12 +280,12 @@ compile_program(std::string source)
 
 TEST_CASE("compile - function returning literal")
 {
-  auto const [types, tu] = compile_program("let f = fn(): Int32 => { return 0; };");
+  auto const [types, tu] =
+    compile_program("let f = fn(): Int32 => { return 0; };");
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
   REQUIRE(!f.blocks.empty());
   CHECK(f.blocks[0]->parameters.empty());
-  CHECK(f.register_count > 0);
   auto const result = basedhlir::interpret(f, {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 0);
@@ -398,8 +398,7 @@ TEST_CASE("compile - recursive function")
     "else { recurse(n - 1) + recurse(n - 2) }; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const args =
-    std::array<basedhlir::Constant_value, 1>{std::int32_t{10}};
+  auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{10}};
   auto const result = basedhlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 55);
@@ -450,9 +449,7 @@ TEST_CASE("compile - pure expression body")
 TEST_CASE("compile - return type mismatch")
 {
   CHECK_THROWS_AS(
-    compile_program(
-      "let f = fn(): Int32 => { return true; };"
-    ),
+    compile_program("let f = fn(): Int32 => { return true; };"),
     basedhlir::Compilation_failure
   );
 }
@@ -505,9 +502,7 @@ TEST_CASE("compile - wrong argument type")
 TEST_CASE("compile - calling non-callable")
 {
   CHECK_THROWS_AS(
-    compile_program(
-      "let f = fn(): Int32 => { return 3(); };"
-    ),
+    compile_program("let f = fn(): Int32 => { return 3(); };"),
     basedhlir::Compilation_failure
   );
 }
@@ -515,9 +510,7 @@ TEST_CASE("compile - calling non-callable")
 TEST_CASE("compile - undefined identifier")
 {
   CHECK_THROWS_AS(
-    compile_program(
-      "let f = fn(): Int32 => { return x; };"
-    ),
+    compile_program("let f = fn(): Int32 => { return x; };"),
     basedhlir::Compilation_failure
   );
 }
@@ -534,9 +527,8 @@ TEST_CASE("compile - top-level mutable binding")
 
 TEST_CASE("compile - void if expression")
 {
-  auto const [types, tu] = compile_program(
-    "let f = fn(x: Int32): Void => { if x < 0 { 0 - x; }; };"
-  );
+  auto const [types, tu] =
+    compile_program("let f = fn(x: Int32): Void => { if x < 0 { 0 - x; }; };");
   REQUIRE(tu.functions.size() == 1);
   auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{-5}};
   auto const result = basedhlir::interpret(*tu.functions[0], args);
@@ -545,9 +537,8 @@ TEST_CASE("compile - void if expression")
 
 TEST_CASE("compile - early return")
 {
-  auto const [types, tu] = compile_program(
-    "let f = fn(x: Int32): Int32 => { return 1; return 2; };"
-  );
+  auto const [types, tu] =
+    compile_program("let f = fn(x: Int32): Int32 => { return 1; return 2; };");
   REQUIRE(tu.functions.size() == 1);
   auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{0}};
   auto const result = basedhlir::interpret(*tu.functions[0], args);
@@ -581,8 +572,10 @@ TEST_CASE("compile - nested if expressions")
   );
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
-  auto const args1 =
-    std::array<basedhlir::Constant_value, 2>{std::int32_t{-1}, std::int32_t{-1}};
+  auto const args1 = std::array<basedhlir::Constant_value, 2>{
+    std::int32_t{-1},
+    std::int32_t{-1}
+  };
   CHECK(std::get<std::int32_t>(basedhlir::interpret(f, args1)) == 1);
   auto const args2 =
     std::array<basedhlir::Constant_value, 2>{std::int32_t{-1}, std::int32_t{1}};
@@ -624,9 +617,8 @@ TEST_CASE("compile - block scoping")
 
 TEST_CASE("compile - expression statement")
 {
-  auto const [types, tu] = compile_program(
-    "let f = fn(x: Int32): Int32 => { 0 - x; return x; };"
-  );
+  auto const [types, tu] =
+    compile_program("let f = fn(x: Int32): Int32 => { 0 - x; return x; };");
   REQUIRE(tu.functions.size() == 1);
   auto const args = std::array<basedhlir::Constant_value, 1>{std::int32_t{42}};
   auto const result = basedhlir::interpret(*tu.functions[0], args);

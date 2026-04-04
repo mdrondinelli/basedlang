@@ -1449,6 +1449,8 @@ namespace basedhlir
   {
     auto const cond_result = compile_expression(*expr.condition);
     // Constant condition folding
+    // TODO: When mutation/side effects are added, untaken branches can no
+    // longer be skipped — their side effects must still be evaluated.
     if (auto const cond_cv = std::get_if<Constant_value>(&cond_result))
     {
       if (!expr.else_part.has_value())
@@ -1513,7 +1515,7 @@ namespace basedhlir
     // Compile then block
     set_current_block(then_block);
     auto const then_result = compile_expression(expr.then_block);
-    auto const then_type = type_of_expression(expr.then_block);
+    auto const then_type = type_of_operand(then_result);
     auto const merge_param = [&]() -> Register
     {
       if (then_type == _type_pool->void_type())
@@ -1566,7 +1568,7 @@ namespace basedhlir
       );
       set_current_block(ei_then);
       auto const ei_result = compile_expression(part.body);
-      auto const ei_type = type_of_expression(part.body);
+      auto const ei_type = type_of_operand(ei_result);
       if (ei_type != then_type)
       {
         emit_error(
@@ -1582,7 +1584,7 @@ namespace basedhlir
     {
       set_current_block(current_else_block);
       auto const else_result = compile_expression(expr.else_part->body);
-      auto const else_type = type_of_expression(expr.else_part->body);
+      auto const else_type = type_of_operand(else_result);
       if (else_type != then_type)
       {
         emit_error(

@@ -1183,6 +1183,8 @@ namespace basedhlir
     );
     if (_current_block != nullptr)
     {
+      // Postcondition: compiling an expression should not leave the current
+      // block in a terminated state
       assert(!_current_block->has_terminator());
     }
     return result;
@@ -1424,9 +1426,8 @@ namespace basedhlir
     {
       compile_statement(stmt);
     }
-    auto const result =
-      expr.tail ? compile_expression(*expr.tail)
-                : Operand{Constant_value{Void_value{}}};
+    auto const result = expr.tail ? compile_expression(*expr.tail)
+                                  : Operand{Constant_value{Void_value{}}};
     _symbol_table.pop_scope();
     return result;
   }
@@ -1516,8 +1517,8 @@ namespace basedhlir
       emit(
         Terminator{Jump_terminator{
           .target = merge_block,
-          .arguments = merge_param ? std::vector<Operand>{result}
-                                   : std::vector<Operand>{},
+          .arguments =
+            merge_param ? std::vector<Operand>{result} : std::vector<Operand>{},
         }}
       );
     };

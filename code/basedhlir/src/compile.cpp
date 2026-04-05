@@ -507,7 +507,7 @@ namespace basedhlir
 
     Operand compile(Compilation_context &, Operand) const override
     {
-      std::abort();
+      throw std::runtime_error{"dereference is not implemented"};
     }
   };
 

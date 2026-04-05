@@ -36,10 +36,16 @@ add_library(basedhlir
 target_include_directories(basedhlir PUBLIC code/basedhlir/include)
 target_link_libraries(basedhlir PUBLIC basedparse)
 
+add_library(basedcli
+  code/based/run.cpp
+)
+target_include_directories(basedcli PUBLIC code/based)
+target_link_libraries(basedcli PUBLIC basedhlir)
+
 add_executable(based
   code/based/main.cpp
 )
-target_link_libraries(based PRIVATE basedhlir)
+target_link_libraries(based PRIVATE basedcli)
 
 add_executable(basedlex-tests
   code/basedlex/test/lexeme_stream_test.cpp
@@ -62,3 +68,8 @@ add_executable(basedhlir-tests
 )
 target_link_libraries(basedhlir-tests PRIVATE basedhlir Catch2::Catch2WithMain)
 target_compile_definitions(basedhlir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+
+add_executable(based-tests
+  code/based/test/run_test.cpp
+)
+target_link_libraries(based-tests PRIVATE basedcli Catch2::Catch2WithMain)

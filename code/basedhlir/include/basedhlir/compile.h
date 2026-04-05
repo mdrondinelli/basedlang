@@ -2,13 +2,13 @@
 #define BASEDHLIR_COMPILE_H
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <variant>
 #include <vector>
 
 #include <basedparse/ast.h>

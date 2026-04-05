@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.22)
 project(basedlang CXX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 add_subdirectory(extern/Catch2-3.13.0)
+add_subdirectory(extern/fmt)
 
 add_library(basedlex
   code/basedlex/src/char_stream_reader.cpp
@@ -34,7 +35,7 @@ add_library(basedhlir
   code/basedhlir/src/type.cpp
 )
 target_include_directories(basedhlir PUBLIC code/basedhlir/include)
-target_link_libraries(basedhlir PUBLIC basedparse)
+target_link_libraries(basedhlir PUBLIC basedparse fmt)
 
 add_library(basedcli
   code/based/run.cpp

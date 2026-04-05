@@ -1,7 +1,6 @@
 #include <concepts>
 #include <cassert>
 #include <cstdint>
-#include <format>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -9,6 +8,7 @@
 #include <vector>
 
 #include <basedparse/source_span.h>
+#include <fmt/format.h>
 
 #include "basedhlir/compile.h"
 #include "basedhlir/interpret.h"
@@ -653,7 +653,7 @@ namespace basedhlir
     if (sym == nullptr)
     {
       emit_error(
-        std::format("undefined identifier: {}", identifier.text),
+        fmt::format("undefined identifier: {}", identifier.text),
         identifier
       );
     }
@@ -1014,7 +1014,7 @@ namespace basedhlir
     if (expr.arguments.size() != ft->parameter_types.size())
     {
       emit_error(
-        std::format(
+        fmt::format(
           "expected {} arguments, got {}",
           ft->parameter_types.size(),
           expr.arguments.size()
@@ -1032,7 +1032,7 @@ namespace basedhlir
       if (!is_type_compatible(ft->parameter_types[i], arg_type))
       {
         emit_error(
-          std::format(
+          fmt::format(
             "argument {} is not compatible with parameter type",
             i + 1
           ),

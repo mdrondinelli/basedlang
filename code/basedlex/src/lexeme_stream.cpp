@@ -344,15 +344,21 @@ namespace basedlex
           }
           if (p && *p == 'i')
           {
-            while (auto const pc = _reader.peek())
+            auto suffix_digit_count = 0;
+            for (;;)
             {
-              if (*pc > 0x7F || !std::isalnum((int) *pc))
+              auto const suffix_peek = _reader.peek();
+              if (!suffix_peek || *suffix_peek > 0x7F ||
+                  !std::isdigit((int) *suffix_peek))
               {
                 break;
               }
-              text += (char) *pc;
-              _reader.read();
+              text += (char) *_reader.read();
               ++_location.column;
+            }
+            if (suffix_digit_count == 0)
+            {
+              throw Lex_error{token_location};
             }
           }
           return Lexeme{

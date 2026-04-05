@@ -1,6 +1,5 @@
 # TODO
 
-* [code/basedhlir/include/basedhlir/interpret.h](/home/marlon/repos/basedlang/code/basedhlir/include/basedhlir/interpret.h#L14): use `std::exception` as the base class for `Fuel_exhausted_error`.
 * Revise compiled HLIR / interpreter not to depend on `Binary_operator_overload`, `Unary_operator_overload`
   * Instructions should carry the information of how to execute them some other way.
   * Might need separate instructions for each math op.

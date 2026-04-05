@@ -1,5 +1,5 @@
-#include <concepts>
 #include <cassert>
+#include <concepts>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -40,7 +40,12 @@ namespace basedhlir
     T _previous;
   };
 
-  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
+  template <
+    typename OperandT,
+    typename ResultT,
+    typename InstructionT,
+    typename Fn
+  >
   Operand compile_unary_operation(
     Compilation_context &ctx,
     Operand operand,
@@ -48,7 +53,9 @@ namespace basedhlir
     Fn const &fn
   )
   {
-    static_assert(std::same_as<std::invoke_result_t<Fn const &, OperandT>, ResultT>);
+    static_assert(
+      std::same_as<std::invoke_result_t<Fn const &, OperandT>, ResultT>
+    );
 
     if (auto const cv = std::get_if<Constant_value>(&operand))
     {
@@ -67,7 +74,8 @@ namespace basedhlir
     typename RhsT,
     typename ResultT,
     typename InstructionT,
-    typename Fn>
+    typename Fn
+  >
   Operand compile_binary_operation(
     Compilation_context &ctx,
     Operand lhs,
@@ -119,7 +127,12 @@ namespace basedhlir
     }
   };
 
-  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
+  template <
+    typename OperandT,
+    typename ResultT,
+    typename InstructionT,
+    typename Fn
+  >
   class Simple_unary_operator_overload: public Unary_operator_overload
   {
   public:
@@ -160,7 +173,8 @@ namespace basedhlir
     typename RhsT,
     typename ResultT,
     typename InstructionT,
-    typename Fn>
+    typename Fn
+  >
   class Simple_binary_operator_overload: public Binary_operator_overload
   {
   public:
@@ -329,104 +343,119 @@ namespace basedhlir
     std::int32_t,
     std::int32_t,
     Int32_unary_plus_instruction,
-    Int32_unary_plus_fn>;
+    Int32_unary_plus_fn
+  >;
 
   using Int32_unary_minus = Simple_unary_operator_overload<
     std::int32_t,
     std::int32_t,
     Int32_unary_minus_instruction,
-    Int32_unary_minus_fn>;
+    Int32_unary_minus_fn
+  >;
 
   using Int32_add = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     std::int32_t,
     Int32_add_instruction,
-    Int32_add_fn>;
+    Int32_add_fn
+  >;
 
   using Int32_subtract = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     std::int32_t,
     Int32_subtract_instruction,
-    Int32_subtract_fn>;
+    Int32_subtract_fn
+  >;
 
   using Int32_multiply = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     std::int32_t,
     Int32_multiply_instruction,
-    Int32_multiply_fn>;
+    Int32_multiply_fn
+  >;
 
   using Int32_divide = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     std::int32_t,
     Int32_divide_instruction,
-    Int32_divide_fn>;
+    Int32_divide_fn
+  >;
 
   using Int32_modulo = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     std::int32_t,
     Int32_modulo_instruction,
-    Int32_modulo_fn>;
+    Int32_modulo_fn
+  >;
 
   using Int32_equal = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     bool,
     Int32_equal_instruction,
-    Int32_equal_fn>;
+    Int32_equal_fn
+  >;
 
   using Int32_not_equal = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     bool,
     Int32_not_equal_instruction,
-    Int32_not_equal_fn>;
+    Int32_not_equal_fn
+  >;
 
   using Int32_less = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     bool,
     Int32_less_instruction,
-    Int32_less_fn>;
+    Int32_less_fn
+  >;
 
   using Int32_less_eq = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     bool,
     Int32_less_eq_instruction,
-    Int32_less_eq_fn>;
+    Int32_less_eq_fn
+  >;
 
   using Int32_greater = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     bool,
     Int32_greater_instruction,
-    Int32_greater_fn>;
+    Int32_greater_fn
+  >;
 
   using Int32_greater_eq = Simple_binary_operator_overload<
     std::int32_t,
     std::int32_t,
     bool,
     Int32_greater_eq_instruction,
-    Int32_greater_eq_fn>;
+    Int32_greater_eq_fn
+  >;
 
   using Bool_equal = Simple_binary_operator_overload<
     bool,
     bool,
     bool,
     Bool_equal_instruction,
-    Bool_equal_fn>;
+    Bool_equal_fn
+  >;
 
   using Bool_not_equal = Simple_binary_operator_overload<
     bool,
     bool,
     bool,
     Bool_not_equal_instruction,
-    Bool_not_equal_fn>;
+    Bool_not_equal_fn
+  >;
 
   class Pointer_to final: public Unary_operator_overload
   {
@@ -602,9 +631,21 @@ namespace basedhlir
       [this](auto const &v) -> Type *
       {
         using T = std::decay_t<decltype(v)>;
-        if constexpr (std::is_same_v<T, std::int32_t>)
+        if constexpr (std::is_same_v<T, std::int8_t>)
+        {
+          return _type_pool->int8_type();
+        }
+        else if constexpr (std::is_same_v<T, std::int16_t>)
+        {
+          return _type_pool->int16_type();
+        }
+        else if constexpr (std::is_same_v<T, std::int32_t>)
         {
           return _type_pool->int32_type();
+        }
+        else if constexpr (std::is_same_v<T, std::int64_t>)
+        {
+          return _type_pool->int64_type();
         }
         else if constexpr (std::is_same_v<T, bool>)
         {

@@ -25,8 +25,16 @@ namespace basedhlir
     Function *function;
   };
 
-  using Constant_value =
-    std::variant<std::int32_t, bool, Void_value, Type_value, Function_value>;
+  using Constant_value = std::variant<
+    std::int8_t,
+    std::int16_t,
+    std::int32_t,
+    std::int64_t,
+    bool,
+    Void_value,
+    Type_value,
+    Function_value
+  >;
 
 } // namespace basedhlir
 

@@ -5,3 +5,4 @@
   * Might need separate instructions for each math op.
   * `Binary_operator_overload`, `Unary_operator_overload` base class APIs could be extended to have a `compile` function that emits the correct instruction(s) corresponding to the operation.
 * Implement sized integer literals and integer types other than `Int32`.
+* Handle lexing and parsing errors in `based` (interpreter)

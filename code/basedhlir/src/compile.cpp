@@ -1107,10 +1107,10 @@ namespace basedhlir
   )
   {
     auto const text = expr.literal.text;
-    auto const suffix_pos = text.find_first_not_of("0123456789");
-    auto const digits = text.substr(0, suffix_pos);
+    auto const suffix_pos = text.rfind('i');
     auto const suffix =
       suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
+    auto const digits = text.substr(0, suffix_pos);
     auto const value = parse_int_literal(digits);
     if (suffix == "i8")
     {
@@ -1215,10 +1215,10 @@ namespace basedhlir
       auto const &literal =
         std::get<basedparse::Int_literal_expression>(expr.operand->value);
       auto const text = literal.literal.text;
-      auto const suffix_pos = text.find_first_not_of("0123456789");
-      auto const digits = text.substr(0, suffix_pos);
+      auto const suffix_pos = text.rfind("i");
       auto const suffix =
         suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
+      auto const digits = text.substr(0, suffix_pos);
       auto const value = parse_int_literal(digits);
       if (suffix == "i8")
       {

@@ -58,7 +58,12 @@ namespace basedhlir
     return Operand{result};
   }
 
-  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
+  template <
+    typename LhsT,
+    typename RhsT,
+    typename ResultT,
+    typename InstructionT,
+    typename Fn>
   Operand compile_binary_operation(
     Compilation_context &ctx,
     Operand lhs,
@@ -72,7 +77,7 @@ namespace basedhlir
     if (lhs_cv != nullptr && rhs_cv != nullptr)
     {
       return Operand{Constant_value{static_cast<ResultT>(
-        fn(std::get<OperandT>(*lhs_cv), std::get<OperandT>(*rhs_cv))
+        fn(std::get<LhsT>(*lhs_cv), std::get<RhsT>(*rhs_cv))
       )}};
     }
     auto const result = ctx.allocate_register(result_type);
@@ -82,595 +87,318 @@ namespace basedhlir
     return Operand{result};
   }
 
-  class Int32_unary_plus final: public Unary_operator_overload
+  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
+  class Simple_unary_operator_overload: public Unary_operator_overload
   {
   public:
-    explicit Int32_unary_plus(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    Simple_unary_operator_overload(Type *operand_type, Type *result_type)
+        : _operand_type{operand_type},
+          _result_type{result_type}
     {
     }
 
     bool matches(Type *operand_type) const override
     {
-      return operand_type == _type;
+      return operand_type == _operand_type;
     }
 
     Type *result_type(Type *) const override
     {
-      return _type;
+      return _result_type;
     }
 
     Operand compile(Compilation_context &ctx, Operand operand) const override
     {
-      return compile_unary_operation<
-        std::int32_t,
-        std::int32_t,
-        Int32_unary_plus_instruction>(ctx, operand, _type, [](std::int32_t x)
-      {
-        return x;
-      });
+      return compile_unary_operation<OperandT, ResultT, InstructionT>(
+        ctx,
+        std::move(operand),
+        _result_type,
+        _fn
+      );
     }
 
   private:
-    Type *_type;
+    Type *_operand_type;
+    Type *_result_type;
+    [[no_unique_address]] Fn _fn;
   };
 
-  class Int32_unary_minus final: public Unary_operator_overload
+  template <
+    typename LhsT,
+    typename RhsT,
+    typename ResultT,
+    typename InstructionT,
+    typename Fn>
+  class Simple_binary_operator_overload: public Binary_operator_overload
   {
   public:
-    explicit Int32_unary_minus(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
-    {
-    }
-
-    bool matches(Type *operand_type) const override
-    {
-      return operand_type == _type;
-    }
-
-    Type *result_type(Type *) const override
-    {
-      return _type;
-    }
-
-    Operand compile(Compilation_context &ctx, Operand operand) const override
-    {
-      return compile_unary_operation<
-        std::int32_t,
-        std::int32_t,
-        Int32_unary_minus_instruction>(ctx, operand, _type, [](std::int32_t x)
-      {
-        return -x;
-      });
-    }
-
-  private:
-    Type *_type;
-  };
-
-  class Int32_add final: public Binary_operator_overload
-  {
-  public:
-    explicit Int32_add(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    Simple_binary_operator_overload(
+      Type *lhs_type,
+      Type *rhs_type,
+      Type *result_type
+    )
+        : _lhs_type{lhs_type},
+          _rhs_type{rhs_type},
+          _result_type{result_type}
     {
     }
 
     Type *lhs_type() const override
     {
-      return _type;
+      return _lhs_type;
     }
 
     Type *rhs_type() const override
     {
-      return _type;
+      return _rhs_type;
     }
 
     Type *result_type() const override
     {
-      return _type;
+      return _result_type;
     }
 
     Operand
     compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return compile_binary_operation<
-        std::int32_t,
-        std::int32_t,
-        Int32_add_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
-                                                         std::int32_t b)
-      {
-        return a + b;
-      });
+      return compile_binary_operation<LhsT, RhsT, ResultT, InstructionT>(
+        ctx,
+        std::move(lhs),
+        std::move(rhs),
+        _result_type,
+        _fn
+      );
     }
 
   private:
-    Type *_type;
+    Type *_lhs_type;
+    Type *_rhs_type;
+    Type *_result_type;
+    [[no_unique_address]] Fn _fn;
   };
 
-  class Int32_subtract final: public Binary_operator_overload
+  struct Int32_unary_plus_fn
   {
-  public:
-    explicit Int32_subtract(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    auto operator()(std::int32_t x) const -> std::int32_t
     {
+      return x;
     }
-
-    Type *lhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *result_type() const override
-    {
-      return _type;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        std::int32_t,
-        Int32_subtract_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
-                                                              std::int32_t b)
-      {
-        return a - b;
-      });
-    }
-
-  private:
-    Type *_type;
   };
 
-  class Int32_multiply final: public Binary_operator_overload
+  struct Int32_unary_minus_fn
   {
-  public:
-    explicit Int32_multiply(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    auto operator()(std::int32_t x) const -> std::int32_t
     {
+      return -x;
     }
-
-    Type *lhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *result_type() const override
-    {
-      return _type;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        std::int32_t,
-        Int32_multiply_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
-                                                              std::int32_t b)
-      {
-        return a * b;
-      });
-    }
-
-  private:
-    Type *_type;
   };
 
-  class Int32_divide final: public Binary_operator_overload
+  struct Int32_add_fn
   {
-  public:
-    explicit Int32_divide(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a + b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *result_type() const override
-    {
-      return _type;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        std::int32_t,
-        Int32_divide_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
-                                                            std::int32_t b)
-      {
-        return a / b;
-      });
-    }
-
-  private:
-    Type *_type;
   };
 
-  class Int32_modulo final: public Binary_operator_overload
+  struct Int32_subtract_fn
   {
-  public:
-    explicit Int32_modulo(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a - b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *result_type() const override
-    {
-      return _type;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        std::int32_t,
-        Int32_modulo_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
-                                                            std::int32_t b)
-      {
-        return a % b;
-      });
-    }
-
-  private:
-    Type *_type;
   };
 
-  class Int32_equal final: public Binary_operator_overload
+  struct Int32_multiply_fn
   {
-  public:
-    explicit Int32_equal(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a * b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        bool,
-        Int32_equal_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
-                                                           std::int32_t b)
-      {
-        return a == b;
-      });
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_not_equal final: public Binary_operator_overload
+  struct Int32_divide_fn
   {
-  public:
-    explicit Int32_not_equal(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a / b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        bool,
-        Int32_not_equal_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
-                                                               std::int32_t b)
-      {
-        return a != b;
-      });
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_less final: public Binary_operator_overload
+  struct Int32_modulo_fn
   {
-  public:
-    explicit Int32_less(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a % b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        bool,
-        Int32_less_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
-                                                          std::int32_t b)
-      {
-        return a < b;
-      });
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_less_eq final: public Binary_operator_overload
+  struct Int32_equal_fn
   {
-  public:
-    explicit Int32_less_eq(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a == b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        bool,
-        Int32_less_eq_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
-                                                             std::int32_t b)
-      {
-        return a <= b;
-      });
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_greater final: public Binary_operator_overload
+  struct Int32_not_equal_fn
   {
-  public:
-    explicit Int32_greater(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a != b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        bool,
-        Int32_greater_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
-                                                             std::int32_t b)
-      {
-        return a > b;
-      });
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_greater_eq final: public Binary_operator_overload
+  struct Int32_less_fn
   {
-  public:
-    explicit Int32_greater_eq(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a < b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        std::int32_t,
-        bool,
-        Int32_greater_eq_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
-                                                                std::int32_t b)
-      {
-        return a >= b;
-      });
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Bool_equal final: public Binary_operator_overload
+  struct Int32_less_eq_fn
   {
-  public:
-    explicit Bool_equal(Type_pool *type_pool)
-        : _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a <= b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _bool;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _bool;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        bool,
-        bool,
-        Bool_equal_instruction>(ctx, lhs, rhs, _bool, [](bool a, bool b)
-      {
-        return a == b;
-      });
-    }
-
-  private:
-    Type *_bool;
   };
 
-  class Bool_not_equal final: public Binary_operator_overload
+  struct Int32_greater_fn
   {
-  public:
-    explicit Bool_not_equal(Type_pool *type_pool)
-        : _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a > b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _bool;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _bool;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
-    {
-      return compile_binary_operation<
-        bool,
-        bool,
-        Bool_not_equal_instruction>(ctx, lhs, rhs, _bool, [](bool a, bool b)
-      {
-        return a != b;
-      });
-    }
-
-  private:
-    Type *_bool;
   };
+
+  struct Int32_greater_eq_fn
+  {
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
+    {
+      return a >= b;
+    }
+  };
+
+  struct Bool_equal_fn
+  {
+    auto operator()(bool a, bool b) const -> bool
+    {
+      return a == b;
+    }
+  };
+
+  struct Bool_not_equal_fn
+  {
+    auto operator()(bool a, bool b) const -> bool
+    {
+      return a != b;
+    }
+  };
+
+  using Int32_unary_plus = Simple_unary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    Int32_unary_plus_instruction,
+    Int32_unary_plus_fn>;
+
+  using Int32_unary_minus = Simple_unary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    Int32_unary_minus_instruction,
+    Int32_unary_minus_fn>;
+
+  using Int32_add = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_add_instruction,
+    Int32_add_fn>;
+
+  using Int32_subtract = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_subtract_instruction,
+    Int32_subtract_fn>;
+
+  using Int32_multiply = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_multiply_instruction,
+    Int32_multiply_fn>;
+
+  using Int32_divide = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_divide_instruction,
+    Int32_divide_fn>;
+
+  using Int32_modulo = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_modulo_instruction,
+    Int32_modulo_fn>;
+
+  using Int32_equal = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_equal_instruction,
+    Int32_equal_fn>;
+
+  using Int32_not_equal = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_not_equal_instruction,
+    Int32_not_equal_fn>;
+
+  using Int32_less = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_less_instruction,
+    Int32_less_fn>;
+
+  using Int32_less_eq = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_less_eq_instruction,
+    Int32_less_eq_fn>;
+
+  using Int32_greater = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_greater_instruction,
+    Int32_greater_fn>;
+
+  using Int32_greater_eq = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_greater_eq_instruction,
+    Int32_greater_eq_fn>;
+
+  using Bool_equal = Simple_binary_operator_overload<
+    bool,
+    bool,
+    bool,
+    Bool_equal_instruction,
+    Bool_equal_fn>;
+
+  using Bool_not_equal = Simple_binary_operator_overload<
+    bool,
+    bool,
+    bool,
+    Bool_not_equal_instruction,
+    Bool_not_equal_fn>;
 
   class Pointer_to final: public Unary_operator_overload
   {
@@ -765,10 +493,16 @@ namespace basedhlir
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Int32_unary_plus>(_type_pool)
+      std::make_unique<Int32_unary_plus>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type()
+      )
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Int32_unary_minus>(_type_pool)
+      std::make_unique<Int32_unary_minus>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type()
+      )
     );
     _unary_overloads[basedparse::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
@@ -780,43 +514,95 @@ namespace basedhlir
       std::make_unique<Dereference>()
     );
     _binary_overloads[basedparse::Operator::add].push_back(
-      std::make_unique<Int32_add>(_type_pool)
+      std::make_unique<Int32_add>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->int32_type()
+      )
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
-      std::make_unique<Int32_subtract>(_type_pool)
+      std::make_unique<Int32_subtract>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->int32_type()
+      )
     );
     _binary_overloads[basedparse::Operator::multiply].push_back(
-      std::make_unique<Int32_multiply>(_type_pool)
+      std::make_unique<Int32_multiply>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->int32_type()
+      )
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
-      std::make_unique<Int32_divide>(_type_pool)
+      std::make_unique<Int32_divide>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->int32_type()
+      )
     );
     _binary_overloads[basedparse::Operator::modulo].push_back(
-      std::make_unique<Int32_modulo>(_type_pool)
+      std::make_unique<Int32_modulo>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->int32_type()
+      )
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Int32_equal>(_type_pool)
+      std::make_unique<Int32_equal>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->bool_type()
+      )
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Int32_not_equal>(_type_pool)
+      std::make_unique<Int32_not_equal>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->bool_type()
+      )
     );
     _binary_overloads[basedparse::Operator::less].push_back(
-      std::make_unique<Int32_less>(_type_pool)
+      std::make_unique<Int32_less>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->bool_type()
+      )
     );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
-      std::make_unique<Int32_less_eq>(_type_pool)
+      std::make_unique<Int32_less_eq>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->bool_type()
+      )
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
-      std::make_unique<Int32_greater>(_type_pool)
+      std::make_unique<Int32_greater>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->bool_type()
+      )
     );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
-      std::make_unique<Int32_greater_eq>(_type_pool)
+      std::make_unique<Int32_greater_eq>(
+        _type_pool->int32_type(),
+        _type_pool->int32_type(),
+        _type_pool->bool_type()
+      )
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Bool_equal>(_type_pool)
+      std::make_unique<Bool_equal>(
+        _type_pool->bool_type(),
+        _type_pool->bool_type(),
+        _type_pool->bool_type()
+      )
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Bool_not_equal>(_type_pool)
+      std::make_unique<Bool_not_equal>(
+        _type_pool->bool_type(),
+        _type_pool->bool_type(),
+        _type_pool->bool_type()
+      )
     );
   }
 

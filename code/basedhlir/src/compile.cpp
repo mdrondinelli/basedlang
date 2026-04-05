@@ -98,13 +98,34 @@ namespace basedhlir
     }
   }
 
+  template <typename T>
+  struct Primitive_hlir_type;
+
+  template <>
+  struct Primitive_hlir_type<std::int32_t>
+  {
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->int32_type();
+    }
+  };
+
+  template <>
+  struct Primitive_hlir_type<bool>
+  {
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->bool_type();
+    }
+  };
+
   template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
   class Simple_unary_operator_overload: public Unary_operator_overload
   {
   public:
-    Simple_unary_operator_overload(Type *operand_type, Type *result_type)
-        : _operand_type{operand_type},
-          _result_type{result_type}
+    explicit Simple_unary_operator_overload(Type_pool *type_pool)
+        : _operand_type{Primitive_hlir_type<OperandT>::get(type_pool)},
+          _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
     {
     }
 
@@ -143,14 +164,10 @@ namespace basedhlir
   class Simple_binary_operator_overload: public Binary_operator_overload
   {
   public:
-    Simple_binary_operator_overload(
-      Type *lhs_type,
-      Type *rhs_type,
-      Type *result_type
-    )
-        : _lhs_type{lhs_type},
-          _rhs_type{rhs_type},
-          _result_type{result_type}
+    explicit Simple_binary_operator_overload(Type_pool *type_pool)
+        : _lhs_type{Primitive_hlir_type<LhsT>::get(type_pool)},
+          _rhs_type{Primitive_hlir_type<RhsT>::get(type_pool)},
+          _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
     {
     }
 
@@ -504,16 +521,10 @@ namespace basedhlir
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Int32_unary_plus>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type()
-      )
+      std::make_unique<Int32_unary_plus>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Int32_unary_minus>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type()
-      )
+      std::make_unique<Int32_unary_minus>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
@@ -525,95 +536,43 @@ namespace basedhlir
       std::make_unique<Dereference>()
     );
     _binary_overloads[basedparse::Operator::add].push_back(
-      std::make_unique<Int32_add>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->int32_type()
-      )
+      std::make_unique<Int32_add>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
-      std::make_unique<Int32_subtract>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->int32_type()
-      )
+      std::make_unique<Int32_subtract>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::multiply].push_back(
-      std::make_unique<Int32_multiply>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->int32_type()
-      )
+      std::make_unique<Int32_multiply>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
-      std::make_unique<Int32_divide>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->int32_type()
-      )
+      std::make_unique<Int32_divide>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::modulo].push_back(
-      std::make_unique<Int32_modulo>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->int32_type()
-      )
+      std::make_unique<Int32_modulo>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Int32_equal>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->bool_type()
-      )
+      std::make_unique<Int32_equal>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Int32_not_equal>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->bool_type()
-      )
+      std::make_unique<Int32_not_equal>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less].push_back(
-      std::make_unique<Int32_less>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->bool_type()
-      )
+      std::make_unique<Int32_less>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
-      std::make_unique<Int32_less_eq>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->bool_type()
-      )
+      std::make_unique<Int32_less_eq>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
-      std::make_unique<Int32_greater>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->bool_type()
-      )
+      std::make_unique<Int32_greater>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
-      std::make_unique<Int32_greater_eq>(
-        _type_pool->int32_type(),
-        _type_pool->int32_type(),
-        _type_pool->bool_type()
-      )
+      std::make_unique<Int32_greater_eq>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Bool_equal>(
-        _type_pool->bool_type(),
-        _type_pool->bool_type(),
-        _type_pool->bool_type()
-      )
+      std::make_unique<Bool_equal>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Bool_not_equal>(
-        _type_pool->bool_type(),
-        _type_pool->bool_type(),
-        _type_pool->bool_type()
-      )
+      std::make_unique<Bool_not_equal>(_type_pool)
     );
   }
 

@@ -1,3 +1,4 @@
+#include <concepts>
 #include <cassert>
 #include <cstdint>
 #include <format>
@@ -39,494 +40,393 @@ namespace basedhlir
     T _previous;
   };
 
-  class Int32_unary_plus final: public Unary_operator_overload
+  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
+  Operand compile_unary_operation(
+    Compilation_context &ctx,
+    Operand operand,
+    Type *result_type,
+    Fn const &fn
+  )
+  {
+    static_assert(std::same_as<std::invoke_result_t<Fn const &, OperandT>, ResultT>);
+
+    if (auto const cv = std::get_if<Constant_value>(&operand))
+    {
+      return Operand{Constant_value{fn(std::get<OperandT>(*cv))}};
+    }
+    else
+    {
+      auto const result = ctx.allocate_register(result_type);
+      ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
+      return Operand{result};
+    }
+  }
+
+  template <
+    typename LhsT,
+    typename RhsT,
+    typename ResultT,
+    typename InstructionT,
+    typename Fn>
+  Operand compile_binary_operation(
+    Compilation_context &ctx,
+    Operand lhs,
+    Operand rhs,
+    Type *result_type,
+    Fn const &fn
+  )
+  {
+    static_assert(
+      std::same_as<std::invoke_result_t<Fn const &, LhsT, RhsT>, ResultT>
+    );
+
+    auto const lhs_cv = std::get_if<Constant_value>(&lhs);
+    auto const rhs_cv = std::get_if<Constant_value>(&rhs);
+    if (lhs_cv != nullptr && rhs_cv != nullptr)
+    {
+      return Operand{
+        Constant_value{fn(std::get<LhsT>(*lhs_cv), std::get<RhsT>(*rhs_cv))}
+      };
+    }
+    else
+    {
+      auto const result = ctx.allocate_register(result_type);
+      ctx.emit(
+        Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}}
+      );
+      return Operand{result};
+    }
+  }
+
+  template <typename T>
+  struct Primitive_hlir_type;
+
+  template <>
+  struct Primitive_hlir_type<std::int32_t>
+  {
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->int32_type();
+    }
+  };
+
+  template <>
+  struct Primitive_hlir_type<bool>
+  {
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->bool_type();
+    }
+  };
+
+  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
+  class Simple_unary_operator_overload: public Unary_operator_overload
   {
   public:
-    explicit Int32_unary_plus(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    explicit Simple_unary_operator_overload(Type_pool *type_pool)
+        : _operand_type{Primitive_hlir_type<OperandT>::get(type_pool)},
+          _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
     {
     }
 
     bool matches(Type *operand_type) const override
     {
-      return operand_type == _type;
+      return operand_type == _operand_type;
     }
 
     Type *result_type(Type *) const override
     {
-      return _type;
+      return _result_type;
     }
 
-    Constant_value evaluate(Constant_value operand) const override
+    Operand compile(Compilation_context &ctx, Operand operand) const override
     {
-      return std::get<std::int32_t>(operand);
+      return compile_unary_operation<OperandT, ResultT, InstructionT>(
+        ctx,
+        std::move(operand),
+        _result_type,
+        _fn
+      );
     }
 
   private:
-    Type *_type;
+    Type *_operand_type;
+    Type *_result_type;
+    [[no_unique_address]] Fn _fn;
   };
 
-  class Int32_unary_minus final: public Unary_operator_overload
+  template <
+    typename LhsT,
+    typename RhsT,
+    typename ResultT,
+    typename InstructionT,
+    typename Fn>
+  class Simple_binary_operator_overload: public Binary_operator_overload
   {
   public:
-    explicit Int32_unary_minus(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
-    {
-    }
-
-    bool matches(Type *operand_type) const override
-    {
-      return operand_type == _type;
-    }
-
-    Type *result_type(Type *) const override
-    {
-      return _type;
-    }
-
-    Constant_value evaluate(Constant_value operand) const override
-    {
-      return -std::get<std::int32_t>(operand);
-    }
-
-  private:
-    Type *_type;
-  };
-
-  class Int32_add final: public Binary_operator_overload
-  {
-  public:
-    explicit Int32_add(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    explicit Simple_binary_operator_overload(Type_pool *type_pool)
+        : _lhs_type{Primitive_hlir_type<LhsT>::get(type_pool)},
+          _rhs_type{Primitive_hlir_type<RhsT>::get(type_pool)},
+          _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
     {
     }
 
     Type *lhs_type() const override
     {
-      return _type;
+      return _lhs_type;
     }
 
     Type *rhs_type() const override
     {
-      return _type;
+      return _rhs_type;
     }
 
     Type *result_type() const override
     {
-      return _type;
+      return _result_type;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) + std::get<std::int32_t>(rhs);
+      return compile_binary_operation<LhsT, RhsT, ResultT, InstructionT>(
+        ctx,
+        std::move(lhs),
+        std::move(rhs),
+        _result_type,
+        _fn
+      );
     }
 
   private:
-    Type *_type;
+    Type *_lhs_type;
+    Type *_rhs_type;
+    Type *_result_type;
+    [[no_unique_address]] Fn _fn;
   };
 
-  class Int32_subtract final: public Binary_operator_overload
+  struct Int32_unary_plus_fn
   {
-  public:
-    explicit Int32_subtract(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    auto operator()(std::int32_t x) const -> std::int32_t
     {
+      return x;
     }
-
-    Type *lhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *result_type() const override
-    {
-      return _type;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) - std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_type;
   };
 
-  class Int32_multiply final: public Binary_operator_overload
+  struct Int32_unary_minus_fn
   {
-  public:
-    explicit Int32_multiply(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    auto operator()(std::int32_t x) const -> std::int32_t
     {
+      return -x;
     }
-
-    Type *lhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *result_type() const override
-    {
-      return _type;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) * std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_type;
   };
 
-  class Int32_divide final: public Binary_operator_overload
+  struct Int32_add_fn
   {
-  public:
-    explicit Int32_divide(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a + b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *result_type() const override
-    {
-      return _type;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) / std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_type;
   };
 
-  class Int32_modulo final: public Binary_operator_overload
+  struct Int32_subtract_fn
   {
-  public:
-    explicit Int32_modulo(Type_pool *type_pool)
-        : _type{type_pool->int32_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a - b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _type;
-    }
-
-    Type *result_type() const override
-    {
-      return _type;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) % std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_type;
   };
 
-  class Int32_equal final: public Binary_operator_overload
+  struct Int32_multiply_fn
   {
-  public:
-    explicit Int32_equal(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a * b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) == std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_not_equal final: public Binary_operator_overload
+  struct Int32_divide_fn
   {
-  public:
-    explicit Int32_not_equal(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a / b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) != std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_less final: public Binary_operator_overload
+  struct Int32_modulo_fn
   {
-  public:
-    explicit Int32_less(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
     {
+      return a % b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) < std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_less_eq final: public Binary_operator_overload
+  struct Int32_equal_fn
   {
-  public:
-    explicit Int32_less_eq(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a == b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) <= std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_greater final: public Binary_operator_overload
+  struct Int32_not_equal_fn
   {
-  public:
-    explicit Int32_greater(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a != b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) > std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Int32_greater_eq final: public Binary_operator_overload
+  struct Int32_less_fn
   {
-  public:
-    explicit Int32_greater_eq(Type_pool *type_pool)
-        : _int32{type_pool->int32_type()}, _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a < b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _int32;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<std::int32_t>(lhs) >= std::get<std::int32_t>(rhs);
-    }
-
-  private:
-    Type *_int32;
-    Type *_bool;
   };
 
-  class Bool_equal final: public Binary_operator_overload
+  struct Int32_less_eq_fn
   {
-  public:
-    explicit Bool_equal(Type_pool *type_pool)
-        : _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a <= b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _bool;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _bool;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<bool>(lhs) == std::get<bool>(rhs);
-    }
-
-  private:
-    Type *_bool;
   };
 
-  class Bool_not_equal final: public Binary_operator_overload
+  struct Int32_greater_fn
   {
-  public:
-    explicit Bool_not_equal(Type_pool *type_pool)
-        : _bool{type_pool->bool_type()}
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
     {
+      return a > b;
     }
-
-    Type *lhs_type() const override
-    {
-      return _bool;
-    }
-
-    Type *rhs_type() const override
-    {
-      return _bool;
-    }
-
-    Type *result_type() const override
-    {
-      return _bool;
-    }
-
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
-    {
-      return std::get<bool>(lhs) != std::get<bool>(rhs);
-    }
-
-  private:
-    Type *_bool;
   };
+
+  struct Int32_greater_eq_fn
+  {
+    auto operator()(std::int32_t a, std::int32_t b) const -> bool
+    {
+      return a >= b;
+    }
+  };
+
+  struct Bool_equal_fn
+  {
+    auto operator()(bool a, bool b) const -> bool
+    {
+      return a == b;
+    }
+  };
+
+  struct Bool_not_equal_fn
+  {
+    auto operator()(bool a, bool b) const -> bool
+    {
+      return a != b;
+    }
+  };
+
+  using Int32_unary_plus = Simple_unary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    Int32_unary_plus_instruction,
+    Int32_unary_plus_fn>;
+
+  using Int32_unary_minus = Simple_unary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    Int32_unary_minus_instruction,
+    Int32_unary_minus_fn>;
+
+  using Int32_add = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_add_instruction,
+    Int32_add_fn>;
+
+  using Int32_subtract = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_subtract_instruction,
+    Int32_subtract_fn>;
+
+  using Int32_multiply = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_multiply_instruction,
+    Int32_multiply_fn>;
+
+  using Int32_divide = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_divide_instruction,
+    Int32_divide_fn>;
+
+  using Int32_modulo = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    std::int32_t,
+    Int32_modulo_instruction,
+    Int32_modulo_fn>;
+
+  using Int32_equal = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_equal_instruction,
+    Int32_equal_fn>;
+
+  using Int32_not_equal = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_not_equal_instruction,
+    Int32_not_equal_fn>;
+
+  using Int32_less = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_less_instruction,
+    Int32_less_fn>;
+
+  using Int32_less_eq = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_less_eq_instruction,
+    Int32_less_eq_fn>;
+
+  using Int32_greater = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_greater_instruction,
+    Int32_greater_fn>;
+
+  using Int32_greater_eq = Simple_binary_operator_overload<
+    std::int32_t,
+    std::int32_t,
+    bool,
+    Int32_greater_eq_instruction,
+    Int32_greater_eq_fn>;
+
+  using Bool_equal = Simple_binary_operator_overload<
+    bool,
+    bool,
+    bool,
+    Bool_equal_instruction,
+    Bool_equal_fn>;
+
+  using Bool_not_equal = Simple_binary_operator_overload<
+    bool,
+    bool,
+    bool,
+    Bool_not_equal_instruction,
+    Bool_not_equal_fn>;
 
   class Pointer_to final: public Unary_operator_overload
   {
@@ -546,11 +446,13 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value evaluate(Constant_value operand) const override
+    Operand compile(Compilation_context &, Operand operand) const override
     {
-      return Type_value{
-        _type_pool->pointer_type(std::get<Type_value>(operand).type, false)
-      };
+      auto const cv = std::get_if<Constant_value>(&operand);
+      assert(cv != nullptr);
+      return Operand{Constant_value{Type_value{
+        _type_pool->pointer_type(std::get<Type_value>(*cv).type, false)
+      }}};
     }
 
   private:
@@ -576,11 +478,13 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value evaluate(Constant_value operand) const override
+    Operand compile(Compilation_context &, Operand operand) const override
     {
-      return Type_value{
-        _type_pool->pointer_type(std::get<Type_value>(operand).type, true)
-      };
+      auto const cv = std::get_if<Constant_value>(&operand);
+      assert(cv != nullptr);
+      return Operand{Constant_value{Type_value{
+        _type_pool->pointer_type(std::get<Type_value>(*cv).type, true)
+      }}};
     }
 
   private:
@@ -601,11 +505,9 @@ namespace basedhlir
       return std::get<Pointer_type>(operand_type->data).pointee;
     }
 
-    Constant_value evaluate(Constant_value) const override
+    Operand compile(Compilation_context &, Operand) const override
     {
-      // Dereference is never a constant expression; this is handled by
-      // evaluate_constant_expression(Postfix_expression) before reaching here.
-      std::abort();
+      throw std::runtime_error{"dereference is not implemented"};
     }
   };
 
@@ -690,20 +592,6 @@ namespace basedhlir
     if (!_diagnostics.empty())
     {
       throw Compilation_failure{std::move(_diagnostics)};
-    }
-    for (auto &[op, overloads] : _unary_overloads)
-    {
-      for (auto &overload : overloads)
-      {
-        _translation_unit.unary_overloads.push_back(std::move(overload));
-      }
-    }
-    for (auto &[op, overloads] : _binary_overloads)
-    {
-      for (auto &overload : overloads)
-      {
-        _translation_unit.binary_overloads.push_back(std::move(overload));
-      }
     }
     return std::move(_translation_unit);
   }
@@ -1079,20 +967,7 @@ namespace basedhlir
       auto const operand_type = type_of_operand(operand_result);
       auto const overload = find_unary_overload(*op, operand_type);
       assert(overload != nullptr);
-      if (auto const cv = std::get_if<Constant_value>(&operand_result))
-      {
-        return overload->evaluate(*cv);
-      }
-      auto const result =
-        allocate_register(overload->result_type(operand_type));
-      emit(
-        Instruction{Unary_instruction{
-          .result = result,
-          .overload = overload,
-          .operand = operand_result,
-        }}
-      );
-      return result;
+      return overload->compile(*this, operand_result);
     }
   }
 
@@ -1115,22 +990,7 @@ namespace basedhlir
     auto const rhs_type = type_of_operand(rhs_result);
     auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
     assert(overload != nullptr);
-    auto const lhs_cv = std::get_if<Constant_value>(&lhs_result);
-    auto const rhs_cv = std::get_if<Constant_value>(&rhs_result);
-    if (lhs_cv != nullptr && rhs_cv != nullptr)
-    {
-      return overload->evaluate(*lhs_cv, *rhs_cv);
-    }
-    auto const result = allocate_register(overload->result_type());
-    emit(
-      Instruction{Binary_instruction{
-        .result = result,
-        .overload = overload,
-        .lhs = lhs_result,
-        .rhs = rhs_result,
-      }}
-    );
-    return result;
+    return overload->compile(*this, lhs_result, rhs_result);
   }
 
   Operand Compilation_context::compile_expression(
@@ -1556,7 +1416,12 @@ namespace basedhlir
     auto parameter_types = std::vector<Type *>{};
     for (auto const &param : expr.parameters)
     {
-      parameter_types.push_back(compile_type_expression(*param.type));
+      auto const param_type = compile_type_expression(*param.type);
+      if (!is_object_type(param_type))
+      {
+        emit_error("parameter type must be an object type", *param.type);
+      }
+      parameter_types.push_back(param_type);
     }
     auto const return_type =
       compile_type_expression(*expr.return_type_specifier.type);

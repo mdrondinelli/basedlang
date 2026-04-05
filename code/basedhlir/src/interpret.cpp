@@ -34,6 +34,29 @@ namespace basedhlir
       );
     }
 
+    template <typename InstructionT, typename Fn>
+    void execute_unary_instruction(
+      std::vector<Constant_value> &register_values,
+      InstructionT const &inst,
+      Fn &&fn
+    )
+    {
+      auto const operand = eval_operand(inst.operand, register_values);
+      register_values[*inst.result] = fn(operand);
+    }
+
+    template <typename InstructionT, typename Fn>
+    void execute_binary_instruction(
+      std::vector<Constant_value> &register_values,
+      InstructionT const &inst,
+      Fn &&fn
+    )
+    {
+      auto const lhs = eval_operand(inst.lhs, register_values);
+      auto const rhs = eval_operand(inst.rhs, register_values);
+      register_values[*inst.result] = fn(lhs, rhs);
+    }
+
     void execute_instruction(
       std::vector<Constant_value> &register_values,
       Instruction const &instruction,
@@ -66,16 +89,140 @@ namespace basedhlir
             register_values[*inst.result] =
               eval_operand(inst.source, register_values);
           }
-          else if constexpr (std::is_same_v<T, Unary_instruction>)
+          else if constexpr (std::is_same_v<T, Int32_unary_plus_instruction>)
           {
-            auto const operand = eval_operand(inst.operand, register_values);
-            register_values[*inst.result] = inst.overload->evaluate(operand);
+            execute_unary_instruction(
+              register_values,
+              inst,
+              [](Constant_value operand) -> Constant_value
+              { return std::get<std::int32_t>(operand); }
+            );
           }
-          else if constexpr (std::is_same_v<T, Binary_instruction>)
+          else if constexpr (std::is_same_v<T, Int32_unary_minus_instruction>)
           {
-            auto const lhs = eval_operand(inst.lhs, register_values);
-            auto const rhs = eval_operand(inst.rhs, register_values);
-            register_values[*inst.result] = inst.overload->evaluate(lhs, rhs);
+            execute_unary_instruction(
+              register_values,
+              inst,
+              [](Constant_value operand) -> Constant_value
+              { return -std::get<std::int32_t>(operand); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_add_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) + std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_subtract_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) - std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_multiply_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) * std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_divide_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) / std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_modulo_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) % std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_equal_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) == std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_not_equal_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) != std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_less_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) < std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_less_eq_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) <= std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_greater_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) > std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Int32_greater_eq_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<std::int32_t>(lhs) >= std::get<std::int32_t>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Bool_equal_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<bool>(lhs) == std::get<bool>(rhs); }
+            );
+          }
+          else if constexpr (std::is_same_v<T, Bool_not_equal_instruction>)
+          {
+            execute_binary_instruction(
+              register_values,
+              inst,
+              [](Constant_value lhs, Constant_value rhs) -> Constant_value
+              { return std::get<bool>(lhs) != std::get<bool>(rhs); }
+            );
           }
           else if constexpr (std::is_same_v<T, Call_instruction>)
           {

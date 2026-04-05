@@ -52,7 +52,9 @@ That is why semantic code has to support:
 
 ## The main execution fact
 
-HLIR is the executable representation produced by compilation. Today it is directly interpreted for development convenience, but that should not be treated as the long-term product direction.
+HLIR is the executable representation produced by compilation. It should remain
+self-contained. Today it is directly interpreted for development convenience,
+but that should not be treated as the long-term product direction.
 
 ## How to use this wiki
 

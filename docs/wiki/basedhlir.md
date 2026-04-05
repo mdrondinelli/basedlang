@@ -49,6 +49,9 @@ The executable model is:
 - `Function`
 - HLIR `Translation_unit`
 
+`Operand` is the value form used during lowering. It can represent either a
+compile-time constant or a runtime register.
+
 ## Data model
 
 The key semantic data model is:
@@ -72,6 +75,7 @@ There are three main kinds of work here.
 - name resolution
 - type checking
 - constant evaluation
+- operator application
 - diagnostics
 - HLIR emission
 
@@ -95,4 +99,5 @@ It uses fuel accounting to stop runaway compile-time execution.
 
 - type identity must come from `Type_pool`
 - diagnostics should point at user-facing syntax
+- executable HLIR should stay self-contained
 - the interpreter may assume HLIR is valid except for explicit safety mechanisms like fuel exhaustion

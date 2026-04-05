@@ -342,6 +342,19 @@ namespace basedlex
             ++_location.column;
             break;
           }
+          if (p && *p == 'i')
+          {
+            while (auto const pc = _reader.peek())
+            {
+              if (*pc > 0x7F || !std::isalnum((int) *pc))
+              {
+                break;
+              }
+              text += (char) *pc;
+              _reader.read();
+              ++_location.column;
+            }
+          }
           return Lexeme{
             .text = text,
             .token = Token::int_literal,

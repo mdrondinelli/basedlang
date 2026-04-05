@@ -66,10 +66,13 @@ namespace based
       }
 
       auto const &func = *it->second;
+      auto const &param_types =
+        std::get<basedhlir::Function_type>(func.type->data).parameter_types;
       auto constant_args = std::vector<basedhlir::Constant_value>{};
       constant_args.reserve(args.size());
-      for (auto const arg : args)
+      for (auto i = std::size_t{}; i < args.size(); ++i)
       {
+        auto const arg = args[i];
         if (arg == "true")
         {
           constant_args.push_back(true);
@@ -77,6 +80,33 @@ namespace based
         else if (arg == "false")
         {
           constant_args.push_back(false);
+        }
+        else if (i < param_types.size() &&
+                 std::holds_alternative<basedhlir::Int8_type>(
+                   param_types[i]->data
+                 ))
+        {
+          constant_args.push_back(
+            static_cast<std::int8_t>(std::stoi(std::string{arg}))
+          );
+        }
+        else if (i < param_types.size() &&
+                 std::holds_alternative<basedhlir::Int16_type>(
+                   param_types[i]->data
+                 ))
+        {
+          constant_args.push_back(
+            static_cast<std::int16_t>(std::stoi(std::string{arg}))
+          );
+        }
+        else if (i < param_types.size() &&
+                 std::holds_alternative<basedhlir::Int64_type>(
+                   param_types[i]->data
+                 ))
+        {
+          constant_args.push_back(
+            static_cast<std::int64_t>(std::stoll(std::string{arg}))
+          );
         }
         else
         {
@@ -91,7 +121,19 @@ namespace based
         [&](auto const &value)
         {
           using T = std::decay_t<decltype(value)>;
-          if constexpr (std::is_same_v<T, std::int32_t>)
+          if constexpr (std::is_same_v<T, std::int8_t>)
+          {
+            out << static_cast<std::int32_t>(value) << '\n';
+          }
+          else if constexpr (std::is_same_v<T, std::int16_t>)
+          {
+            out << value << '\n';
+          }
+          else if constexpr (std::is_same_v<T, std::int32_t>)
+          {
+            out << value << '\n';
+          }
+          else if constexpr (std::is_same_v<T, std::int64_t>)
           {
             out << value << '\n';
           }

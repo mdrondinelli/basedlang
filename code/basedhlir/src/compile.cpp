@@ -1416,7 +1416,12 @@ namespace basedhlir
     auto parameter_types = std::vector<Type *>{};
     for (auto const &param : expr.parameters)
     {
-      parameter_types.push_back(compile_type_expression(*param.type));
+      auto const param_type = compile_type_expression(*param.type);
+      if (!is_object_type(param_type))
+      {
+        emit_error("parameter type must be an object type", *param.type);
+      }
+      parameter_types.push_back(param_type);
     }
     auto const return_type =
       compile_type_expression(*expr.return_type_specifier.type);

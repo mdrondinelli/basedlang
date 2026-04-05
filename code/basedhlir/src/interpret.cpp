@@ -95,27 +95,10 @@ namespace basedhlir
               eval_operand(inst.source, register_values);
           }
           else if constexpr (
-            std::is_same_v<T, Integer_unary_plus_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_unary_plus_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_unary_plus_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_unary_plus_instruction<std::int64_t>>
-          )
-          {
-            using V = typename T::value_type;
-            execute_unary_instruction(
-              register_values,
-              inst,
-              [](Constant_value operand) -> Constant_value
-              {
-                return std::get<V>(operand);
-              }
-            );
-          }
-          else if constexpr (
-            std::is_same_v<T, Integer_unary_minus_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_unary_minus_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_unary_minus_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_unary_minus_instruction<std::int64_t>>
+            std::is_same_v<T, Integer_negate_instruction<std::int8_t>> ||
+            std::is_same_v<T, Integer_negate_instruction<std::int16_t>> ||
+            std::is_same_v<T, Integer_negate_instruction<std::int32_t>> ||
+            std::is_same_v<T, Integer_negate_instruction<std::int64_t>>
           )
           {
             using V = typename T::value_type;

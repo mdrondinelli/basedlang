@@ -247,16 +247,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_unary_plus_fn
-  {
-    auto operator()(T x) const -> T
-    {
-      return x;
-    }
-  };
-
-  template <typename T>
-  struct Integer_unary_minus_fn
+  struct Integer_negate_fn
   {
     auto operator()(T x) const -> T
     {
@@ -380,19 +371,11 @@ namespace basedhlir
   };
 
   template <typename T>
-  using Integer_unary_plus = Simple_unary_operator_overload<
+  using Integer_negate = Simple_unary_operator_overload<
     T,
     T,
-    Integer_unary_plus_instruction<T>,
-    Integer_unary_plus_fn<T>
-  >;
-
-  template <typename T>
-  using Integer_unary_minus = Simple_unary_operator_overload<
-    T,
-    T,
-    Integer_unary_minus_instruction<T>,
-    Integer_unary_minus_fn<T>
+    Integer_negate_instruction<T>,
+    Integer_negate_fn<T>
   >;
 
   template <typename T>
@@ -510,6 +493,40 @@ namespace basedhlir
     Bool_not_equal_fn
   >;
 
+  class Unary_plus final: public Unary_operator_overload
+  {
+  public:
+    explicit Unary_plus(Type_pool *type_pool)
+        : _int8_type{type_pool->int8_type()},
+          _int16_type{type_pool->int16_type()},
+          _int32_type{type_pool->int32_type()},
+          _int64_type{type_pool->int64_type()}
+    {
+    }
+
+    bool matches(Type *operand_type) const override
+    {
+      return operand_type == _int8_type || operand_type == _int16_type ||
+             operand_type == _int32_type || operand_type == _int64_type;
+    }
+
+    Type *result_type(Type *operand_type) const override
+    {
+      return operand_type;
+    }
+
+    Operand compile(Compilation_context &, Operand operand) const override
+    {
+      return operand;
+    }
+
+  private:
+    Type *_int8_type;
+    Type *_int16_type;
+    Type *_int32_type;
+    Type *_int64_type;
+  };
+
   class Pointer_to final: public Unary_operator_overload
   {
   public:
@@ -606,28 +623,19 @@ namespace basedhlir
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Integer_unary_plus<std::int8_t>>(_type_pool)
-    );
-    _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Integer_unary_plus<std::int16_t>>(_type_pool)
-    );
-    _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Integer_unary_plus<std::int32_t>>(_type_pool)
-    );
-    _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Integer_unary_plus<std::int64_t>>(_type_pool)
+      std::make_unique<Unary_plus>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Integer_unary_minus<std::int8_t>>(_type_pool)
+      std::make_unique<Integer_negate<std::int8_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Integer_unary_minus<std::int16_t>>(_type_pool)
+      std::make_unique<Integer_negate<std::int16_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Integer_unary_minus<std::int32_t>>(_type_pool)
+      std::make_unique<Integer_negate<std::int32_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Integer_unary_minus<std::int64_t>>(_type_pool)
+      std::make_unique<Integer_negate<std::int64_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)

@@ -73,15 +73,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_unary_plus_instruction
-  {
-    using value_type = T;
-    Register result;
-    Operand operand;
-  };
-
-  template <typename T>
-  struct Integer_unary_minus_instruction
+  struct Integer_negate_instruction
   {
     using value_type = T;
     Register result;
@@ -218,14 +210,10 @@ namespace basedhlir
     Bool_constant_instruction,
     Void_constant_instruction,
     Copy_instruction,
-    Integer_unary_plus_instruction<std::int8_t>,
-    Integer_unary_plus_instruction<std::int16_t>,
-    Integer_unary_plus_instruction<std::int32_t>,
-    Integer_unary_plus_instruction<std::int64_t>,
-    Integer_unary_minus_instruction<std::int8_t>,
-    Integer_unary_minus_instruction<std::int16_t>,
-    Integer_unary_minus_instruction<std::int32_t>,
-    Integer_unary_minus_instruction<std::int64_t>,
+    Integer_negate_instruction<std::int8_t>,
+    Integer_negate_instruction<std::int16_t>,
+    Integer_negate_instruction<std::int32_t>,
+    Integer_negate_instruction<std::int64_t>,
     Integer_add_instruction<std::int8_t>,
     Integer_add_instruction<std::int16_t>,
     Integer_add_instruction<std::int32_t>,

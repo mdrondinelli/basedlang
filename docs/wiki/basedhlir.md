@@ -52,6 +52,13 @@ The executable model is:
 `Operand` is the value form used during lowering. It can represent either a
 compile-time constant or a runtime register.
 
+Key properties of these types:
+
+- `Register` is an opaque integer ID. A default-constructed `Register` is invalid.
+- `Operand` is `std::variant<Register, Constant_value>`.
+- `Basic_block` has parameters (registers), a list of instructions, and a `Terminator`.
+- `Function` owns its blocks and a monotonically increasing register counter.
+
 ## Data model
 
 The key semantic data model is:
@@ -78,6 +85,12 @@ There are three main kinds of work here.
 - operator application
 - diagnostics
 - HLIR emission
+
+`compile_expression` returns an `Operand` — either a `Register` (runtime result) or a `Constant_value` (compile-time result). Constant folding happens naturally: if all inputs to an operation are `Constant_value`, the result is evaluated at compile time without emitting any instructions.
+
+Register types are tracked in a table indexed by register ID. This table is saved and restored per function so nested function compilations do not interfere with each other.
+
+Symbol bindings hold either a runtime `Object_binding` (type + register + mutability) or a compile-time `Constant_value`.
 
 ### Type canonicalization
 

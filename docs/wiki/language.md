@@ -133,6 +133,8 @@ These compose naturally:
 
 `^mut` affects pointee mutability, not variable mutability. Variable mutability still comes from `let mut`.
 
+Unsized array types (`[]T`) are valid types, but they cannot appear in contexts that require a known size — local variable bindings and pass-by-value are the main examples. They can exist behind a pointer (`^[]T`, `^mut []T`). `^[]T` is the idiomatic way to pass a slice-like reference.
+
 The `[n]` form accepts any compile-time constant integer expression as the size, so `[2 + 2]Int32` is valid.
 
 ## Implemented examples

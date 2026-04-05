@@ -39,6 +39,49 @@ namespace basedhlir
     T _previous;
   };
 
+  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
+  Operand compile_unary_operation(
+    Compilation_context &ctx,
+    Operand operand,
+    Type *result_type,
+    Fn &&fn
+  )
+  {
+    if (auto const cv = std::get_if<Constant_value>(&operand))
+    {
+      return Operand{Constant_value{
+        static_cast<ResultT>(fn(std::get<OperandT>(*cv)))
+      }};
+    }
+    auto const result = ctx.allocate_register(result_type);
+    ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
+    return Operand{result};
+  }
+
+  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
+  Operand compile_binary_operation(
+    Compilation_context &ctx,
+    Operand lhs,
+    Operand rhs,
+    Type *result_type,
+    Fn &&fn
+  )
+  {
+    auto const lhs_cv = std::get_if<Constant_value>(&lhs);
+    auto const rhs_cv = std::get_if<Constant_value>(&rhs);
+    if (lhs_cv != nullptr && rhs_cv != nullptr)
+    {
+      return Operand{Constant_value{static_cast<ResultT>(
+        fn(std::get<OperandT>(*lhs_cv), std::get<OperandT>(*rhs_cv))
+      )}};
+    }
+    auto const result = ctx.allocate_register(result_type);
+    ctx.emit(
+      Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}}
+    );
+    return Operand{result};
+  }
+
   class Int32_unary_plus final: public Unary_operator_overload
   {
   public:
@@ -57,9 +100,15 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value evaluate(Constant_value operand) const override
+    Operand compile(Compilation_context &ctx, Operand operand) const override
     {
-      return std::get<std::int32_t>(operand);
+      return compile_unary_operation<
+        std::int32_t,
+        std::int32_t,
+        Int32_unary_plus_instruction>(ctx, operand, _type, [](std::int32_t x)
+      {
+        return x;
+      });
     }
 
   private:
@@ -84,9 +133,15 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value evaluate(Constant_value operand) const override
+    Operand compile(Compilation_context &ctx, Operand operand) const override
     {
-      return -std::get<std::int32_t>(operand);
+      return compile_unary_operation<
+        std::int32_t,
+        std::int32_t,
+        Int32_unary_minus_instruction>(ctx, operand, _type, [](std::int32_t x)
+      {
+        return -x;
+      });
     }
 
   private:
@@ -116,10 +171,17 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) + std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        std::int32_t,
+        Int32_add_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
+                                                         std::int32_t b)
+      {
+        return a + b;
+      });
     }
 
   private:
@@ -149,10 +211,17 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) - std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        std::int32_t,
+        Int32_subtract_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
+                                                              std::int32_t b)
+      {
+        return a - b;
+      });
     }
 
   private:
@@ -182,10 +251,17 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) * std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        std::int32_t,
+        Int32_multiply_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
+                                                              std::int32_t b)
+      {
+        return a * b;
+      });
     }
 
   private:
@@ -215,10 +291,17 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) / std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        std::int32_t,
+        Int32_divide_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
+                                                            std::int32_t b)
+      {
+        return a / b;
+      });
     }
 
   private:
@@ -248,10 +331,17 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) % std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        std::int32_t,
+        Int32_modulo_instruction>(ctx, lhs, rhs, _type, [](std::int32_t a,
+                                                            std::int32_t b)
+      {
+        return a % b;
+      });
     }
 
   private:
@@ -281,10 +371,17 @@ namespace basedhlir
       return _bool;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) == std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        bool,
+        Int32_equal_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
+                                                           std::int32_t b)
+      {
+        return a == b;
+      });
     }
 
   private:
@@ -315,10 +412,17 @@ namespace basedhlir
       return _bool;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) != std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        bool,
+        Int32_not_equal_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
+                                                               std::int32_t b)
+      {
+        return a != b;
+      });
     }
 
   private:
@@ -349,10 +453,17 @@ namespace basedhlir
       return _bool;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) < std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        bool,
+        Int32_less_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
+                                                          std::int32_t b)
+      {
+        return a < b;
+      });
     }
 
   private:
@@ -383,10 +494,17 @@ namespace basedhlir
       return _bool;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) <= std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        bool,
+        Int32_less_eq_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
+                                                             std::int32_t b)
+      {
+        return a <= b;
+      });
     }
 
   private:
@@ -417,10 +535,17 @@ namespace basedhlir
       return _bool;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) > std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        bool,
+        Int32_greater_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
+                                                             std::int32_t b)
+      {
+        return a > b;
+      });
     }
 
   private:
@@ -451,10 +576,17 @@ namespace basedhlir
       return _bool;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<std::int32_t>(lhs) >= std::get<std::int32_t>(rhs);
+      return compile_binary_operation<
+        std::int32_t,
+        bool,
+        Int32_greater_eq_instruction>(ctx, lhs, rhs, _bool, [](std::int32_t a,
+                                                                std::int32_t b)
+      {
+        return a >= b;
+      });
     }
 
   private:
@@ -485,10 +617,16 @@ namespace basedhlir
       return _bool;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<bool>(lhs) == std::get<bool>(rhs);
+      return compile_binary_operation<
+        bool,
+        bool,
+        Bool_equal_instruction>(ctx, lhs, rhs, _bool, [](bool a, bool b)
+      {
+        return a == b;
+      });
     }
 
   private:
@@ -518,10 +656,16 @@ namespace basedhlir
       return _bool;
     }
 
-    Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const override
+    Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return std::get<bool>(lhs) != std::get<bool>(rhs);
+      return compile_binary_operation<
+        bool,
+        bool,
+        Bool_not_equal_instruction>(ctx, lhs, rhs, _bool, [](bool a, bool b)
+      {
+        return a != b;
+      });
     }
 
   private:
@@ -546,11 +690,13 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value evaluate(Constant_value operand) const override
+    Operand compile(Compilation_context &, Operand operand) const override
     {
-      return Type_value{
-        _type_pool->pointer_type(std::get<Type_value>(operand).type, false)
-      };
+      auto const cv = std::get_if<Constant_value>(&operand);
+      assert(cv != nullptr);
+      return Operand{Constant_value{Type_value{
+        _type_pool->pointer_type(std::get<Type_value>(*cv).type, false)
+      }}};
     }
 
   private:
@@ -576,11 +722,13 @@ namespace basedhlir
       return _type;
     }
 
-    Constant_value evaluate(Constant_value operand) const override
+    Operand compile(Compilation_context &, Operand operand) const override
     {
-      return Type_value{
-        _type_pool->pointer_type(std::get<Type_value>(operand).type, true)
-      };
+      auto const cv = std::get_if<Constant_value>(&operand);
+      assert(cv != nullptr);
+      return Operand{Constant_value{Type_value{
+        _type_pool->pointer_type(std::get<Type_value>(*cv).type, true)
+      }}};
     }
 
   private:
@@ -601,10 +749,8 @@ namespace basedhlir
       return std::get<Pointer_type>(operand_type->data).pointee;
     }
 
-    Constant_value evaluate(Constant_value) const override
+    Operand compile(Compilation_context &, Operand) const override
     {
-      // Dereference is never a constant expression; this is handled by
-      // evaluate_constant_expression(Postfix_expression) before reaching here.
       std::abort();
     }
   };
@@ -690,20 +836,6 @@ namespace basedhlir
     if (!_diagnostics.empty())
     {
       throw Compilation_failure{std::move(_diagnostics)};
-    }
-    for (auto &[op, overloads] : _unary_overloads)
-    {
-      for (auto &overload : overloads)
-      {
-        _translation_unit.unary_overloads.push_back(std::move(overload));
-      }
-    }
-    for (auto &[op, overloads] : _binary_overloads)
-    {
-      for (auto &overload : overloads)
-      {
-        _translation_unit.binary_overloads.push_back(std::move(overload));
-      }
     }
     return std::move(_translation_unit);
   }
@@ -1079,20 +1211,7 @@ namespace basedhlir
       auto const operand_type = type_of_operand(operand_result);
       auto const overload = find_unary_overload(*op, operand_type);
       assert(overload != nullptr);
-      if (auto const cv = std::get_if<Constant_value>(&operand_result))
-      {
-        return overload->evaluate(*cv);
-      }
-      auto const result =
-        allocate_register(overload->result_type(operand_type));
-      emit(
-        Instruction{Unary_instruction{
-          .result = result,
-          .overload = overload,
-          .operand = operand_result,
-        }}
-      );
-      return result;
+      return overload->compile(*this, operand_result);
     }
   }
 
@@ -1115,22 +1234,7 @@ namespace basedhlir
     auto const rhs_type = type_of_operand(rhs_result);
     auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
     assert(overload != nullptr);
-    auto const lhs_cv = std::get_if<Constant_value>(&lhs_result);
-    auto const rhs_cv = std::get_if<Constant_value>(&rhs_result);
-    if (lhs_cv != nullptr && rhs_cv != nullptr)
-    {
-      return overload->evaluate(*lhs_cv, *rhs_cv);
-    }
-    auto const result = allocate_register(overload->result_type());
-    emit(
-      Instruction{Binary_instruction{
-        .result = result,
-        .overload = overload,
-        .lhs = lhs_result,
-        .rhs = rhs_result,
-      }}
-    );
-    return result;
+    return overload->compile(*this, lhs_result, rhs_result);
   }
 
   Operand Compilation_context::compile_expression(

@@ -9,14 +9,10 @@
 #include <vector>
 
 #include "constant_value.h"
-#include "operator_overload.h"
 #include "type.h"
 
 namespace basedhlir
 {
-
-  class Unary_operator_overload;
-  class Binary_operator_overload;
 
   class Register
   {
@@ -74,17 +70,105 @@ namespace basedhlir
     Operand source;
   };
 
-  struct Unary_instruction
+  struct Int32_unary_plus_instruction
   {
     Register result;
-    Unary_operator_overload *overload;
     Operand operand;
   };
 
-  struct Binary_instruction
+  struct Int32_unary_minus_instruction
   {
     Register result;
-    Binary_operator_overload *overload;
+    Operand operand;
+  };
+
+  struct Int32_add_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_subtract_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_multiply_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_divide_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_modulo_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_equal_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_not_equal_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_less_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_less_eq_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_greater_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Int32_greater_eq_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Bool_equal_instruction
+  {
+    Register result;
+    Operand lhs;
+    Operand rhs;
+  };
+
+  struct Bool_not_equal_instruction
+  {
+    Register result;
     Operand lhs;
     Operand rhs;
   };
@@ -103,8 +187,21 @@ namespace basedhlir
     Bool_constant_instruction,
     Void_constant_instruction,
     Copy_instruction,
-    Unary_instruction,
-    Binary_instruction,
+    Int32_unary_plus_instruction,
+    Int32_unary_minus_instruction,
+    Int32_add_instruction,
+    Int32_subtract_instruction,
+    Int32_multiply_instruction,
+    Int32_divide_instruction,
+    Int32_modulo_instruction,
+    Int32_equal_instruction,
+    Int32_not_equal_instruction,
+    Int32_less_instruction,
+    Int32_less_eq_instruction,
+    Int32_greater_instruction,
+    Int32_greater_eq_instruction,
+    Bool_equal_instruction,
+    Bool_not_equal_instruction,
     Call_instruction
   >;
 
@@ -160,8 +257,6 @@ namespace basedhlir
   {
     std::vector<std::unique_ptr<Function>> functions;
     std::unordered_map<std::string, Function *> function_table;
-    std::vector<std::unique_ptr<Unary_operator_overload>> unary_overloads;
-    std::vector<std::unique_ptr<Binary_operator_overload>> binary_overloads;
   };
 
 } // namespace basedhlir

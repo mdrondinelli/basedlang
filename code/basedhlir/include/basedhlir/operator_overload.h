@@ -1,11 +1,12 @@
 #ifndef BASEDHLIR_OPERATOR_OVERLOAD_H
 #define BASEDHLIR_OPERATOR_OVERLOAD_H
 
-#include "constant_value.h"
-#include "type.h"
+#include "hlir.h"
 
 namespace basedhlir
 {
+
+  class Compilation_context;
 
   class Unary_operator_overload
   {
@@ -16,7 +17,8 @@ namespace basedhlir
 
     virtual Type *result_type(Type *operand_type) const = 0;
 
-    virtual Constant_value evaluate(Constant_value operand) const = 0;
+    virtual Operand
+    compile(Compilation_context &ctx, Operand operand) const = 0;
   };
 
   class Binary_operator_overload
@@ -30,8 +32,8 @@ namespace basedhlir
 
     virtual Type *result_type() const = 0;
 
-    virtual Constant_value
-    evaluate(Constant_value lhs, Constant_value rhs) const = 0;
+    virtual Operand
+    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const = 0;
   };
 
 } // namespace basedhlir

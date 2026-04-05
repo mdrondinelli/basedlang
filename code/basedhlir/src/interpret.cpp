@@ -72,19 +72,12 @@ namespace basedhlir
         [&](auto const &inst)
         {
           using T = std::decay_t<decltype(inst)>;
-          if constexpr (std::is_same_v<T, Int8_constant_instruction>)
-          {
-            register_values[*inst.result] = inst.value;
-          }
-          else if constexpr (std::is_same_v<T, Int16_constant_instruction>)
-          {
-            register_values[*inst.result] = inst.value;
-          }
-          else if constexpr (std::is_same_v<T, Int32_constant_instruction>)
-          {
-            register_values[*inst.result] = inst.value;
-          }
-          else if constexpr (std::is_same_v<T, Int64_constant_instruction>)
+          if constexpr (
+            std::is_same_v<T, Integer_constant_instruction<std::int8_t>> ||
+            std::is_same_v<T, Integer_constant_instruction<std::int16_t>> ||
+            std::is_same_v<T, Integer_constant_instruction<std::int32_t>> ||
+            std::is_same_v<T, Integer_constant_instruction<std::int64_t>>
+          )
           {
             register_values[*inst.result] = inst.value;
           }

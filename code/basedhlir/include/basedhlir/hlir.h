@@ -47,28 +47,12 @@ namespace basedhlir
 
   using Operand = std::variant<Register, Constant_value>;
 
-  struct Int8_constant_instruction
+  template <typename T>
+  struct Integer_constant_instruction
   {
+    using value_type = T;
     Register result;
-    std::int8_t value;
-  };
-
-  struct Int16_constant_instruction
-  {
-    Register result;
-    std::int16_t value;
-  };
-
-  struct Int32_constant_instruction
-  {
-    Register result;
-    std::int32_t value;
-  };
-
-  struct Int64_constant_instruction
-  {
-    Register result;
-    std::int64_t value;
+    T value;
   };
 
   struct Bool_constant_instruction
@@ -227,10 +211,10 @@ namespace basedhlir
   };
 
   using Instruction = std::variant<
-    Int8_constant_instruction,
-    Int16_constant_instruction,
-    Int32_constant_instruction,
-    Int64_constant_instruction,
+    Integer_constant_instruction<std::int8_t>,
+    Integer_constant_instruction<std::int16_t>,
+    Integer_constant_instruction<std::int32_t>,
+    Integer_constant_instruction<std::int64_t>,
     Bool_constant_instruction,
     Void_constant_instruction,
     Copy_instruction,

@@ -110,11 +110,38 @@ namespace basedhlir
   struct Primitive_hlir_type;
 
   template <>
+  struct Primitive_hlir_type<std::int8_t>
+  {
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->int8_type();
+    }
+  };
+
+  template <>
+  struct Primitive_hlir_type<std::int16_t>
+  {
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->int16_type();
+    }
+  };
+
+  template <>
   struct Primitive_hlir_type<std::int32_t>
   {
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->int32_type();
+    }
+  };
+
+  template <>
+  struct Primitive_hlir_type<std::int64_t>
+  {
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->int64_type();
     }
   };
 
@@ -217,6 +244,214 @@ namespace basedhlir
     Type *_rhs_type;
     Type *_result_type;
     [[no_unique_address]] Fn _fn;
+  };
+
+  struct Int8_unary_plus_fn
+  {
+    auto operator()(std::int8_t x) const -> std::int8_t
+    {
+      return x;
+    }
+  };
+
+  struct Int8_unary_minus_fn
+  {
+    auto operator()(std::int8_t x) const -> std::int8_t
+    {
+      return static_cast<std::int8_t>(-x);
+    }
+  };
+
+  struct Int8_add_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    {
+      return static_cast<std::int8_t>(a + b);
+    }
+  };
+
+  struct Int8_subtract_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    {
+      return static_cast<std::int8_t>(a - b);
+    }
+  };
+
+  struct Int8_multiply_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    {
+      return static_cast<std::int8_t>(a * b);
+    }
+  };
+
+  struct Int8_divide_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    {
+      return static_cast<std::int8_t>(a / b);
+    }
+  };
+
+  struct Int8_modulo_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    {
+      return static_cast<std::int8_t>(a % b);
+    }
+  };
+
+  struct Int8_equal_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> bool
+    {
+      return a == b;
+    }
+  };
+
+  struct Int8_not_equal_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> bool
+    {
+      return a != b;
+    }
+  };
+
+  struct Int8_less_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> bool
+    {
+      return a < b;
+    }
+  };
+
+  struct Int8_less_eq_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> bool
+    {
+      return a <= b;
+    }
+  };
+
+  struct Int8_greater_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> bool
+    {
+      return a > b;
+    }
+  };
+
+  struct Int8_greater_eq_fn
+  {
+    auto operator()(std::int8_t a, std::int8_t b) const -> bool
+    {
+      return a >= b;
+    }
+  };
+
+  struct Int16_unary_plus_fn
+  {
+    auto operator()(std::int16_t x) const -> std::int16_t
+    {
+      return x;
+    }
+  };
+
+  struct Int16_unary_minus_fn
+  {
+    auto operator()(std::int16_t x) const -> std::int16_t
+    {
+      return static_cast<std::int16_t>(-x);
+    }
+  };
+
+  struct Int16_add_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
+    {
+      return static_cast<std::int16_t>(a + b);
+    }
+  };
+
+  struct Int16_subtract_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
+    {
+      return static_cast<std::int16_t>(a - b);
+    }
+  };
+
+  struct Int16_multiply_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
+    {
+      return static_cast<std::int16_t>(a * b);
+    }
+  };
+
+  struct Int16_divide_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
+    {
+      return static_cast<std::int16_t>(a / b);
+    }
+  };
+
+  struct Int16_modulo_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
+    {
+      return static_cast<std::int16_t>(a % b);
+    }
+  };
+
+  struct Int16_equal_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    {
+      return a == b;
+    }
+  };
+
+  struct Int16_not_equal_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    {
+      return a != b;
+    }
+  };
+
+  struct Int16_less_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    {
+      return a < b;
+    }
+  };
+
+  struct Int16_less_eq_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    {
+      return a <= b;
+    }
+  };
+
+  struct Int16_greater_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    {
+      return a > b;
+    }
+  };
+
+  struct Int16_greater_eq_fn
+  {
+    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    {
+      return a >= b;
+    }
   };
 
   struct Int32_unary_plus_fn
@@ -323,6 +558,110 @@ namespace basedhlir
     }
   };
 
+  struct Int64_unary_plus_fn
+  {
+    auto operator()(std::int64_t x) const -> std::int64_t
+    {
+      return x;
+    }
+  };
+
+  struct Int64_unary_minus_fn
+  {
+    auto operator()(std::int64_t x) const -> std::int64_t
+    {
+      return -x;
+    }
+  };
+
+  struct Int64_add_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
+    {
+      return a + b;
+    }
+  };
+
+  struct Int64_subtract_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
+    {
+      return a - b;
+    }
+  };
+
+  struct Int64_multiply_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
+    {
+      return a * b;
+    }
+  };
+
+  struct Int64_divide_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
+    {
+      return a / b;
+    }
+  };
+
+  struct Int64_modulo_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
+    {
+      return a % b;
+    }
+  };
+
+  struct Int64_equal_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> bool
+    {
+      return a == b;
+    }
+  };
+
+  struct Int64_not_equal_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> bool
+    {
+      return a != b;
+    }
+  };
+
+  struct Int64_less_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> bool
+    {
+      return a < b;
+    }
+  };
+
+  struct Int64_less_eq_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> bool
+    {
+      return a <= b;
+    }
+  };
+
+  struct Int64_greater_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> bool
+    {
+      return a > b;
+    }
+  };
+
+  struct Int64_greater_eq_fn
+  {
+    auto operator()(std::int64_t a, std::int64_t b) const -> bool
+    {
+      return a >= b;
+    }
+  };
+
   struct Bool_equal_fn
   {
     auto operator()(bool a, bool b) const -> bool
@@ -338,6 +677,210 @@ namespace basedhlir
       return a != b;
     }
   };
+
+  using Int8_unary_plus = Simple_unary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    Int8_unary_plus_instruction,
+    Int8_unary_plus_fn
+  >;
+
+  using Int8_unary_minus = Simple_unary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    Int8_unary_minus_instruction,
+    Int8_unary_minus_fn
+  >;
+
+  using Int8_add = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    std::int8_t,
+    Int8_add_instruction,
+    Int8_add_fn
+  >;
+
+  using Int8_subtract = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    std::int8_t,
+    Int8_subtract_instruction,
+    Int8_subtract_fn
+  >;
+
+  using Int8_multiply = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    std::int8_t,
+    Int8_multiply_instruction,
+    Int8_multiply_fn
+  >;
+
+  using Int8_divide = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    std::int8_t,
+    Int8_divide_instruction,
+    Int8_divide_fn
+  >;
+
+  using Int8_modulo = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    std::int8_t,
+    Int8_modulo_instruction,
+    Int8_modulo_fn
+  >;
+
+  using Int8_equal = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    bool,
+    Int8_equal_instruction,
+    Int8_equal_fn
+  >;
+
+  using Int8_not_equal = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    bool,
+    Int8_not_equal_instruction,
+    Int8_not_equal_fn
+  >;
+
+  using Int8_less = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    bool,
+    Int8_less_instruction,
+    Int8_less_fn
+  >;
+
+  using Int8_less_eq = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    bool,
+    Int8_less_eq_instruction,
+    Int8_less_eq_fn
+  >;
+
+  using Int8_greater = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    bool,
+    Int8_greater_instruction,
+    Int8_greater_fn
+  >;
+
+  using Int8_greater_eq = Simple_binary_operator_overload<
+    std::int8_t,
+    std::int8_t,
+    bool,
+    Int8_greater_eq_instruction,
+    Int8_greater_eq_fn
+  >;
+
+  using Int16_unary_plus = Simple_unary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    Int16_unary_plus_instruction,
+    Int16_unary_plus_fn
+  >;
+
+  using Int16_unary_minus = Simple_unary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    Int16_unary_minus_instruction,
+    Int16_unary_minus_fn
+  >;
+
+  using Int16_add = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    std::int16_t,
+    Int16_add_instruction,
+    Int16_add_fn
+  >;
+
+  using Int16_subtract = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    std::int16_t,
+    Int16_subtract_instruction,
+    Int16_subtract_fn
+  >;
+
+  using Int16_multiply = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    std::int16_t,
+    Int16_multiply_instruction,
+    Int16_multiply_fn
+  >;
+
+  using Int16_divide = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    std::int16_t,
+    Int16_divide_instruction,
+    Int16_divide_fn
+  >;
+
+  using Int16_modulo = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    std::int16_t,
+    Int16_modulo_instruction,
+    Int16_modulo_fn
+  >;
+
+  using Int16_equal = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    bool,
+    Int16_equal_instruction,
+    Int16_equal_fn
+  >;
+
+  using Int16_not_equal = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    bool,
+    Int16_not_equal_instruction,
+    Int16_not_equal_fn
+  >;
+
+  using Int16_less = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    bool,
+    Int16_less_instruction,
+    Int16_less_fn
+  >;
+
+  using Int16_less_eq = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    bool,
+    Int16_less_eq_instruction,
+    Int16_less_eq_fn
+  >;
+
+  using Int16_greater = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    bool,
+    Int16_greater_instruction,
+    Int16_greater_fn
+  >;
+
+  using Int16_greater_eq = Simple_binary_operator_overload<
+    std::int16_t,
+    std::int16_t,
+    bool,
+    Int16_greater_eq_instruction,
+    Int16_greater_eq_fn
+  >;
 
   using Int32_unary_plus = Simple_unary_operator_overload<
     std::int32_t,
@@ -439,6 +982,108 @@ namespace basedhlir
     bool,
     Int32_greater_eq_instruction,
     Int32_greater_eq_fn
+  >;
+
+  using Int64_unary_plus = Simple_unary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    Int64_unary_plus_instruction,
+    Int64_unary_plus_fn
+  >;
+
+  using Int64_unary_minus = Simple_unary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    Int64_unary_minus_instruction,
+    Int64_unary_minus_fn
+  >;
+
+  using Int64_add = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    std::int64_t,
+    Int64_add_instruction,
+    Int64_add_fn
+  >;
+
+  using Int64_subtract = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    std::int64_t,
+    Int64_subtract_instruction,
+    Int64_subtract_fn
+  >;
+
+  using Int64_multiply = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    std::int64_t,
+    Int64_multiply_instruction,
+    Int64_multiply_fn
+  >;
+
+  using Int64_divide = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    std::int64_t,
+    Int64_divide_instruction,
+    Int64_divide_fn
+  >;
+
+  using Int64_modulo = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    std::int64_t,
+    Int64_modulo_instruction,
+    Int64_modulo_fn
+  >;
+
+  using Int64_equal = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    bool,
+    Int64_equal_instruction,
+    Int64_equal_fn
+  >;
+
+  using Int64_not_equal = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    bool,
+    Int64_not_equal_instruction,
+    Int64_not_equal_fn
+  >;
+
+  using Int64_less = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    bool,
+    Int64_less_instruction,
+    Int64_less_fn
+  >;
+
+  using Int64_less_eq = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    bool,
+    Int64_less_eq_instruction,
+    Int64_less_eq_fn
+  >;
+
+  using Int64_greater = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    bool,
+    Int64_greater_instruction,
+    Int64_greater_fn
+  >;
+
+  using Int64_greater_eq = Simple_binary_operator_overload<
+    std::int64_t,
+    std::int64_t,
+    bool,
+    Int64_greater_eq_instruction,
+    Int64_greater_eq_fn
   >;
 
   using Bool_equal = Simple_binary_operator_overload<
@@ -544,16 +1189,37 @@ namespace basedhlir
       : _type_pool{type_pool}
   {
     assert(_type_pool != nullptr);
+    _symbol_table.declare_value("Int8", Type_value{_type_pool->int8_type()});
+    _symbol_table.declare_value("Int16", Type_value{_type_pool->int16_type()});
     _symbol_table.declare_value("Int32", Type_value{_type_pool->int32_type()});
+    _symbol_table.declare_value("Int64", Type_value{_type_pool->int64_type()});
     _symbol_table.declare_value("Bool", Type_value{_type_pool->bool_type()});
     _symbol_table.declare_value("Void", Type_value{_type_pool->void_type()});
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
+      std::make_unique<Int8_unary_plus>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_plus].push_back(
+      std::make_unique<Int16_unary_plus>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_plus].push_back(
       std::make_unique<Int32_unary_plus>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_plus].push_back(
+      std::make_unique<Int64_unary_plus>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+      std::make_unique<Int8_unary_minus>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+      std::make_unique<Int16_unary_minus>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
       std::make_unique<Int32_unary_minus>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+      std::make_unique<Int64_unary_minus>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
@@ -565,37 +1231,136 @@ namespace basedhlir
       std::make_unique<Dereference>()
     );
     _binary_overloads[basedparse::Operator::add].push_back(
+      std::make_unique<Int8_add>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::add].push_back(
+      std::make_unique<Int16_add>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::add].push_back(
       std::make_unique<Int32_add>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::add].push_back(
+      std::make_unique<Int64_add>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::subtract].push_back(
+      std::make_unique<Int8_subtract>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::subtract].push_back(
+      std::make_unique<Int16_subtract>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
       std::make_unique<Int32_subtract>(_type_pool)
     );
+    _binary_overloads[basedparse::Operator::subtract].push_back(
+      std::make_unique<Int64_subtract>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::multiply].push_back(
+      std::make_unique<Int8_multiply>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::multiply].push_back(
+      std::make_unique<Int16_multiply>(_type_pool)
+    );
     _binary_overloads[basedparse::Operator::multiply].push_back(
       std::make_unique<Int32_multiply>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::multiply].push_back(
+      std::make_unique<Int64_multiply>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::divide].push_back(
+      std::make_unique<Int8_divide>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::divide].push_back(
+      std::make_unique<Int16_divide>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
       std::make_unique<Int32_divide>(_type_pool)
     );
+    _binary_overloads[basedparse::Operator::divide].push_back(
+      std::make_unique<Int64_divide>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::modulo].push_back(
+      std::make_unique<Int8_modulo>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::modulo].push_back(
+      std::make_unique<Int16_modulo>(_type_pool)
+    );
     _binary_overloads[basedparse::Operator::modulo].push_back(
       std::make_unique<Int32_modulo>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::modulo].push_back(
+      std::make_unique<Int64_modulo>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::equal].push_back(
+      std::make_unique<Int8_equal>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::equal].push_back(
+      std::make_unique<Int16_equal>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
       std::make_unique<Int32_equal>(_type_pool)
     );
+    _binary_overloads[basedparse::Operator::equal].push_back(
+      std::make_unique<Int64_equal>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::not_equal].push_back(
+      std::make_unique<Int8_not_equal>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::not_equal].push_back(
+      std::make_unique<Int16_not_equal>(_type_pool)
+    );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
       std::make_unique<Int32_not_equal>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::not_equal].push_back(
+      std::make_unique<Int64_not_equal>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less].push_back(
+      std::make_unique<Int8_less>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less].push_back(
+      std::make_unique<Int16_less>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less].push_back(
       std::make_unique<Int32_less>(_type_pool)
     );
+    _binary_overloads[basedparse::Operator::less].push_back(
+      std::make_unique<Int64_less>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less_eq].push_back(
+      std::make_unique<Int8_less_eq>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less_eq].push_back(
+      std::make_unique<Int16_less_eq>(_type_pool)
+    );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
       std::make_unique<Int32_less_eq>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less_eq].push_back(
+      std::make_unique<Int64_less_eq>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater].push_back(
+      std::make_unique<Int8_greater>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater].push_back(
+      std::make_unique<Int16_greater>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
       std::make_unique<Int32_greater>(_type_pool)
     );
+    _binary_overloads[basedparse::Operator::greater].push_back(
+      std::make_unique<Int64_greater>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+      std::make_unique<Int8_greater_eq>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+      std::make_unique<Int16_greater_eq>(_type_pool)
+    );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
       std::make_unique<Int32_greater_eq>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+      std::make_unique<Int64_greater_eq>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
       std::make_unique<Bool_equal>(_type_pool)
@@ -925,14 +1690,59 @@ namespace basedhlir
     basedparse::Int_literal_expression const &expr
   )
   {
-    auto const value = parse_int_literal(expr.literal.text);
-    if (!value.has_value() ||
-        *value >
-          static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()))
+    auto const text = expr.literal.text;
+    auto const suffix_pos = text.find_first_not_of("0123456789");
+    auto const digits = text.substr(0, suffix_pos);
+    auto const suffix =
+      suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
+    auto const value = parse_int_literal(digits);
+    if (suffix == "" || suffix == "i32")
     {
-      emit_error("integer literal is out of range for Int32", expr.literal);
+      if (!value.has_value() ||
+          *value > static_cast<std::uint64_t>(
+                     std::numeric_limits<std::int32_t>::max()
+                   ))
+      {
+        emit_error("integer literal is out of range for Int32", expr.literal);
+      }
+      return Constant_value{static_cast<std::int32_t>(*value)};
     }
-    return Constant_value{static_cast<std::int32_t>(*value)};
+    if (suffix == "i8")
+    {
+      if (!value.has_value() ||
+          *value >
+            static_cast<std::uint64_t>(std::numeric_limits<std::int8_t>::max()))
+      {
+        emit_error("integer literal is out of range for Int8", expr.literal);
+      }
+      return Constant_value{static_cast<std::int8_t>(*value)};
+    }
+    if (suffix == "i16")
+    {
+      if (!value.has_value() ||
+          *value > static_cast<std::uint64_t>(
+                     std::numeric_limits<std::int16_t>::max()
+                   ))
+      {
+        emit_error("integer literal is out of range for Int16", expr.literal);
+      }
+      return Constant_value{static_cast<std::int16_t>(*value)};
+    }
+    if (suffix == "i64")
+    {
+      if (!value.has_value() ||
+          *value > static_cast<std::uint64_t>(
+                     std::numeric_limits<std::int64_t>::max()
+                   ))
+      {
+        emit_error("integer literal is out of range for Int64", expr.literal);
+      }
+      return Constant_value{static_cast<std::int64_t>(*value)};
+    }
+    emit_error(
+      fmt::format("unknown integer literal suffix '{}'", suffix),
+      expr.literal
+    );
   }
 
   Operand Compilation_context::compile_expression(
@@ -988,18 +1798,76 @@ namespace basedhlir
     {
       auto const &literal =
         std::get<basedparse::Int_literal_expression>(expr.operand->value);
-      auto const value = parse_int_literal(literal.literal.text);
-      if (!value.has_value() || *value > int32_max_magnitude)
+      auto const text = literal.literal.text;
+      auto const suffix_pos = text.find_first_not_of("0123456789");
+      auto const digits = text.substr(0, suffix_pos);
+      auto const suffix =
+        suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
+      auto const value = parse_int_literal(digits);
+      if (suffix == "" || suffix == "i32")
       {
-        emit_error(
-          "integer literal is out of range for Int32",
-          literal.literal
-        );
+        if (!value.has_value() || *value > int32_max_magnitude)
+        {
+          emit_error(
+            "integer literal is out of range for Int32",
+            literal.literal
+          );
+        }
+        return Constant_value{
+          *value < int32_max_magnitude
+            ? -static_cast<std::int32_t>(*value)
+            : std::numeric_limits<std::int32_t>::min()
+        };
       }
-      return Constant_value{
-        *value < int32_max_magnitude ? -static_cast<std::int32_t>(*value)
-                                     : std::numeric_limits<std::int32_t>::min()
-      };
+      if (suffix == "i8")
+      {
+        if (!value.has_value() || *value > int8_max_magnitude)
+        {
+          emit_error(
+            "integer literal is out of range for Int8",
+            literal.literal
+          );
+        }
+        return Constant_value{
+          *value < int8_max_magnitude
+            ? static_cast<std::int8_t>(-static_cast<std::int8_t>(*value))
+            : std::numeric_limits<std::int8_t>::min()
+        };
+      }
+      if (suffix == "i16")
+      {
+        if (!value.has_value() || *value > int16_max_magnitude)
+        {
+          emit_error(
+            "integer literal is out of range for Int16",
+            literal.literal
+          );
+        }
+        return Constant_value{
+          *value < int16_max_magnitude
+            ? static_cast<std::int16_t>(-static_cast<std::int16_t>(*value))
+            : std::numeric_limits<std::int16_t>::min()
+        };
+      }
+      if (suffix == "i64")
+      {
+        if (!value.has_value() || *value > int64_max_magnitude)
+        {
+          emit_error(
+            "integer literal is out of range for Int64",
+            literal.literal
+          );
+        }
+        return Constant_value{
+          *value < int64_max_magnitude
+            ? -static_cast<std::int64_t>(*value)
+            : std::numeric_limits<std::int64_t>::min()
+        };
+      }
+      emit_error(
+        fmt::format("unknown integer literal suffix '{}'", suffix),
+        literal.literal
+      );
     }
     // General case
     else

@@ -1,3 +1,4 @@
+#include <concepts>
 #include <cassert>
 #include <cstdint>
 #include <format>
@@ -44,18 +45,21 @@ namespace basedhlir
     Compilation_context &ctx,
     Operand operand,
     Type *result_type,
-    Fn &&fn
+    Fn const &fn
   )
   {
+    static_assert(std::same_as<std::invoke_result_t<Fn const &, OperandT>, ResultT>);
+
     if (auto const cv = std::get_if<Constant_value>(&operand))
     {
-      return Operand{Constant_value{
-        static_cast<ResultT>(fn(std::get<OperandT>(*cv)))
-      }};
+      return Operand{Constant_value{fn(std::get<OperandT>(*cv))}};
     }
-    auto const result = ctx.allocate_register(result_type);
-    ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
-    return Operand{result};
+    else
+    {
+      auto const result = ctx.allocate_register(result_type);
+      ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
+      return Operand{result};
+    }
   }
 
   template <
@@ -69,22 +73,29 @@ namespace basedhlir
     Operand lhs,
     Operand rhs,
     Type *result_type,
-    Fn &&fn
+    Fn const &fn
   )
   {
+    static_assert(
+      std::same_as<std::invoke_result_t<Fn const &, LhsT, RhsT>, ResultT>
+    );
+
     auto const lhs_cv = std::get_if<Constant_value>(&lhs);
     auto const rhs_cv = std::get_if<Constant_value>(&rhs);
     if (lhs_cv != nullptr && rhs_cv != nullptr)
     {
-      return Operand{Constant_value{static_cast<ResultT>(
-        fn(std::get<LhsT>(*lhs_cv), std::get<RhsT>(*rhs_cv))
-      )}};
+      return Operand{
+        Constant_value{fn(std::get<LhsT>(*lhs_cv), std::get<RhsT>(*rhs_cv))}
+      };
     }
-    auto const result = ctx.allocate_register(result_type);
-    ctx.emit(
-      Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}}
-    );
-    return Operand{result};
+    else
+    {
+      auto const result = ctx.allocate_register(result_type);
+      ctx.emit(
+        Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}}
+      );
+      return Operand{result};
+    }
   }
 
   template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>

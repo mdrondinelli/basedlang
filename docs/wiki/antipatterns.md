@@ -19,33 +19,9 @@ When you add a new antipattern:
 
 **Smell:** An `else` or `default` branch contains `std::unreachable()` to paper over a condition that must always be true.
 
-**Why it is dangerous:** `std::unreachable()` is an optimizer hint. It does not communicate the invariant to readers, and in debug builds it silently produces undefined behavior rather than a diagnostic.
+**Why it is dangerous:** `std::unreachable()` is an optimizer hint. It does not communicate the invariant to readers, and it produces undefined behavior rather than a diagnostic.
 
 **Better implementation:** Use `assert(condition)` to express internal invariants. It clearly communicates "this cannot be false here" and fires in debug builds when violated.
-
-## Re-walking the AST to recover a type that was already compiled
-
-**Smell:** Inside `compile_expression`, after compiling a sub-expression into an `Operand`, the code calls `type_of_expression` on the same sub-expression to recover its type.
-
-**Why it is dangerous:** It re-walks the AST unnecessarily and can diverge from what was actually compiled if any side-effectful state changed in between.
-
-**Better implementation:** Derive the type from the compiled `Operand` directly: call `type_of_register(r)` for a `Register` result and `type_of_constant(cv)` for a `Constant_value` result. Only call `type_of_expression` on sub-expressions that have not yet been compiled.
-
-## Ad hoc type construction outside `Type_pool`
-
-**Smell:** A `Type` object is constructed directly rather than going through `Type_pool`.
-
-**Why it is dangerous:** Type identity in this compiler is pointer identity. Two `Type` objects with identical structure but different addresses compare unequal. Any type check or deduplication that relies on pointer equality silently breaks.
-
-**Better implementation:** All type construction must go through `Type_pool`. The pool interns types so equal types share the same `Type *`.
-
-## Diagnostics that point at derived nodes instead of user syntax
-
-**Smell:** A diagnostic's source span points at a computed or internal AST node rather than at the token or surface syntax the user actually wrote.
-
-**Why it is dangerous:** The user sees an error highlighted at the wrong location, which makes the error message confusing or unactionable.
-
-**Better implementation:** Propagate source spans from the original `Lexeme` through the AST. When emitting a diagnostic, use the span of the closest enclosing user-written construct.
 
 ## Tests that only cover the happy path
 

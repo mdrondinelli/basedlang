@@ -1112,17 +1112,6 @@ namespace basedhlir
     auto const suffix =
       suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
     auto const value = parse_int_literal(digits);
-    if (suffix == "" || suffix == "i32")
-    {
-      if (!value.has_value() ||
-          *value > static_cast<std::uint64_t>(
-                     std::numeric_limits<std::int32_t>::max()
-                   ))
-      {
-        emit_error("integer literal is out of range for Int32", expr.literal);
-      }
-      return Constant_value{static_cast<std::int32_t>(*value)};
-    }
     if (suffix == "i8")
     {
       if (!value.has_value() ||
@@ -1133,7 +1122,7 @@ namespace basedhlir
       }
       return Constant_value{static_cast<std::int8_t>(*value)};
     }
-    if (suffix == "i16")
+    else if (suffix == "i16")
     {
       if (!value.has_value() ||
           *value > static_cast<std::uint64_t>(
@@ -1144,7 +1133,18 @@ namespace basedhlir
       }
       return Constant_value{static_cast<std::int16_t>(*value)};
     }
-    if (suffix == "i64")
+    else if (suffix == "i32" || suffix.empty())
+    {
+      if (!value.has_value() ||
+          *value > static_cast<std::uint64_t>(
+                     std::numeric_limits<std::int32_t>::max()
+                   ))
+      {
+        emit_error("integer literal is out of range for Int32", expr.literal);
+      }
+      return Constant_value{static_cast<std::int32_t>(*value)};
+    }
+    else if (suffix == "i64")
     {
       if (!value.has_value() ||
           *value > static_cast<std::uint64_t>(
@@ -1220,21 +1220,6 @@ namespace basedhlir
       auto const suffix =
         suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
       auto const value = parse_int_literal(digits);
-      if (suffix == "" || suffix == "i32")
-      {
-        if (!value.has_value() || *value > int32_max_magnitude)
-        {
-          emit_error(
-            "integer literal is out of range for Int32",
-            literal.literal
-          );
-        }
-        return Constant_value{
-          *value < int32_max_magnitude
-            ? -static_cast<std::int32_t>(*value)
-            : std::numeric_limits<std::int32_t>::min()
-        };
-      }
       if (suffix == "i8")
       {
         if (!value.has_value() || *value > int8_max_magnitude)
@@ -1250,7 +1235,7 @@ namespace basedhlir
             : std::numeric_limits<std::int8_t>::min()
         };
       }
-      if (suffix == "i16")
+      else if (suffix == "i16")
       {
         if (!value.has_value() || *value > int16_max_magnitude)
         {
@@ -1263,6 +1248,21 @@ namespace basedhlir
           *value < int16_max_magnitude
             ? static_cast<std::int16_t>(-static_cast<std::int16_t>(*value))
             : std::numeric_limits<std::int16_t>::min()
+        };
+      }
+      else if (suffix == "i32" || suffix.empty())
+      {
+        if (!value.has_value() || *value > int32_max_magnitude)
+        {
+          emit_error(
+            "integer literal is out of range for Int32",
+            literal.literal
+          );
+        }
+        return Constant_value{
+          *value < int32_max_magnitude
+            ? -static_cast<std::int32_t>(*value)
+            : std::numeric_limits<std::int32_t>::min()
         };
       }
       if (suffix == "i64")

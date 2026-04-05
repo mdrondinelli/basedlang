@@ -8,7 +8,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 add_subdirectory(extern/Catch2-3.13.0)
-add_subdirectory(extern/fmt)
 
 add_library(basedlex
   code/basedlex/src/char_stream_reader.cpp
@@ -35,7 +34,7 @@ add_library(basedhlir
   code/basedhlir/src/type.cpp
 )
 target_include_directories(basedhlir PUBLIC code/basedhlir/include)
-target_link_libraries(basedhlir PUBLIC basedparse fmt)
+target_link_libraries(basedhlir PUBLIC basedparse)
 
 add_library(basedcli
   code/based/run.cpp

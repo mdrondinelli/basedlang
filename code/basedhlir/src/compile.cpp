@@ -1,6 +1,7 @@
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <format>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -8,7 +9,6 @@
 #include <vector>
 
 #include <basedparse/source_span.h>
-#include <fmt/format.h>
 
 #include "basedhlir/compile.h"
 #include "basedhlir/interpret.h"
@@ -246,417 +246,118 @@ namespace basedhlir
     [[no_unique_address]] Fn _fn;
   };
 
-  struct Int8_unary_plus_fn
+  template <typename T>
+  struct Integer_unary_plus_fn
   {
-    auto operator()(std::int8_t x) const -> std::int8_t
+    auto operator()(T x) const -> T
     {
       return x;
     }
   };
 
-  struct Int8_unary_minus_fn
+  template <typename T>
+  struct Integer_unary_minus_fn
   {
-    auto operator()(std::int8_t x) const -> std::int8_t
+    auto operator()(T x) const -> T
     {
-      return static_cast<std::int8_t>(-x);
+      return static_cast<T>(-x);
     }
   };
 
-  struct Int8_add_fn
+  template <typename T>
+  struct Integer_add_fn
   {
-    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    auto operator()(T a, T b) const -> T
     {
-      return static_cast<std::int8_t>(a + b);
+      return static_cast<T>(a + b);
     }
   };
 
-  struct Int8_subtract_fn
+  template <typename T>
+  struct Integer_subtract_fn
   {
-    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    auto operator()(T a, T b) const -> T
     {
-      return static_cast<std::int8_t>(a - b);
+      return static_cast<T>(a - b);
     }
   };
 
-  struct Int8_multiply_fn
+  template <typename T>
+  struct Integer_multiply_fn
   {
-    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    auto operator()(T a, T b) const -> T
     {
-      return static_cast<std::int8_t>(a * b);
+      return static_cast<T>(a * b);
     }
   };
 
-  struct Int8_divide_fn
+  template <typename T>
+  struct Integer_divide_fn
   {
-    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    auto operator()(T a, T b) const -> T
     {
-      return static_cast<std::int8_t>(a / b);
+      return static_cast<T>(a / b);
     }
   };
 
-  struct Int8_modulo_fn
+  template <typename T>
+  struct Integer_modulo_fn
   {
-    auto operator()(std::int8_t a, std::int8_t b) const -> std::int8_t
+    auto operator()(T a, T b) const -> T
     {
-      return static_cast<std::int8_t>(a % b);
+      return static_cast<T>(a % b);
     }
   };
 
-  struct Int8_equal_fn
+  template <typename T>
+  struct Integer_equal_fn
   {
-    auto operator()(std::int8_t a, std::int8_t b) const -> bool
-    {
-      return a == b;
-    }
-  };
-
-  struct Int8_not_equal_fn
-  {
-    auto operator()(std::int8_t a, std::int8_t b) const -> bool
-    {
-      return a != b;
-    }
-  };
-
-  struct Int8_less_fn
-  {
-    auto operator()(std::int8_t a, std::int8_t b) const -> bool
-    {
-      return a < b;
-    }
-  };
-
-  struct Int8_less_eq_fn
-  {
-    auto operator()(std::int8_t a, std::int8_t b) const -> bool
-    {
-      return a <= b;
-    }
-  };
-
-  struct Int8_greater_fn
-  {
-    auto operator()(std::int8_t a, std::int8_t b) const -> bool
-    {
-      return a > b;
-    }
-  };
-
-  struct Int8_greater_eq_fn
-  {
-    auto operator()(std::int8_t a, std::int8_t b) const -> bool
-    {
-      return a >= b;
-    }
-  };
-
-  struct Int16_unary_plus_fn
-  {
-    auto operator()(std::int16_t x) const -> std::int16_t
-    {
-      return x;
-    }
-  };
-
-  struct Int16_unary_minus_fn
-  {
-    auto operator()(std::int16_t x) const -> std::int16_t
-    {
-      return static_cast<std::int16_t>(-x);
-    }
-  };
-
-  struct Int16_add_fn
-  {
-    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
-    {
-      return static_cast<std::int16_t>(a + b);
-    }
-  };
-
-  struct Int16_subtract_fn
-  {
-    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
-    {
-      return static_cast<std::int16_t>(a - b);
-    }
-  };
-
-  struct Int16_multiply_fn
-  {
-    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
-    {
-      return static_cast<std::int16_t>(a * b);
-    }
-  };
-
-  struct Int16_divide_fn
-  {
-    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
-    {
-      return static_cast<std::int16_t>(a / b);
-    }
-  };
-
-  struct Int16_modulo_fn
-  {
-    auto operator()(std::int16_t a, std::int16_t b) const -> std::int16_t
-    {
-      return static_cast<std::int16_t>(a % b);
-    }
-  };
-
-  struct Int16_equal_fn
-  {
-    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a == b;
     }
   };
 
-  struct Int16_not_equal_fn
+  template <typename T>
+  struct Integer_not_equal_fn
   {
-    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a != b;
     }
   };
 
-  struct Int16_less_fn
+  template <typename T>
+  struct Integer_less_fn
   {
-    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a < b;
     }
   };
 
-  struct Int16_less_eq_fn
+  template <typename T>
+  struct Integer_less_eq_fn
   {
-    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a <= b;
     }
   };
 
-  struct Int16_greater_fn
+  template <typename T>
+  struct Integer_greater_fn
   {
-    auto operator()(std::int16_t a, std::int16_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a > b;
     }
   };
 
-  struct Int16_greater_eq_fn
+  template <typename T>
+  struct Integer_greater_eq_fn
   {
-    auto operator()(std::int16_t a, std::int16_t b) const -> bool
-    {
-      return a >= b;
-    }
-  };
-
-  struct Int32_unary_plus_fn
-  {
-    auto operator()(std::int32_t x) const -> std::int32_t
-    {
-      return x;
-    }
-  };
-
-  struct Int32_unary_minus_fn
-  {
-    auto operator()(std::int32_t x) const -> std::int32_t
-    {
-      return -x;
-    }
-  };
-
-  struct Int32_add_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
-    {
-      return a + b;
-    }
-  };
-
-  struct Int32_subtract_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
-    {
-      return a - b;
-    }
-  };
-
-  struct Int32_multiply_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
-    {
-      return a * b;
-    }
-  };
-
-  struct Int32_divide_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
-    {
-      return a / b;
-    }
-  };
-
-  struct Int32_modulo_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
-    {
-      return a % b;
-    }
-  };
-
-  struct Int32_equal_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
-    {
-      return a == b;
-    }
-  };
-
-  struct Int32_not_equal_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
-    {
-      return a != b;
-    }
-  };
-
-  struct Int32_less_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
-    {
-      return a < b;
-    }
-  };
-
-  struct Int32_less_eq_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
-    {
-      return a <= b;
-    }
-  };
-
-  struct Int32_greater_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
-    {
-      return a > b;
-    }
-  };
-
-  struct Int32_greater_eq_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
-    {
-      return a >= b;
-    }
-  };
-
-  struct Int64_unary_plus_fn
-  {
-    auto operator()(std::int64_t x) const -> std::int64_t
-    {
-      return x;
-    }
-  };
-
-  struct Int64_unary_minus_fn
-  {
-    auto operator()(std::int64_t x) const -> std::int64_t
-    {
-      return -x;
-    }
-  };
-
-  struct Int64_add_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
-    {
-      return a + b;
-    }
-  };
-
-  struct Int64_subtract_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
-    {
-      return a - b;
-    }
-  };
-
-  struct Int64_multiply_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
-    {
-      return a * b;
-    }
-  };
-
-  struct Int64_divide_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
-    {
-      return a / b;
-    }
-  };
-
-  struct Int64_modulo_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> std::int64_t
-    {
-      return a % b;
-    }
-  };
-
-  struct Int64_equal_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> bool
-    {
-      return a == b;
-    }
-  };
-
-  struct Int64_not_equal_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> bool
-    {
-      return a != b;
-    }
-  };
-
-  struct Int64_less_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> bool
-    {
-      return a < b;
-    }
-  };
-
-  struct Int64_less_eq_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> bool
-    {
-      return a <= b;
-    }
-  };
-
-  struct Int64_greater_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> bool
-    {
-      return a > b;
-    }
-  };
-
-  struct Int64_greater_eq_fn
-  {
-    auto operator()(std::int64_t a, std::int64_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a >= b;
     }
@@ -678,412 +379,119 @@ namespace basedhlir
     }
   };
 
-  using Int8_unary_plus = Simple_unary_operator_overload<
-    std::int8_t,
-    std::int8_t,
-    Int8_unary_plus_instruction,
-    Int8_unary_plus_fn
+  template <typename T>
+  using Integer_unary_plus = Simple_unary_operator_overload<
+    T,
+    T,
+    Integer_unary_plus_instruction<T>,
+    Integer_unary_plus_fn<T>
   >;
 
-  using Int8_unary_minus = Simple_unary_operator_overload<
-    std::int8_t,
-    std::int8_t,
-    Int8_unary_minus_instruction,
-    Int8_unary_minus_fn
+  template <typename T>
+  using Integer_unary_minus = Simple_unary_operator_overload<
+    T,
+    T,
+    Integer_unary_minus_instruction<T>,
+    Integer_unary_minus_fn<T>
   >;
 
-  using Int8_add = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
-    std::int8_t,
-    Int8_add_instruction,
-    Int8_add_fn
+  template <typename T>
+  using Integer_add = Simple_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_add_instruction<T>,
+    Integer_add_fn<T>
   >;
 
-  using Int8_subtract = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
-    std::int8_t,
-    Int8_subtract_instruction,
-    Int8_subtract_fn
+  template <typename T>
+  using Integer_subtract = Simple_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_subtract_instruction<T>,
+    Integer_subtract_fn<T>
   >;
 
-  using Int8_multiply = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
-    std::int8_t,
-    Int8_multiply_instruction,
-    Int8_multiply_fn
+  template <typename T>
+  using Integer_multiply = Simple_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_multiply_instruction<T>,
+    Integer_multiply_fn<T>
   >;
 
-  using Int8_divide = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
-    std::int8_t,
-    Int8_divide_instruction,
-    Int8_divide_fn
+  template <typename T>
+  using Integer_divide = Simple_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_divide_instruction<T>,
+    Integer_divide_fn<T>
   >;
 
-  using Int8_modulo = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
-    std::int8_t,
-    Int8_modulo_instruction,
-    Int8_modulo_fn
+  template <typename T>
+  using Integer_modulo = Simple_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_modulo_instruction<T>,
+    Integer_modulo_fn<T>
   >;
 
-  using Int8_equal = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
+  template <typename T>
+  using Integer_equal = Simple_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int8_equal_instruction,
-    Int8_equal_fn
+    Integer_equal_instruction<T>,
+    Integer_equal_fn<T>
   >;
 
-  using Int8_not_equal = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
+  template <typename T>
+  using Integer_not_equal = Simple_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int8_not_equal_instruction,
-    Int8_not_equal_fn
+    Integer_not_equal_instruction<T>,
+    Integer_not_equal_fn<T>
   >;
 
-  using Int8_less = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
+  template <typename T>
+  using Integer_less = Simple_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int8_less_instruction,
-    Int8_less_fn
+    Integer_less_instruction<T>,
+    Integer_less_fn<T>
   >;
 
-  using Int8_less_eq = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
+  template <typename T>
+  using Integer_less_eq = Simple_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int8_less_eq_instruction,
-    Int8_less_eq_fn
+    Integer_less_eq_instruction<T>,
+    Integer_less_eq_fn<T>
   >;
 
-  using Int8_greater = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
+  template <typename T>
+  using Integer_greater = Simple_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int8_greater_instruction,
-    Int8_greater_fn
+    Integer_greater_instruction<T>,
+    Integer_greater_fn<T>
   >;
 
-  using Int8_greater_eq = Simple_binary_operator_overload<
-    std::int8_t,
-    std::int8_t,
+  template <typename T>
+  using Integer_greater_eq = Simple_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int8_greater_eq_instruction,
-    Int8_greater_eq_fn
-  >;
-
-  using Int16_unary_plus = Simple_unary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    Int16_unary_plus_instruction,
-    Int16_unary_plus_fn
-  >;
-
-  using Int16_unary_minus = Simple_unary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    Int16_unary_minus_instruction,
-    Int16_unary_minus_fn
-  >;
-
-  using Int16_add = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    std::int16_t,
-    Int16_add_instruction,
-    Int16_add_fn
-  >;
-
-  using Int16_subtract = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    std::int16_t,
-    Int16_subtract_instruction,
-    Int16_subtract_fn
-  >;
-
-  using Int16_multiply = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    std::int16_t,
-    Int16_multiply_instruction,
-    Int16_multiply_fn
-  >;
-
-  using Int16_divide = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    std::int16_t,
-    Int16_divide_instruction,
-    Int16_divide_fn
-  >;
-
-  using Int16_modulo = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    std::int16_t,
-    Int16_modulo_instruction,
-    Int16_modulo_fn
-  >;
-
-  using Int16_equal = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    bool,
-    Int16_equal_instruction,
-    Int16_equal_fn
-  >;
-
-  using Int16_not_equal = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    bool,
-    Int16_not_equal_instruction,
-    Int16_not_equal_fn
-  >;
-
-  using Int16_less = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    bool,
-    Int16_less_instruction,
-    Int16_less_fn
-  >;
-
-  using Int16_less_eq = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    bool,
-    Int16_less_eq_instruction,
-    Int16_less_eq_fn
-  >;
-
-  using Int16_greater = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    bool,
-    Int16_greater_instruction,
-    Int16_greater_fn
-  >;
-
-  using Int16_greater_eq = Simple_binary_operator_overload<
-    std::int16_t,
-    std::int16_t,
-    bool,
-    Int16_greater_eq_instruction,
-    Int16_greater_eq_fn
-  >;
-
-  using Int32_unary_plus = Simple_unary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    Int32_unary_plus_instruction,
-    Int32_unary_plus_fn
-  >;
-
-  using Int32_unary_minus = Simple_unary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    Int32_unary_minus_instruction,
-    Int32_unary_minus_fn
-  >;
-
-  using Int32_add = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_add_instruction,
-    Int32_add_fn
-  >;
-
-  using Int32_subtract = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_subtract_instruction,
-    Int32_subtract_fn
-  >;
-
-  using Int32_multiply = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_multiply_instruction,
-    Int32_multiply_fn
-  >;
-
-  using Int32_divide = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_divide_instruction,
-    Int32_divide_fn
-  >;
-
-  using Int32_modulo = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_modulo_instruction,
-    Int32_modulo_fn
-  >;
-
-  using Int32_equal = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    bool,
-    Int32_equal_instruction,
-    Int32_equal_fn
-  >;
-
-  using Int32_not_equal = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    bool,
-    Int32_not_equal_instruction,
-    Int32_not_equal_fn
-  >;
-
-  using Int32_less = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    bool,
-    Int32_less_instruction,
-    Int32_less_fn
-  >;
-
-  using Int32_less_eq = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    bool,
-    Int32_less_eq_instruction,
-    Int32_less_eq_fn
-  >;
-
-  using Int32_greater = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    bool,
-    Int32_greater_instruction,
-    Int32_greater_fn
-  >;
-
-  using Int32_greater_eq = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    bool,
-    Int32_greater_eq_instruction,
-    Int32_greater_eq_fn
-  >;
-
-  using Int64_unary_plus = Simple_unary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    Int64_unary_plus_instruction,
-    Int64_unary_plus_fn
-  >;
-
-  using Int64_unary_minus = Simple_unary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    Int64_unary_minus_instruction,
-    Int64_unary_minus_fn
-  >;
-
-  using Int64_add = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    std::int64_t,
-    Int64_add_instruction,
-    Int64_add_fn
-  >;
-
-  using Int64_subtract = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    std::int64_t,
-    Int64_subtract_instruction,
-    Int64_subtract_fn
-  >;
-
-  using Int64_multiply = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    std::int64_t,
-    Int64_multiply_instruction,
-    Int64_multiply_fn
-  >;
-
-  using Int64_divide = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    std::int64_t,
-    Int64_divide_instruction,
-    Int64_divide_fn
-  >;
-
-  using Int64_modulo = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    std::int64_t,
-    Int64_modulo_instruction,
-    Int64_modulo_fn
-  >;
-
-  using Int64_equal = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    bool,
-    Int64_equal_instruction,
-    Int64_equal_fn
-  >;
-
-  using Int64_not_equal = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    bool,
-    Int64_not_equal_instruction,
-    Int64_not_equal_fn
-  >;
-
-  using Int64_less = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    bool,
-    Int64_less_instruction,
-    Int64_less_fn
-  >;
-
-  using Int64_less_eq = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    bool,
-    Int64_less_eq_instruction,
-    Int64_less_eq_fn
-  >;
-
-  using Int64_greater = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    bool,
-    Int64_greater_instruction,
-    Int64_greater_fn
-  >;
-
-  using Int64_greater_eq = Simple_binary_operator_overload<
-    std::int64_t,
-    std::int64_t,
-    bool,
-    Int64_greater_eq_instruction,
-    Int64_greater_eq_fn
+    Integer_greater_eq_instruction<T>,
+    Integer_greater_eq_fn<T>
   >;
 
   using Bool_equal = Simple_binary_operator_overload<
@@ -1198,28 +606,28 @@ namespace basedhlir
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Int8_unary_plus>(_type_pool)
+      std::make_unique<Integer_unary_plus<std::int8_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Int16_unary_plus>(_type_pool)
+      std::make_unique<Integer_unary_plus<std::int16_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Int32_unary_plus>(_type_pool)
+      std::make_unique<Integer_unary_plus<std::int32_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Int64_unary_plus>(_type_pool)
+      std::make_unique<Integer_unary_plus<std::int64_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Int8_unary_minus>(_type_pool)
+      std::make_unique<Integer_unary_minus<std::int8_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Int16_unary_minus>(_type_pool)
+      std::make_unique<Integer_unary_minus<std::int16_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Int32_unary_minus>(_type_pool)
+      std::make_unique<Integer_unary_minus<std::int32_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Int64_unary_minus>(_type_pool)
+      std::make_unique<Integer_unary_minus<std::int64_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
@@ -1231,136 +639,136 @@ namespace basedhlir
       std::make_unique<Dereference>()
     );
     _binary_overloads[basedparse::Operator::add].push_back(
-      std::make_unique<Int8_add>(_type_pool)
+      std::make_unique<Integer_add<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::add].push_back(
-      std::make_unique<Int16_add>(_type_pool)
+      std::make_unique<Integer_add<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::add].push_back(
-      std::make_unique<Int32_add>(_type_pool)
+      std::make_unique<Integer_add<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::add].push_back(
-      std::make_unique<Int64_add>(_type_pool)
+      std::make_unique<Integer_add<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
-      std::make_unique<Int8_subtract>(_type_pool)
+      std::make_unique<Integer_subtract<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
-      std::make_unique<Int16_subtract>(_type_pool)
+      std::make_unique<Integer_subtract<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
-      std::make_unique<Int32_subtract>(_type_pool)
+      std::make_unique<Integer_subtract<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
-      std::make_unique<Int64_subtract>(_type_pool)
+      std::make_unique<Integer_subtract<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::multiply].push_back(
-      std::make_unique<Int8_multiply>(_type_pool)
+      std::make_unique<Integer_multiply<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::multiply].push_back(
-      std::make_unique<Int16_multiply>(_type_pool)
+      std::make_unique<Integer_multiply<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::multiply].push_back(
-      std::make_unique<Int32_multiply>(_type_pool)
+      std::make_unique<Integer_multiply<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::multiply].push_back(
-      std::make_unique<Int64_multiply>(_type_pool)
+      std::make_unique<Integer_multiply<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
-      std::make_unique<Int8_divide>(_type_pool)
+      std::make_unique<Integer_divide<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
-      std::make_unique<Int16_divide>(_type_pool)
+      std::make_unique<Integer_divide<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
-      std::make_unique<Int32_divide>(_type_pool)
+      std::make_unique<Integer_divide<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
-      std::make_unique<Int64_divide>(_type_pool)
+      std::make_unique<Integer_divide<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::modulo].push_back(
-      std::make_unique<Int8_modulo>(_type_pool)
+      std::make_unique<Integer_modulo<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::modulo].push_back(
-      std::make_unique<Int16_modulo>(_type_pool)
+      std::make_unique<Integer_modulo<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::modulo].push_back(
-      std::make_unique<Int32_modulo>(_type_pool)
+      std::make_unique<Integer_modulo<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::modulo].push_back(
-      std::make_unique<Int64_modulo>(_type_pool)
+      std::make_unique<Integer_modulo<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Int8_equal>(_type_pool)
+      std::make_unique<Integer_equal<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Int16_equal>(_type_pool)
+      std::make_unique<Integer_equal<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Int32_equal>(_type_pool)
+      std::make_unique<Integer_equal<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Int64_equal>(_type_pool)
+      std::make_unique<Integer_equal<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Int8_not_equal>(_type_pool)
+      std::make_unique<Integer_not_equal<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Int16_not_equal>(_type_pool)
+      std::make_unique<Integer_not_equal<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Int32_not_equal>(_type_pool)
+      std::make_unique<Integer_not_equal<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Int64_not_equal>(_type_pool)
+      std::make_unique<Integer_not_equal<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less].push_back(
-      std::make_unique<Int8_less>(_type_pool)
+      std::make_unique<Integer_less<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less].push_back(
-      std::make_unique<Int16_less>(_type_pool)
+      std::make_unique<Integer_less<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less].push_back(
-      std::make_unique<Int32_less>(_type_pool)
+      std::make_unique<Integer_less<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less].push_back(
-      std::make_unique<Int64_less>(_type_pool)
+      std::make_unique<Integer_less<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
-      std::make_unique<Int8_less_eq>(_type_pool)
+      std::make_unique<Integer_less_eq<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
-      std::make_unique<Int16_less_eq>(_type_pool)
+      std::make_unique<Integer_less_eq<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
-      std::make_unique<Int32_less_eq>(_type_pool)
+      std::make_unique<Integer_less_eq<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
-      std::make_unique<Int64_less_eq>(_type_pool)
+      std::make_unique<Integer_less_eq<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
-      std::make_unique<Int8_greater>(_type_pool)
+      std::make_unique<Integer_greater<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
-      std::make_unique<Int16_greater>(_type_pool)
+      std::make_unique<Integer_greater<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
-      std::make_unique<Int32_greater>(_type_pool)
+      std::make_unique<Integer_greater<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
-      std::make_unique<Int64_greater>(_type_pool)
+      std::make_unique<Integer_greater<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
-      std::make_unique<Int8_greater_eq>(_type_pool)
+      std::make_unique<Integer_greater_eq<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
-      std::make_unique<Int16_greater_eq>(_type_pool)
+      std::make_unique<Integer_greater_eq<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
-      std::make_unique<Int32_greater_eq>(_type_pool)
+      std::make_unique<Integer_greater_eq<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
-      std::make_unique<Int64_greater_eq>(_type_pool)
+      std::make_unique<Integer_greater_eq<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
       std::make_unique<Bool_equal>(_type_pool)
@@ -1459,7 +867,7 @@ namespace basedhlir
     if (sym == nullptr)
     {
       emit_error(
-        fmt::format("undefined identifier: {}", identifier.text),
+        std::format("undefined identifier: {}", identifier.text),
         identifier
       );
     }
@@ -1740,7 +1148,7 @@ namespace basedhlir
       return Constant_value{static_cast<std::int64_t>(*value)};
     }
     emit_error(
-      fmt::format("unknown integer literal suffix '{}'", suffix),
+      std::format("unknown integer literal suffix '{}'", suffix),
       expr.literal
     );
   }
@@ -1865,7 +1273,7 @@ namespace basedhlir
         };
       }
       emit_error(
-        fmt::format("unknown integer literal suffix '{}'", suffix),
+        std::format("unknown integer literal suffix '{}'", suffix),
         literal.literal
       );
     }
@@ -1923,7 +1331,7 @@ namespace basedhlir
     if (expr.arguments.size() != ft->parameter_types.size())
     {
       emit_error(
-        fmt::format(
+        std::format(
           "expected {} arguments, got {}",
           ft->parameter_types.size(),
           expr.arguments.size()
@@ -1941,7 +1349,7 @@ namespace basedhlir
       if (!is_type_compatible(ft->parameter_types[i], arg_type))
       {
         emit_error(
-          fmt::format(
+          std::format(
             "argument {} is not compatible with parameter type",
             i + 1
           ),

@@ -1688,9 +1688,19 @@ namespace basedhlir
     {
       return compile_typed.operator()<std::int16_t>();
     }
-    else if (suffix == "i32" || suffix.empty())
+    else if (suffix == "i32")
     {
       return compile_typed.operator()<std::int32_t>();
+    }
+    else if (suffix.empty())
+    {
+      auto constexpr max_i32 =
+        static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max());
+      auto constexpr max_magnitude_i32 = max_i32 + 1u;
+      auto const limit_i32 = negate ? max_magnitude_i32 : max_i32;
+      return validate_int_literal(digits, limit_i32).has_value()
+        ? compile_typed.operator()<std::int32_t>()
+        : compile_typed.operator()<std::int64_t>();
     }
     else if (suffix == "i64")
     {

@@ -98,10 +98,10 @@ TEST_CASE("evaluate_constant_expression - integer literal above int32 max")
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
 
-  CHECK_THROWS_AS(
-    compile_fixture.compiler.evaluate_constant_expression(*expr),
-    basedhlir::Compilation_error
-  );
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int64_t>(value));
+  CHECK(std::get<std::int64_t>(value) == 2147483648LL);
 }
 
 TEST_CASE("evaluate_constant_expression - unary minus allows int32 minimum")
@@ -158,6 +158,17 @@ TEST_CASE("compile_int_literal - i64 literal")
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<std::int64_t>(value));
   CHECK(std::get<std::int64_t>(value) == 42);
+}
+
+TEST_CASE("compile_int_literal - unsuffixed literal above int32 max is int64")
+{
+  auto parse_fixture = Parse_fixture{"2147483648"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int64_t>(value));
+  CHECK(std::get<std::int64_t>(value) == 2147483648LL);
 }
 
 TEST_CASE("compile_int_literal - i8 max")

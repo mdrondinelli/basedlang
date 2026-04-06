@@ -66,12 +66,6 @@ namespace basedhlir
     Register result;
   };
 
-  struct Copy_instruction
-  {
-    Register result;
-    Operand source;
-  };
-
   template <typename T>
   struct Integer_negate_instruction
   {
@@ -209,7 +203,6 @@ namespace basedhlir
     Integer_constant_instruction<std::int64_t>,
     Bool_constant_instruction,
     Void_constant_instruction,
-    Copy_instruction,
     Integer_negate_instruction<std::int8_t>,
     Integer_negate_instruction<std::int16_t>,
     Integer_negate_instruction<std::int32_t>,

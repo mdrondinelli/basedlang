@@ -7,7 +7,6 @@
 * Split up modules more:
   * Split up AST from parser
   * Split up HLIR from AST -> HLIR compiler
-* Remove copy instruction which is never emitted by the compiler from HLIR.
 * Make lexer actually handle unicode codepoints
   * Maybe make our own string class? Interned?
 * Add a helper function for the lexeme stream to read a character and advance

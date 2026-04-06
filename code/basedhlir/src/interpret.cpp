@@ -98,11 +98,6 @@ namespace basedhlir
           {
             register_values[*inst.result] = Void_value{};
           }
-          else if constexpr (std::is_same_v<T, Copy_instruction>)
-          {
-            register_values[*inst.result] =
-              eval_operand(inst.source, register_values);
-          }
           else if constexpr (is_instantiation_of_v<T, Integer_negate_instruction>)
           {
             using V = typename T::value_type;

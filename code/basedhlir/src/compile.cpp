@@ -1698,11 +1698,9 @@ namespace basedhlir
         static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max());
       auto constexpr max_magnitude_i32 = max_i32 + 1u;
       auto const limit_i32 = negate ? max_magnitude_i32 : max_i32;
-      if (validate_int_literal(digits, limit_i32).has_value())
-      {
-        return compile_typed.operator()<std::int32_t>();
-      }
-      return compile_typed.operator()<std::int64_t>();
+      return validate_int_literal(digits, limit_i32).has_value()
+        ? compile_typed.operator()<std::int32_t>()
+        : compile_typed.operator()<std::int64_t>();
     }
     else if (suffix == "i64")
     {

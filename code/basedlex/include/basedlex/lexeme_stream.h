@@ -28,7 +28,9 @@ namespace basedlex
     Lexeme lex();
 
   private:
-    char32_t consume();
+    void consume_newline();
+
+    char32_t consume_non_newline();
 
     Char_stream_reader _reader;
     Source_location _location;

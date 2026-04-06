@@ -14,9 +14,7 @@ Build a reliable mental model before touching code:
 ## Step 0: Start from a branch
 
 Before editing tracked files, create a dedicated branch for the change.
-
-This keeps unrelated work off `main` and makes it possible to open a focused
-PR without cleanup later.
+**Do this first, even for small changes.**
 
 Example:
 

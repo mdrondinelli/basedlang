@@ -47,10 +47,12 @@ namespace basedhlir
 
   using Operand = std::variant<Register, Constant_value>;
 
-  struct Int32_constant_instruction
+  template <typename T>
+  struct Integer_constant_instruction
   {
+    using value_type = T;
     Register result;
-    std::int32_t value;
+    T value;
   };
 
   struct Bool_constant_instruction
@@ -70,90 +72,108 @@ namespace basedhlir
     Operand source;
   };
 
-  struct Int32_unary_plus_instruction
+  template <typename T>
+  struct Integer_negate_instruction
   {
+    using value_type = T;
     Register result;
     Operand operand;
   };
 
-  struct Int32_unary_minus_instruction
+  template <typename T>
+  struct Integer_add_instruction
   {
-    Register result;
-    Operand operand;
-  };
-
-  struct Int32_add_instruction
-  {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_subtract_instruction
+  template <typename T>
+  struct Integer_subtract_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_multiply_instruction
+  template <typename T>
+  struct Integer_multiply_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_divide_instruction
+  template <typename T>
+  struct Integer_divide_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_modulo_instruction
+  template <typename T>
+  struct Integer_modulo_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_equal_instruction
+  template <typename T>
+  struct Integer_equal_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_not_equal_instruction
+  template <typename T>
+  struct Integer_not_equal_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_less_instruction
+  template <typename T>
+  struct Integer_less_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_less_eq_instruction
+  template <typename T>
+  struct Integer_less_eq_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_greater_instruction
+  template <typename T>
+  struct Integer_greater_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
   };
 
-  struct Int32_greater_eq_instruction
+  template <typename T>
+  struct Integer_greater_eq_instruction
   {
+    using value_type = T;
     Register result;
     Operand lhs;
     Operand rhs;
@@ -183,23 +203,61 @@ namespace basedhlir
   };
 
   using Instruction = std::variant<
-    Int32_constant_instruction,
+    Integer_constant_instruction<std::int8_t>,
+    Integer_constant_instruction<std::int16_t>,
+    Integer_constant_instruction<std::int32_t>,
+    Integer_constant_instruction<std::int64_t>,
     Bool_constant_instruction,
     Void_constant_instruction,
     Copy_instruction,
-    Int32_unary_plus_instruction,
-    Int32_unary_minus_instruction,
-    Int32_add_instruction,
-    Int32_subtract_instruction,
-    Int32_multiply_instruction,
-    Int32_divide_instruction,
-    Int32_modulo_instruction,
-    Int32_equal_instruction,
-    Int32_not_equal_instruction,
-    Int32_less_instruction,
-    Int32_less_eq_instruction,
-    Int32_greater_instruction,
-    Int32_greater_eq_instruction,
+    Integer_negate_instruction<std::int8_t>,
+    Integer_negate_instruction<std::int16_t>,
+    Integer_negate_instruction<std::int32_t>,
+    Integer_negate_instruction<std::int64_t>,
+    Integer_add_instruction<std::int8_t>,
+    Integer_add_instruction<std::int16_t>,
+    Integer_add_instruction<std::int32_t>,
+    Integer_add_instruction<std::int64_t>,
+    Integer_subtract_instruction<std::int8_t>,
+    Integer_subtract_instruction<std::int16_t>,
+    Integer_subtract_instruction<std::int32_t>,
+    Integer_subtract_instruction<std::int64_t>,
+    Integer_multiply_instruction<std::int8_t>,
+    Integer_multiply_instruction<std::int16_t>,
+    Integer_multiply_instruction<std::int32_t>,
+    Integer_multiply_instruction<std::int64_t>,
+    Integer_divide_instruction<std::int8_t>,
+    Integer_divide_instruction<std::int16_t>,
+    Integer_divide_instruction<std::int32_t>,
+    Integer_divide_instruction<std::int64_t>,
+    Integer_modulo_instruction<std::int8_t>,
+    Integer_modulo_instruction<std::int16_t>,
+    Integer_modulo_instruction<std::int32_t>,
+    Integer_modulo_instruction<std::int64_t>,
+    Integer_equal_instruction<std::int8_t>,
+    Integer_equal_instruction<std::int16_t>,
+    Integer_equal_instruction<std::int32_t>,
+    Integer_equal_instruction<std::int64_t>,
+    Integer_not_equal_instruction<std::int8_t>,
+    Integer_not_equal_instruction<std::int16_t>,
+    Integer_not_equal_instruction<std::int32_t>,
+    Integer_not_equal_instruction<std::int64_t>,
+    Integer_less_instruction<std::int8_t>,
+    Integer_less_instruction<std::int16_t>,
+    Integer_less_instruction<std::int32_t>,
+    Integer_less_instruction<std::int64_t>,
+    Integer_less_eq_instruction<std::int8_t>,
+    Integer_less_eq_instruction<std::int16_t>,
+    Integer_less_eq_instruction<std::int32_t>,
+    Integer_less_eq_instruction<std::int64_t>,
+    Integer_greater_instruction<std::int8_t>,
+    Integer_greater_instruction<std::int16_t>,
+    Integer_greater_instruction<std::int32_t>,
+    Integer_greater_instruction<std::int64_t>,
+    Integer_greater_eq_instruction<std::int8_t>,
+    Integer_greater_eq_instruction<std::int16_t>,
+    Integer_greater_eq_instruction<std::int32_t>,
+    Integer_greater_eq_instruction<std::int64_t>,
     Bool_equal_instruction,
     Bool_not_equal_instruction,
     Call_instruction

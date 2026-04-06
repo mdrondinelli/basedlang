@@ -1,6 +1,6 @@
-#include <concepts>
 #include <cassert>
 #include <cstdint>
+#include <format>
 #include <limits>
 #include <memory>
 #include <utility>
@@ -8,7 +8,6 @@
 #include <vector>
 
 #include <basedparse/source_span.h>
-#include <fmt/format.h>
 
 #include "basedhlir/compile.h"
 #include "basedhlir/interpret.h"
@@ -40,70 +39,36 @@ namespace basedhlir
     T _previous;
   };
 
-  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
-  Operand compile_unary_operation(
-    Compilation_context &ctx,
-    Operand operand,
-    Type *result_type,
-    Fn const &fn
-  )
-  {
-    static_assert(std::same_as<std::invoke_result_t<Fn const &, OperandT>, ResultT>);
-
-    if (auto const cv = std::get_if<Constant_value>(&operand))
-    {
-      return Operand{Constant_value{fn(std::get<OperandT>(*cv))}};
-    }
-    else
-    {
-      auto const result = ctx.allocate_register(result_type);
-      ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
-      return Operand{result};
-    }
-  }
-
-  template <
-    typename LhsT,
-    typename RhsT,
-    typename ResultT,
-    typename InstructionT,
-    typename Fn>
-  Operand compile_binary_operation(
-    Compilation_context &ctx,
-    Operand lhs,
-    Operand rhs,
-    Type *result_type,
-    Fn const &fn
-  )
-  {
-    static_assert(
-      std::same_as<std::invoke_result_t<Fn const &, LhsT, RhsT>, ResultT>
-    );
-
-    auto const lhs_cv = std::get_if<Constant_value>(&lhs);
-    auto const rhs_cv = std::get_if<Constant_value>(&rhs);
-    if (lhs_cv != nullptr && rhs_cv != nullptr)
-    {
-      return Operand{
-        Constant_value{fn(std::get<LhsT>(*lhs_cv), std::get<RhsT>(*rhs_cv))}
-      };
-    }
-    else
-    {
-      auto const result = ctx.allocate_register(result_type);
-      ctx.emit(
-        Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}}
-      );
-      return Operand{result};
-    }
-  }
-
   template <typename T>
   struct Primitive_hlir_type;
 
   template <>
+  struct Primitive_hlir_type<std::int8_t>
+  {
+    static constexpr std::string_view name = "Int8";
+
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->int8_type();
+    }
+  };
+
+  template <>
+  struct Primitive_hlir_type<std::int16_t>
+  {
+    static constexpr std::string_view name = "Int16";
+
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->int16_type();
+    }
+  };
+
+  template <>
   struct Primitive_hlir_type<std::int32_t>
   {
+    static constexpr std::string_view name = "Int32";
+
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->int32_type();
@@ -111,19 +76,37 @@ namespace basedhlir
   };
 
   template <>
+  struct Primitive_hlir_type<std::int64_t>
+  {
+    static constexpr std::string_view name = "Int64";
+
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->int64_type();
+    }
+  };
+
+  template <>
   struct Primitive_hlir_type<bool>
   {
+    static constexpr std::string_view name = "Bool";
+
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->bool_type();
     }
   };
 
-  template <typename OperandT, typename ResultT, typename InstructionT, typename Fn>
-  class Simple_unary_operator_overload: public Unary_operator_overload
+  template <
+    typename OperandT,
+    typename ResultT,
+    typename InstructionT,
+    typename Fn
+  >
+  class Primitive_unary_operator_overload: public Unary_operator_overload
   {
   public:
-    explicit Simple_unary_operator_overload(Type_pool *type_pool)
+    explicit Primitive_unary_operator_overload(Type_pool *type_pool)
         : _operand_type{Primitive_hlir_type<OperandT>::get(type_pool)},
           _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
     {
@@ -141,12 +124,16 @@ namespace basedhlir
 
     Operand compile(Compilation_context &ctx, Operand operand) const override
     {
-      return compile_unary_operation<OperandT, ResultT, InstructionT>(
-        ctx,
-        std::move(operand),
-        _result_type,
-        _fn
-      );
+      if (auto const cv = std::get_if<Constant_value>(&operand))
+      {
+        return Operand{Constant_value{_fn(std::get<OperandT>(*cv))}};
+      }
+      else
+      {
+        auto const result = ctx.allocate_register(_result_type);
+        ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
+        return Operand{result};
+      }
     }
 
   private:
@@ -160,11 +147,12 @@ namespace basedhlir
     typename RhsT,
     typename ResultT,
     typename InstructionT,
-    typename Fn>
-  class Simple_binary_operator_overload: public Binary_operator_overload
+    typename Fn
+  >
+  class Primitive_binary_operator_overload: public Binary_operator_overload
   {
   public:
-    explicit Simple_binary_operator_overload(Type_pool *type_pool)
+    explicit Primitive_binary_operator_overload(Type_pool *type_pool)
         : _lhs_type{Primitive_hlir_type<LhsT>::get(type_pool)},
           _rhs_type{Primitive_hlir_type<RhsT>::get(type_pool)},
           _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
@@ -189,13 +177,22 @@ namespace basedhlir
     Operand
     compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return compile_binary_operation<LhsT, RhsT, ResultT, InstructionT>(
-        ctx,
-        std::move(lhs),
-        std::move(rhs),
-        _result_type,
-        _fn
-      );
+      auto const lhs_cv = std::get_if<Constant_value>(&lhs);
+      auto const rhs_cv = std::get_if<Constant_value>(&rhs);
+      if (lhs_cv != nullptr && rhs_cv != nullptr)
+      {
+        return Operand{
+          Constant_value{_fn(std::get<LhsT>(*lhs_cv), std::get<RhsT>(*rhs_cv))}
+        };
+      }
+      else
+      {
+        auto const result = ctx.allocate_register(_result_type);
+        ctx.emit(
+          Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}}
+        );
+        return Operand{result};
+      }
     }
 
   private:
@@ -205,228 +202,270 @@ namespace basedhlir
     [[no_unique_address]] Fn _fn;
   };
 
-  struct Int32_unary_plus_fn
+  template <typename T>
+  struct Negate_fn
   {
-    auto operator()(std::int32_t x) const -> std::int32_t
+    auto operator()(T x) const -> T
     {
-      return x;
+      return static_cast<T>(-x);
     }
   };
 
-  struct Int32_unary_minus_fn
+  template <typename T>
+  struct Add_fn
   {
-    auto operator()(std::int32_t x) const -> std::int32_t
+    auto operator()(T a, T b) const -> T
     {
-      return -x;
+      return static_cast<T>(a + b);
     }
   };
 
-  struct Int32_add_fn
+  template <typename T>
+  struct Sub_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
+    auto operator()(T a, T b) const -> T
     {
-      return a + b;
+      return static_cast<T>(a - b);
     }
   };
 
-  struct Int32_subtract_fn
+  template <typename T>
+  struct Mul_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
+    auto operator()(T a, T b) const -> T
     {
-      return a - b;
+      return static_cast<T>(a * b);
     }
   };
 
-  struct Int32_multiply_fn
+  template <typename T>
+  struct Div_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
+    auto operator()(T a, T b) const -> T
     {
-      return a * b;
+      return static_cast<T>(a / b);
     }
   };
 
-  struct Int32_divide_fn
+  template <typename T>
+  struct Mod_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
+    auto operator()(T a, T b) const -> T
     {
-      return a / b;
+      return static_cast<T>(a % b);
     }
   };
 
-  struct Int32_modulo_fn
+  template <typename T>
+  struct Equal_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> std::int32_t
-    {
-      return a % b;
-    }
-  };
-
-  struct Int32_equal_fn
-  {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a == b;
     }
   };
 
-  struct Int32_not_equal_fn
+  template <typename T>
+  struct Not_equal_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a != b;
     }
   };
 
-  struct Int32_less_fn
+  template <typename T>
+  struct Less_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a < b;
     }
   };
 
-  struct Int32_less_eq_fn
+  template <typename T>
+  struct Less_eq_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a <= b;
     }
   };
 
-  struct Int32_greater_fn
+  template <typename T>
+  struct Greater_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a > b;
     }
   };
 
-  struct Int32_greater_eq_fn
+  template <typename T>
+  struct Greater_eq_fn
   {
-    auto operator()(std::int32_t a, std::int32_t b) const -> bool
+    auto operator()(T a, T b) const -> bool
     {
       return a >= b;
     }
   };
 
-  struct Bool_equal_fn
-  {
-    auto operator()(bool a, bool b) const -> bool
-    {
-      return a == b;
-    }
-  };
+  template <typename T>
+  using Integer_negate = Primitive_unary_operator_overload<
+    T,
+    T,
+    Integer_negate_instruction<T>,
+    Negate_fn<T>
+  >;
 
-  struct Bool_not_equal_fn
-  {
-    auto operator()(bool a, bool b) const -> bool
-    {
-      return a != b;
-    }
-  };
+  template <typename T>
+  using Integer_add = Primitive_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_add_instruction<T>,
+    Add_fn<T>
+  >;
 
-  using Int32_unary_plus = Simple_unary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    Int32_unary_plus_instruction,
-    Int32_unary_plus_fn>;
+  template <typename T>
+  using Integer_subtract = Primitive_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_subtract_instruction<T>,
+    Sub_fn<T>
+  >;
 
-  using Int32_unary_minus = Simple_unary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    Int32_unary_minus_instruction,
-    Int32_unary_minus_fn>;
+  template <typename T>
+  using Integer_multiply = Primitive_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_multiply_instruction<T>,
+    Mul_fn<T>
+  >;
 
-  using Int32_add = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_add_instruction,
-    Int32_add_fn>;
+  template <typename T>
+  using Integer_divide = Primitive_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_divide_instruction<T>,
+    Div_fn<T>
+  >;
 
-  using Int32_subtract = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_subtract_instruction,
-    Int32_subtract_fn>;
+  template <typename T>
+  using Integer_modulo = Primitive_binary_operator_overload<
+    T,
+    T,
+    T,
+    Integer_modulo_instruction<T>,
+    Mod_fn<T>
+  >;
 
-  using Int32_multiply = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_multiply_instruction,
-    Int32_multiply_fn>;
-
-  using Int32_divide = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_divide_instruction,
-    Int32_divide_fn>;
-
-  using Int32_modulo = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
-    std::int32_t,
-    Int32_modulo_instruction,
-    Int32_modulo_fn>;
-
-  using Int32_equal = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
+  template <typename T>
+  using Integer_equal = Primitive_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int32_equal_instruction,
-    Int32_equal_fn>;
+    Integer_equal_instruction<T>,
+    Equal_fn<T>
+  >;
 
-  using Int32_not_equal = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
+  template <typename T>
+  using Integer_not_equal = Primitive_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int32_not_equal_instruction,
-    Int32_not_equal_fn>;
+    Integer_not_equal_instruction<T>,
+    Not_equal_fn<T>
+  >;
 
-  using Int32_less = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
+  template <typename T>
+  using Integer_less = Primitive_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int32_less_instruction,
-    Int32_less_fn>;
+    Integer_less_instruction<T>,
+    Less_fn<T>
+  >;
 
-  using Int32_less_eq = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
+  template <typename T>
+  using Integer_less_eq = Primitive_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int32_less_eq_instruction,
-    Int32_less_eq_fn>;
+    Integer_less_eq_instruction<T>,
+    Less_eq_fn<T>
+  >;
 
-  using Int32_greater = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
+  template <typename T>
+  using Integer_greater = Primitive_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int32_greater_instruction,
-    Int32_greater_fn>;
+    Integer_greater_instruction<T>,
+    Greater_fn<T>
+  >;
 
-  using Int32_greater_eq = Simple_binary_operator_overload<
-    std::int32_t,
-    std::int32_t,
+  template <typename T>
+  using Integer_greater_eq = Primitive_binary_operator_overload<
+    T,
+    T,
     bool,
-    Int32_greater_eq_instruction,
-    Int32_greater_eq_fn>;
+    Integer_greater_eq_instruction<T>,
+    Greater_eq_fn<T>
+  >;
 
-  using Bool_equal = Simple_binary_operator_overload<
+  using Bool_equal = Primitive_binary_operator_overload<
     bool,
     bool,
     bool,
     Bool_equal_instruction,
-    Bool_equal_fn>;
+    Equal_fn<bool>
+  >;
 
-  using Bool_not_equal = Simple_binary_operator_overload<
+  using Bool_not_equal = Primitive_binary_operator_overload<
     bool,
     bool,
     bool,
     Bool_not_equal_instruction,
-    Bool_not_equal_fn>;
+    Not_equal_fn<bool>
+  >;
+
+  class Unary_plus final: public Unary_operator_overload
+  {
+  public:
+    explicit Unary_plus(Type_pool *type_pool)
+        : _int8_type{type_pool->int8_type()},
+          _int16_type{type_pool->int16_type()},
+          _int32_type{type_pool->int32_type()},
+          _int64_type{type_pool->int64_type()}
+    {
+    }
+
+    bool matches(Type *operand_type) const override
+    {
+      return operand_type == _int8_type || operand_type == _int16_type ||
+             operand_type == _int32_type || operand_type == _int64_type;
+    }
+
+    Type *result_type(Type *operand_type) const override
+    {
+      return operand_type;
+    }
+
+    Operand compile(Compilation_context &, Operand operand) const override
+    {
+      return operand;
+    }
+
+  private:
+    Type *_int8_type;
+    Type *_int16_type;
+    Type *_int32_type;
+    Type *_int64_type;
+  };
 
   class Pointer_to final: public Unary_operator_overload
   {
@@ -515,16 +554,28 @@ namespace basedhlir
       : _type_pool{type_pool}
   {
     assert(_type_pool != nullptr);
+    _symbol_table.declare_value("Int8", Type_value{_type_pool->int8_type()});
+    _symbol_table.declare_value("Int16", Type_value{_type_pool->int16_type()});
     _symbol_table.declare_value("Int32", Type_value{_type_pool->int32_type()});
+    _symbol_table.declare_value("Int64", Type_value{_type_pool->int64_type()});
     _symbol_table.declare_value("Bool", Type_value{_type_pool->bool_type()});
     _symbol_table.declare_value("Void", Type_value{_type_pool->void_type()});
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
     _unary_overloads[basedparse::Operator::unary_plus].push_back(
-      std::make_unique<Int32_unary_plus>(_type_pool)
+      std::make_unique<Unary_plus>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::unary_minus].push_back(
-      std::make_unique<Int32_unary_minus>(_type_pool)
+      std::make_unique<Integer_negate<std::int8_t>>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+      std::make_unique<Integer_negate<std::int16_t>>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+      std::make_unique<Integer_negate<std::int32_t>>(_type_pool)
+    );
+    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+      std::make_unique<Integer_negate<std::int64_t>>(_type_pool)
     );
     _unary_overloads[basedparse::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
@@ -536,37 +587,136 @@ namespace basedhlir
       std::make_unique<Dereference>()
     );
     _binary_overloads[basedparse::Operator::add].push_back(
-      std::make_unique<Int32_add>(_type_pool)
+      std::make_unique<Integer_add<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::add].push_back(
+      std::make_unique<Integer_add<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::add].push_back(
+      std::make_unique<Integer_add<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::add].push_back(
+      std::make_unique<Integer_add<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::subtract].push_back(
-      std::make_unique<Int32_subtract>(_type_pool)
+      std::make_unique<Integer_subtract<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::subtract].push_back(
+      std::make_unique<Integer_subtract<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::subtract].push_back(
+      std::make_unique<Integer_subtract<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::subtract].push_back(
+      std::make_unique<Integer_subtract<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::multiply].push_back(
-      std::make_unique<Int32_multiply>(_type_pool)
+      std::make_unique<Integer_multiply<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::multiply].push_back(
+      std::make_unique<Integer_multiply<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::multiply].push_back(
+      std::make_unique<Integer_multiply<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::multiply].push_back(
+      std::make_unique<Integer_multiply<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::divide].push_back(
-      std::make_unique<Int32_divide>(_type_pool)
+      std::make_unique<Integer_divide<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::divide].push_back(
+      std::make_unique<Integer_divide<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::divide].push_back(
+      std::make_unique<Integer_divide<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::divide].push_back(
+      std::make_unique<Integer_divide<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::modulo].push_back(
-      std::make_unique<Int32_modulo>(_type_pool)
+      std::make_unique<Integer_modulo<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::modulo].push_back(
+      std::make_unique<Integer_modulo<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::modulo].push_back(
+      std::make_unique<Integer_modulo<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::modulo].push_back(
+      std::make_unique<Integer_modulo<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
-      std::make_unique<Int32_equal>(_type_pool)
+      std::make_unique<Integer_equal<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::equal].push_back(
+      std::make_unique<Integer_equal<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::equal].push_back(
+      std::make_unique<Integer_equal<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::equal].push_back(
+      std::make_unique<Integer_equal<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::not_equal].push_back(
-      std::make_unique<Int32_not_equal>(_type_pool)
+      std::make_unique<Integer_not_equal<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::not_equal].push_back(
+      std::make_unique<Integer_not_equal<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::not_equal].push_back(
+      std::make_unique<Integer_not_equal<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::not_equal].push_back(
+      std::make_unique<Integer_not_equal<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less].push_back(
-      std::make_unique<Int32_less>(_type_pool)
+      std::make_unique<Integer_less<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less].push_back(
+      std::make_unique<Integer_less<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less].push_back(
+      std::make_unique<Integer_less<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less].push_back(
+      std::make_unique<Integer_less<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::less_eq].push_back(
-      std::make_unique<Int32_less_eq>(_type_pool)
+      std::make_unique<Integer_less_eq<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less_eq].push_back(
+      std::make_unique<Integer_less_eq<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less_eq].push_back(
+      std::make_unique<Integer_less_eq<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::less_eq].push_back(
+      std::make_unique<Integer_less_eq<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater].push_back(
-      std::make_unique<Int32_greater>(_type_pool)
+      std::make_unique<Integer_greater<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater].push_back(
+      std::make_unique<Integer_greater<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater].push_back(
+      std::make_unique<Integer_greater<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater].push_back(
+      std::make_unique<Integer_greater<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::greater_eq].push_back(
-      std::make_unique<Int32_greater_eq>(_type_pool)
+      std::make_unique<Integer_greater_eq<std::int8_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+      std::make_unique<Integer_greater_eq<std::int16_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+      std::make_unique<Integer_greater_eq<std::int32_t>>(_type_pool)
+    );
+    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+      std::make_unique<Integer_greater_eq<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedparse::Operator::equal].push_back(
       std::make_unique<Bool_equal>(_type_pool)
@@ -602,9 +752,21 @@ namespace basedhlir
       [this](auto const &v) -> Type *
       {
         using T = std::decay_t<decltype(v)>;
-        if constexpr (std::is_same_v<T, std::int32_t>)
+        if constexpr (std::is_same_v<T, std::int8_t>)
+        {
+          return _type_pool->int8_type();
+        }
+        else if constexpr (std::is_same_v<T, std::int16_t>)
+        {
+          return _type_pool->int16_type();
+        }
+        else if constexpr (std::is_same_v<T, std::int32_t>)
         {
           return _type_pool->int32_type();
+        }
+        else if constexpr (std::is_same_v<T, std::int64_t>)
+        {
+          return _type_pool->int64_type();
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
@@ -653,7 +815,7 @@ namespace basedhlir
     if (sym == nullptr)
     {
       emit_error(
-        fmt::format("undefined identifier: {}", identifier.text),
+        std::format("undefined identifier: {}", identifier.text),
         identifier
       );
     }
@@ -884,14 +1046,7 @@ namespace basedhlir
     basedparse::Int_literal_expression const &expr
   )
   {
-    auto const value = parse_int_literal(expr.literal.text);
-    if (!value.has_value() ||
-        *value >
-          static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()))
-    {
-      emit_error("integer literal is out of range for Int32", expr.literal);
-    }
-    return Constant_value{static_cast<std::int32_t>(*value)};
+    return compile_int_literal(expr.literal.text, false, expr.literal);
   }
 
   Operand Compilation_context::compile_expression(
@@ -947,18 +1102,7 @@ namespace basedhlir
     {
       auto const &literal =
         std::get<basedparse::Int_literal_expression>(expr.operand->value);
-      auto const value = parse_int_literal(literal.literal.text);
-      if (!value.has_value() || *value > int32_max_magnitude)
-      {
-        emit_error(
-          "integer literal is out of range for Int32",
-          literal.literal
-        );
-      }
-      return Constant_value{
-        *value < int32_max_magnitude ? -static_cast<std::int32_t>(*value)
-                                     : std::numeric_limits<std::int32_t>::min()
-      };
+      return compile_int_literal(literal.literal.text, true, literal.literal);
     }
     // General case
     else
@@ -1014,7 +1158,7 @@ namespace basedhlir
     if (expr.arguments.size() != ft->parameter_types.size())
     {
       emit_error(
-        fmt::format(
+        std::format(
           "expected {} arguments, got {}",
           ft->parameter_types.size(),
           expr.arguments.size()
@@ -1032,7 +1176,7 @@ namespace basedhlir
       if (!is_type_compatible(ft->parameter_types[i], arg_type))
       {
         emit_error(
-          fmt::format(
+          std::format(
             "argument {} is not compatible with parameter type",
             i + 1
           ),
@@ -1478,7 +1622,8 @@ namespace basedhlir
     return ctx.compile(ast);
   }
 
-  std::optional<std::uint64_t> parse_int_literal(std::string_view digits)
+  std::optional<std::uint64_t>
+  validate_int_literal(std::string_view digits, std::uint64_t max_value)
   {
     auto value = std::uint64_t{0};
     for (auto const ch : digits)
@@ -1491,7 +1636,70 @@ namespace basedhlir
       }
       value = value * 10u + digit;
     }
+    if (value > max_value)
+    {
+      return std::nullopt;
+    }
     return value;
+  }
+
+  Operand Compilation_context::compile_int_literal(
+    std::string_view text,
+    bool negate,
+    basedlex::Lexeme const &token
+  )
+  {
+    auto const suffix_pos = text.rfind('i');
+    auto const suffix =
+      suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
+    auto const digits = text.substr(0, suffix_pos);
+    auto const compile_typed = [&]<typename T>() -> Operand
+    {
+      auto constexpr max =
+        static_cast<std::uint64_t>(std::numeric_limits<T>::max());
+      auto constexpr max_magnitude = max + 1u;
+      auto const limit = negate ? max_magnitude : max;
+      auto const value = validate_int_literal(digits, limit);
+      if (!value.has_value())
+      {
+        emit_error(
+          std::format(
+            "integer literal is out of range for {}",
+            Primitive_hlir_type<T>::name
+          ),
+          token
+        );
+      }
+      if (negate)
+      {
+        return Constant_value{
+          *value < max_magnitude
+            ? static_cast<T>(-static_cast<T>(*value))
+            : std::numeric_limits<T>::min()
+        };
+      }
+      return Constant_value{static_cast<T>(*value)};
+    };
+    if (suffix == "i8")
+    {
+      return compile_typed.operator()<std::int8_t>();
+    }
+    else if (suffix == "i16")
+    {
+      return compile_typed.operator()<std::int16_t>();
+    }
+    else if (suffix == "i32" || suffix.empty())
+    {
+      return compile_typed.operator()<std::int32_t>();
+    }
+    else if (suffix == "i64")
+    {
+      return compile_typed.operator()<std::int64_t>();
+    }
+    emit_error(
+      std::format("unknown integer literal suffix '{}'", suffix),
+      token
+    );
   }
 
 } // namespace basedhlir

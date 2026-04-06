@@ -61,16 +61,23 @@ struct Compile_fixture
   Compile_fixture &operator=(Compile_fixture const &other) = delete;
 };
 
-TEST_CASE("parse_int_literal")
+TEST_CASE("validate_int_literal")
 {
-  auto const value = basedhlir::parse_int_literal("42");
+  auto const value =
+    basedhlir::validate_int_literal("42", std::numeric_limits<std::uint64_t>::max());
   REQUIRE(value.has_value());
   CHECK(*value == 42);
 }
 
-TEST_CASE("parse_int_literal - uint64 overflow")
+TEST_CASE("validate_int_literal - uint64 overflow")
 {
-  CHECK_FALSE(basedhlir::parse_int_literal("18446744073709551616").has_value());
+  CHECK_FALSE(
+    basedhlir::validate_int_literal(
+      "18446744073709551616",
+      std::numeric_limits<std::uint64_t>::max()
+    )
+      .has_value()
+  );
 }
 
 TEST_CASE("evaluate_constant_expression - integer literal")
@@ -107,6 +114,135 @@ TEST_CASE("evaluate_constant_expression - unary minus allows int32 minimum")
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == std::numeric_limits<std::int32_t>::min());
+}
+
+TEST_CASE("compile_int_literal - i8 literal")
+{
+  auto parse_fixture = Parse_fixture{"42i8"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int8_t>(value));
+  CHECK(std::get<std::int8_t>(value) == 42);
+}
+
+TEST_CASE("compile_int_literal - i16 literal")
+{
+  auto parse_fixture = Parse_fixture{"1000i16"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int16_t>(value));
+  CHECK(std::get<std::int16_t>(value) == 1000);
+}
+
+TEST_CASE("compile_int_literal - i32 literal with explicit suffix")
+{
+  auto parse_fixture = Parse_fixture{"42i32"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int32_t>(value));
+  CHECK(std::get<std::int32_t>(value) == 42);
+}
+
+TEST_CASE("compile_int_literal - i64 literal")
+{
+  auto parse_fixture = Parse_fixture{"42i64"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int64_t>(value));
+  CHECK(std::get<std::int64_t>(value) == 42);
+}
+
+TEST_CASE("compile_int_literal - i8 max")
+{
+  auto parse_fixture = Parse_fixture{"127i8"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int8_t>(value));
+  CHECK(std::get<std::int8_t>(value) == std::numeric_limits<std::int8_t>::max());
+}
+
+TEST_CASE("compile_int_literal - i8 above max throws")
+{
+  auto parse_fixture = Parse_fixture{"128i8"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  CHECK_THROWS_AS(
+    compile_fixture.compiler.evaluate_constant_expression(*expr),
+    basedhlir::Compilation_error
+  );
+}
+
+TEST_CASE("compile_int_literal - unary minus i8 minimum")
+{
+  auto parse_fixture = Parse_fixture{"-128i8"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int8_t>(value));
+  CHECK(std::get<std::int8_t>(value) == std::numeric_limits<std::int8_t>::min());
+}
+
+TEST_CASE("compile_int_literal - i16 max")
+{
+  auto parse_fixture = Parse_fixture{"32767i16"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int16_t>(value));
+  CHECK(
+    std::get<std::int16_t>(value) == std::numeric_limits<std::int16_t>::max()
+  );
+}
+
+TEST_CASE("compile_int_literal - unary minus i16 minimum")
+{
+  auto parse_fixture = Parse_fixture{"-32768i16"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int16_t>(value));
+  CHECK(
+    std::get<std::int16_t>(value) == std::numeric_limits<std::int16_t>::min()
+  );
+}
+
+TEST_CASE("compile_int_literal - i64 max")
+{
+  auto parse_fixture = Parse_fixture{"9223372036854775807i64"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int64_t>(value));
+  CHECK(
+    std::get<std::int64_t>(value) == std::numeric_limits<std::int64_t>::max()
+  );
+}
+
+TEST_CASE("compile_int_literal - unary minus i64 minimum")
+{
+  auto parse_fixture = Parse_fixture{"-9223372036854775808i64"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<std::int64_t>(value));
+  CHECK(
+    std::get<std::int64_t>(value) == std::numeric_limits<std::int64_t>::min()
+  );
 }
 
 TEST_CASE("evaluate_constant_expression - integer arithmetic")

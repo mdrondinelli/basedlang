@@ -12,7 +12,7 @@ namespace basedhlir
            !std::holds_alternative<Function_type>(type->data);
   }
 
-  auto Type_pool::Function_type_hash::operator()(
+auto Type_pool::Function_type_hash::operator()(
     Function_type const &ft
   ) const noexcept -> std::size_t
   {
@@ -25,6 +25,26 @@ namespace basedhlir
     return seed;
   }
 
+  Type *Type_pool::int8_type()
+  {
+    if (_int8_type == nullptr)
+    {
+      _types.push_back(std::make_unique<Type>(Int8_type{}));
+      _int8_type = _types.back().get();
+    }
+    return _int8_type;
+  }
+
+  Type *Type_pool::int16_type()
+  {
+    if (_int16_type == nullptr)
+    {
+      _types.push_back(std::make_unique<Type>(Int16_type{}));
+      _int16_type = _types.back().get();
+    }
+    return _int16_type;
+  }
+
   Type *Type_pool::int32_type()
   {
     if (_int32_type == nullptr)
@@ -33,6 +53,16 @@ namespace basedhlir
       _int32_type = _types.back().get();
     }
     return _int32_type;
+  }
+
+  Type *Type_pool::int64_type()
+  {
+    if (_int64_type == nullptr)
+    {
+      _types.push_back(std::make_unique<Type>(Int64_type{}));
+      _int64_type = _types.back().get();
+    }
+    return _int64_type;
   }
 
   Type *Type_pool::bool_type()

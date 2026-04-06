@@ -93,6 +93,70 @@ TEST_CASE("Lexeme_stream - minus adjacent to digits lexes as separate tokens")
   CHECK(second.token == int_literal);
 }
 
+TEST_CASE("Lexeme_stream lexes i8 integer literal")
+{
+  auto ss = std::istringstream{"42i8"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "42i8");
+  CHECK(lexeme.token == basedlex::Token::int_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes i16 integer literal")
+{
+  auto ss = std::istringstream{"100i16"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "100i16");
+  CHECK(lexeme.token == basedlex::Token::int_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes i32 integer literal")
+{
+  auto ss = std::istringstream{"100i32"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "100i32");
+  CHECK(lexeme.token == basedlex::Token::int_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes i64 integer literal")
+{
+  auto ss = std::istringstream{"100i64"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "100i64");
+  CHECK(lexeme.token == basedlex::Token::int_literal);
+}
+
+TEST_CASE("Lexeme_stream throws on bare i suffix")
+{
+  auto ss = std::istringstream{"42i "};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  CHECK_THROWS_AS(stream.lex(), basedlex::Lexeme_stream::Lex_error);
+}
+
+TEST_CASE("Lexeme_stream lexes unknown integer suffix as token")
+{
+  auto ss = std::istringstream{"42i7"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "42i7");
+  CHECK(lexeme.token == basedlex::Token::int_literal);
+}
+
 TEST_CASE("Lexeme_stream lexes colon")
 {
   auto ss = std::istringstream{":"};

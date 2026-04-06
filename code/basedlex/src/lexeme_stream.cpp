@@ -342,6 +342,29 @@ namespace basedlex
             ++_location.column;
             break;
           }
+          if (p && *p == 'i')
+          {
+            text += 'i';
+            _reader.read();
+            ++_location.column;
+            auto suffix_digit_count = 0;
+            for (;;)
+            {
+              auto const suffix_peek = _reader.peek();
+              if (!suffix_peek || *suffix_peek > 0x7F ||
+                  !std::isdigit((int) *suffix_peek))
+              {
+                break;
+              }
+              text += (char) *_reader.read();
+              ++_location.column;
+              ++suffix_digit_count;
+            }
+            if (suffix_digit_count == 0)
+            {
+              throw Lex_error{token_location};
+            }
+          }
           return Lexeme{
             .text = text,
             .token = Token::int_literal,

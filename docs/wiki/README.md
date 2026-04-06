@@ -20,6 +20,7 @@ The pages below are organized to support fast navigation rather than linear read
 - [`based`](./based.md)
 - [Project structure](./project-structure.md)
 - [Formatting](./formatting.md)
+- [Conventions](./conventions.md)
 - [PR review guide](./pr-review-guide.md)
 - [Antipatterns for reviewers](./antipatterns.md)
 - [Wiki maintenance](./wiki-maintenance.md)
@@ -44,6 +45,7 @@ Read these first:
 - [Architecture and pipeline overview](./overview.md)
 - [Project structure](./project-structure.md)
 - [Formatting](./formatting.md)
+- [Conventions](./conventions.md)
 
 Then jump to the module page for the area you are editing.
 

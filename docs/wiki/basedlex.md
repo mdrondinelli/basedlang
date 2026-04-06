@@ -63,6 +63,8 @@ At a high level, `Lexeme_stream` does this each time a token is requested:
 4. consume the rest of the token
 5. return a `Lexeme`
 
+Integer literals may carry an optional size suffix — `i8`, `i16`, `i32`, or `i64` — that is lexed as part of the same token and determines the integer type.
+
 Identifier-like sequences are consumed first and then classified as keywords or identifiers. Punctuation-heavy tokens use lookahead and longest-match behavior for things like `==`, `!=`, `<=`, `>=`, `=>`, `&mut`, and `^mut`.
 
 ## What to keep stable

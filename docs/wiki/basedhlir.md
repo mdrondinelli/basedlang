@@ -35,7 +35,7 @@ The canonical type system representation and the interning pool that makes point
 
 ### `Constant_value`
 
-The compile-time value domain, including integers, booleans, `void`, type values, and function values.
+The compile-time value domain, including 8-, 16-, 32-, and 64-bit signed integers, booleans, `void`, type values, and function values.
 
 ### HLIR objects
 

@@ -51,7 +51,7 @@ Parsed but not fully implemented in `basedhlir`:
 
 Implemented primary expression forms:
 
-- integer literals: `42`
+- integer literals: `42`, `42i8`, `42i16`, `42i32`, `42i64`
 - identifiers: `x`
 - builtin boolean values via ordinary identifiers: `true`, `false`
 - `recurse`
@@ -96,7 +96,7 @@ Types are ordinary compile-time values in the language.
 
 There is no separate type-expression grammar. A type annotation is just an expression that must evaluate at compile time to a value of type `Type`.
 
-The builtin type names `Int32`, `Bool`, and `Void` are ordinary identifiers predeclared in the root scope. They are not keywords.
+The builtin type names `Int8`, `Int16`, `Int32`, `Int64`, `Bool`, and `Void` are ordinary identifiers predeclared in the root scope. They are not keywords.
 
 This means expressions like these are all part of the ordinary expression system:
 
@@ -123,7 +123,10 @@ These compose naturally:
 
 | Expression | Meaning |
 |---|---|
+| `Int8` | 8-bit signed integer |
+| `Int16` | 16-bit signed integer |
 | `Int32` | 32-bit signed integer |
+| `Int64` | 64-bit signed integer |
 | `^Int32` | pointer to `Int32` |
 | `^mut Int32` | pointer to mutable `Int32` |
 | `[4]Int32` | array of 4 `Int32` |

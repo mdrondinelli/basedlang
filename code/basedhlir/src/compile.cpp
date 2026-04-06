@@ -103,10 +103,10 @@ namespace basedhlir
     typename InstructionT,
     typename Fn
   >
-  class Simple_unary_operator_overload: public Unary_operator_overload
+  class Primitive_unary_operator_overload: public Unary_operator_overload
   {
   public:
-    explicit Simple_unary_operator_overload(Type_pool *type_pool)
+    explicit Primitive_unary_operator_overload(Type_pool *type_pool)
         : _operand_type{Primitive_hlir_type<OperandT>::get(type_pool)},
           _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
     {
@@ -149,10 +149,10 @@ namespace basedhlir
     typename InstructionT,
     typename Fn
   >
-  class Simple_binary_operator_overload: public Binary_operator_overload
+  class Primitive_binary_operator_overload: public Binary_operator_overload
   {
   public:
-    explicit Simple_binary_operator_overload(Type_pool *type_pool)
+    explicit Primitive_binary_operator_overload(Type_pool *type_pool)
         : _lhs_type{Primitive_hlir_type<LhsT>::get(type_pool)},
           _rhs_type{Primitive_hlir_type<RhsT>::get(type_pool)},
           _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
@@ -203,7 +203,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_negate_fn
+  struct Negate_fn
   {
     auto operator()(T x) const -> T
     {
@@ -212,7 +212,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_add_fn
+  struct Add_fn
   {
     auto operator()(T a, T b) const -> T
     {
@@ -221,7 +221,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_subtract_fn
+  struct Sub_fn
   {
     auto operator()(T a, T b) const -> T
     {
@@ -230,7 +230,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_multiply_fn
+  struct Mul_fn
   {
     auto operator()(T a, T b) const -> T
     {
@@ -239,7 +239,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_divide_fn
+  struct Div_fn
   {
     auto operator()(T a, T b) const -> T
     {
@@ -248,7 +248,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_modulo_fn
+  struct Mod_fn
   {
     auto operator()(T a, T b) const -> T
     {
@@ -257,7 +257,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_equal_fn
+  struct Equal_fn
   {
     auto operator()(T a, T b) const -> bool
     {
@@ -266,7 +266,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_not_equal_fn
+  struct Not_equal_fn
   {
     auto operator()(T a, T b) const -> bool
     {
@@ -275,7 +275,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_less_fn
+  struct Less_fn
   {
     auto operator()(T a, T b) const -> bool
     {
@@ -284,7 +284,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_less_eq_fn
+  struct Less_eq_fn
   {
     auto operator()(T a, T b) const -> bool
     {
@@ -293,7 +293,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_greater_fn
+  struct Greater_fn
   {
     auto operator()(T a, T b) const -> bool
     {
@@ -302,7 +302,7 @@ namespace basedhlir
   };
 
   template <typename T>
-  struct Integer_greater_eq_fn
+  struct Greater_eq_fn
   {
     auto operator()(T a, T b) const -> bool
     {
@@ -310,143 +310,127 @@ namespace basedhlir
     }
   };
 
-  struct Bool_equal_fn
-  {
-    auto operator()(bool a, bool b) const -> bool
-    {
-      return a == b;
-    }
-  };
-
-  struct Bool_not_equal_fn
-  {
-    auto operator()(bool a, bool b) const -> bool
-    {
-      return a != b;
-    }
-  };
-
   template <typename T>
-  using Integer_negate = Simple_unary_operator_overload<
+  using Integer_negate = Primitive_unary_operator_overload<
     T,
     T,
     Integer_negate_instruction<T>,
-    Integer_negate_fn<T>
+    Negate_fn<T>
   >;
 
   template <typename T>
-  using Integer_add = Simple_binary_operator_overload<
+  using Integer_add = Primitive_binary_operator_overload<
     T,
     T,
     T,
     Integer_add_instruction<T>,
-    Integer_add_fn<T>
+    Add_fn<T>
   >;
 
   template <typename T>
-  using Integer_subtract = Simple_binary_operator_overload<
+  using Integer_subtract = Primitive_binary_operator_overload<
     T,
     T,
     T,
     Integer_subtract_instruction<T>,
-    Integer_subtract_fn<T>
+    Sub_fn<T>
   >;
 
   template <typename T>
-  using Integer_multiply = Simple_binary_operator_overload<
+  using Integer_multiply = Primitive_binary_operator_overload<
     T,
     T,
     T,
     Integer_multiply_instruction<T>,
-    Integer_multiply_fn<T>
+    Mul_fn<T>
   >;
 
   template <typename T>
-  using Integer_divide = Simple_binary_operator_overload<
+  using Integer_divide = Primitive_binary_operator_overload<
     T,
     T,
     T,
     Integer_divide_instruction<T>,
-    Integer_divide_fn<T>
+    Div_fn<T>
   >;
 
   template <typename T>
-  using Integer_modulo = Simple_binary_operator_overload<
+  using Integer_modulo = Primitive_binary_operator_overload<
     T,
     T,
     T,
     Integer_modulo_instruction<T>,
-    Integer_modulo_fn<T>
+    Mod_fn<T>
   >;
 
   template <typename T>
-  using Integer_equal = Simple_binary_operator_overload<
+  using Integer_equal = Primitive_binary_operator_overload<
     T,
     T,
     bool,
     Integer_equal_instruction<T>,
-    Integer_equal_fn<T>
+    Equal_fn<T>
   >;
 
   template <typename T>
-  using Integer_not_equal = Simple_binary_operator_overload<
+  using Integer_not_equal = Primitive_binary_operator_overload<
     T,
     T,
     bool,
     Integer_not_equal_instruction<T>,
-    Integer_not_equal_fn<T>
+    Not_equal_fn<T>
   >;
 
   template <typename T>
-  using Integer_less = Simple_binary_operator_overload<
+  using Integer_less = Primitive_binary_operator_overload<
     T,
     T,
     bool,
     Integer_less_instruction<T>,
-    Integer_less_fn<T>
+    Less_fn<T>
   >;
 
   template <typename T>
-  using Integer_less_eq = Simple_binary_operator_overload<
+  using Integer_less_eq = Primitive_binary_operator_overload<
     T,
     T,
     bool,
     Integer_less_eq_instruction<T>,
-    Integer_less_eq_fn<T>
+    Less_eq_fn<T>
   >;
 
   template <typename T>
-  using Integer_greater = Simple_binary_operator_overload<
+  using Integer_greater = Primitive_binary_operator_overload<
     T,
     T,
     bool,
     Integer_greater_instruction<T>,
-    Integer_greater_fn<T>
+    Greater_fn<T>
   >;
 
   template <typename T>
-  using Integer_greater_eq = Simple_binary_operator_overload<
+  using Integer_greater_eq = Primitive_binary_operator_overload<
     T,
     T,
     bool,
     Integer_greater_eq_instruction<T>,
-    Integer_greater_eq_fn<T>
+    Greater_eq_fn<T>
   >;
 
-  using Bool_equal = Simple_binary_operator_overload<
+  using Bool_equal = Primitive_binary_operator_overload<
     bool,
     bool,
     bool,
     Bool_equal_instruction,
-    Bool_equal_fn
+    Equal_fn<bool>
   >;
 
-  using Bool_not_equal = Simple_binary_operator_overload<
+  using Bool_not_equal = Primitive_binary_operator_overload<
     bool,
     bool,
     bool,
     Bool_not_equal_instruction,
-    Bool_not_equal_fn
+    Not_equal_fn<bool>
   >;
 
   class Unary_plus final: public Unary_operator_overload

@@ -1,7 +1,5 @@
 # TODO
 
-* `Unary_plus::matches` stores 4 explicit type pointers and must be updated manually when a new
-  integer type is added — inconsistent with how `Simple_unary_operator_overload<T>` instances work.
 * Come up with a better name than `basedlang`
 * Better integer arg parsing for `based` CLI
 * Split up modules more:

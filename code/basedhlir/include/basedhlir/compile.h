@@ -162,7 +162,7 @@ namespace basedhlir
 
     Operand compile_int_literal(
       std::string_view text,
-      bool is_negative,
+      bool negate,
       basedlex::Lexeme const &token
     );
 

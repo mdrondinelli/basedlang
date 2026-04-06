@@ -61,18 +61,18 @@ struct Compile_fixture
   Compile_fixture &operator=(Compile_fixture const &other) = delete;
 };
 
-TEST_CASE("parse_int_literal")
+TEST_CASE("validate_int_literal")
 {
   auto const value =
-    basedhlir::parse_int_literal("42", std::numeric_limits<std::uint64_t>::max());
+    basedhlir::validate_int_literal("42", std::numeric_limits<std::uint64_t>::max());
   REQUIRE(value.has_value());
   CHECK(*value == 42);
 }
 
-TEST_CASE("parse_int_literal - uint64 overflow")
+TEST_CASE("validate_int_literal - uint64 overflow")
 {
   CHECK_FALSE(
-    basedhlir::parse_int_literal(
+    basedhlir::validate_int_literal(
       "18446744073709551616",
       std::numeric_limits<std::uint64_t>::max()
     )

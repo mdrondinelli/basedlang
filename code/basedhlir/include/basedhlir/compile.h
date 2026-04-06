@@ -224,7 +224,7 @@ namespace basedhlir
   compile(basedparse::Translation_unit const &ast, Type_pool *type_pool);
 
   std::optional<std::uint64_t>
-  parse_int_literal(std::string_view digits, std::uint64_t max_value);
+  validate_int_literal(std::string_view digits, std::uint64_t max_value);
 
 } // namespace basedhlir
 

@@ -1683,7 +1683,7 @@ namespace basedhlir
   }
 
   std::optional<std::uint64_t>
-  parse_int_literal(std::string_view digits, std::uint64_t max_value)
+  validate_int_literal(std::string_view digits, std::uint64_t max_value)
   {
     auto value = std::uint64_t{0};
     for (auto const ch : digits)
@@ -1716,7 +1716,7 @@ namespace basedhlir
     if (suffix == "i8")
     {
       auto const max = negate ? int8_max_magnitude : int8_max;
-      auto const value = parse_int_literal(digits, max);
+      auto const value = validate_int_literal(digits, max);
       if (!value.has_value())
       {
         emit_error("integer literal is out of range for Int8", token);
@@ -1734,7 +1734,7 @@ namespace basedhlir
     else if (suffix == "i16")
     {
       auto const max = negate ? int16_max_magnitude : int16_max;
-      auto const value = parse_int_literal(digits, max);
+      auto const value = validate_int_literal(digits, max);
       if (!value.has_value())
       {
         emit_error("integer literal is out of range for Int16", token);
@@ -1752,7 +1752,7 @@ namespace basedhlir
     else if (suffix == "i32" || suffix.empty())
     {
       auto const max = negate ? int32_max_magnitude : int32_max;
-      auto const value = parse_int_literal(digits, max);
+      auto const value = validate_int_literal(digits, max);
       if (!value.has_value())
       {
         emit_error("integer literal is out of range for Int32", token);
@@ -1770,7 +1770,7 @@ namespace basedhlir
     else if (suffix == "i64")
     {
       auto const max = negate ? int64_max_magnitude : int64_max;
-      auto const value = parse_int_literal(digits, max);
+      auto const value = validate_int_literal(digits, max);
       if (!value.has_value())
       {
         emit_error("integer literal is out of range for Int64", token);

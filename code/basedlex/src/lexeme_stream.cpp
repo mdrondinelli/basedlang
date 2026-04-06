@@ -344,6 +344,9 @@ namespace basedlex
           }
           if (p && *p == 'i')
           {
+            text += 'i';
+            _reader.read();
+            ++_location.column;
             auto suffix_digit_count = 0;
             for (;;)
             {
@@ -355,6 +358,7 @@ namespace basedlex
               }
               text += (char) *_reader.read();
               ++_location.column;
+              ++suffix_digit_count;
             }
             if (suffix_digit_count == 0)
             {

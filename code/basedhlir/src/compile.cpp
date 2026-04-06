@@ -112,6 +112,8 @@ namespace basedhlir
   template <>
   struct Primitive_hlir_type<std::int8_t>
   {
+    static constexpr std::string_view name = "Int8";
+
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->int8_type();
@@ -121,6 +123,8 @@ namespace basedhlir
   template <>
   struct Primitive_hlir_type<std::int16_t>
   {
+    static constexpr std::string_view name = "Int16";
+
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->int16_type();
@@ -130,6 +134,8 @@ namespace basedhlir
   template <>
   struct Primitive_hlir_type<std::int32_t>
   {
+    static constexpr std::string_view name = "Int32";
+
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->int32_type();
@@ -139,6 +145,8 @@ namespace basedhlir
   template <>
   struct Primitive_hlir_type<std::int64_t>
   {
+    static constexpr std::string_view name = "Int64";
+
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->int64_type();
@@ -148,6 +156,8 @@ namespace basedhlir
   template <>
   struct Primitive_hlir_type<bool>
   {
+    static constexpr std::string_view name = "Bool";
+
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->bool_type();
@@ -1713,77 +1723,48 @@ namespace basedhlir
     auto const suffix =
       suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
     auto const digits = text.substr(0, suffix_pos);
-    if (suffix == "i8")
+    auto const compile_typed = [&]<typename T>() -> Operand
     {
-      auto const max = negate ? int8_max_magnitude : int8_max;
-      auto const value = validate_int_literal(digits, max);
+      auto constexpr max =
+        static_cast<std::uint64_t>(std::numeric_limits<T>::max());
+      auto constexpr max_magnitude = max + 1u;
+      auto const limit = negate ? max_magnitude : max;
+      auto const value = validate_int_literal(digits, limit);
       if (!value.has_value())
       {
-        emit_error("integer literal is out of range for Int8", token);
+        emit_error(
+          std::format(
+            "integer literal is out of range for {}",
+            Primitive_hlir_type<T>::name
+          ),
+          token
+        );
       }
       if (negate)
       {
         return Constant_value{
-          *value < int8_max_magnitude
-            ? static_cast<std::int8_t>(-static_cast<std::int8_t>(*value))
-            : std::numeric_limits<std::int8_t>::min()
+          *value < max_magnitude
+            ? static_cast<T>(-static_cast<T>(*value))
+            : std::numeric_limits<T>::min()
         };
       }
-      return Constant_value{static_cast<std::int8_t>(*value)};
+      return Constant_value{static_cast<T>(*value)};
+    };
+    if (suffix == "i8")
+    {
+      return compile_typed.operator()<std::int8_t>();
     }
     else if (suffix == "i16")
     {
-      auto const max = negate ? int16_max_magnitude : int16_max;
-      auto const value = validate_int_literal(digits, max);
-      if (!value.has_value())
-      {
-        emit_error("integer literal is out of range for Int16", token);
-      }
-      if (negate)
-      {
-        return Constant_value{
-          *value < int16_max_magnitude
-            ? static_cast<std::int16_t>(-static_cast<std::int16_t>(*value))
-            : std::numeric_limits<std::int16_t>::min()
-        };
-      }
-      return Constant_value{static_cast<std::int16_t>(*value)};
+      return compile_typed.operator()<std::int16_t>();
     }
     else if (suffix == "i32" || suffix.empty())
     {
-      auto const max = negate ? int32_max_magnitude : int32_max;
-      auto const value = validate_int_literal(digits, max);
-      if (!value.has_value())
-      {
-        emit_error("integer literal is out of range for Int32", token);
-      }
-      if (negate)
-      {
-        return Constant_value{
-          *value < int32_max_magnitude
-            ? -static_cast<std::int32_t>(*value)
-            : std::numeric_limits<std::int32_t>::min()
-        };
-      }
-      return Constant_value{static_cast<std::int32_t>(*value)};
+      return compile_typed.operator()<std::int32_t>();
     }
     else if (suffix == "i64")
     {
-      auto const max = negate ? int64_max_magnitude : int64_max;
-      auto const value = validate_int_literal(digits, max);
-      if (!value.has_value())
-      {
-        emit_error("integer literal is out of range for Int64", token);
-      }
-      if (negate)
-      {
-        return Constant_value{
-          *value < int64_max_magnitude
-            ? -static_cast<std::int64_t>(*value)
-            : std::numeric_limits<std::int64_t>::min()
-        };
-      }
-      return Constant_value{static_cast<std::int64_t>(*value)};
+      return compile_typed.operator()<std::int64_t>();
     }
     emit_error(
       std::format("unknown integer literal suffix '{}'", suffix),

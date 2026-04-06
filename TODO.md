@@ -2,8 +2,6 @@
 
 * `Unary_plus::matches` stores 4 explicit type pointers and must be updated manually when a new
   integer type is added — inconsistent with how `Simple_unary_operator_overload<T>` instances work.
-* `compile_int_literal` has 4 nearly copy-pasted branches for i8/i16/i32/i64; consider a template
-  helper.
 * Come up with a better name than `basedlang`
 * Better integer arg parsing for `based` CLI
 * Split up modules more:

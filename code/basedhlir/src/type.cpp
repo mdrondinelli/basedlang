@@ -12,7 +12,7 @@ namespace basedhlir
            !std::holds_alternative<Function_type>(type->data);
   }
 
-  auto Type_pool::Function_type_hash::operator()(
+auto Type_pool::Function_type_hash::operator()(
     Function_type const &ft
   ) const noexcept -> std::size_t
   {

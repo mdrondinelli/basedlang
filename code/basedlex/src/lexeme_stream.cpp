@@ -11,6 +11,13 @@ namespace basedlex
   {
   }
 
+  char32_t Lexeme_stream::consume()
+  {
+    auto const c = *_reader.read();
+    ++_location.column;
+    return c;
+  }
+
   Lexeme Lexeme_stream::lex()
   {
     auto text = std::string{};
@@ -60,8 +67,7 @@ namespace basedlex
           {
             if (_reader.peek() && *_reader.peek() == '>')
             {
-              _reader.read();
-              ++_location.column;
+              consume();
               return Lexeme{
                 .text = "->",
                 .token = Token::arrow,
@@ -86,10 +92,9 @@ namespace basedlex
                   (!p3 ||
                    !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
               {
-                _reader.read();
-                _reader.read();
-                _reader.read();
-                _location.column += 3;
+                consume();
+                consume();
+                consume();
                 return Lexeme{
                   .text = "&mut",
                   .token = Token::ampersand_mut,
@@ -118,10 +123,9 @@ namespace basedlex
                   (!p3 ||
                    !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
               {
-                _reader.read();
-                _reader.read();
-                _reader.read();
-                _location.column += 3;
+                consume();
+                consume();
+                consume();
                 return Lexeme{
                   .text = "^mut",
                   .token = Token::caret_mut,
@@ -155,8 +159,7 @@ namespace basedlex
           case '=':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              _reader.read();
-              ++_location.column;
+              consume();
               return Lexeme{
                 .text = "==",
                 .token = Token::eq_eq,
@@ -165,8 +168,7 @@ namespace basedlex
             }
             if (_reader.peek() && *_reader.peek() == '>')
             {
-              _reader.read();
-              ++_location.column;
+              consume();
               return Lexeme{
                 .text = "=>",
                 .token = Token::fat_arrow,
@@ -181,8 +183,7 @@ namespace basedlex
           case '!':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              _reader.read();
-              ++_location.column;
+              consume();
               return Lexeme{
                 .text = "!=",
                 .token = Token::bang_eq,
@@ -193,8 +194,7 @@ namespace basedlex
           case '<':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              _reader.read();
-              ++_location.column;
+              consume();
               return Lexeme{
                 .text = "<=",
                 .token = Token::le,
@@ -209,8 +209,7 @@ namespace basedlex
           case '>':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              _reader.read();
-              ++_location.column;
+              consume();
               return Lexeme{
                 .text = ">=",
                 .token = Token::ge,
@@ -285,9 +284,7 @@ namespace basedlex
           auto const p = _reader.peek();
           if (p && *p <= 0x7F && (std::isalnum((int) *p) || *p == '_'))
           {
-            text += (char) *p;
-            _reader.read();
-            ++_location.column;
+            text += (char) consume();
             break;
           }
           auto const token = [&]() -> Token
@@ -337,16 +334,12 @@ namespace basedlex
           auto const p = _reader.peek();
           if (p && *p <= 0x7F && std::isdigit((int) *p))
           {
-            text += (char) *p;
-            _reader.read();
-            ++_location.column;
+            text += (char) consume();
             break;
           }
           if (p && *p == 'i')
           {
-            text += 'i';
-            _reader.read();
-            ++_location.column;
+            text += (char) consume();
             auto suffix_digit_count = 0;
             for (;;)
             {
@@ -356,8 +349,7 @@ namespace basedlex
               {
                 break;
               }
-              text += (char) *_reader.read();
-              ++_location.column;
+              text += (char) consume();
               ++suffix_digit_count;
             }
             if (suffix_digit_count == 0)

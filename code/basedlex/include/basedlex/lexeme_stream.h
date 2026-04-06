@@ -28,6 +28,8 @@ namespace basedlex
     Lexeme lex();
 
   private:
+    char32_t consume();
+
     Char_stream_reader _reader;
     Source_location _location;
   };

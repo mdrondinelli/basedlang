@@ -52,6 +52,7 @@ Parsed but not fully implemented in `basedhlir`:
 Implemented primary expression forms:
 
 - integer literals: `42`, `42i8`, `42i16`, `42i32`, `42i64`
+  - Unsuffixed literals default to `Int32`. If the value exceeds `Int32::max` (2147483647), the literal is automatically typed as `Int64` instead.
 - identifiers: `x`
 - builtin boolean values via ordinary identifiers: `true`, `false`
 - `recurse`

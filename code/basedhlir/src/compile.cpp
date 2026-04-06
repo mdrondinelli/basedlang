@@ -1,5 +1,4 @@
 #include <cassert>
-#include <concepts>
 #include <cstdint>
 #include <format>
 #include <limits>
@@ -39,72 +38,6 @@ namespace basedhlir
     T &_target;
     T _previous;
   };
-
-  template <
-    typename OperandT,
-    typename ResultT,
-    typename InstructionT,
-    typename Fn
-  >
-  Operand compile_unary_operation(
-    Compilation_context &ctx,
-    Operand operand,
-    Type *result_type,
-    Fn const &fn
-  )
-  {
-    static_assert(
-      std::same_as<std::invoke_result_t<Fn const &, OperandT>, ResultT>
-    );
-
-    if (auto const cv = std::get_if<Constant_value>(&operand))
-    {
-      return Operand{Constant_value{fn(std::get<OperandT>(*cv))}};
-    }
-    else
-    {
-      auto const result = ctx.allocate_register(result_type);
-      ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
-      return Operand{result};
-    }
-  }
-
-  template <
-    typename LhsT,
-    typename RhsT,
-    typename ResultT,
-    typename InstructionT,
-    typename Fn
-  >
-  Operand compile_binary_operation(
-    Compilation_context &ctx,
-    Operand lhs,
-    Operand rhs,
-    Type *result_type,
-    Fn const &fn
-  )
-  {
-    static_assert(
-      std::same_as<std::invoke_result_t<Fn const &, LhsT, RhsT>, ResultT>
-    );
-
-    auto const lhs_cv = std::get_if<Constant_value>(&lhs);
-    auto const rhs_cv = std::get_if<Constant_value>(&rhs);
-    if (lhs_cv != nullptr && rhs_cv != nullptr)
-    {
-      return Operand{
-        Constant_value{fn(std::get<LhsT>(*lhs_cv), std::get<RhsT>(*rhs_cv))}
-      };
-    }
-    else
-    {
-      auto const result = ctx.allocate_register(result_type);
-      ctx.emit(
-        Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}}
-      );
-      return Operand{result};
-    }
-  }
 
   template <typename T>
   struct Primitive_hlir_type;
@@ -191,12 +124,16 @@ namespace basedhlir
 
     Operand compile(Compilation_context &ctx, Operand operand) const override
     {
-      return compile_unary_operation<OperandT, ResultT, InstructionT>(
-        ctx,
-        std::move(operand),
-        _result_type,
-        _fn
-      );
+      if (auto const cv = std::get_if<Constant_value>(&operand))
+      {
+        return Operand{Constant_value{_fn(std::get<OperandT>(*cv))}};
+      }
+      else
+      {
+        auto const result = ctx.allocate_register(_result_type);
+        ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
+        return Operand{result};
+      }
     }
 
   private:
@@ -240,13 +177,22 @@ namespace basedhlir
     Operand
     compile(Compilation_context &ctx, Operand lhs, Operand rhs) const override
     {
-      return compile_binary_operation<LhsT, RhsT, ResultT, InstructionT>(
-        ctx,
-        std::move(lhs),
-        std::move(rhs),
-        _result_type,
-        _fn
-      );
+      auto const lhs_cv = std::get_if<Constant_value>(&lhs);
+      auto const rhs_cv = std::get_if<Constant_value>(&rhs);
+      if (lhs_cv != nullptr && rhs_cv != nullptr)
+      {
+        return Operand{
+          Constant_value{_fn(std::get<LhsT>(*lhs_cv), std::get<RhsT>(*rhs_cv))}
+        };
+      }
+      else
+      {
+        auto const result = ctx.allocate_register(_result_type);
+        ctx.emit(
+          Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}}
+        );
+        return Operand{result};
+      }
     }
 
   private:

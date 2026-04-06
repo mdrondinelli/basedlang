@@ -11,5 +11,3 @@
   * Maybe make our own string class? Interned?
 * Add a helper function for the lexeme stream to read a character and advance
   the location, instead of repeating this pattern all over the place
-* Make it so int literals can be Int64 if their value is greater than the max
-  Int32

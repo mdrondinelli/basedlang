@@ -34,6 +34,20 @@ namespace basedhlir
       );
     }
 
+    template <typename T, template <typename> class Template>
+    struct Is_instantiation_of : std::false_type
+    {
+    };
+
+    template <template <typename> class Template, typename Arg>
+    struct Is_instantiation_of<Template<Arg>, Template> : std::true_type
+    {
+    };
+
+    template <typename T, template <typename> class Template>
+    inline constexpr auto is_instantiation_of_v =
+      Is_instantiation_of<T, Template>::value;
+
     template <typename InstructionT, typename Fn>
     void execute_unary_instruction(
       std::vector<Constant_value> &register_values,
@@ -72,12 +86,7 @@ namespace basedhlir
         [&](auto const &inst)
         {
           using T = std::decay_t<decltype(inst)>;
-          if constexpr (
-            std::is_same_v<T, Integer_constant_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_constant_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_constant_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_constant_instruction<std::int64_t>>
-          )
+          if constexpr (is_instantiation_of_v<T, Integer_constant_instruction>)
           {
             register_values[*inst.result] = inst.value;
           }
@@ -94,12 +103,7 @@ namespace basedhlir
             register_values[*inst.result] =
               eval_operand(inst.source, register_values);
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_negate_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_negate_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_negate_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_negate_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_negate_instruction>)
           {
             using V = typename T::value_type;
             execute_unary_instruction(
@@ -111,12 +115,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_add_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_add_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_add_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_add_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_add_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -128,12 +127,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_subtract_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_subtract_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_subtract_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_subtract_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_subtract_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -145,12 +139,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_multiply_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_multiply_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_multiply_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_multiply_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_multiply_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -162,12 +151,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_divide_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_divide_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_divide_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_divide_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_divide_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -179,12 +163,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_modulo_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_modulo_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_modulo_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_modulo_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_modulo_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -196,12 +175,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_equal_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_equal_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_equal_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_equal_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_equal_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -213,12 +187,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_not_equal_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_not_equal_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_not_equal_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_not_equal_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_not_equal_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -230,12 +199,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_less_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_less_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_less_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_less_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_less_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -247,12 +211,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_less_eq_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_less_eq_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_less_eq_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_less_eq_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_less_eq_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -264,12 +223,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_greater_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_greater_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_greater_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_greater_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_greater_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -281,12 +235,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (
-            std::is_same_v<T, Integer_greater_eq_instruction<std::int8_t>> ||
-            std::is_same_v<T, Integer_greater_eq_instruction<std::int16_t>> ||
-            std::is_same_v<T, Integer_greater_eq_instruction<std::int32_t>> ||
-            std::is_same_v<T, Integer_greater_eq_instruction<std::int64_t>>
-          )
+          else if constexpr (is_instantiation_of_v<T, Integer_greater_eq_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(

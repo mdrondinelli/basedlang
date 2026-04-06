@@ -160,6 +160,12 @@ namespace basedhlir
 
     Operand compile_expression(basedparse::If_expression const &expr);
 
+    Operand compile_int_literal(
+      std::string_view text,
+      bool is_negative,
+      basedlex::Lexeme const &token
+    );
+
     void compile_statement(basedparse::Statement const &stmt);
 
     void compile_statement(basedparse::Let_statement const &stmt);
@@ -194,26 +200,31 @@ namespace basedhlir
       _binary_overloads;
   };
 
-  auto constexpr int8_max_magnitude =
-    static_cast<std::uint64_t>(std::numeric_limits<std::int8_t>::max()) +
-    1u;
+  auto constexpr int8_max =
+    static_cast<std::uint64_t>(std::numeric_limits<std::int8_t>::max());
 
-  auto constexpr int16_max_magnitude =
-    static_cast<std::uint64_t>(std::numeric_limits<std::int16_t>::max()) +
-    1u;
+  auto constexpr int16_max =
+    static_cast<std::uint64_t>(std::numeric_limits<std::int16_t>::max());
 
-  auto constexpr int32_max_magnitude =
-    static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max()) +
-    1u;
+  auto constexpr int32_max =
+    static_cast<std::uint64_t>(std::numeric_limits<std::int32_t>::max());
 
-  auto constexpr int64_max_magnitude =
-    static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()) +
-    1u;
+  auto constexpr int64_max =
+    static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max());
+
+  auto constexpr int8_max_magnitude = int8_max + 1u;
+
+  auto constexpr int16_max_magnitude = int16_max + 1u;
+
+  auto constexpr int32_max_magnitude = int32_max + 1u;
+
+  auto constexpr int64_max_magnitude = int64_max + 1u;
 
   Translation_unit
   compile(basedparse::Translation_unit const &ast, Type_pool *type_pool);
 
-  std::optional<std::uint64_t> parse_int_literal(std::string_view digits);
+  std::optional<std::uint64_t>
+  parse_int_literal(std::string_view digits, std::uint64_t max_value);
 
 } // namespace basedhlir
 

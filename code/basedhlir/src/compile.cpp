@@ -1106,59 +1106,7 @@ namespace basedhlir
     basedparse::Int_literal_expression const &expr
   )
   {
-    auto const text = expr.literal.text;
-    auto const suffix_pos = text.rfind('i');
-    auto const suffix =
-      suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
-    auto const digits = text.substr(0, suffix_pos);
-    auto const value = parse_int_literal(digits);
-    if (suffix == "i8")
-    {
-      if (!value.has_value() ||
-          *value >
-            static_cast<std::uint64_t>(std::numeric_limits<std::int8_t>::max()))
-      {
-        emit_error("integer literal is out of range for Int8", expr.literal);
-      }
-      return Constant_value{static_cast<std::int8_t>(*value)};
-    }
-    else if (suffix == "i16")
-    {
-      if (!value.has_value() ||
-          *value > static_cast<std::uint64_t>(
-                     std::numeric_limits<std::int16_t>::max()
-                   ))
-      {
-        emit_error("integer literal is out of range for Int16", expr.literal);
-      }
-      return Constant_value{static_cast<std::int16_t>(*value)};
-    }
-    else if (suffix == "i32" || suffix.empty())
-    {
-      if (!value.has_value() ||
-          *value > static_cast<std::uint64_t>(
-                     std::numeric_limits<std::int32_t>::max()
-                   ))
-      {
-        emit_error("integer literal is out of range for Int32", expr.literal);
-      }
-      return Constant_value{static_cast<std::int32_t>(*value)};
-    }
-    else if (suffix == "i64")
-    {
-      if (!value.has_value() ||
-          *value > static_cast<std::uint64_t>(
-                     std::numeric_limits<std::int64_t>::max()
-                   ))
-      {
-        emit_error("integer literal is out of range for Int64", expr.literal);
-      }
-      return Constant_value{static_cast<std::int64_t>(*value)};
-    }
-    emit_error(
-      std::format("unknown integer literal suffix '{}'", suffix),
-      expr.literal
-    );
+    return compile_int_literal(expr.literal.text, false, expr.literal);
   }
 
   Operand Compilation_context::compile_expression(
@@ -1214,76 +1162,7 @@ namespace basedhlir
     {
       auto const &literal =
         std::get<basedparse::Int_literal_expression>(expr.operand->value);
-      auto const text = literal.literal.text;
-      auto const suffix_pos = text.rfind("i");
-      auto const suffix =
-        suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
-      auto const digits = text.substr(0, suffix_pos);
-      auto const value = parse_int_literal(digits);
-      if (suffix == "i8")
-      {
-        if (!value.has_value() || *value > int8_max_magnitude)
-        {
-          emit_error(
-            "integer literal is out of range for Int8",
-            literal.literal
-          );
-        }
-        return Constant_value{
-          *value < int8_max_magnitude
-            ? static_cast<std::int8_t>(-static_cast<std::int8_t>(*value))
-            : std::numeric_limits<std::int8_t>::min()
-        };
-      }
-      else if (suffix == "i16")
-      {
-        if (!value.has_value() || *value > int16_max_magnitude)
-        {
-          emit_error(
-            "integer literal is out of range for Int16",
-            literal.literal
-          );
-        }
-        return Constant_value{
-          *value < int16_max_magnitude
-            ? static_cast<std::int16_t>(-static_cast<std::int16_t>(*value))
-            : std::numeric_limits<std::int16_t>::min()
-        };
-      }
-      else if (suffix == "i32" || suffix.empty())
-      {
-        if (!value.has_value() || *value > int32_max_magnitude)
-        {
-          emit_error(
-            "integer literal is out of range for Int32",
-            literal.literal
-          );
-        }
-        return Constant_value{
-          *value < int32_max_magnitude
-            ? -static_cast<std::int32_t>(*value)
-            : std::numeric_limits<std::int32_t>::min()
-        };
-      }
-      if (suffix == "i64")
-      {
-        if (!value.has_value() || *value > int64_max_magnitude)
-        {
-          emit_error(
-            "integer literal is out of range for Int64",
-            literal.literal
-          );
-        }
-        return Constant_value{
-          *value < int64_max_magnitude
-            ? -static_cast<std::int64_t>(*value)
-            : std::numeric_limits<std::int64_t>::min()
-        };
-      }
-      emit_error(
-        std::format("unknown integer literal suffix '{}'", suffix),
-        literal.literal
-      );
+      return compile_int_literal(literal.literal.text, true, literal.literal);
     }
     // General case
     else
@@ -1803,7 +1682,8 @@ namespace basedhlir
     return ctx.compile(ast);
   }
 
-  std::optional<std::uint64_t> parse_int_literal(std::string_view digits)
+  std::optional<std::uint64_t>
+  parse_int_literal(std::string_view digits, std::uint64_t max_value)
   {
     auto value = std::uint64_t{0};
     for (auto const ch : digits)
@@ -1816,7 +1696,99 @@ namespace basedhlir
       }
       value = value * 10u + digit;
     }
+    if (value > max_value)
+    {
+      return std::nullopt;
+    }
     return value;
+  }
+
+  Operand Compilation_context::compile_int_literal(
+    std::string_view text,
+    bool is_negative,
+    basedlex::Lexeme const &token
+  )
+  {
+    auto const suffix_pos = text.rfind('i');
+    auto const suffix =
+      suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
+    auto const digits = text.substr(0, suffix_pos);
+    if (suffix == "i8")
+    {
+      auto const max = is_negative ? int8_max_magnitude : int8_max;
+      auto const value = parse_int_literal(digits, max);
+      if (!value.has_value())
+      {
+        emit_error("integer literal is out of range for Int8", token);
+      }
+      if (is_negative)
+      {
+        return Constant_value{
+          *value < int8_max_magnitude
+            ? static_cast<std::int8_t>(-static_cast<std::int8_t>(*value))
+            : std::numeric_limits<std::int8_t>::min()
+        };
+      }
+      return Constant_value{static_cast<std::int8_t>(*value)};
+    }
+    else if (suffix == "i16")
+    {
+      auto const max = is_negative ? int16_max_magnitude : int16_max;
+      auto const value = parse_int_literal(digits, max);
+      if (!value.has_value())
+      {
+        emit_error("integer literal is out of range for Int16", token);
+      }
+      if (is_negative)
+      {
+        return Constant_value{
+          *value < int16_max_magnitude
+            ? static_cast<std::int16_t>(-static_cast<std::int16_t>(*value))
+            : std::numeric_limits<std::int16_t>::min()
+        };
+      }
+      return Constant_value{static_cast<std::int16_t>(*value)};
+    }
+    else if (suffix == "i32" || suffix.empty())
+    {
+      auto const max = is_negative ? int32_max_magnitude : int32_max;
+      auto const value = parse_int_literal(digits, max);
+      if (!value.has_value())
+      {
+        emit_error("integer literal is out of range for Int32", token);
+      }
+      if (is_negative)
+      {
+        return Constant_value{
+          *value < int32_max_magnitude
+            ? -static_cast<std::int32_t>(*value)
+            : std::numeric_limits<std::int32_t>::min()
+        };
+      }
+      return Constant_value{static_cast<std::int32_t>(*value)};
+    }
+    else if (suffix == "i64")
+    {
+      auto const max = is_negative ? int64_max_magnitude : int64_max;
+      auto const value = parse_int_literal(digits, max);
+      if (!value.has_value())
+      {
+        emit_error("integer literal is out of range for Int64", token);
+      }
+      if (is_negative)
+      {
+        return Constant_value{
+          *value < int64_max_magnitude
+            ? -static_cast<std::int64_t>(*value)
+            : std::numeric_limits<std::int64_t>::min()
+        };
+      }
+      return Constant_value{static_cast<std::int64_t>(*value)};
+    }
+    emit_error(
+      std::format("unknown integer literal suffix '{}'", suffix),
+      token
+    );
   }
 
 } // namespace basedhlir

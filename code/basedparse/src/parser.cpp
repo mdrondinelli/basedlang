@@ -293,6 +293,12 @@ namespace basedparse
         parse_int_literal_expression()
       );
     }
+    if (next.token == basedlex::Token::float_literal)
+    {
+      return std::make_unique<basedast::Expression>(
+        parse_float_literal_expression()
+      );
+    }
     if (next.token == basedlex::Token::identifier)
     {
       return std::make_unique<basedast::Expression>(
@@ -374,6 +380,13 @@ namespace basedparse
   {
     return basedast::Int_literal_expression{
       .literal = expect(basedlex::Token::int_literal)
+    };
+  }
+
+  basedast::Float_literal_expression Parser::parse_float_literal_expression()
+  {
+    return basedast::Float_literal_expression{
+      .literal = expect(basedlex::Token::float_literal)
     };
   }
 

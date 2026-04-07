@@ -22,6 +22,11 @@ namespace basedast
     basedlex::Lexeme literal;
   };
 
+  struct Float_literal_expression
+  {
+    basedlex::Lexeme literal;
+  };
+
   struct Identifier_expression
   {
     basedlex::Lexeme identifier;
@@ -233,6 +238,7 @@ namespace basedast
   {
     std::variant<
       Int_literal_expression,
+      Float_literal_expression,
       Identifier_expression,
       Recurse_expression,
       Fn_expression,

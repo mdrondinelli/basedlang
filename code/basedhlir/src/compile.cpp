@@ -1162,7 +1162,7 @@ namespace basedhlir
     basedast::Float_literal_expression const &expr
   )
   {
-    return compile_float_literal(expr.literal.text, false, expr.literal);
+    return compile_float_literal(expr.literal.text, expr.literal);
   }
 
   Operand Compilation_context::compile_expression(
@@ -1827,7 +1827,6 @@ namespace basedhlir
 
   Operand Compilation_context::compile_float_literal(
     std::string_view text,
-    bool negate,
     basedlex::Lexeme const &token
   )
   {
@@ -1850,7 +1849,7 @@ namespace basedhlir
           token
         );
       }
-      return Constant_value{negate ? static_cast<T>(-value) : value};
+      return Constant_value{value};
     };
     if (suffix == "f32")
     {

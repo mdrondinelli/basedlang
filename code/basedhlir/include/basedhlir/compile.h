@@ -166,7 +166,6 @@ namespace basedhlir
 
     Operand compile_float_literal(
       std::string_view text,
-      bool negate,
       basedlex::Lexeme const &token
     );
 

@@ -86,7 +86,7 @@ namespace basedhlir
         [&](auto const &inst)
         {
           using T = std::decay_t<decltype(inst)>;
-          if constexpr (is_instantiation_of_v<T, Integer_constant_instruction>)
+          if constexpr (is_instantiation_of_v<T, Constant_instruction>)
           {
             register_values[*inst.result] = inst.value;
           }
@@ -98,7 +98,7 @@ namespace basedhlir
           {
             register_values[*inst.result] = Void_value{};
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_negate_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Negate_instruction>)
           {
             using V = typename T::value_type;
             execute_unary_instruction(
@@ -110,7 +110,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_add_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Add_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -122,7 +122,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_subtract_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Subtract_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -134,7 +134,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_multiply_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Multiply_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -146,7 +146,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_divide_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Divide_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -158,7 +158,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_modulo_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Modulo_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -170,7 +170,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_equal_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Equal_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -182,7 +182,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_not_equal_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Not_equal_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -194,7 +194,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_less_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Less_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -206,7 +206,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_less_eq_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Less_eq_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -218,7 +218,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_greater_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Greater_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(
@@ -230,7 +230,7 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (is_instantiation_of_v<T, Integer_greater_eq_instruction>)
+          else if constexpr (is_instantiation_of_v<T, Greater_eq_instruction>)
           {
             using V = typename T::value_type;
             execute_binary_instruction(

@@ -65,6 +65,26 @@ auto Type_pool::Function_type_hash::operator()(
     return _int64_type;
   }
 
+  Type *Type_pool::float32_type()
+  {
+    if (_float32_type == nullptr)
+    {
+      _types.push_back(std::make_unique<Type>(Float32_type{}));
+      _float32_type = _types.back().get();
+    }
+    return _float32_type;
+  }
+
+  Type *Type_pool::float64_type()
+  {
+    if (_float64_type == nullptr)
+    {
+      _types.push_back(std::make_unique<Type>(Float64_type{}));
+      _float64_type = _types.back().get();
+    }
+    return _float64_type;
+  }
+
   Type *Type_pool::bool_type()
   {
     if (_bool_type == nullptr)

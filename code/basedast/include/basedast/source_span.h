@@ -34,6 +34,7 @@ namespace basedast
 
   Source_span span_of(Expression const &node);
   Source_span span_of(Int_literal_expression const &node);
+  Source_span span_of(Float_literal_expression const &node);
   Source_span span_of(Identifier_expression const &node);
   Source_span span_of(Recurse_expression const &node);
   Source_span span_of(Fn_expression const &node);

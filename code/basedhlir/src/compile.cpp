@@ -1,4 +1,5 @@
 #include <cassert>
+#include <charconv>
 #include <cstdint>
 #include <format>
 #include <limits>
@@ -83,6 +84,28 @@ namespace basedhlir
     static auto get(Type_pool *type_pool) -> Type *
     {
       return type_pool->int64_type();
+    }
+  };
+
+  template <>
+  struct Primitive_hlir_type<float>
+  {
+    static constexpr std::string_view name = "Float32";
+
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->float32_type();
+    }
+  };
+
+  template <>
+  struct Primitive_hlir_type<double>
+  {
+    static constexpr std::string_view name = "Float64";
+
+    static auto get(Type_pool *type_pool) -> Type *
+    {
+      return type_pool->float64_type();
     }
   };
 
@@ -313,109 +336,109 @@ namespace basedhlir
   };
 
   template <typename T>
-  using Integer_negate = Primitive_unary_operator_overload<
+  using Negate = Primitive_unary_operator_overload<
     T,
     T,
-    Integer_negate_instruction<T>,
+    Negate_instruction<T>,
     Negate_fn<T>
   >;
 
   template <typename T>
-  using Integer_add = Primitive_binary_operator_overload<
+  using Add = Primitive_binary_operator_overload<
     T,
     T,
     T,
-    Integer_add_instruction<T>,
+    Add_instruction<T>,
     Add_fn<T>
   >;
 
   template <typename T>
-  using Integer_subtract = Primitive_binary_operator_overload<
+  using Subtract = Primitive_binary_operator_overload<
     T,
     T,
     T,
-    Integer_subtract_instruction<T>,
+    Subtract_instruction<T>,
     Sub_fn<T>
   >;
 
   template <typename T>
-  using Integer_multiply = Primitive_binary_operator_overload<
+  using Multiply = Primitive_binary_operator_overload<
     T,
     T,
     T,
-    Integer_multiply_instruction<T>,
+    Multiply_instruction<T>,
     Mul_fn<T>
   >;
 
   template <typename T>
-  using Integer_divide = Primitive_binary_operator_overload<
+  using Divide = Primitive_binary_operator_overload<
     T,
     T,
     T,
-    Integer_divide_instruction<T>,
+    Divide_instruction<T>,
     Div_fn<T>
   >;
 
   template <typename T>
-  using Integer_modulo = Primitive_binary_operator_overload<
+  using Modulo = Primitive_binary_operator_overload<
     T,
     T,
     T,
-    Integer_modulo_instruction<T>,
+    Modulo_instruction<T>,
     Mod_fn<T>
   >;
 
   template <typename T>
-  using Integer_equal = Primitive_binary_operator_overload<
+  using Equal = Primitive_binary_operator_overload<
     T,
     T,
     bool,
-    Integer_equal_instruction<T>,
+    Equal_instruction<T>,
     Equal_fn<T>
   >;
 
   template <typename T>
-  using Integer_not_equal = Primitive_binary_operator_overload<
+  using Not_equal = Primitive_binary_operator_overload<
     T,
     T,
     bool,
-    Integer_not_equal_instruction<T>,
+    Not_equal_instruction<T>,
     Not_equal_fn<T>
   >;
 
   template <typename T>
-  using Integer_less = Primitive_binary_operator_overload<
+  using Less = Primitive_binary_operator_overload<
     T,
     T,
     bool,
-    Integer_less_instruction<T>,
+    Less_instruction<T>,
     Less_fn<T>
   >;
 
   template <typename T>
-  using Integer_less_eq = Primitive_binary_operator_overload<
+  using Less_eq = Primitive_binary_operator_overload<
     T,
     T,
     bool,
-    Integer_less_eq_instruction<T>,
+    Less_eq_instruction<T>,
     Less_eq_fn<T>
   >;
 
   template <typename T>
-  using Integer_greater = Primitive_binary_operator_overload<
+  using Greater = Primitive_binary_operator_overload<
     T,
     T,
     bool,
-    Integer_greater_instruction<T>,
+    Greater_instruction<T>,
     Greater_fn<T>
   >;
 
   template <typename T>
-  using Integer_greater_eq = Primitive_binary_operator_overload<
+  using Greater_eq = Primitive_binary_operator_overload<
     T,
     T,
     bool,
-    Integer_greater_eq_instruction<T>,
+    Greater_eq_instruction<T>,
     Greater_eq_fn<T>
   >;
 
@@ -442,14 +465,17 @@ namespace basedhlir
         : _int8_type{type_pool->int8_type()},
           _int16_type{type_pool->int16_type()},
           _int32_type{type_pool->int32_type()},
-          _int64_type{type_pool->int64_type()}
+          _int64_type{type_pool->int64_type()},
+          _float32_type{type_pool->float32_type()},
+          _float64_type{type_pool->float64_type()}
     {
     }
 
     bool matches(Type *operand_type) const override
     {
       return operand_type == _int8_type || operand_type == _int16_type ||
-             operand_type == _int32_type || operand_type == _int64_type;
+             operand_type == _int32_type || operand_type == _int64_type ||
+             operand_type == _float32_type || operand_type == _float64_type;
     }
 
     Type *result_type(Type *operand_type) const override
@@ -467,6 +493,8 @@ namespace basedhlir
     Type *_int16_type;
     Type *_int32_type;
     Type *_int64_type;
+    Type *_float32_type;
+    Type *_float64_type;
   };
 
   class Pointer_to final: public Unary_operator_overload
@@ -562,22 +590,34 @@ namespace basedhlir
     _symbol_table.declare_value("Int64", Type_value{_type_pool->int64_type()});
     _symbol_table.declare_value("Bool", Type_value{_type_pool->bool_type()});
     _symbol_table.declare_value("Void", Type_value{_type_pool->void_type()});
+    _symbol_table.declare_value(
+      "Float32", Type_value{_type_pool->float32_type()}
+    );
+    _symbol_table.declare_value(
+      "Float64", Type_value{_type_pool->float64_type()}
+    );
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
     _unary_overloads[basedast::Operator::unary_plus].push_back(
       std::make_unique<Unary_plus>(_type_pool)
     );
     _unary_overloads[basedast::Operator::unary_minus].push_back(
-      std::make_unique<Integer_negate<std::int8_t>>(_type_pool)
+      std::make_unique<Negate<std::int8_t>>(_type_pool)
     );
     _unary_overloads[basedast::Operator::unary_minus].push_back(
-      std::make_unique<Integer_negate<std::int16_t>>(_type_pool)
+      std::make_unique<Negate<std::int16_t>>(_type_pool)
     );
     _unary_overloads[basedast::Operator::unary_minus].push_back(
-      std::make_unique<Integer_negate<std::int32_t>>(_type_pool)
+      std::make_unique<Negate<std::int32_t>>(_type_pool)
     );
     _unary_overloads[basedast::Operator::unary_minus].push_back(
-      std::make_unique<Integer_negate<std::int64_t>>(_type_pool)
+      std::make_unique<Negate<std::int64_t>>(_type_pool)
+    );
+    _unary_overloads[basedast::Operator::unary_minus].push_back(
+      std::make_unique<Negate<float>>(_type_pool)
+    );
+    _unary_overloads[basedast::Operator::unary_minus].push_back(
+      std::make_unique<Negate<double>>(_type_pool)
     );
     _unary_overloads[basedast::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
@@ -589,136 +629,196 @@ namespace basedhlir
       std::make_unique<Dereference>()
     );
     _binary_overloads[basedast::Operator::add].push_back(
-      std::make_unique<Integer_add<std::int8_t>>(_type_pool)
+      std::make_unique<Add<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::add].push_back(
-      std::make_unique<Integer_add<std::int16_t>>(_type_pool)
+      std::make_unique<Add<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::add].push_back(
-      std::make_unique<Integer_add<std::int32_t>>(_type_pool)
+      std::make_unique<Add<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::add].push_back(
-      std::make_unique<Integer_add<std::int64_t>>(_type_pool)
+      std::make_unique<Add<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::subtract].push_back(
-      std::make_unique<Integer_subtract<std::int8_t>>(_type_pool)
+      std::make_unique<Subtract<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::subtract].push_back(
-      std::make_unique<Integer_subtract<std::int16_t>>(_type_pool)
+      std::make_unique<Subtract<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::subtract].push_back(
-      std::make_unique<Integer_subtract<std::int32_t>>(_type_pool)
+      std::make_unique<Subtract<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::subtract].push_back(
-      std::make_unique<Integer_subtract<std::int64_t>>(_type_pool)
+      std::make_unique<Subtract<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::multiply].push_back(
-      std::make_unique<Integer_multiply<std::int8_t>>(_type_pool)
+      std::make_unique<Multiply<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::multiply].push_back(
-      std::make_unique<Integer_multiply<std::int16_t>>(_type_pool)
+      std::make_unique<Multiply<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::multiply].push_back(
-      std::make_unique<Integer_multiply<std::int32_t>>(_type_pool)
+      std::make_unique<Multiply<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::multiply].push_back(
-      std::make_unique<Integer_multiply<std::int64_t>>(_type_pool)
+      std::make_unique<Multiply<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::divide].push_back(
-      std::make_unique<Integer_divide<std::int8_t>>(_type_pool)
+      std::make_unique<Divide<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::divide].push_back(
-      std::make_unique<Integer_divide<std::int16_t>>(_type_pool)
+      std::make_unique<Divide<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::divide].push_back(
-      std::make_unique<Integer_divide<std::int32_t>>(_type_pool)
+      std::make_unique<Divide<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::divide].push_back(
-      std::make_unique<Integer_divide<std::int64_t>>(_type_pool)
+      std::make_unique<Divide<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::modulo].push_back(
-      std::make_unique<Integer_modulo<std::int8_t>>(_type_pool)
+      std::make_unique<Modulo<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::modulo].push_back(
-      std::make_unique<Integer_modulo<std::int16_t>>(_type_pool)
+      std::make_unique<Modulo<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::modulo].push_back(
-      std::make_unique<Integer_modulo<std::int32_t>>(_type_pool)
+      std::make_unique<Modulo<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::modulo].push_back(
-      std::make_unique<Integer_modulo<std::int64_t>>(_type_pool)
+      std::make_unique<Modulo<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::equal].push_back(
-      std::make_unique<Integer_equal<std::int8_t>>(_type_pool)
+      std::make_unique<Equal<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::equal].push_back(
-      std::make_unique<Integer_equal<std::int16_t>>(_type_pool)
+      std::make_unique<Equal<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::equal].push_back(
-      std::make_unique<Integer_equal<std::int32_t>>(_type_pool)
+      std::make_unique<Equal<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::equal].push_back(
-      std::make_unique<Integer_equal<std::int64_t>>(_type_pool)
+      std::make_unique<Equal<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::not_equal].push_back(
-      std::make_unique<Integer_not_equal<std::int8_t>>(_type_pool)
+      std::make_unique<Not_equal<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::not_equal].push_back(
-      std::make_unique<Integer_not_equal<std::int16_t>>(_type_pool)
+      std::make_unique<Not_equal<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::not_equal].push_back(
-      std::make_unique<Integer_not_equal<std::int32_t>>(_type_pool)
+      std::make_unique<Not_equal<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::not_equal].push_back(
-      std::make_unique<Integer_not_equal<std::int64_t>>(_type_pool)
+      std::make_unique<Not_equal<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::less].push_back(
-      std::make_unique<Integer_less<std::int8_t>>(_type_pool)
+      std::make_unique<Less<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::less].push_back(
-      std::make_unique<Integer_less<std::int16_t>>(_type_pool)
+      std::make_unique<Less<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::less].push_back(
-      std::make_unique<Integer_less<std::int32_t>>(_type_pool)
+      std::make_unique<Less<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::less].push_back(
-      std::make_unique<Integer_less<std::int64_t>>(_type_pool)
+      std::make_unique<Less<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::less_eq].push_back(
-      std::make_unique<Integer_less_eq<std::int8_t>>(_type_pool)
+      std::make_unique<Less_eq<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::less_eq].push_back(
-      std::make_unique<Integer_less_eq<std::int16_t>>(_type_pool)
+      std::make_unique<Less_eq<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::less_eq].push_back(
-      std::make_unique<Integer_less_eq<std::int32_t>>(_type_pool)
+      std::make_unique<Less_eq<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::less_eq].push_back(
-      std::make_unique<Integer_less_eq<std::int64_t>>(_type_pool)
+      std::make_unique<Less_eq<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::greater].push_back(
-      std::make_unique<Integer_greater<std::int8_t>>(_type_pool)
+      std::make_unique<Greater<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::greater].push_back(
-      std::make_unique<Integer_greater<std::int16_t>>(_type_pool)
+      std::make_unique<Greater<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::greater].push_back(
-      std::make_unique<Integer_greater<std::int32_t>>(_type_pool)
+      std::make_unique<Greater<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::greater].push_back(
-      std::make_unique<Integer_greater<std::int64_t>>(_type_pool)
+      std::make_unique<Greater<std::int64_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::greater_eq].push_back(
-      std::make_unique<Integer_greater_eq<std::int8_t>>(_type_pool)
+      std::make_unique<Greater_eq<std::int8_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::greater_eq].push_back(
-      std::make_unique<Integer_greater_eq<std::int16_t>>(_type_pool)
+      std::make_unique<Greater_eq<std::int16_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::greater_eq].push_back(
-      std::make_unique<Integer_greater_eq<std::int32_t>>(_type_pool)
+      std::make_unique<Greater_eq<std::int32_t>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::greater_eq].push_back(
-      std::make_unique<Integer_greater_eq<std::int64_t>>(_type_pool)
+      std::make_unique<Greater_eq<std::int64_t>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::add].push_back(
+      std::make_unique<Add<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::add].push_back(
+      std::make_unique<Add<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::subtract].push_back(
+      std::make_unique<Subtract<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::subtract].push_back(
+      std::make_unique<Subtract<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::multiply].push_back(
+      std::make_unique<Multiply<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::multiply].push_back(
+      std::make_unique<Multiply<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::divide].push_back(
+      std::make_unique<Divide<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::divide].push_back(
+      std::make_unique<Divide<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::equal].push_back(
+      std::make_unique<Equal<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::equal].push_back(
+      std::make_unique<Equal<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::not_equal].push_back(
+      std::make_unique<Not_equal<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::not_equal].push_back(
+      std::make_unique<Not_equal<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::less].push_back(
+      std::make_unique<Less<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::less].push_back(
+      std::make_unique<Less<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::less_eq].push_back(
+      std::make_unique<Less_eq<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::less_eq].push_back(
+      std::make_unique<Less_eq<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::greater].push_back(
+      std::make_unique<Greater<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::greater].push_back(
+      std::make_unique<Greater<double>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::greater_eq].push_back(
+      std::make_unique<Greater_eq<float>>(_type_pool)
+    );
+    _binary_overloads[basedast::Operator::greater_eq].push_back(
+      std::make_unique<Greater_eq<double>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::equal].push_back(
       std::make_unique<Bool_equal>(_type_pool)
@@ -769,6 +869,14 @@ namespace basedhlir
         else if constexpr (std::is_same_v<T, std::int64_t>)
         {
           return _type_pool->int64_type();
+        }
+        else if constexpr (std::is_same_v<T, float>)
+        {
+          return _type_pool->float32_type();
+        }
+        else if constexpr (std::is_same_v<T, double>)
+        {
+          return _type_pool->float64_type();
         }
         else if constexpr (std::is_same_v<T, bool>)
         {
@@ -1048,6 +1156,13 @@ namespace basedhlir
   )
   {
     return compile_int_literal(expr.literal.text, false, expr.literal);
+  }
+
+  Operand Compilation_context::compile_expression(
+    basedast::Float_literal_expression const &expr
+  )
+  {
+    return compile_float_literal(expr.literal.text, false, expr.literal);
   }
 
   Operand Compilation_context::compile_expression(
@@ -1706,6 +1821,47 @@ namespace basedhlir
     }
     emit_error(
       std::format("unknown integer literal suffix '{}'", suffix),
+      token
+    );
+  }
+
+  Operand Compilation_context::compile_float_literal(
+    std::string_view text,
+    bool negate,
+    basedlex::Lexeme const &token
+  )
+  {
+    auto const suffix_pos = text.rfind('f');
+    auto const suffix =
+      suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
+    auto const digits = text.substr(0, suffix_pos);
+    auto const compile_typed = [&]<typename T>() -> Operand
+    {
+      T value{};
+      auto const result =
+        std::from_chars(digits.data(), digits.data() + digits.size(), value);
+      if (result.ec != std::errc{})
+      {
+        emit_error(
+          std::format(
+            "float literal is out of range for {}",
+            Primitive_hlir_type<T>::name
+          ),
+          token
+        );
+      }
+      return Constant_value{negate ? static_cast<T>(-value) : value};
+    };
+    if (suffix == "f32")
+    {
+      return compile_typed.operator()<float>();
+    }
+    else if (suffix == "f64" || suffix.empty())
+    {
+      return compile_typed.operator()<double>();
+    }
+    emit_error(
+      std::format("unknown float literal suffix '{}'", suffix),
       token
     );
   }

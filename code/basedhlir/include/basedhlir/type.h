@@ -28,6 +28,14 @@ namespace basedhlir
   {
   };
 
+  struct Float32_type
+  {
+  };
+
+  struct Float64_type
+  {
+  };
+
   struct Bool_type
   {
   };
@@ -72,6 +80,8 @@ namespace basedhlir
       Int16_type,
       Int32_type,
       Int64_type,
+      Float32_type,
+      Float64_type,
       Bool_type,
       Void_type,
       Type_type,
@@ -101,6 +111,10 @@ namespace basedhlir
 
     Type *int64_type();
 
+    Type *float32_type();
+
+    Type *float64_type();
+
     Type *bool_type();
 
     Type *void_type();
@@ -121,6 +135,8 @@ namespace basedhlir
     Type *_int16_type{};
     Type *_int32_type{};
     Type *_int64_type{};
+    Type *_float32_type{};
+    Type *_float64_type{};
     Type *_bool_type{};
     Type *_void_type{};
     Type *_type_type{};

@@ -38,6 +38,11 @@ namespace basedast
     return span_of(node.literal);
   }
 
+  Source_span span_of(Float_literal_expression const &node)
+  {
+    return span_of(node.literal);
+  }
+
   Source_span span_of(Identifier_expression const &node)
   {
     return span_of(node.identifier);

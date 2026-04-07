@@ -1,6 +1,6 @@
 #include <variant>
 
-#include "basedparse/source_span.h"
+#include "basedast/source_span.h"
 
 namespace basedparse
 {

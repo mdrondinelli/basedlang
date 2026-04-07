@@ -1,7 +1,7 @@
 #ifndef BASEDHLIR_SOURCE_LOCATION_H
 #define BASEDHLIR_SOURCE_LOCATION_H
 
-#include <basedparse/source_location.h>
+#include <basedast/source_location.h>
 
 namespace basedhlir
 {

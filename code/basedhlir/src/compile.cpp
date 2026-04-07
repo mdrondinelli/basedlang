@@ -7,7 +7,7 @@
 #include <variant>
 #include <vector>
 
-#include <basedparse/source_span.h>
+#include <basedast/source_span.h>
 
 #include "basedhlir/compile.h"
 #include "basedhlir/interpret.h"

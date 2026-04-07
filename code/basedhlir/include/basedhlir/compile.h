@@ -11,8 +11,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include <basedparse/ast.h>
-#include <basedparse/operator.h>
+#include <basedast/ast.h>
+#include <basedast/operator.h>
 
 #include "constant_value.h"
 #include "hlir.h"

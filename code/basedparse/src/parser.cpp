@@ -12,7 +12,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "basedparse/operator.h"
+#include <basedast/operator.h>
+
 #include "basedparse/parser.h"
 
 namespace basedparse

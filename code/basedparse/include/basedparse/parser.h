@@ -5,8 +5,8 @@
 
 #include "basedlex/lexeme_stream_reader.h"
 
-#include "ast.h"
-#include "operator.h"
+#include <basedast/ast.h>
+#include <basedast/operator.h>
 
 namespace basedparse
 {

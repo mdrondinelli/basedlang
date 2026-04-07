@@ -15,6 +15,7 @@ The pages below are organized to support fast navigation rather than linear read
 - [Language reference](./language.md)
 - [Architecture and pipeline overview](./overview.md)
 - [`basedlex`](./basedlex.md)
+- [`basedast`](./basedast.md)
 - [`basedparse`](./basedparse.md)
 - [`basedhlir`](./basedhlir.md)
 - [`based`](./based.md)

@@ -562,172 +562,172 @@ namespace basedhlir
     _symbol_table.declare_value("Void", Type_value{_type_pool->void_type()});
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
-    _unary_overloads[basedparse::Operator::unary_plus].push_back(
+    _unary_overloads[basedast::Operator::unary_plus].push_back(
       std::make_unique<Unary_plus>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+    _unary_overloads[basedast::Operator::unary_minus].push_back(
       std::make_unique<Integer_negate<std::int8_t>>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+    _unary_overloads[basedast::Operator::unary_minus].push_back(
       std::make_unique<Integer_negate<std::int16_t>>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+    _unary_overloads[basedast::Operator::unary_minus].push_back(
       std::make_unique<Integer_negate<std::int32_t>>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::unary_minus].push_back(
+    _unary_overloads[basedast::Operator::unary_minus].push_back(
       std::make_unique<Integer_negate<std::int64_t>>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::pointer_to].push_back(
+    _unary_overloads[basedast::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::pointer_to_mut].push_back(
+    _unary_overloads[basedast::Operator::pointer_to_mut].push_back(
       std::make_unique<Pointer_to_mut>(_type_pool)
     );
-    _unary_overloads[basedparse::Operator::dereference].push_back(
+    _unary_overloads[basedast::Operator::dereference].push_back(
       std::make_unique<Dereference>()
     );
-    _binary_overloads[basedparse::Operator::add].push_back(
+    _binary_overloads[basedast::Operator::add].push_back(
       std::make_unique<Integer_add<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::add].push_back(
+    _binary_overloads[basedast::Operator::add].push_back(
       std::make_unique<Integer_add<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::add].push_back(
+    _binary_overloads[basedast::Operator::add].push_back(
       std::make_unique<Integer_add<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::add].push_back(
+    _binary_overloads[basedast::Operator::add].push_back(
       std::make_unique<Integer_add<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::subtract].push_back(
+    _binary_overloads[basedast::Operator::subtract].push_back(
       std::make_unique<Integer_subtract<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::subtract].push_back(
+    _binary_overloads[basedast::Operator::subtract].push_back(
       std::make_unique<Integer_subtract<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::subtract].push_back(
+    _binary_overloads[basedast::Operator::subtract].push_back(
       std::make_unique<Integer_subtract<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::subtract].push_back(
+    _binary_overloads[basedast::Operator::subtract].push_back(
       std::make_unique<Integer_subtract<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::multiply].push_back(
+    _binary_overloads[basedast::Operator::multiply].push_back(
       std::make_unique<Integer_multiply<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::multiply].push_back(
+    _binary_overloads[basedast::Operator::multiply].push_back(
       std::make_unique<Integer_multiply<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::multiply].push_back(
+    _binary_overloads[basedast::Operator::multiply].push_back(
       std::make_unique<Integer_multiply<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::multiply].push_back(
+    _binary_overloads[basedast::Operator::multiply].push_back(
       std::make_unique<Integer_multiply<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::divide].push_back(
+    _binary_overloads[basedast::Operator::divide].push_back(
       std::make_unique<Integer_divide<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::divide].push_back(
+    _binary_overloads[basedast::Operator::divide].push_back(
       std::make_unique<Integer_divide<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::divide].push_back(
+    _binary_overloads[basedast::Operator::divide].push_back(
       std::make_unique<Integer_divide<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::divide].push_back(
+    _binary_overloads[basedast::Operator::divide].push_back(
       std::make_unique<Integer_divide<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::modulo].push_back(
+    _binary_overloads[basedast::Operator::modulo].push_back(
       std::make_unique<Integer_modulo<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::modulo].push_back(
+    _binary_overloads[basedast::Operator::modulo].push_back(
       std::make_unique<Integer_modulo<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::modulo].push_back(
+    _binary_overloads[basedast::Operator::modulo].push_back(
       std::make_unique<Integer_modulo<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::modulo].push_back(
+    _binary_overloads[basedast::Operator::modulo].push_back(
       std::make_unique<Integer_modulo<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::equal].push_back(
+    _binary_overloads[basedast::Operator::equal].push_back(
       std::make_unique<Integer_equal<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::equal].push_back(
+    _binary_overloads[basedast::Operator::equal].push_back(
       std::make_unique<Integer_equal<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::equal].push_back(
+    _binary_overloads[basedast::Operator::equal].push_back(
       std::make_unique<Integer_equal<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::equal].push_back(
+    _binary_overloads[basedast::Operator::equal].push_back(
       std::make_unique<Integer_equal<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::not_equal].push_back(
+    _binary_overloads[basedast::Operator::not_equal].push_back(
       std::make_unique<Integer_not_equal<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::not_equal].push_back(
+    _binary_overloads[basedast::Operator::not_equal].push_back(
       std::make_unique<Integer_not_equal<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::not_equal].push_back(
+    _binary_overloads[basedast::Operator::not_equal].push_back(
       std::make_unique<Integer_not_equal<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::not_equal].push_back(
+    _binary_overloads[basedast::Operator::not_equal].push_back(
       std::make_unique<Integer_not_equal<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::less].push_back(
+    _binary_overloads[basedast::Operator::less].push_back(
       std::make_unique<Integer_less<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::less].push_back(
+    _binary_overloads[basedast::Operator::less].push_back(
       std::make_unique<Integer_less<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::less].push_back(
+    _binary_overloads[basedast::Operator::less].push_back(
       std::make_unique<Integer_less<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::less].push_back(
+    _binary_overloads[basedast::Operator::less].push_back(
       std::make_unique<Integer_less<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::less_eq].push_back(
+    _binary_overloads[basedast::Operator::less_eq].push_back(
       std::make_unique<Integer_less_eq<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::less_eq].push_back(
+    _binary_overloads[basedast::Operator::less_eq].push_back(
       std::make_unique<Integer_less_eq<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::less_eq].push_back(
+    _binary_overloads[basedast::Operator::less_eq].push_back(
       std::make_unique<Integer_less_eq<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::less_eq].push_back(
+    _binary_overloads[basedast::Operator::less_eq].push_back(
       std::make_unique<Integer_less_eq<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::greater].push_back(
+    _binary_overloads[basedast::Operator::greater].push_back(
       std::make_unique<Integer_greater<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::greater].push_back(
+    _binary_overloads[basedast::Operator::greater].push_back(
       std::make_unique<Integer_greater<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::greater].push_back(
+    _binary_overloads[basedast::Operator::greater].push_back(
       std::make_unique<Integer_greater<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::greater].push_back(
+    _binary_overloads[basedast::Operator::greater].push_back(
       std::make_unique<Integer_greater<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+    _binary_overloads[basedast::Operator::greater_eq].push_back(
       std::make_unique<Integer_greater_eq<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+    _binary_overloads[basedast::Operator::greater_eq].push_back(
       std::make_unique<Integer_greater_eq<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+    _binary_overloads[basedast::Operator::greater_eq].push_back(
       std::make_unique<Integer_greater_eq<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::greater_eq].push_back(
+    _binary_overloads[basedast::Operator::greater_eq].push_back(
       std::make_unique<Integer_greater_eq<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::equal].push_back(
+    _binary_overloads[basedast::Operator::equal].push_back(
       std::make_unique<Bool_equal>(_type_pool)
     );
-    _binary_overloads[basedparse::Operator::not_equal].push_back(
+    _binary_overloads[basedast::Operator::not_equal].push_back(
       std::make_unique<Bool_not_equal>(_type_pool)
     );
   }
 
   Translation_unit
-  Compilation_context::compile(basedparse::Translation_unit const &ast)
+  Compilation_context::compile(basedast::Translation_unit const &ast)
   {
     for (auto const &decl : ast.let_statements)
     {
@@ -823,7 +823,7 @@ namespace basedhlir
   }
 
   Unary_operator_overload *Compilation_context::find_unary_overload(
-    basedparse::Operator op,
+    basedast::Operator op,
     Type *operand_type
   )
   {
@@ -842,7 +842,7 @@ namespace basedhlir
   }
 
   Binary_operator_overload *Compilation_context::find_binary_overload(
-    basedparse::Operator op,
+    basedast::Operator op,
     Type *lhs_type,
     Type *rhs_type
   )
@@ -896,7 +896,7 @@ namespace basedhlir
   }
 
   Type *Compilation_context::compile_type_expression(
-    basedparse::Expression const &expr
+    basedast::Expression const &expr
   )
   {
     auto const value = evaluate_constant_expression(expr);
@@ -909,7 +909,7 @@ namespace basedhlir
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    basedparse::Expression const &expr
+    basedast::Expression const &expr
   )
   {
     auto result = Operand{};
@@ -922,7 +922,7 @@ namespace basedhlir
       _diagnostics.push_back(
         Diagnostic{
           .message = "expression is not a compile-time constant",
-          .location = e.expression_location.value_or(basedparse::span_of(expr)),
+          .location = e.expression_location.value_or(basedast::span_of(expr)),
           .notes = {},
         }
       );
@@ -933,7 +933,7 @@ namespace basedhlir
       _diagnostics.push_back(
         Diagnostic{
           .message = "compile-time evaluation ran out of fuel",
-          .location = basedparse::span_of(expr),
+          .location = basedast::span_of(expr),
           .notes = {},
         }
       );
@@ -1013,7 +1013,7 @@ namespace basedhlir
   }
 
   Operand
-  Compilation_context::compile_expression(basedparse::Expression const &expr)
+  Compilation_context::compile_expression(basedast::Expression const &expr)
   {
     try
     {
@@ -1036,21 +1036,21 @@ namespace basedhlir
     {
       if (!e.expression_location.has_value())
       {
-        e.expression_location = basedparse::span_of(expr);
+        e.expression_location = basedast::span_of(expr);
       }
       throw;
     }
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Int_literal_expression const &expr
+    basedast::Int_literal_expression const &expr
   )
   {
     return compile_int_literal(expr.literal.text, false, expr.literal);
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Identifier_expression const &expr
+    basedast::Identifier_expression const &expr
   )
   {
     auto const sym = lookup_identifier(expr.identifier);
@@ -1065,7 +1065,7 @@ namespace basedhlir
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Recurse_expression const &expr
+    basedast::Recurse_expression const &expr
   )
   {
     if (is_top_level())
@@ -1076,32 +1076,32 @@ namespace basedhlir
   }
 
   Operand
-  Compilation_context::compile_expression(basedparse::Fn_expression const &expr)
+  Compilation_context::compile_expression(basedast::Fn_expression const &expr)
   {
     return Constant_value{Function_value{.function = compile_function(expr)}};
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Paren_expression const &expr
+    basedast::Paren_expression const &expr
   )
   {
     return compile_expression(*expr.inner);
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Prefix_expression const &expr
+    basedast::Prefix_expression const &expr
   )
   {
-    auto const op = basedparse::get_prefix_operator(expr.op.token);
+    auto const op = basedast::get_prefix_operator(expr.op.token);
     assert(op.has_value());
     // Special case: unary minus before int literal expression
-    if (*op == basedparse::Operator::unary_minus &&
-        std::holds_alternative<basedparse::Int_literal_expression>(
+    if (*op == basedast::Operator::unary_minus &&
+        std::holds_alternative<basedast::Int_literal_expression>(
           expr.operand->value
         ))
     {
       auto const &literal =
-        std::get<basedparse::Int_literal_expression>(expr.operand->value);
+        std::get<basedast::Int_literal_expression>(expr.operand->value);
       return compile_int_literal(literal.literal.text, true, literal.literal);
     }
     // General case
@@ -1116,19 +1116,19 @@ namespace basedhlir
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Postfix_expression const &expr
+    basedast::Postfix_expression const &expr
   )
   {
     emit_error("dereference is not supported in this context", expr.op);
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Binary_expression const &expr
+    basedast::Binary_expression const &expr
   )
   {
     auto const lhs_result = compile_expression(*expr.left);
     auto const rhs_result = compile_expression(*expr.right);
-    auto const op = basedparse::get_binary_operator(expr.op.token);
+    auto const op = basedast::get_binary_operator(expr.op.token);
     assert(op.has_value());
     auto const lhs_type = type_of_operand(lhs_result);
     auto const rhs_type = type_of_operand(rhs_result);
@@ -1138,7 +1138,7 @@ namespace basedhlir
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Call_expression const &expr
+    basedast::Call_expression const &expr
   )
   {
     auto const callee_result = compile_expression(*expr.callee);
@@ -1211,13 +1211,13 @@ namespace basedhlir
   }
 
   Operand
-  Compilation_context::compile_expression(basedparse::Index_expression const &)
+  Compilation_context::compile_expression(basedast::Index_expression const &)
   {
     throw std::runtime_error{"index expressions are not implemented"};
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Prefix_bracket_expression const &expr
+    basedast::Prefix_bracket_expression const &expr
   )
   {
     auto const element_result = compile_expression(*expr.operand);
@@ -1258,7 +1258,7 @@ namespace basedhlir
   }
 
   Operand Compilation_context::compile_expression(
-    basedparse::Block_expression const &expr
+    basedast::Block_expression const &expr
   )
   {
     _symbol_table.push_scope();
@@ -1273,7 +1273,7 @@ namespace basedhlir
   }
 
   Operand
-  Compilation_context::compile_expression(basedparse::If_expression const &expr)
+  Compilation_context::compile_expression(basedast::If_expression const &expr)
   {
     auto const cond_result = compile_expression(*expr.condition);
     auto const cond_type = type_of_operand(cond_result);
@@ -1415,7 +1415,7 @@ namespace basedhlir
     return Constant_value{Void_value{}};
   }
 
-  void Compilation_context::compile_statement(basedparse::Statement const &stmt)
+  void Compilation_context::compile_statement(basedast::Statement const &stmt)
   {
     std::visit(
       [this](auto const &s)
@@ -1427,7 +1427,7 @@ namespace basedhlir
   }
 
   void Compilation_context::compile_statement(
-    basedparse::Let_statement const &stmt
+    basedast::Let_statement const &stmt
   )
   {
     auto const is_mutable = stmt.kw_mut.has_value();
@@ -1446,11 +1446,11 @@ namespace basedhlir
         Diagnostic{
           .message = "expression is not a compile-time constant",
           .location = e.expression_location.value_or(
-            basedparse::span_of(stmt.initializer)
+            basedast::span_of(stmt.initializer)
           ),
           .notes = {Diagnostic_note{
             .message = "required by this top-level binding",
-            .location = basedparse::span_of(stmt),
+            .location = basedast::span_of(stmt),
           }},
         }
       );
@@ -1461,10 +1461,10 @@ namespace basedhlir
       _diagnostics.push_back(
         Diagnostic{
           .message = "compile-time evaluation ran out of fuel",
-          .location = basedparse::span_of(stmt.initializer),
+          .location = basedast::span_of(stmt.initializer),
           .notes = {Diagnostic_note{
             .message = "required by this top-level binding",
-            .location = basedparse::span_of(stmt),
+            .location = basedast::span_of(stmt),
           }},
         }
       );
@@ -1484,10 +1484,10 @@ namespace basedhlir
         _diagnostics.push_back(
           Diagnostic{
             .message = "expression is not a compile-time constant",
-            .location = basedparse::span_of(stmt.initializer),
+            .location = basedast::span_of(stmt.initializer),
             .notes = {Diagnostic_note{
               .message = "required by this top-level binding",
-              .location = basedparse::span_of(stmt),
+              .location = basedast::span_of(stmt),
             }},
           }
         );
@@ -1518,7 +1518,7 @@ namespace basedhlir
   }
 
   void Compilation_context::compile_statement(
-    basedparse::While_statement const &stmt
+    basedast::While_statement const &stmt
   )
   {
     emit_error(
@@ -1528,7 +1528,7 @@ namespace basedhlir
   }
 
   void Compilation_context::compile_statement(
-    basedparse::Return_statement const &stmt
+    basedast::Return_statement const &stmt
   )
   {
     auto const result = compile_expression(stmt.value);
@@ -1548,14 +1548,14 @@ namespace basedhlir
   }
 
   void Compilation_context::compile_statement(
-    basedparse::Expression_statement const &stmt
+    basedast::Expression_statement const &stmt
   )
   {
     compile_expression(stmt.expression);
   }
 
   Function *
-  Compilation_context::compile_function(basedparse::Fn_expression const &expr)
+  Compilation_context::compile_function(basedast::Fn_expression const &expr)
   {
     auto parameter_types = std::vector<Type *>{};
     for (auto const &param : expr.parameters)
@@ -1616,7 +1616,7 @@ namespace basedhlir
   }
 
   Translation_unit
-  compile(basedparse::Translation_unit const &ast, Type_pool *type_pool)
+  compile(basedast::Translation_unit const &ast, Type_pool *type_pool)
   {
     auto ctx = Compilation_context{type_pool};
     return ctx.compile(ast);

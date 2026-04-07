@@ -1,6 +1,6 @@
 #include "basedast/ast.h"
 
-namespace basedparse
+namespace basedast
 {
 
   Fn_expression::~Fn_expression() = default;
@@ -16,4 +16,4 @@ namespace basedparse
   If_expression::~If_expression() = default;
   While_statement::~While_statement() = default;
 
-} // namespace basedparse
+} // namespace basedast

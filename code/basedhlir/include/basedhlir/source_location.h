@@ -6,7 +6,7 @@
 namespace basedhlir
 {
 
-  using basedparse::Source_location;
+  using basedast::Source_location;
 
 } // namespace basedhlir
 

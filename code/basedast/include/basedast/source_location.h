@@ -1,13 +1,13 @@
-#ifndef BASEDPARSE_SOURCE_LOCATION_H
-#define BASEDPARSE_SOURCE_LOCATION_H
+#ifndef BASEDAST_SOURCE_LOCATION_H
+#define BASEDAST_SOURCE_LOCATION_H
 
 #include <basedlex/source_location.h>
 
-namespace basedparse
+namespace basedast
 {
 
   using basedlex::Source_location;
 
-} // namespace basedparse
+} // namespace basedast
 
-#endif // BASEDPARSE_SOURCE_LOCATION_H
+#endif // BASEDAST_SOURCE_LOCATION_H

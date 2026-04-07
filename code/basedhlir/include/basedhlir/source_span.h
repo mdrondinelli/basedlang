@@ -6,7 +6,7 @@
 namespace basedhlir
 {
 
-  using basedparse::Source_span;
+  using basedast::Source_span;
 
 } // namespace basedhlir
 

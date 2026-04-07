@@ -314,7 +314,7 @@ TEST_CASE("evaluate_constant_expression - integer comparisons")
   cases.emplace_back(make_parse_fixture("123 >= 456"), false);
   cases.emplace_back(make_parse_fixture("123 == 456"), false);
   cases.emplace_back(make_parse_fixture("123 != 456"), true);
-  auto expressions = std::vector<std::unique_ptr<basedparse::Expression>>{};
+  auto expressions = std::vector<std::unique_ptr<basedast::Expression>>{};
   for (auto const &[parse_fixture, expected] : cases)
   {
     auto const &expr =
@@ -456,7 +456,7 @@ TEST_CASE("evaluate_constant_expression - bool equality")
   cases.emplace_back(make_parse_fixture("1 == 1 == (2 == 2)"), true);
   cases.emplace_back(make_parse_fixture("1 == 1 != (1 == 2)"), true);
   cases.emplace_back(make_parse_fixture("1 == 2 == (3 == 4)"), true);
-  auto expressions = std::vector<std::unique_ptr<basedparse::Expression>>{};
+  auto expressions = std::vector<std::unique_ptr<basedast::Expression>>{};
   for (auto const &[parse_fixture, expected] : cases)
   {
     auto const &expr =

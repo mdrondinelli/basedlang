@@ -85,7 +85,7 @@ namespace basedhlir
   public:
     explicit Compilation_context(Type_pool *type_pool);
 
-    Translation_unit compile(basedparse::Translation_unit const &ast);
+    Translation_unit compile(basedast::Translation_unit const &ast);
 
     Type *type_of_constant(Constant_value const &value);
 
@@ -94,7 +94,7 @@ namespace basedhlir
     template <typename T>
     [[noreturn]] void emit_error(std::string message, T const &node)
     {
-      emit_error(std::move(message), basedparse::span_of(node));
+      emit_error(std::move(message), basedast::span_of(node));
     }
 
     Symbol *try_lookup_identifier(basedlex::Lexeme const &identifier);
@@ -102,20 +102,20 @@ namespace basedhlir
     Symbol *lookup_identifier(basedlex::Lexeme const &identifier);
 
     Unary_operator_overload *
-    find_unary_overload(basedparse::Operator op, Type *operand_type);
+    find_unary_overload(basedast::Operator op, Type *operand_type);
 
     Binary_operator_overload *find_binary_overload(
-      basedparse::Operator op,
+      basedast::Operator op,
       Type *lhs_type,
       Type *rhs_type
     );
 
     bool is_type_compatible(Type *parameter_type, Type *argument_type);
 
-    Type *compile_type_expression(basedparse::Expression const &expr);
+    Type *compile_type_expression(basedast::Expression const &expr);
 
     Constant_value
-    evaluate_constant_expression(basedparse::Expression const &expr);
+    evaluate_constant_expression(basedast::Expression const &expr);
 
     Basic_block *new_block();
 
@@ -131,34 +131,34 @@ namespace basedhlir
 
     void emit(Instruction instruction);
 
-    Operand compile_expression(basedparse::Expression const &expr);
+    Operand compile_expression(basedast::Expression const &expr);
 
-    Operand compile_expression(basedparse::Int_literal_expression const &expr);
+    Operand compile_expression(basedast::Int_literal_expression const &expr);
 
-    Operand compile_expression(basedparse::Identifier_expression const &expr);
+    Operand compile_expression(basedast::Identifier_expression const &expr);
 
-    Operand compile_expression(basedparse::Recurse_expression const &expr);
+    Operand compile_expression(basedast::Recurse_expression const &expr);
 
-    Operand compile_expression(basedparse::Fn_expression const &expr);
+    Operand compile_expression(basedast::Fn_expression const &expr);
 
-    Operand compile_expression(basedparse::Paren_expression const &expr);
+    Operand compile_expression(basedast::Paren_expression const &expr);
 
-    Operand compile_expression(basedparse::Prefix_expression const &expr);
+    Operand compile_expression(basedast::Prefix_expression const &expr);
 
-    Operand compile_expression(basedparse::Postfix_expression const &expr);
+    Operand compile_expression(basedast::Postfix_expression const &expr);
 
-    Operand compile_expression(basedparse::Binary_expression const &expr);
+    Operand compile_expression(basedast::Binary_expression const &expr);
 
-    Operand compile_expression(basedparse::Call_expression const &expr);
+    Operand compile_expression(basedast::Call_expression const &expr);
 
-    Operand compile_expression(basedparse::Index_expression const &expr);
+    Operand compile_expression(basedast::Index_expression const &expr);
 
     Operand
-    compile_expression(basedparse::Prefix_bracket_expression const &expr);
+    compile_expression(basedast::Prefix_bracket_expression const &expr);
 
-    Operand compile_expression(basedparse::Block_expression const &expr);
+    Operand compile_expression(basedast::Block_expression const &expr);
 
-    Operand compile_expression(basedparse::If_expression const &expr);
+    Operand compile_expression(basedast::If_expression const &expr);
 
     Operand compile_int_literal(
       std::string_view text,
@@ -166,17 +166,17 @@ namespace basedhlir
       basedlex::Lexeme const &token
     );
 
-    void compile_statement(basedparse::Statement const &stmt);
+    void compile_statement(basedast::Statement const &stmt);
 
-    void compile_statement(basedparse::Let_statement const &stmt);
+    void compile_statement(basedast::Let_statement const &stmt);
 
-    void compile_statement(basedparse::While_statement const &stmt);
+    void compile_statement(basedast::While_statement const &stmt);
 
-    void compile_statement(basedparse::Return_statement const &stmt);
+    void compile_statement(basedast::Return_statement const &stmt);
 
-    void compile_statement(basedparse::Expression_statement const &stmt);
+    void compile_statement(basedast::Expression_statement const &stmt);
 
-    Function *compile_function(basedparse::Fn_expression const &expr);
+    Function *compile_function(basedast::Fn_expression const &expr);
 
     bool is_top_level() const;
 
@@ -189,19 +189,19 @@ namespace basedhlir
     std::vector<Type *> _register_types;
     std::vector<Diagnostic> _diagnostics;
     std::unordered_map<
-      basedparse::Operator,
+      basedast::Operator,
       std::vector<std::unique_ptr<Unary_operator_overload>>
     >
       _unary_overloads;
     std::unordered_map<
-      basedparse::Operator,
+      basedast::Operator,
       std::vector<std::unique_ptr<Binary_operator_overload>>
     >
       _binary_overloads;
   };
 
   Translation_unit
-  compile(basedparse::Translation_unit const &ast, Type_pool *type_pool);
+  compile(basedast::Translation_unit const &ast, Type_pool *type_pool);
 
   std::optional<std::uint64_t>
   validate_int_literal(std::string_view digits, std::uint64_t max_value);

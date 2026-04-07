@@ -16,6 +16,8 @@
 
 #include "basedparse/parser.h"
 
+using namespace basedast;
+
 namespace basedparse
 {
 
@@ -165,7 +167,7 @@ namespace basedparse
   /// **To add a new operator:**
   /// 1. Add a token to `basedlex::Token` (token.h) and lex it in
   /// lexeme_stream.cpp.
-  /// 2. Add a variant to `basedparse::Operator` (operator.h).
+  /// 2. Add a variant to `basedast::Operator` (operator.h).
   /// 3. Assign it a precedence in `get_operator_precedence` (operator.cpp).
   /// 4. Map the token to the operator in the appropriate get_*_operator
   /// function

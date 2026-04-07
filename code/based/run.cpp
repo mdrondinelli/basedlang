@@ -32,7 +32,7 @@ namespace based
     auto lr = basedlex::Lexeme_stream_reader{&ls};
     auto parser = basedparse::Parser{&lr};
 
-    basedparse::Translation_unit ast;
+    basedast::Translation_unit ast;
     try
     {
       ast = parser.parse_translation_unit();

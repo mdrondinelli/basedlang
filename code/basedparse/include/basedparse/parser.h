@@ -16,38 +16,38 @@ namespace basedparse
   public:
     explicit Parser(basedlex::Lexeme_stream_reader *reader) noexcept;
 
-    Translation_unit parse_translation_unit();
+    basedast::Translation_unit parse_translation_unit();
 
-    Statement parse_statement();
+    basedast::Statement parse_statement();
 
-    Let_statement parse_let_statement();
+    basedast::Let_statement parse_let_statement();
 
-    Return_statement parse_return_statement();
+    basedast::Return_statement parse_return_statement();
 
-    Expression_statement parse_expression_statement();
+    basedast::Expression_statement parse_expression_statement();
 
-    std::unique_ptr<Expression> parse_expression();
+    std::unique_ptr<basedast::Expression> parse_expression();
 
-    std::unique_ptr<Expression> parse_primary_expression();
+    std::unique_ptr<basedast::Expression> parse_primary_expression();
 
-    Int_literal_expression parse_int_literal_expression();
+    basedast::Int_literal_expression parse_int_literal_expression();
 
-    Identifier_expression parse_identifier_expression();
+    basedast::Identifier_expression parse_identifier_expression();
 
-    Paren_expression parse_paren_expression();
+    basedast::Paren_expression parse_paren_expression();
 
-    Block_expression parse_block_expression();
+    basedast::Block_expression parse_block_expression();
 
-    If_expression parse_if_expression();
+    basedast::If_expression parse_if_expression();
 
-    While_statement parse_while_statement();
+    basedast::While_statement parse_while_statement();
 
-    Fn_expression parse_fn_expression();
+    basedast::Fn_expression parse_fn_expression();
 
-    Fn_expression::Return_type_specifier parse_return_type_specifier();
+    basedast::Fn_expression::Return_type_specifier parse_return_type_specifier();
 
   private:
-    std::unique_ptr<Expression> parse_expression(int current_precedence);
+    std::unique_ptr<basedast::Expression> parse_expression(int current_precedence);
 
     basedlex::Lexeme expect(basedlex::Token token);
 

@@ -412,3 +412,57 @@ TEST_CASE("Lexeme_stream - ^mut column tracking")
   CHECK(y.text == "y");
   CHECK(y.location.column == 8);
 }
+
+TEST_CASE("Lexeme_stream lexes unsuffixed float literal")
+{
+  auto ss = std::istringstream{"3.14"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "3.14");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes f32 float literal")
+{
+  auto ss = std::istringstream{"1.5f32"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "1.5f32");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes f64 float literal")
+{
+  auto ss = std::istringstream{"1.5f64"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "1.5f64");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream - integer with dot but no following digit stays int")
+{
+  // "1 ." — the 1 is an int_literal; the dot is not consumed by the int lex
+  auto ss = std::istringstream{"1 ."};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const first = stream.lex();
+  CHECK(first.text == "1");
+  CHECK(first.token == basedlex::Token::int_literal);
+}
+
+TEST_CASE("Lexeme_stream throws on bare f suffix in float literal")
+{
+  auto ss = std::istringstream{"3.14f "};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  CHECK_THROWS_AS(stream.lex(), basedlex::Lexeme_stream::Lex_error);
+}

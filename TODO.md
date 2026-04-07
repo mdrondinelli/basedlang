@@ -7,5 +7,3 @@
   * Split up HLIR from AST -> HLIR compiler
 * Make lexer actually handle unicode codepoints
   * Maybe make our own string class? Interned?
-* Add a helper function for the lexeme stream to read a character and advance
-  the location, instead of repeating this pattern all over the place

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cctype>
 #include <string>
 
@@ -9,6 +10,22 @@ namespace basedlex
   Lexeme_stream::Lexeme_stream(Char_stream *stream) noexcept
       : _reader{stream}, _location{.line = 1, .column = 1}
   {
+  }
+
+  void Lexeme_stream::consume_newline()
+  {
+    assert(_reader.peek() && *_reader.peek() == '\n');
+    _reader.read();
+    ++_location.line;
+    _location.column = 1;
+  }
+
+  char32_t Lexeme_stream::consume_non_newline()
+  {
+    assert(_reader.peek() && *_reader.peek() != '\n');
+    auto const c = *_reader.read();
+    ++_location.column;
+    return c;
   }
 
   Lexeme Lexeme_stream::lex()
@@ -30,15 +47,13 @@ namespace basedlex
               .location = _location,
             };
           }
-          auto const c = *_reader.read();
-          auto const c_location = _location;
-          if (c == '\n')
+          if (*_reader.peek() == '\n')
           {
-            ++_location.line;
-            _location.column = 1;
+            consume_newline();
             break;
           }
-          ++_location.column;
+          auto const c_location = _location;
+          auto const c = consume_non_newline();
           if (c == ' ' || c == '\t' || c == '\r')
           {
             break;
@@ -60,8 +75,7 @@ namespace basedlex
           {
             if (_reader.peek() && *_reader.peek() == '>')
             {
-              _reader.read();
-              ++_location.column;
+              consume_non_newline();
               return Lexeme{
                 .text = "->",
                 .token = Token::arrow,
@@ -86,10 +100,9 @@ namespace basedlex
                   (!p3 ||
                    !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
               {
-                _reader.read();
-                _reader.read();
-                _reader.read();
-                _location.column += 3;
+                consume_non_newline();
+                consume_non_newline();
+                consume_non_newline();
                 return Lexeme{
                   .text = "&mut",
                   .token = Token::ampersand_mut,
@@ -118,10 +131,9 @@ namespace basedlex
                   (!p3 ||
                    !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
               {
-                _reader.read();
-                _reader.read();
-                _reader.read();
-                _location.column += 3;
+                consume_non_newline();
+                consume_non_newline();
+                consume_non_newline();
                 return Lexeme{
                   .text = "^mut",
                   .token = Token::caret_mut,
@@ -155,8 +167,7 @@ namespace basedlex
           case '=':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              _reader.read();
-              ++_location.column;
+              consume_non_newline();
               return Lexeme{
                 .text = "==",
                 .token = Token::eq_eq,
@@ -165,8 +176,7 @@ namespace basedlex
             }
             if (_reader.peek() && *_reader.peek() == '>')
             {
-              _reader.read();
-              ++_location.column;
+              consume_non_newline();
               return Lexeme{
                 .text = "=>",
                 .token = Token::fat_arrow,
@@ -181,8 +191,7 @@ namespace basedlex
           case '!':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              _reader.read();
-              ++_location.column;
+              consume_non_newline();
               return Lexeme{
                 .text = "!=",
                 .token = Token::bang_eq,
@@ -193,8 +202,7 @@ namespace basedlex
           case '<':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              _reader.read();
-              ++_location.column;
+              consume_non_newline();
               return Lexeme{
                 .text = "<=",
                 .token = Token::le,
@@ -209,8 +217,7 @@ namespace basedlex
           case '>':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              _reader.read();
-              ++_location.column;
+              consume_non_newline();
               return Lexeme{
                 .text = ">=",
                 .token = Token::ge,
@@ -285,9 +292,7 @@ namespace basedlex
           auto const p = _reader.peek();
           if (p && *p <= 0x7F && (std::isalnum((int) *p) || *p == '_'))
           {
-            text += (char) *p;
-            _reader.read();
-            ++_location.column;
+            text += (char) consume_non_newline();
             break;
           }
           auto const token = [&]() -> Token
@@ -337,16 +342,12 @@ namespace basedlex
           auto const p = _reader.peek();
           if (p && *p <= 0x7F && std::isdigit((int) *p))
           {
-            text += (char) *p;
-            _reader.read();
-            ++_location.column;
+            text += (char) consume_non_newline();
             break;
           }
           if (p && *p == 'i')
           {
-            text += 'i';
-            _reader.read();
-            ++_location.column;
+            text += (char) consume_non_newline();
             auto suffix_digit_count = 0;
             for (;;)
             {
@@ -356,8 +357,7 @@ namespace basedlex
               {
                 break;
               }
-              text += (char) *_reader.read();
-              ++_location.column;
+              text += (char) consume_non_newline();
               ++suffix_digit_count;
             }
             if (suffix_digit_count == 0)

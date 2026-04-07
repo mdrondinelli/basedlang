@@ -34,3 +34,7 @@ Expression parsing uses precedence climbing. The parser reads a primary expressi
 
 - parsing stays syntax-only
 - AST nodes must preserve all lexemes
+
+## See also
+
+- [`basedast`](./basedast.md) — data model produced by this module

@@ -242,28 +242,6 @@ namespace basedhlir
               }
             );
           }
-          else if constexpr (std::is_same_v<T, Bool_equal_instruction>)
-          {
-            execute_binary_instruction(
-              register_values,
-              inst,
-              [](Constant_value lhs, Constant_value rhs) -> Constant_value
-              {
-                return std::get<bool>(lhs) == std::get<bool>(rhs);
-              }
-            );
-          }
-          else if constexpr (std::is_same_v<T, Bool_not_equal_instruction>)
-          {
-            execute_binary_instruction(
-              register_values,
-              inst,
-              [](Constant_value lhs, Constant_value rhs) -> Constant_value
-              {
-                return std::get<bool>(lhs) != std::get<bool>(rhs);
-              }
-            );
-          }
           else if constexpr (std::is_same_v<T, Call_instruction>)
           {
             auto args = std::vector<Constant_value>{};

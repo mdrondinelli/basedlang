@@ -442,21 +442,6 @@ namespace basedhlir
     Greater_eq_fn<T>
   >;
 
-  using Bool_equal = Primitive_binary_operator_overload<
-    bool,
-    bool,
-    bool,
-    Bool_equal_instruction,
-    Equal_fn<bool>
-  >;
-
-  using Bool_not_equal = Primitive_binary_operator_overload<
-    bool,
-    bool,
-    bool,
-    Bool_not_equal_instruction,
-    Not_equal_fn<bool>
-  >;
 
   class Unary_plus final: public Unary_operator_overload
   {
@@ -821,10 +806,10 @@ namespace basedhlir
       std::make_unique<Greater_eq<double>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::equal].push_back(
-      std::make_unique<Bool_equal>(_type_pool)
+      std::make_unique<Equal<bool>>(_type_pool)
     );
     _binary_overloads[basedast::Operator::not_equal].push_back(
-      std::make_unique<Bool_not_equal>(_type_pool)
+      std::make_unique<Not_equal<bool>>(_type_pool)
     );
   }
 

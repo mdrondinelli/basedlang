@@ -173,20 +173,6 @@ namespace basedhlir
     Operand rhs;
   };
 
-  struct Bool_equal_instruction
-  {
-    Register result;
-    Operand lhs;
-    Operand rhs;
-  };
-
-  struct Bool_not_equal_instruction
-  {
-    Register result;
-    Operand lhs;
-    Operand rhs;
-  };
-
   struct Function;
 
   struct Call_instruction
@@ -275,8 +261,8 @@ namespace basedhlir
     Greater_eq_instruction<std::int64_t>,
     Greater_eq_instruction<float>,
     Greater_eq_instruction<double>,
-    Bool_equal_instruction,
-    Bool_not_equal_instruction,
+    Equal_instruction<bool>,
+    Not_equal_instruction<bool>,
     Call_instruction
   >;
 

@@ -60,8 +60,7 @@ TEST_CASE("Parser - first.based produces a declaration")
   CHECK(decl.kw_let.text == "let");
   CHECK(decl.name.text == "main");
   CHECK(decl.eq.text == "=");
-  auto const fn =
-    std::get_if<basedast::Fn_expression>(&decl.initializer.value);
+  auto const fn = std::get_if<basedast::Fn_expression>(&decl.initializer.value);
   REQUIRE(fn != nullptr);
   CHECK(fn->kw_fn.text == "fn");
   CHECK(fn->lparen.text == "(");
@@ -356,8 +355,7 @@ TEST_CASE("parse_let_statement - function declaration")
   CHECK(stmt.kw_let.text == "let");
   CHECK(stmt.name.text == "main");
   CHECK(stmt.eq.text == "=");
-  auto const fn =
-    std::get_if<basedast::Fn_expression>(&stmt.initializer.value);
+  auto const fn = std::get_if<basedast::Fn_expression>(&stmt.initializer.value);
   REQUIRE(fn != nullptr);
   CHECK(fn->kw_fn.text == "fn");
   REQUIRE(fn->body != nullptr);
@@ -414,8 +412,7 @@ TEST_CASE("parse_block_expression")
     nullptr
   );
   CHECK(
-    std::get_if<basedast::Let_statement>(&block.statements[1].value) !=
-    nullptr
+    std::get_if<basedast::Let_statement>(&block.statements[1].value) != nullptr
   );
   CHECK(block.rbrace.text == "}");
 }
@@ -448,12 +445,10 @@ TEST_CASE("parse_block_expression - statements then tail")
   auto const block = fixture.parser.parse_block_expression();
   REQUIRE(block.statements.size() == 1);
   CHECK(
-    std::get_if<basedast::Let_statement>(&block.statements[0].value) !=
-    nullptr
+    std::get_if<basedast::Let_statement>(&block.statements[0].value) != nullptr
   );
   REQUIRE(block.tail != nullptr);
-  auto const bin =
-    std::get_if<basedast::Binary_expression>(&block.tail->value);
+  auto const bin = std::get_if<basedast::Binary_expression>(&block.tail->value);
   REQUIRE(bin != nullptr);
   CHECK(bin->op.text == "+");
 }
@@ -619,18 +614,14 @@ TEST_CASE("parse_primary_expression - dispatches to int literal")
 {
   auto fixture = Parse_fixture{"123"};
   auto const expr = fixture.parser.parse_primary_expression();
-  CHECK(
-    std::get_if<basedast::Int_literal_expression>(&expr->value) != nullptr
-  );
+  CHECK(std::get_if<basedast::Int_literal_expression>(&expr->value) != nullptr);
 }
 
 TEST_CASE("parse_primary_expression - dispatches to identifier")
 {
   auto fixture = Parse_fixture{"x"};
   auto const expr = fixture.parser.parse_primary_expression();
-  CHECK(
-    std::get_if<basedast::Identifier_expression>(&expr->value) != nullptr
-  );
+  CHECK(std::get_if<basedast::Identifier_expression>(&expr->value) != nullptr);
 }
 
 TEST_CASE("parse_primary_expression - dispatches to fn")
@@ -672,8 +663,7 @@ TEST_CASE("parse_expression - multiplicative before additive")
   auto const add = std::get_if<basedast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
   CHECK(add->op.text == "+");
-  auto const mul =
-    std::get_if<basedast::Binary_expression>(&add->right->value);
+  auto const mul = std::get_if<basedast::Binary_expression>(&add->right->value);
   REQUIRE(mul != nullptr);
   CHECK(mul->op.text == "*");
   auto const two =
@@ -715,8 +705,7 @@ TEST_CASE("parse_expression - all operators")
   REQUIRE(sub != nullptr);
   CHECK(sub->op.text == "-");
   // left of -: -f() + +2
-  auto const add =
-    std::get_if<basedast::Binary_expression>(&sub->left->value);
+  auto const add = std::get_if<basedast::Binary_expression>(&sub->left->value);
   REQUIRE(add != nullptr);
   CHECK(add->op.text == "+");
   // left of +: -f()
@@ -737,18 +726,15 @@ TEST_CASE("parse_expression - all operators")
   REQUIRE(unary_plus != nullptr);
   CHECK(unary_plus->op.text == "+");
   // right of -: ((3 * 4) / 5) % 6
-  auto const mod =
-    std::get_if<basedast::Binary_expression>(&sub->right->value);
+  auto const mod = std::get_if<basedast::Binary_expression>(&sub->right->value);
   REQUIRE(mod != nullptr);
   CHECK(mod->op.text == "%");
   // left of %: (3 * 4) / 5
-  auto const div =
-    std::get_if<basedast::Binary_expression>(&mod->left->value);
+  auto const div = std::get_if<basedast::Binary_expression>(&mod->left->value);
   REQUIRE(div != nullptr);
   CHECK(div->op.text == "/");
   // left of /: 3 * 4
-  auto const mul =
-    std::get_if<basedast::Binary_expression>(&div->left->value);
+  auto const mul = std::get_if<basedast::Binary_expression>(&div->left->value);
   REQUIRE(mul != nullptr);
   CHECK(mul->op.text == "*");
 }
@@ -879,9 +865,7 @@ TEST_CASE("parse_expression - index: binds tighter than binary op")
   auto const add = std::get_if<basedast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
   CHECK(add->op.text == "+");
-  CHECK(
-    std::get_if<basedast::Index_expression>(&add->left->value) != nullptr
-  );
+  CHECK(std::get_if<basedast::Index_expression>(&add->left->value) != nullptr);
 }
 
 TEST_CASE("parse_expression - index: call then index")
@@ -914,8 +898,7 @@ TEST_CASE("parse_expression - dereference")
 {
   auto fixture = Parse_fixture{"p^"};
   auto const expr = fixture.parser.parse_expression();
-  auto const postfix =
-    std::get_if<basedast::Postfix_expression>(&expr->value);
+  auto const postfix = std::get_if<basedast::Postfix_expression>(&expr->value);
   REQUIRE(postfix != nullptr);
   CHECK(postfix->op.text == "^");
   auto const operand =
@@ -929,13 +912,11 @@ TEST_CASE("parse_expression - dereference: index then deref")
   // p[0]^ should parse as (p[0])^
   auto fixture = Parse_fixture{"p[0]^"};
   auto const expr = fixture.parser.parse_expression();
-  auto const postfix =
-    std::get_if<basedast::Postfix_expression>(&expr->value);
+  auto const postfix = std::get_if<basedast::Postfix_expression>(&expr->value);
   REQUIRE(postfix != nullptr);
   CHECK(postfix->op.text == "^");
   CHECK(
-    std::get_if<basedast::Index_expression>(&postfix->operand->value) !=
-    nullptr
+    std::get_if<basedast::Index_expression>(&postfix->operand->value) != nullptr
   );
 }
 
@@ -997,8 +978,7 @@ TEST_CASE("parse_expression - address-of: in binary expression")
   auto const add = std::get_if<basedast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
   CHECK(add->op.text == "+");
-  auto const left =
-    std::get_if<basedast::Prefix_expression>(&add->left->value);
+  auto const left = std::get_if<basedast::Prefix_expression>(&add->left->value);
   REQUIRE(left != nullptr);
   CHECK(left->op.text == "&");
   auto const right =
@@ -1118,8 +1098,7 @@ TEST_CASE("parse_expression - additive before comparison")
   auto const lt = std::get_if<basedast::Binary_expression>(&expr->value);
   REQUIRE(lt != nullptr);
   CHECK(lt->op.text == "<");
-  auto const left =
-    std::get_if<basedast::Binary_expression>(&lt->left->value);
+  auto const left = std::get_if<basedast::Binary_expression>(&lt->left->value);
   REQUIRE(left != nullptr);
   CHECK(left->op.text == "+");
   auto const right =
@@ -1136,8 +1115,7 @@ TEST_CASE("parse_expression - comparison before equality")
   auto const eq = std::get_if<basedast::Binary_expression>(&expr->value);
   REQUIRE(eq != nullptr);
   CHECK(eq->op.text == "==");
-  auto const left =
-    std::get_if<basedast::Binary_expression>(&eq->left->value);
+  auto const left = std::get_if<basedast::Binary_expression>(&eq->left->value);
   REQUIRE(left != nullptr);
   CHECK(left->op.text == "<");
   auto const right =
@@ -1223,9 +1201,8 @@ TEST_CASE("parse_statement - while: simple")
   auto const while_stmt = std::get_if<basedast::While_statement>(&stmt.value);
   REQUIRE(while_stmt != nullptr);
   CHECK(while_stmt->kw_while.text == "while");
-  auto const cond = std::get_if<basedast::Identifier_expression>(
-    &while_stmt->condition->value
-  );
+  auto const cond =
+    std::get_if<basedast::Identifier_expression>(&while_stmt->condition->value);
   REQUIRE(cond != nullptr);
   CHECK(cond->identifier.text == "x");
   CHECK(while_stmt->body.statements.empty());

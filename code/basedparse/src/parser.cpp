@@ -97,11 +97,15 @@ namespace basedparse
       }
       else if (next.token == basedlex::Token::kw_return)
       {
-        block.statements.push_back(basedast::Statement{parse_return_statement()});
+        block.statements.push_back(
+          basedast::Statement{parse_return_statement()}
+        );
       }
       else if (next.token == basedlex::Token::kw_while)
       {
-        block.statements.push_back(basedast::Statement{parse_while_statement()});
+        block.statements.push_back(
+          basedast::Statement{parse_while_statement()}
+        );
       }
       else
       {
@@ -171,17 +175,20 @@ namespace basedparse
   /// function
   ///    (operator.cpp): `get_prefix_operator`, `get_postfix_operator`, or
   ///    `get_binary_operator`. No changes to the parser itself are needed.
-  std::unique_ptr<basedast::Expression> Parser::parse_expression(int current_precedence)
+  std::unique_ptr<basedast::Expression>
+  Parser::parse_expression(int current_precedence)
   {
     auto expr = [&]() -> std::unique_ptr<basedast::Expression>
     {
-      if (auto const prefix_op = basedast::get_prefix_operator(_reader->peek().token);
+      if (auto const prefix_op =
+            basedast::get_prefix_operator(_reader->peek().token);
           prefix_op &&
           basedast::get_operator_precedence(*prefix_op) <= current_precedence)
       {
         auto prefix = basedast::Prefix_expression{};
         prefix.op = _reader->read();
-        prefix.operand = parse_expression(basedast::get_operator_precedence(*prefix_op));
+        prefix.operand =
+          parse_expression(basedast::get_operator_precedence(*prefix_op));
         return std::make_unique<basedast::Expression>(std::move(prefix));
       }
       if (_reader->peek().token == basedlex::Token::lbracket &&
@@ -200,9 +207,10 @@ namespace basedparse
       auto primary = parse_primary_expression();
       for (;;)
       {
-        if (auto const postfix_op = basedast::get_postfix_operator(_reader->peek().token);
-            postfix_op &&
-            basedast::get_operator_precedence(*postfix_op) <= current_precedence)
+        if (auto const postfix_op =
+              basedast::get_postfix_operator(_reader->peek().token);
+            postfix_op && basedast::get_operator_precedence(*postfix_op) <=
+                            current_precedence)
         {
           if (*postfix_op == basedast::Operator::call)
           {
@@ -239,7 +247,8 @@ namespace basedparse
             auto postfix = basedast::Postfix_expression{};
             postfix.operand = std::move(primary);
             postfix.op = _reader->read();
-            primary = std::make_unique<basedast::Expression>(std::move(postfix));
+            primary =
+              std::make_unique<basedast::Expression>(std::move(postfix));
           }
         }
         else
@@ -251,14 +260,16 @@ namespace basedparse
     }();
     for (;;)
     {
-      if (auto const bin_op = basedast::get_binary_operator(_reader->peek().token);
-          bin_op && basedast::get_operator_precedence(*bin_op) <= current_precedence)
+      if (auto const bin_op =
+            basedast::get_binary_operator(_reader->peek().token);
+          bin_op &&
+          basedast::get_operator_precedence(*bin_op) <= current_precedence)
       {
         auto const op_prec = basedast::get_operator_precedence(*bin_op);
-        auto const rhs_prec =
-          basedast::get_precedence_associativity(op_prec) == basedast::Operator_associativity::right
-            ? op_prec
-            : op_prec - 1;
+        auto const rhs_prec = basedast::get_precedence_associativity(op_prec) ==
+                                  basedast::Operator_associativity::right
+                                ? op_prec
+                                : op_prec - 1;
         auto binary = basedast::Binary_expression{};
         binary.left = std::move(expr);
         binary.op = _reader->read();
@@ -278,11 +289,15 @@ namespace basedparse
     auto const &next = _reader->peek();
     if (next.token == basedlex::Token::int_literal)
     {
-      return std::make_unique<basedast::Expression>(parse_int_literal_expression());
+      return std::make_unique<basedast::Expression>(
+        parse_int_literal_expression()
+      );
     }
     if (next.token == basedlex::Token::identifier)
     {
-      return std::make_unique<basedast::Expression>(parse_identifier_expression());
+      return std::make_unique<basedast::Expression>(
+        parse_identifier_expression()
+      );
     }
     if (next.token == basedlex::Token::kw_recurse)
     {
@@ -346,7 +361,8 @@ namespace basedparse
     return fn;
   }
 
-  basedast::Fn_expression::Return_type_specifier Parser::parse_return_type_specifier()
+  basedast::Fn_expression::Return_type_specifier
+  Parser::parse_return_type_specifier()
   {
     auto spec = basedast::Fn_expression::Return_type_specifier{};
     spec.colon = expect(basedlex::Token::colon);

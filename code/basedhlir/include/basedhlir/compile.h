@@ -104,11 +104,8 @@ namespace basedhlir
     Unary_operator_overload *
     find_unary_overload(basedast::Operator op, Type *operand_type);
 
-    Binary_operator_overload *find_binary_overload(
-      basedast::Operator op,
-      Type *lhs_type,
-      Type *rhs_type
-    );
+    Binary_operator_overload *
+    find_binary_overload(basedast::Operator op, Type *lhs_type, Type *rhs_type);
 
     bool is_type_compatible(Type *parameter_type, Type *argument_type);
 
@@ -153,8 +150,7 @@ namespace basedhlir
 
     Operand compile_expression(basedast::Index_expression const &expr);
 
-    Operand
-    compile_expression(basedast::Prefix_bracket_expression const &expr);
+    Operand compile_expression(basedast::Prefix_bracket_expression const &expr);
 
     Operand compile_expression(basedast::Block_expression const &expr);
 

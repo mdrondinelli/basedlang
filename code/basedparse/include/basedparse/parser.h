@@ -44,10 +44,12 @@ namespace basedparse
 
     basedast::Fn_expression parse_fn_expression();
 
-    basedast::Fn_expression::Return_type_specifier parse_return_type_specifier();
+    basedast::Fn_expression::Return_type_specifier
+    parse_return_type_specifier();
 
   private:
-    std::unique_ptr<basedast::Expression> parse_expression(int current_precedence);
+    std::unique_ptr<basedast::Expression>
+    parse_expression(int current_precedence);
 
     basedlex::Lexeme expect(basedlex::Token token);
 

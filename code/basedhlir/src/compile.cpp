@@ -131,7 +131,9 @@ namespace basedhlir
       else
       {
         auto const result = ctx.allocate_register(_result_type);
-        ctx.emit(Instruction{InstructionT{.result = result, .operand = operand}});
+        ctx.emit(
+          Instruction{InstructionT{.result = result, .operand = operand}}
+        );
         return Operand{result};
       }
     }
@@ -895,9 +897,8 @@ namespace basedhlir
     return false;
   }
 
-  Type *Compilation_context::compile_type_expression(
-    basedast::Expression const &expr
-  )
+  Type *
+  Compilation_context::compile_type_expression(basedast::Expression const &expr)
   {
     auto const value = evaluate_constant_expression(expr);
     auto const tv = std::get_if<Type_value>(&value);
@@ -1137,9 +1138,8 @@ namespace basedhlir
     return overload->compile(*this, lhs_result, rhs_result);
   }
 
-  Operand Compilation_context::compile_expression(
-    basedast::Call_expression const &expr
-  )
+  Operand
+  Compilation_context::compile_expression(basedast::Call_expression const &expr)
   {
     auto const callee_result = compile_expression(*expr.callee);
     auto const callee_type = type_of_operand(callee_result);
@@ -1445,9 +1445,8 @@ namespace basedhlir
       _diagnostics.push_back(
         Diagnostic{
           .message = "expression is not a compile-time constant",
-          .location = e.expression_location.value_or(
-            basedast::span_of(stmt.initializer)
-          ),
+          .location =
+            e.expression_location.value_or(basedast::span_of(stmt.initializer)),
           .notes = {Diagnostic_note{
             .message = "required by this top-level binding",
             .location = basedast::span_of(stmt),
@@ -1673,9 +1672,8 @@ namespace basedhlir
       if (negate)
       {
         return Constant_value{
-          *value < max_magnitude
-            ? static_cast<T>(-static_cast<T>(*value))
-            : std::numeric_limits<T>::min()
+          *value < max_magnitude ? static_cast<T>(-static_cast<T>(*value))
+                                 : std::numeric_limits<T>::min()
         };
       }
       return Constant_value{static_cast<T>(*value)};
@@ -1699,8 +1697,8 @@ namespace basedhlir
       auto constexpr max_magnitude_i32 = max_i32 + 1u;
       auto const limit_i32 = negate ? max_magnitude_i32 : max_i32;
       return validate_int_literal(digits, limit_i32).has_value()
-        ? compile_typed.operator()<std::int32_t>()
-        : compile_typed.operator()<std::int64_t>();
+               ? compile_typed.operator()<std::int32_t>()
+               : compile_typed.operator()<std::int64_t>();
     }
     else if (suffix == "i64")
     {

@@ -63,8 +63,10 @@ struct Compile_fixture
 
 TEST_CASE("validate_int_literal")
 {
-  auto const value =
-    basedhlir::validate_int_literal("42", std::numeric_limits<std::uint64_t>::max());
+  auto const value = basedhlir::validate_int_literal(
+    "42",
+    std::numeric_limits<std::uint64_t>::max()
+  );
   REQUIRE(value.has_value());
   CHECK(*value == 42);
 }
@@ -179,7 +181,9 @@ TEST_CASE("compile_int_literal - i8 max")
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<std::int8_t>(value));
-  CHECK(std::get<std::int8_t>(value) == std::numeric_limits<std::int8_t>::max());
+  CHECK(
+    std::get<std::int8_t>(value) == std::numeric_limits<std::int8_t>::max()
+  );
 }
 
 TEST_CASE("compile_int_literal - i8 above max throws")
@@ -201,7 +205,9 @@ TEST_CASE("compile_int_literal - unary minus i8 minimum")
   auto const value =
     compile_fixture.compiler.evaluate_constant_expression(*expr);
   REQUIRE(std::holds_alternative<std::int8_t>(value));
-  CHECK(std::get<std::int8_t>(value) == std::numeric_limits<std::int8_t>::min());
+  CHECK(
+    std::get<std::int8_t>(value) == std::numeric_limits<std::int8_t>::min()
+  );
 }
 
 TEST_CASE("compile_int_literal - i16 max")

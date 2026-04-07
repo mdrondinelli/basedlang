@@ -1,6 +1,6 @@
-#include "basedparse/operator.h"
+#include "basedast/operator.h"
 
-namespace basedparse
+namespace basedast
 {
 
   int get_operator_precedence(Operator op)
@@ -118,4 +118,4 @@ namespace basedparse
     }
   }
 
-} // namespace basedparse
+} // namespace basedast

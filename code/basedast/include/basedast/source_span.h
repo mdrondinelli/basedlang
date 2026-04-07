@@ -1,10 +1,10 @@
-#ifndef BASEDPARSE_SOURCE_SPAN_H
-#define BASEDPARSE_SOURCE_SPAN_H
+#ifndef BASEDAST_SOURCE_SPAN_H
+#define BASEDAST_SOURCE_SPAN_H
 
 #include "ast.h"
 #include "source_location.h"
 
-namespace basedparse
+namespace basedast
 {
 
   /// A closed range of source positions [start, end].
@@ -56,6 +56,6 @@ namespace basedparse
 
   /// @}
 
-} // namespace basedparse
+} // namespace basedast
 
-#endif // BASEDPARSE_SOURCE_SPAN_H
+#endif // BASEDAST_SOURCE_SPAN_H

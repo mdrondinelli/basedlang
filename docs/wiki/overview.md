@@ -1,17 +1,18 @@
 # Architecture and pipeline overview
 
-basedlang currently has four main modules:
+basedlang currently has five main modules:
 
 1. `basedlex`
-2. `basedparse`
-3. `basedhlir`
-4. `based`
+2. `basedast`
+3. `basedparse`
+4. `basedhlir`
+5. `based`
 
 The pipeline is simple:
 
 1. bytes are decoded into Unicode characters
 2. characters are lexed into `Lexeme` values
-3. lexemes are parsed into an AST
+3. lexemes are parsed into an AST (defined by `basedast`, produced by `basedparse`)
 4. the AST is compiled into HLIR with name resolution, type evaluation, diagnostics, and constant evaluation
 5. the `based` executable can currently interpret a chosen HLIR function
 
@@ -21,9 +22,13 @@ The pipeline is simple:
 
 Owns tokenization, source locations, and character/token lookahead.
 
+### `basedast`
+
+Owns the AST data model: expression and statement node types, operator identity, and source spans over AST nodes.
+
 ### `basedparse`
 
-Owns syntax, AST construction, precedence handling, and source spans over AST nodes.
+Owns syntax: consuming lexemes and constructing the `basedast` data model. Owns precedence rules.
 
 ### `basedhlir`
 

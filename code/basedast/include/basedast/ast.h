@@ -1,5 +1,5 @@
-#ifndef BASEDPARSE_AST_H
-#define BASEDPARSE_AST_H
+#ifndef BASEDAST_AST_H
+#define BASEDAST_AST_H
 
 #include <memory>
 #include <optional>
@@ -8,7 +8,7 @@
 
 #include "basedlex/lexeme.h"
 
-namespace basedparse
+namespace basedast
 {
 
   struct Expression;
@@ -307,6 +307,6 @@ namespace basedparse
     std::vector<Let_statement> let_statements;
   };
 
-} // namespace basedparse
+} // namespace basedast
 
-#endif // BASEDPARSE_AST_H
+#endif // BASEDAST_AST_H

@@ -7,50 +7,14 @@
 The public surface is centered on:
 
 - `Parser`
-- `Expression`
-- `Statement`
-- `Translation_unit`
-- `Operator`
-- `Source_span`
 
-This module consumes lexemes and produces source-preserving AST nodes.
+This module consumes lexemes and produces the AST defined in [`basedast`](./basedast.md).
 
 ## Core abstractions
 
 ### `Parser`
 
-Hand-written parser over `Lexeme_stream_reader`.
-
-### `Expression`
-
-The main AST sum type for expression forms.
-
-### `Statement`
-
-The AST sum type for statements inside blocks.
-
-### `Translation_unit`
-
-The AST for the whole program.
-
-### `Operator`
-
-Semantic operator identity used for precedence and later compilation logic.
-
-### `Source_span`
-
-Source range over lexemes or AST nodes.
-
-## Data model
-
-The AST is explicit:
-
-- each syntax form has its own struct
-- lexemes are preserved throughout the tree
-- recursive links use `std::unique_ptr`
-- sum types use `std::variant`
-
-That keeps diagnostics source-facing and makes later compilation code easy to line up with syntax.
+Hand-written parser over `Lexeme_stream_reader`. Produces `Translation_unit`, `Expression`, and `Statement` values from `basedast`.
 
 ## Algorithm
 
@@ -70,3 +34,7 @@ Expression parsing uses precedence climbing. The parser reads a primary expressi
 
 - parsing stays syntax-only
 - AST nodes must preserve all lexemes
+
+## See also
+
+- [`basedast`](./basedast.md) — data model produced by this module

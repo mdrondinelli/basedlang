@@ -1,11 +1,11 @@
-#ifndef BASEDPARSE_OPERATOR_H
-#define BASEDPARSE_OPERATOR_H
+#ifndef BASEDAST_OPERATOR_H
+#define BASEDAST_OPERATOR_H
 
 #include <optional>
 
 #include "basedlex/token.h"
 
-namespace basedparse
+namespace basedast
 {
 
   enum class Operator
@@ -49,6 +49,6 @@ namespace basedparse
 
   std::optional<Operator> get_binary_operator(basedlex::Token token);
 
-} // namespace basedparse
+} // namespace basedast
 
-#endif // BASEDPARSE_OPERATOR_H
+#endif // BASEDAST_OPERATOR_H

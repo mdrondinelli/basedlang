@@ -10,9 +10,15 @@ The lexer library. Owns character input, buffering/lookahead, tokenization, and 
 
 See [`basedlex`](./basedlex.md).
 
+### `code/basedast`
+
+The AST library. Owns the data model for all syntax forms: expression and statement node types, operator identity, and source-span utilities.
+
+See [`basedast`](./basedast.md).
+
 ### `code/basedparse`
 
-The parser library. Owns AST construction, expression precedence, statement parsing, and source-span recovery over the AST.
+The parser library. Owns expression precedence, statement parsing, and AST construction via the types defined in `basedast`.
 
 See [`basedparse`](./basedparse.md).
 
@@ -56,17 +62,19 @@ For the local build and test workflow, see [Tutorial: first change](./tutorial-f
 When deciding where a change belongs, ask this in order:
 
 1. Is this about raw characters or token boundaries?
-2. Is this about syntax shape only?
-3. Is this about meaning, type checking, lowering, or diagnostics?
-4. Is this only about wiring the executable?
+2. Is this about AST node shapes, operator identity, or source spans?
+3. Is this about syntax only — consuming tokens to produce AST nodes?
+4. Is this about meaning, type checking, lowering, or diagnostics?
+5. Is this only about wiring the executable?
 
-Those map directly to the four main modules.
+Those map directly to the five main modules.
 
 ## Stability guidelines
 
 The repo may be reorganized internally over time. The stable structure to preserve in docs and reviews is:
 
 - lexer
+- AST data model
 - parser
 - semantic compiler / HLIR
 - executable wrapper

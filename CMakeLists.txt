@@ -18,14 +18,19 @@ add_library(basedlex
 )
 target_include_directories(basedlex PUBLIC code/basedlex/include)
 
+add_library(basedast
+  code/basedast/src/ast.cpp
+  code/basedast/src/operator.cpp
+  code/basedast/src/source_span.cpp
+)
+target_include_directories(basedast PUBLIC code/basedast/include)
+target_link_libraries(basedast PUBLIC basedlex)
+
 add_library(basedparse
-  code/basedparse/src/ast.cpp
-  code/basedparse/src/operator.cpp
   code/basedparse/src/parser.cpp
-  code/basedparse/src/source_span.cpp
 )
 target_include_directories(basedparse PUBLIC code/basedparse/include)
-target_link_libraries(basedparse PUBLIC basedlex)
+target_link_libraries(basedparse PUBLIC basedast)
 
 add_library(basedhlir
   code/basedhlir/src/compile.cpp
@@ -34,13 +39,13 @@ add_library(basedhlir
   code/basedhlir/src/type.cpp
 )
 target_include_directories(basedhlir PUBLIC code/basedhlir/include)
-target_link_libraries(basedhlir PUBLIC basedparse)
+target_link_libraries(basedhlir PUBLIC basedast)
 
 add_library(basedcli
   code/based/run.cpp
 )
 target_include_directories(basedcli PUBLIC code/based)
-target_link_libraries(basedcli PUBLIC basedhlir)
+target_link_libraries(basedcli PUBLIC basedhlir basedparse)
 
 add_executable(based
   code/based/main.cpp
@@ -66,7 +71,7 @@ add_executable(basedhlir-tests
   code/basedhlir/test/type_test.cpp
   code/basedhlir/test/compile_test.cpp
 )
-target_link_libraries(basedhlir-tests PRIVATE basedhlir Catch2::Catch2WithMain)
+target_link_libraries(basedhlir-tests PRIVATE basedhlir basedparse Catch2::Catch2WithMain)
 target_compile_definitions(basedhlir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(based-tests

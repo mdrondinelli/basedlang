@@ -1,8 +1,8 @@
 #include <variant>
 
-#include "basedparse/source_span.h"
+#include "basedast/source_span.h"
 
-namespace basedparse
+namespace basedast
 {
 
   Source_span span_of(basedlex::Lexeme const &lexeme)
@@ -143,4 +143,4 @@ namespace basedparse
     return hull(span_of(node.expression), span_of(node.semicolon));
   }
 
-} // namespace basedparse
+} // namespace basedast

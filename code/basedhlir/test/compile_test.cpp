@@ -41,11 +41,6 @@ struct Parse_fixture
   Parse_fixture &operator=(Parse_fixture const &other) = delete;
 };
 
-std::unique_ptr<Parse_fixture> make_parse_fixture(std::string source)
-{
-  return std::make_unique<Parse_fixture>(std::move(source));
-}
-
 struct Compile_fixture
 {
   basedhlir::Type_pool types;
@@ -60,6 +55,26 @@ struct Compile_fixture
 
   Compile_fixture &operator=(Compile_fixture const &other) = delete;
 };
+
+basedhlir::Constant_value evaluate_constant(
+  basedhlir::Compilation_context &compiler,
+  std::string_view source
+)
+{
+  auto parse_fixture = Parse_fixture{std::string{source}};
+  auto const expr = parse_fixture.parser.parse_expression();
+  return compiler.evaluate_constant_expression(*expr);
+}
+
+basedhlir::Type *compile_type(
+  basedhlir::Compilation_context &compiler,
+  std::string_view source
+)
+{
+  auto parse_fixture = Parse_fixture{std::string{source}};
+  auto const expr = parse_fixture.parser.parse_expression();
+  return compiler.compile_type_expression(*expr);
+}
 
 TEST_CASE("validate_int_literal")
 {
@@ -84,102 +99,72 @@ TEST_CASE("validate_int_literal - uint64 overflow")
 
 TEST_CASE("evaluate_constant_expression - integer literal")
 {
-  auto parse_fixture = Parse_fixture{"1"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "1");
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == 1);
 }
 
 TEST_CASE("evaluate_constant_expression - integer literal above int32 max")
 {
-  auto parse_fixture = Parse_fixture{"2147483648"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "2147483648");
   REQUIRE(std::holds_alternative<std::int64_t>(value));
   CHECK(std::get<std::int64_t>(value) == 2147483648LL);
 }
 
 TEST_CASE("evaluate_constant_expression - unary minus allows int32 minimum")
 {
-  auto parse_fixture = Parse_fixture{"-2147483648"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "-2147483648");
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == std::numeric_limits<std::int32_t>::min());
 }
 
 TEST_CASE("compile_int_literal - i8 literal")
 {
-  auto parse_fixture = Parse_fixture{"42i8"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "42i8");
   REQUIRE(std::holds_alternative<std::int8_t>(value));
   CHECK(std::get<std::int8_t>(value) == 42);
 }
 
 TEST_CASE("compile_int_literal - i16 literal")
 {
-  auto parse_fixture = Parse_fixture{"1000i16"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "1000i16");
   REQUIRE(std::holds_alternative<std::int16_t>(value));
   CHECK(std::get<std::int16_t>(value) == 1000);
 }
 
 TEST_CASE("compile_int_literal - i32 literal with explicit suffix")
 {
-  auto parse_fixture = Parse_fixture{"42i32"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "42i32");
   REQUIRE(std::holds_alternative<std::int32_t>(value));
   CHECK(std::get<std::int32_t>(value) == 42);
 }
 
 TEST_CASE("compile_int_literal - i64 literal")
 {
-  auto parse_fixture = Parse_fixture{"42i64"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "42i64");
   REQUIRE(std::holds_alternative<std::int64_t>(value));
   CHECK(std::get<std::int64_t>(value) == 42);
 }
 
 TEST_CASE("compile_int_literal - unsuffixed literal above int32 max is int64")
 {
-  auto parse_fixture = Parse_fixture{"2147483648"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "2147483648");
   REQUIRE(std::holds_alternative<std::int64_t>(value));
   CHECK(std::get<std::int64_t>(value) == 2147483648LL);
 }
 
 TEST_CASE("compile_int_literal - i8 max")
 {
-  auto parse_fixture = Parse_fixture{"127i8"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "127i8");
   REQUIRE(std::holds_alternative<std::int8_t>(value));
   CHECK(
     std::get<std::int8_t>(value) == std::numeric_limits<std::int8_t>::max()
@@ -188,22 +173,17 @@ TEST_CASE("compile_int_literal - i8 max")
 
 TEST_CASE("compile_int_literal - i8 above max throws")
 {
-  auto parse_fixture = Parse_fixture{"128i8"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
+  auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
-    compile_fixture.compiler.evaluate_constant_expression(*expr),
+    evaluate_constant(fixture.compiler, "128i8"),
     basedhlir::Compilation_error
   );
 }
 
 TEST_CASE("compile_int_literal - unary minus i8 minimum")
 {
-  auto parse_fixture = Parse_fixture{"-128i8"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "-128i8");
   REQUIRE(std::holds_alternative<std::int8_t>(value));
   CHECK(
     std::get<std::int8_t>(value) == std::numeric_limits<std::int8_t>::min()
@@ -212,11 +192,8 @@ TEST_CASE("compile_int_literal - unary minus i8 minimum")
 
 TEST_CASE("compile_int_literal - i16 max")
 {
-  auto parse_fixture = Parse_fixture{"32767i16"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "32767i16");
   REQUIRE(std::holds_alternative<std::int16_t>(value));
   CHECK(
     std::get<std::int16_t>(value) == std::numeric_limits<std::int16_t>::max()
@@ -225,11 +202,8 @@ TEST_CASE("compile_int_literal - i16 max")
 
 TEST_CASE("compile_int_literal - unary minus i16 minimum")
 {
-  auto parse_fixture = Parse_fixture{"-32768i16"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "-32768i16");
   REQUIRE(std::holds_alternative<std::int16_t>(value));
   CHECK(
     std::get<std::int16_t>(value) == std::numeric_limits<std::int16_t>::min()
@@ -238,11 +212,8 @@ TEST_CASE("compile_int_literal - unary minus i16 minimum")
 
 TEST_CASE("compile_int_literal - i64 max")
 {
-  auto parse_fixture = Parse_fixture{"9223372036854775807i64"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "9223372036854775807i64");
   REQUIRE(std::holds_alternative<std::int64_t>(value));
   CHECK(
     std::get<std::int64_t>(value) == std::numeric_limits<std::int64_t>::max()
@@ -251,11 +222,8 @@ TEST_CASE("compile_int_literal - i64 max")
 
 TEST_CASE("compile_int_literal - unary minus i64 minimum")
 {
-  auto parse_fixture = Parse_fixture{"-9223372036854775808i64"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "-9223372036854775808i64");
   REQUIRE(std::holds_alternative<std::int64_t>(value));
   CHECK(
     std::get<std::int64_t>(value) == std::numeric_limits<std::int64_t>::min()
@@ -264,108 +232,72 @@ TEST_CASE("compile_int_literal - unary minus i64 minimum")
 
 TEST_CASE("evaluate_constant_expression - integer arithmetic")
 {
-  auto parse_fixture = Parse_fixture{"3 % 2 / (3 - 4) * 5 + 6"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "3 % 2 / (3 - 4) * 5 + 6");
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == 1);
 }
 
 TEST_CASE("evaluate_constant_expression - unary plus")
 {
-  auto parse_fixture = Parse_fixture{"+42"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "+42");
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == 42);
 }
 
 TEST_CASE("evaluate_constant_expression - unary minus")
 {
-  auto parse_fixture = Parse_fixture{"-42"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "-42");
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == -42);
 }
 
 TEST_CASE("evaluate_constant_expression - nested arithmetic")
 {
-  auto parse_fixture = Parse_fixture{"(1 + 2) * 3"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "(1 + 2) * 3");
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == 9);
 }
 
 TEST_CASE("evaluate_constant_expression - integer comparisons")
 {
-  auto compile_fixture = Compile_fixture{};
-  auto cases = std::vector<std::pair<std::unique_ptr<Parse_fixture>, bool>>{};
-  cases.emplace_back(make_parse_fixture("123 < 456"), true);
-  cases.emplace_back(make_parse_fixture("123 > 456"), false);
-  cases.emplace_back(make_parse_fixture("123 <= 456"), true);
-  cases.emplace_back(make_parse_fixture("123 >= 456"), false);
-  cases.emplace_back(make_parse_fixture("123 == 456"), false);
-  cases.emplace_back(make_parse_fixture("123 != 456"), true);
-  auto expressions = std::vector<std::unique_ptr<basedast::Expression>>{};
-  for (auto const &[parse_fixture, expected] : cases)
-  {
-    auto const &expr =
-      *expressions.emplace_back(parse_fixture->parser.parse_expression());
-
-    auto const value =
-      compile_fixture.compiler.evaluate_constant_expression(expr);
-    REQUIRE(std::holds_alternative<bool>(value));
-    CHECK(std::get<bool>(value) == expected);
-  }
+  auto fixture = Compile_fixture{};
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "123 < 456")) == true);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "123 > 456")) == false);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "123 <= 456")) == true);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "123 >= 456")) == false);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "123 == 456")) == false);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "123 != 456")) == true);
 }
 
 TEST_CASE("evaluate_constant_expression - if expression")
 {
-  auto parse_fixture = Parse_fixture{"if 1 < 2 { 10 } else { 20 }"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
+  auto fixture = Compile_fixture{};
   auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+    evaluate_constant(fixture.compiler, "if 1 < 2 { 10 } else { 20 }");
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == 10);
 }
 
 TEST_CASE("evaluate_constant_expression - if expression takes else branch")
 {
-  auto parse_fixture = Parse_fixture{"if 1 > 2 { 10 } else { 20 }"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
+  auto fixture = Compile_fixture{};
   auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+    evaluate_constant(fixture.compiler, "if 1 > 2 { 10 } else { 20 }");
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == 20);
 }
 
 TEST_CASE("evaluate_constant_expression - if expression takes else-if branch")
 {
-  auto parse_fixture =
-    Parse_fixture{"if 1 > 2 { 10 } else if 1 < 2 { 30 } else { 20 }"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(
+    fixture.compiler,
+    "if 1 > 2 { 10 } else if 1 < 2 { 30 } else { 20 }"
+  );
   REQUIRE(std::holds_alternative<int32_t>(value));
   CHECK(std::get<int32_t>(value) == 30);
 }
@@ -375,12 +307,8 @@ TEST_CASE(
   "then branch"
 )
 {
-  auto parse_fixture = Parse_fixture{"if 1 < 2 { 10 }"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "if 1 < 2 { 10 }");
   CHECK(std::get<std::int32_t>(value) == 10);
 }
 
@@ -389,90 +317,74 @@ TEST_CASE(
   "allows different branch types"
 )
 {
-  auto parse_fixture = Parse_fixture{"if true { 10 } else { false }"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-
+  auto fixture = Compile_fixture{};
   auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+    evaluate_constant(fixture.compiler, "if true { 10 } else { false }");
   CHECK(std::get<std::int32_t>(value) == 10);
 }
 
 TEST_CASE("compile_type_expression - sized array")
 {
-  auto parse_fixture = Parse_fixture{"[4]Int32"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const type = compile_fixture.compiler.compile_type_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const type = compile_type(fixture.compiler, "[4]Int32");
   auto const sa = std::get_if<basedhlir::Sized_array_type>(&type->data);
   REQUIRE(sa != nullptr);
-  CHECK(sa->element == compile_fixture.types.int32_type());
+  CHECK(sa->element == fixture.types.int32_type());
   CHECK(sa->size == 4);
 }
 
 TEST_CASE("compile_type_expression - sized array with constant expression size")
 {
-  auto parse_fixture = Parse_fixture{"[2 + 2]Int32"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const type = compile_fixture.compiler.compile_type_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const type = compile_type(fixture.compiler, "[2 + 2]Int32");
   auto const sa = std::get_if<basedhlir::Sized_array_type>(&type->data);
   REQUIRE(sa != nullptr);
-  CHECK(sa->element == compile_fixture.types.int32_type());
+  CHECK(sa->element == fixture.types.int32_type());
   CHECK(sa->size == 4);
 }
 
 TEST_CASE("compile_type_expression - sized array rejects zero size")
 {
-  auto parse_fixture = Parse_fixture{"[0]Int32"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
+  auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
-    compile_fixture.compiler.compile_type_expression(*expr),
+    compile_type(fixture.compiler, "[0]Int32"),
     basedhlir::Compilation_error
   );
 }
 
 TEST_CASE("compile_type_expression - sized array rejects negative size")
 {
-  auto parse_fixture = Parse_fixture{"[-1]Int32"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
+  auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
-    compile_fixture.compiler.compile_type_expression(*expr),
+    compile_type(fixture.compiler, "[-1]Int32"),
     basedhlir::Compilation_error
   );
 }
 
 TEST_CASE("compile_type_expression - sized array rejects non-integer size")
 {
-  auto parse_fixture = Parse_fixture{"[1 < 2]Int32"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
+  auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
-    compile_fixture.compiler.compile_type_expression(*expr),
+    compile_type(fixture.compiler, "[1 < 2]Int32"),
     basedhlir::Compilation_error
   );
 }
 
 TEST_CASE("evaluate_constant_expression - bool equality")
 {
-  auto compile_fixture = Compile_fixture{};
-  auto cases = std::vector<std::pair<std::unique_ptr<Parse_fixture>, bool>>{};
-  cases.emplace_back(make_parse_fixture("1 == 1 == (2 == 2)"), true);
-  cases.emplace_back(make_parse_fixture("1 == 1 != (1 == 2)"), true);
-  cases.emplace_back(make_parse_fixture("1 == 2 == (3 == 4)"), true);
-  auto expressions = std::vector<std::unique_ptr<basedast::Expression>>{};
-  for (auto const &[parse_fixture, expected] : cases)
-  {
-    auto const &expr =
-      *expressions.emplace_back(parse_fixture->parser.parse_expression());
-
-    auto const value =
-      compile_fixture.compiler.evaluate_constant_expression(expr);
-    REQUIRE(std::holds_alternative<bool>(value));
-    CHECK(std::get<bool>(value) == expected);
-  }
+  auto fixture = Compile_fixture{};
+  CHECK(
+    std::get<bool>(evaluate_constant(fixture.compiler, "1 == 1 == (2 == 2)")) ==
+    true
+  );
+  CHECK(
+    std::get<bool>(evaluate_constant(fixture.compiler, "1 == 1 != (1 == 2)")) ==
+    true
+  );
+  CHECK(
+    std::get<bool>(evaluate_constant(fixture.compiler, "1 == 2 == (3 == 4)")) ==
+    true
+  );
 }
 
 // --- Function compilation and interpretation tests ---
@@ -906,100 +818,62 @@ TEST_CASE("compile - expression statement")
 
 TEST_CASE("compile_float_literal - unsuffixed defaults to Float64")
 {
-  auto parse_fixture = Parse_fixture{"3.14"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "3.14");
   REQUIRE(std::holds_alternative<double>(value));
   CHECK(std::get<double>(value) == 3.14);
 }
 
 TEST_CASE("compile_float_literal - f suffix gives Float32")
 {
-  auto parse_fixture = Parse_fixture{"1.5f"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "1.5f");
   REQUIRE(std::holds_alternative<float>(value));
   CHECK(std::get<float>(value) == 1.5f);
 }
 
 TEST_CASE("compile_float_literal - d suffix gives Float64")
 {
-  auto parse_fixture = Parse_fixture{"1.5d"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "1.5d");
   REQUIRE(std::holds_alternative<double>(value));
   CHECK(std::get<double>(value) == 1.5);
 }
 
 TEST_CASE("compile_float_literal - unary minus")
 {
-  auto parse_fixture = Parse_fixture{"-2.5"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "-2.5");
   REQUIRE(std::holds_alternative<double>(value));
   CHECK(std::get<double>(value) == -2.5);
 }
 
 TEST_CASE("compile_float_literal - unary plus")
 {
-  auto parse_fixture = Parse_fixture{"+2.5"};
-  auto compile_fixture = Compile_fixture{};
-  auto const expr = parse_fixture.parser.parse_expression();
-  auto const value =
-    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  auto fixture = Compile_fixture{};
+  auto const value = evaluate_constant(fixture.compiler, "+2.5");
   REQUIRE(std::holds_alternative<double>(value));
   CHECK(std::get<double>(value) == 2.5);
 }
 
 TEST_CASE("evaluate_constant_expression - float arithmetic")
 {
-  auto compile_fixture = Compile_fixture{};
-  auto cases =
-    std::vector<std::pair<std::unique_ptr<Parse_fixture>, double>>{};
-  cases.emplace_back(make_parse_fixture("1.0 + 2.0"), 3.0);
-  cases.emplace_back(make_parse_fixture("5.0 - 1.5"), 3.5);
-  cases.emplace_back(make_parse_fixture("2.0 * 3.0"), 6.0);
-  cases.emplace_back(make_parse_fixture("10.0 / 4.0"), 2.5);
-  auto expressions = std::vector<std::unique_ptr<basedast::Expression>>{};
-  for (auto const &[parse_fixture, expected] : cases)
-  {
-    auto const &expr =
-      *expressions.emplace_back(parse_fixture->parser.parse_expression());
-    auto const value =
-      compile_fixture.compiler.evaluate_constant_expression(expr);
-    REQUIRE(std::holds_alternative<double>(value));
-    CHECK(std::get<double>(value) == expected);
-  }
+  auto fixture = Compile_fixture{};
+  CHECK(std::get<double>(evaluate_constant(fixture.compiler, "1.0 + 2.0")) == 3.0);
+  CHECK(std::get<double>(evaluate_constant(fixture.compiler, "5.0 - 1.5")) == 3.5);
+  CHECK(std::get<double>(evaluate_constant(fixture.compiler, "2.0 * 3.0")) == 6.0);
+  CHECK(std::get<double>(evaluate_constant(fixture.compiler, "10.0 / 4.0")) == 2.5);
 }
 
 TEST_CASE("evaluate_constant_expression - float comparisons")
 {
-  auto compile_fixture = Compile_fixture{};
-  auto cases = std::vector<std::pair<std::unique_ptr<Parse_fixture>, bool>>{};
-  cases.emplace_back(make_parse_fixture("1.0 < 2.0"), true);
-  cases.emplace_back(make_parse_fixture("1.0 > 2.0"), false);
-  cases.emplace_back(make_parse_fixture("1.0 <= 1.0"), true);
-  cases.emplace_back(make_parse_fixture("1.0 >= 2.0"), false);
-  cases.emplace_back(make_parse_fixture("1.0 == 1.0"), true);
-  cases.emplace_back(make_parse_fixture("1.0 != 2.0"), true);
-  auto expressions = std::vector<std::unique_ptr<basedast::Expression>>{};
-  for (auto const &[parse_fixture, expected] : cases)
-  {
-    auto const &expr =
-      *expressions.emplace_back(parse_fixture->parser.parse_expression());
-    auto const value =
-      compile_fixture.compiler.evaluate_constant_expression(expr);
-    REQUIRE(std::holds_alternative<bool>(value));
-    CHECK(std::get<bool>(value) == expected);
-  }
+  auto fixture = Compile_fixture{};
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "1.0 < 2.0")) == true);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "1.0 > 2.0")) == false);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "1.0 <= 1.0")) == true);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "1.0 >= 2.0")) == false);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "1.0 == 1.0")) == true);
+  CHECK(std::get<bool>(evaluate_constant(fixture.compiler, "1.0 != 2.0")) == true);
 }
 
 TEST_CASE("compile - function returning Float64 literal")

@@ -6,5 +6,10 @@
 * Make lexer actually handle the 32-bit unicode codepoints the character stream
   already emits
   * Maybe make our own string class? Interned?
-* Split up compiler tests
-* Split up compiler implementation
+* Split up HLIR compiler tests
+* Split up HLIR compiler implementation
+* Bytecode interpreter (4 part plan)
+  1. Design bytecode, implement data model
+  2. Implement bytecode interpreter
+  3. Implement HLIR -> bytecode compilation
+  4. Replace/remove HLIR interpreter

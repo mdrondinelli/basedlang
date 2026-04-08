@@ -12,6 +12,7 @@
 
 #include "basedhlir/compile.h"
 #include "basedhlir/interpret.h"
+#include "primitive_type_traits.h"
 
 namespace basedhlir
 {
@@ -40,86 +41,6 @@ namespace basedhlir
     T _previous;
   };
 
-  template <typename T>
-  struct Primitive_hlir_type;
-
-  template <>
-  struct Primitive_hlir_type<std::int8_t>
-  {
-    static constexpr std::string_view name = "Int8";
-
-    static auto get(Type_pool *type_pool) -> Type *
-    {
-      return type_pool->int8_type();
-    }
-  };
-
-  template <>
-  struct Primitive_hlir_type<std::int16_t>
-  {
-    static constexpr std::string_view name = "Int16";
-
-    static auto get(Type_pool *type_pool) -> Type *
-    {
-      return type_pool->int16_type();
-    }
-  };
-
-  template <>
-  struct Primitive_hlir_type<std::int32_t>
-  {
-    static constexpr std::string_view name = "Int32";
-
-    static auto get(Type_pool *type_pool) -> Type *
-    {
-      return type_pool->int32_type();
-    }
-  };
-
-  template <>
-  struct Primitive_hlir_type<std::int64_t>
-  {
-    static constexpr std::string_view name = "Int64";
-
-    static auto get(Type_pool *type_pool) -> Type *
-    {
-      return type_pool->int64_type();
-    }
-  };
-
-  template <>
-  struct Primitive_hlir_type<float>
-  {
-    static constexpr std::string_view name = "Float32";
-
-    static auto get(Type_pool *type_pool) -> Type *
-    {
-      return type_pool->float32_type();
-    }
-  };
-
-  template <>
-  struct Primitive_hlir_type<double>
-  {
-    static constexpr std::string_view name = "Float64";
-
-    static auto get(Type_pool *type_pool) -> Type *
-    {
-      return type_pool->float64_type();
-    }
-  };
-
-  template <>
-  struct Primitive_hlir_type<bool>
-  {
-    static constexpr std::string_view name = "Bool";
-
-    static auto get(Type_pool *type_pool) -> Type *
-    {
-      return type_pool->bool_type();
-    }
-  };
-
   template <
     typename OperandT,
     typename ResultT,
@@ -130,8 +51,8 @@ namespace basedhlir
   {
   public:
     explicit Primitive_unary_operator_overload(Type_pool *type_pool)
-        : _operand_type{Primitive_hlir_type<OperandT>::get(type_pool)},
-          _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
+        : _operand_type{Primitive_type_traits<OperandT>::get(type_pool)},
+          _result_type{Primitive_type_traits<ResultT>::get(type_pool)}
     {
     }
 
@@ -178,9 +99,9 @@ namespace basedhlir
   {
   public:
     explicit Primitive_binary_operator_overload(Type_pool *type_pool)
-        : _lhs_type{Primitive_hlir_type<LhsT>::get(type_pool)},
-          _rhs_type{Primitive_hlir_type<RhsT>::get(type_pool)},
-          _result_type{Primitive_hlir_type<ResultT>::get(type_pool)}
+        : _lhs_type{Primitive_type_traits<LhsT>::get(type_pool)},
+          _rhs_type{Primitive_type_traits<RhsT>::get(type_pool)},
+          _result_type{Primitive_type_traits<ResultT>::get(type_pool)}
     {
     }
 
@@ -1764,7 +1685,7 @@ namespace basedhlir
         emit_error(
           std::format(
             "integer literal is out of range for {}",
-            Primitive_hlir_type<T>::name
+            Primitive_type_traits<T>::name
           ),
           token
         );
@@ -1828,7 +1749,7 @@ namespace basedhlir
         emit_error(
           std::format(
             "float literal is out of range for {}",
-            Primitive_hlir_type<T>::name
+            Primitive_type_traits<T>::name
           ),
           token
         );

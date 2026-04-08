@@ -1,5 +1,5 @@
 let abs = fn(x: Float64): Float64 =>
-  if x < 0.0 { 0.0 - x } else { x };
+  if x > 0.0 { x } else { -x };
 
 let sqrt_iter = fn(x: Float64, guess: Float64): Float64 => {
   let improved = (guess + x / guess) * 0.5;

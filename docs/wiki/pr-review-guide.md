@@ -14,6 +14,7 @@ Use this order for most PRs:
 ## Which page to open
 
 - Lexer changes: [`basedlex`](./basedlex.md)
+- AST changes: [`basedast`](./basedast.md)
 - Parser changes: [`basedparse`](./basedparse.md)
 - Semantic, lowering, or interpreter changes: [`basedhlir`](./basedhlir.md)
 - CLI wiring changes: [`based`](./based.md)
@@ -30,22 +31,21 @@ Look for:
 - source-location correctness
 - lookahead/buffering correctness
 
-Common reviewer question:
+### `basedast`
 
-"Did this change alter the token stream in a way the parser is actually prepared to consume?"
+Look for:
+
+- unnecessary pointer indirections
+- implementation of `span_of` for any new AST node
+
 
 ### `basedparse`
 
 Look for:
 
-- AST shape correctness
+- parser correctness
 - precedence and associativity consistency
-- statement-versus-expression boundary correctness
-- retained syntax needed for diagnostics
-
-Common reviewer question:
-
-"Did syntax handling change without the semantic compiler being updated for the new AST shape?"
+- edge cases which could parse in an unexpected way
 
 ### `basedhlir`
 
@@ -59,10 +59,6 @@ Look for:
 - diagnostic quality
 - interpreter consistency if executable semantics changed
 
-Common reviewer question:
-
-"Is this actually a semantic change, or is the compiler compensating for a bug that belongs in parsing?"
-
 ### `based`
 
 Look for:
@@ -71,10 +67,6 @@ Look for:
 - correct pipeline wiring
 - argument parsing consistent with current executable expectations
 - no compiler logic creeping into the executable
-
-Common reviewer question:
-
-"Did this executable change introduce logic that really belongs in one of the libraries?"
 
 ## Key invariants to keep in your head
 

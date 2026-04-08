@@ -20,8 +20,8 @@ The pages below are organized to support fast navigation rather than linear read
 - [`basedhlir`](./basedhlir.md)
 - [`based`](./based.md)
 - [Project structure](./project-structure.md)
-- [Formatting](./formatting.md)
 - [Conventions](./conventions.md)
+- [Formatting](./formatting.md)
 - [PR review guide](./pr-review-guide.md)
 - [Antipatterns for reviewers](./antipatterns.md)
 - [Wiki maintenance](./wiki-maintenance.md)
@@ -38,7 +38,7 @@ Read these first:
 
 Then jump to the module page for the code being changed.
 
-### I need to make a change
+### I need to draft a PR
 
 Read these first:
 

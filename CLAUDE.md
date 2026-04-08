@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## Introduction
+
+See [`AGENTS.md`](./agents.md) for general instructions.
+
 ## Commits
 
 Prefer atomic commits: each commit should represent one logical change. When a task involves multiple distinct steps (e.g., a refactor followed by a new feature), split them into separate commits.
@@ -16,6 +20,3 @@ Then (or if `build/` already exists):
 cmake --build build
 ```
 
-## See Also
-
-[`AGENTS.md`](./agents.md)

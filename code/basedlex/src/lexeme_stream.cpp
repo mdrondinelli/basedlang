@@ -351,6 +351,15 @@ namespace basedlex
             state = 3;
             break;
           }
+          if (p && (*p == 'f' || *p == 'd'))
+          {
+            text += (char) consume_non_newline();
+            return Lexeme{
+              .text = text,
+              .token = Token::float_literal,
+              .location = token_location,
+            };
+          }
           if (p && *p == 'i')
           {
             text += (char) consume_non_newline();
@@ -385,25 +394,9 @@ namespace basedlex
             text += (char) consume_non_newline();
             break;
           }
-          if (p && *p == 'f')
+          if (p && (*p == 'f' || *p == 'd'))
           {
             text += (char) consume_non_newline();
-            auto suffix_digit_count = 0;
-            for (;;)
-            {
-              auto const suffix_peek = _reader.peek();
-              if (!suffix_peek || *suffix_peek > 0x7F ||
-                  !std::isdigit((int) *suffix_peek))
-              {
-                break;
-              }
-              text += (char) consume_non_newline();
-              ++suffix_digit_count;
-            }
-            if (suffix_digit_count == 0)
-            {
-              throw Lex_error{token_location};
-            }
           }
           return Lexeme{
             .text = text,

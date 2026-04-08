@@ -1815,10 +1815,9 @@ namespace basedhlir
     basedlex::Lexeme const &token
   )
   {
-    auto const suffix_pos = text.rfind('f');
-    auto const suffix =
-      suffix_pos != std::string_view::npos ? text.substr(suffix_pos) : "";
-    auto const digits = text.substr(0, suffix_pos);
+    assert(!text.empty());
+    auto const suffix = (text.back() == 'f' || text.back() == 'd') ? text.back() : '\0';
+    auto const digits = suffix != '\0' ? text.substr(0, text.size() - 1) : text;
     auto const compile_typed = [&]<typename T>() -> Operand
     {
       T value{};
@@ -1836,18 +1835,14 @@ namespace basedhlir
       }
       return Constant_value{value};
     };
-    if (suffix == "f32")
+    if (suffix == 'f')
     {
       return compile_typed.operator()<float>();
     }
-    else if (suffix == "f64" || suffix.empty())
+    else
     {
       return compile_typed.operator()<double>();
     }
-    emit_error(
-      std::format("unknown float literal suffix '{}'", suffix),
-      token
-    );
   }
 
 } // namespace basedhlir

@@ -915,9 +915,9 @@ TEST_CASE("compile_float_literal - unsuffixed defaults to Float64")
   CHECK(std::get<double>(value) == 3.14);
 }
 
-TEST_CASE("compile_float_literal - f32 suffix gives Float32")
+TEST_CASE("compile_float_literal - f suffix gives Float32")
 {
-  auto parse_fixture = Parse_fixture{"1.5f32"};
+  auto parse_fixture = Parse_fixture{"1.5f"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
   auto const value =
@@ -926,9 +926,9 @@ TEST_CASE("compile_float_literal - f32 suffix gives Float32")
   CHECK(std::get<float>(value) == 1.5f);
 }
 
-TEST_CASE("compile_float_literal - f64 suffix gives Float64")
+TEST_CASE("compile_float_literal - d suffix gives Float64")
 {
-  auto parse_fixture = Parse_fixture{"1.5f64"};
+  auto parse_fixture = Parse_fixture{"1.5d"};
   auto compile_fixture = Compile_fixture{};
   auto const expr = parse_fixture.parser.parse_expression();
   auto const value =
@@ -1015,7 +1015,7 @@ TEST_CASE("compile - function returning Float64 literal")
 TEST_CASE("compile - function returning Float32 literal")
 {
   auto const [types, tu] =
-    compile_program("let f = fn(): Float32 => { return 1.5f32; };");
+    compile_program("let f = fn(): Float32 => { return 1.5f; };");
   REQUIRE(tu.functions.size() == 1);
   auto const result = basedhlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<float>(result));

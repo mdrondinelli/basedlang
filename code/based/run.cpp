@@ -139,26 +139,6 @@ namespace based
           {
             out << static_cast<std::int32_t>(value) << '\n';
           }
-          else if constexpr (std::is_same_v<T, std::int16_t>)
-          {
-            out << value << '\n';
-          }
-          else if constexpr (std::is_same_v<T, std::int32_t>)
-          {
-            out << value << '\n';
-          }
-          else if constexpr (std::is_same_v<T, std::int64_t>)
-          {
-            out << value << '\n';
-          }
-          else if constexpr (std::is_same_v<T, float>)
-          {
-            out << value << '\n';
-          }
-          else if constexpr (std::is_same_v<T, double>)
-          {
-            out << value << '\n';
-          }
           else if constexpr (std::is_same_v<T, bool>)
           {
             out << (value ? "true" : "false") << '\n';
@@ -174,6 +154,10 @@ namespace based
           else if constexpr (std::is_same_v<T, basedhlir::Function_value>)
           {
             out << "<function>\n";
+          }
+          else
+          {
+            out << value << '\n';
           }
         },
         result

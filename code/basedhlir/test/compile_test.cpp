@@ -83,8 +83,17 @@ T evaluate_constant_as(
   return std::get<T>(evaluate_constant(compiler, source));
 }
 
-#define CHECK_CONSTANT(compiler, source, expected) \
-  CHECK(evaluate_constant_as<decltype(expected)>((compiler), (source)) == (expected))
+#define CHECK_CONSTANT(source, expected)        \
+  do                                            \
+  {                                             \
+    auto fixture = Compile_fixture{};           \
+    CHECK(                                      \
+      evaluate_constant_as<decltype(expected)>( \
+        (fixture.compiler),                     \
+        (source)                                \
+      ) == (expected)                           \
+    )                                           \
+    while (false)
 
 TEST_CASE("validate_int_literal")
 {
@@ -109,56 +118,53 @@ TEST_CASE("validate_int_literal - uint64 overflow")
 
 TEST_CASE("evaluate_constant_expression - integer literal")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "1", 1);
+  CHECK_CONSTANT("1", 1);
 }
 
 TEST_CASE("evaluate_constant_expression - integer literal above int32 max")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "2147483648", std::int64_t{2147483648});
+  CHECK_CONSTANT("2147483648", std::int64_t{2147483648});
 }
 
 TEST_CASE("evaluate_constant_expression - unary minus allows int32 minimum")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "-2147483648", std::numeric_limits<std::int32_t>::min());
+  CHECK_CONSTANT(
+    "-2147483648",
+    std::numeric_limits<std::int32_t>::min()
+  );
 }
 
 TEST_CASE("compile_int_literal - i8 literal")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "42i8", std::int8_t{42});
+  CHECK_CONSTANT("42i8", std::int8_t{42});
 }
 
 TEST_CASE("compile_int_literal - i16 literal")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "1000i16", std::int16_t{1000});
+  CHECK_CONSTANT("1000i16", std::int16_t{1000});
 }
 
 TEST_CASE("compile_int_literal - i32 literal with explicit suffix")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "42i32", 42);
+  CHECK_CONSTANT("42i32", 42);
 }
 
 TEST_CASE("compile_int_literal - i64 literal")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "42i64", std::int64_t{42});
+  CHECK_CONSTANT("42i64", std::int64_t{42});
 }
 
 TEST_CASE("compile_int_literal - unsuffixed literal above int32 max is int64")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "2147483648", std::int64_t{2147483648});
+  CHECK_CONSTANT("2147483648", std::int64_t{2147483648});
 }
 
 TEST_CASE("compile_int_literal - i8 max")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "127i8", std::numeric_limits<std::int8_t>::max());
+  CHECK_CONSTANT(
+    "127i8",
+    std::numeric_limits<std::int8_t>::max()
+  );
 }
 
 TEST_CASE("compile_int_literal - i8 above max throws")
@@ -172,27 +178,31 @@ TEST_CASE("compile_int_literal - i8 above max throws")
 
 TEST_CASE("compile_int_literal - unary minus i8 minimum")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "-128i8", std::numeric_limits<std::int8_t>::min());
+  CHECK_CONSTANT(
+    "-128i8",
+    std::numeric_limits<std::int8_t>::min()
+  );
 }
 
 TEST_CASE("compile_int_literal - i16 max")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "32767i16", std::numeric_limits<std::int16_t>::max());
+  CHECK_CONSTANT(
+    "32767i16",
+    std::numeric_limits<std::int16_t>::max()
+  );
 }
 
 TEST_CASE("compile_int_literal - unary minus i16 minimum")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "-32768i16", std::numeric_limits<std::int16_t>::min());
+  CHECK_CONSTANT(
+    "-32768i16",
+    std::numeric_limits<std::int16_t>::min()
+  );
 }
 
 TEST_CASE("compile_int_literal - i64 max")
 {
-  auto fixture = Compile_fixture{};
   CHECK_CONSTANT(
-    fixture.compiler,
     "9223372036854775807i64",
     std::numeric_limits<std::int64_t>::max()
   );
@@ -200,9 +210,7 @@ TEST_CASE("compile_int_literal - i64 max")
 
 TEST_CASE("compile_int_literal - unary minus i64 minimum")
 {
-  auto fixture = Compile_fixture{};
   CHECK_CONSTANT(
-    fixture.compiler,
     "-9223372036854775808i64",
     std::numeric_limits<std::int64_t>::min()
   );
@@ -210,56 +218,47 @@ TEST_CASE("compile_int_literal - unary minus i64 minimum")
 
 TEST_CASE("evaluate_constant_expression - integer arithmetic")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "3 % 2 / (3 - 4) * 5 + 6", 1);
+  CHECK_CONSTANT("3 % 2 / (3 - 4) * 5 + 6", 1);
 }
 
 TEST_CASE("evaluate_constant_expression - unary plus")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "+42", 42);
+  CHECK_CONSTANT("+42", 42);
 }
 
 TEST_CASE("evaluate_constant_expression - unary minus")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "-42", -42);
+  CHECK_CONSTANT("-42", -42);
 }
 
 TEST_CASE("evaluate_constant_expression - nested arithmetic")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "(1 + 2) * 3", 9);
+  CHECK_CONSTANT("(1 + 2) * 3", 9);
 }
 
 TEST_CASE("evaluate_constant_expression - integer comparisons")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "123 < 456", true);
-  CHECK_CONSTANT(fixture.compiler, "123 > 456", false);
-  CHECK_CONSTANT(fixture.compiler, "123 <= 456", true);
-  CHECK_CONSTANT(fixture.compiler, "123 >= 456", false);
-  CHECK_CONSTANT(fixture.compiler, "123 == 456", false);
-  CHECK_CONSTANT(fixture.compiler, "123 != 456", true);
+  CHECK_CONSTANT("123 < 456", true);
+  CHECK_CONSTANT("123 > 456", false);
+  CHECK_CONSTANT("123 <= 456", true);
+  CHECK_CONSTANT("123 >= 456", false);
+  CHECK_CONSTANT("123 == 456", false);
+  CHECK_CONSTANT("123 != 456", true);
 }
 
 TEST_CASE("evaluate_constant_expression - if expression")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "if 1 < 2 { 10 } else { 20 }", 10);
+  CHECK_CONSTANT("if 1 < 2 { 10 } else { 20 }", 10);
 }
 
 TEST_CASE("evaluate_constant_expression - if expression takes else branch")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "if 1 > 2 { 10 } else { 20 }", 20);
+  CHECK_CONSTANT("if 1 > 2 { 10 } else { 20 }", 20);
 }
 
 TEST_CASE("evaluate_constant_expression - if expression takes else-if branch")
 {
-  auto fixture = Compile_fixture{};
   CHECK_CONSTANT(
-    fixture.compiler,
     "if 1 > 2 { 10 } else if 1 < 2 { 30 } else { 20 }",
     30
   );
@@ -270,8 +269,7 @@ TEST_CASE(
   "then branch"
 )
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "if 1 < 2 { 10 }", 10);
+  CHECK_CONSTANT("if 1 < 2 { 10 }", 10);
 }
 
 TEST_CASE(
@@ -279,8 +277,7 @@ TEST_CASE(
   "allows different branch types"
 )
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "if true { 10 } else { false }", 10);
+  CHECK_CONSTANT("if true { 10 } else { false }", 10);
 }
 
 TEST_CASE("compile_type_expression - sized array")
@@ -332,10 +329,9 @@ TEST_CASE("compile_type_expression - sized array rejects non-integer size")
 
 TEST_CASE("evaluate_constant_expression - bool equality")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "1 == 1 == (2 == 2)", true);
-  CHECK_CONSTANT(fixture.compiler, "1 == 1 != (1 == 2)", true);
-  CHECK_CONSTANT(fixture.compiler, "1 == 2 == (3 == 4)", true);
+  CHECK_CONSTANT("1 == 1 == (2 == 2)", true);
+  CHECK_CONSTANT("1 == 1 != (1 == 2)", true);
+  CHECK_CONSTANT("1 == 2 == (3 == 4)", true);
 }
 
 // --- Function compilation and interpretation tests ---
@@ -769,52 +765,45 @@ TEST_CASE("compile - expression statement")
 
 TEST_CASE("compile_float_literal - unsuffixed defaults to Float64")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "3.14", 3.14);
+  CHECK_CONSTANT("3.14", 3.14);
 }
 
 TEST_CASE("compile_float_literal - f suffix gives Float32")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "1.5f", 1.5f);
+  CHECK_CONSTANT("1.5f", 1.5f);
 }
 
 TEST_CASE("compile_float_literal - d suffix gives Float64")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "1.5d", 1.5);
+  CHECK_CONSTANT("1.5d", 1.5);
 }
 
 TEST_CASE("compile_float_literal - unary minus")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "-2.5", -2.5);
+  CHECK_CONSTANT("-2.5", -2.5);
 }
 
 TEST_CASE("compile_float_literal - unary plus")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "+2.5", 2.5);
+  CHECK_CONSTANT("+2.5", 2.5);
 }
 
 TEST_CASE("evaluate_constant_expression - float arithmetic")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "1.0 + 2.0", 3.0);
-  CHECK_CONSTANT(fixture.compiler, "5.0 - 1.5", 3.5);
-  CHECK_CONSTANT(fixture.compiler, "2.0 * 3.0", 6.0);
-  CHECK_CONSTANT(fixture.compiler, "10.0 / 4.0", 2.5);
+  CHECK_CONSTANT("1.0 + 2.0", 3.0);
+  CHECK_CONSTANT("5.0 - 1.5", 3.5);
+  CHECK_CONSTANT("2.0 * 3.0", 6.0);
+  CHECK_CONSTANT("10.0 / 4.0", 2.5);
 }
 
 TEST_CASE("evaluate_constant_expression - float comparisons")
 {
-  auto fixture = Compile_fixture{};
-  CHECK_CONSTANT(fixture.compiler, "1.0 < 2.0", true);
-  CHECK_CONSTANT(fixture.compiler, "1.0 > 2.0", false);
-  CHECK_CONSTANT(fixture.compiler, "1.0 <= 1.0", true);
-  CHECK_CONSTANT(fixture.compiler, "1.0 >= 2.0", false);
-  CHECK_CONSTANT(fixture.compiler, "1.0 == 1.0", true);
-  CHECK_CONSTANT(fixture.compiler, "1.0 != 2.0", true);
+  CHECK_CONSTANT("1.0 < 2.0", true);
+  CHECK_CONSTANT("1.0 > 2.0", false);
+  CHECK_CONSTANT("1.0 <= 1.0", true);
+  CHECK_CONSTANT("1.0 >= 2.0", false);
+  CHECK_CONSTANT("1.0 == 1.0", true);
+  CHECK_CONSTANT("1.0 != 2.0", true);
 }
 
 TEST_CASE("compile - function returning Float64 literal")

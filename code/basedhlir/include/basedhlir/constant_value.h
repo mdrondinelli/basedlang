@@ -30,6 +30,8 @@ namespace basedhlir
     std::int16_t,
     std::int32_t,
     std::int64_t,
+    float,
+    double,
     bool,
     Void_value,
     Type_value,

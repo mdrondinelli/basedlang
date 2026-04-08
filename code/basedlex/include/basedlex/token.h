@@ -9,6 +9,7 @@ namespace basedlex
     eof,
     identifier,
     int_literal,
+    float_literal,
     kw_else,
     kw_fn,
     kw_if,

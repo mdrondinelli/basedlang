@@ -902,6 +902,161 @@ TEST_CASE("compile - expression statement")
   CHECK(std::get<std::int32_t>(result) == 42);
 }
 
+// --- Float literal tests ---
+
+TEST_CASE("compile_float_literal - unsuffixed defaults to Float64")
+{
+  auto parse_fixture = Parse_fixture{"3.14"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<double>(value));
+  CHECK(std::get<double>(value) == 3.14);
+}
+
+TEST_CASE("compile_float_literal - f suffix gives Float32")
+{
+  auto parse_fixture = Parse_fixture{"1.5f"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<float>(value));
+  CHECK(std::get<float>(value) == 1.5f);
+}
+
+TEST_CASE("compile_float_literal - d suffix gives Float64")
+{
+  auto parse_fixture = Parse_fixture{"1.5d"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<double>(value));
+  CHECK(std::get<double>(value) == 1.5);
+}
+
+TEST_CASE("compile_float_literal - unary minus")
+{
+  auto parse_fixture = Parse_fixture{"-2.5"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<double>(value));
+  CHECK(std::get<double>(value) == -2.5);
+}
+
+TEST_CASE("compile_float_literal - unary plus")
+{
+  auto parse_fixture = Parse_fixture{"+2.5"};
+  auto compile_fixture = Compile_fixture{};
+  auto const expr = parse_fixture.parser.parse_expression();
+  auto const value =
+    compile_fixture.compiler.evaluate_constant_expression(*expr);
+  REQUIRE(std::holds_alternative<double>(value));
+  CHECK(std::get<double>(value) == 2.5);
+}
+
+TEST_CASE("evaluate_constant_expression - float arithmetic")
+{
+  auto compile_fixture = Compile_fixture{};
+  auto cases =
+    std::vector<std::pair<std::unique_ptr<Parse_fixture>, double>>{};
+  cases.emplace_back(make_parse_fixture("1.0 + 2.0"), 3.0);
+  cases.emplace_back(make_parse_fixture("5.0 - 1.5"), 3.5);
+  cases.emplace_back(make_parse_fixture("2.0 * 3.0"), 6.0);
+  cases.emplace_back(make_parse_fixture("10.0 / 4.0"), 2.5);
+  auto expressions = std::vector<std::unique_ptr<basedast::Expression>>{};
+  for (auto const &[parse_fixture, expected] : cases)
+  {
+    auto const &expr =
+      *expressions.emplace_back(parse_fixture->parser.parse_expression());
+    auto const value =
+      compile_fixture.compiler.evaluate_constant_expression(expr);
+    REQUIRE(std::holds_alternative<double>(value));
+    CHECK(std::get<double>(value) == expected);
+  }
+}
+
+TEST_CASE("evaluate_constant_expression - float comparisons")
+{
+  auto compile_fixture = Compile_fixture{};
+  auto cases = std::vector<std::pair<std::unique_ptr<Parse_fixture>, bool>>{};
+  cases.emplace_back(make_parse_fixture("1.0 < 2.0"), true);
+  cases.emplace_back(make_parse_fixture("1.0 > 2.0"), false);
+  cases.emplace_back(make_parse_fixture("1.0 <= 1.0"), true);
+  cases.emplace_back(make_parse_fixture("1.0 >= 2.0"), false);
+  cases.emplace_back(make_parse_fixture("1.0 == 1.0"), true);
+  cases.emplace_back(make_parse_fixture("1.0 != 2.0"), true);
+  auto expressions = std::vector<std::unique_ptr<basedast::Expression>>{};
+  for (auto const &[parse_fixture, expected] : cases)
+  {
+    auto const &expr =
+      *expressions.emplace_back(parse_fixture->parser.parse_expression());
+    auto const value =
+      compile_fixture.compiler.evaluate_constant_expression(expr);
+    REQUIRE(std::holds_alternative<bool>(value));
+    CHECK(std::get<bool>(value) == expected);
+  }
+}
+
+TEST_CASE("compile - function returning Float64 literal")
+{
+  auto const [types, tu] =
+    compile_program("let f = fn(): Float64 => { return 3.14; };");
+  REQUIRE(tu.functions.size() == 1);
+  auto const result = basedhlir::interpret(*tu.functions[0], {});
+  REQUIRE(std::holds_alternative<double>(result));
+  CHECK(std::get<double>(result) == 3.14);
+}
+
+TEST_CASE("compile - function returning Float32 literal")
+{
+  auto const [types, tu] =
+    compile_program("let f = fn(): Float32 => { return 1.5f; };");
+  REQUIRE(tu.functions.size() == 1);
+  auto const result = basedhlir::interpret(*tu.functions[0], {});
+  REQUIRE(std::holds_alternative<float>(result));
+  CHECK(std::get<float>(result) == 1.5f);
+}
+
+TEST_CASE("compile - function with Float64 parameter and arithmetic")
+{
+  auto const [types, tu] = compile_program(
+    "let scale = fn(x: Float64): Float64 => { return x * 2.0; };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const args = std::array<basedhlir::Constant_value, 1>{double{3.5}};
+  auto const result = basedhlir::interpret(*tu.functions[0], args);
+  REQUIRE(std::holds_alternative<double>(result));
+  CHECK(std::get<double>(result) == 7.0);
+}
+
+TEST_CASE("compile - function with Float64 comparison")
+{
+  auto const [types, tu] = compile_program(
+    "let is_positive = fn(x: Float64): Bool => { return x > 0.0; };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const &f = *tu.functions[0];
+  auto const args1 = std::array<basedhlir::Constant_value, 1>{double{1.0}};
+  CHECK(std::get<bool>(basedhlir::interpret(f, args1)) == true);
+  auto const args2 = std::array<basedhlir::Constant_value, 1>{double{-1.0}};
+  CHECK(std::get<bool>(basedhlir::interpret(f, args2)) == false);
+}
+
+TEST_CASE("compile - return type mismatch Float32 vs Float64")
+{
+  CHECK_THROWS_AS(
+    compile_program("let f = fn(): Float32 => { return 1.0; };"),
+    basedhlir::Compilation_failure
+  );
+}
+
+// --- bool operators ---
+
 TEST_CASE("compile - bool operators")
 {
   auto const [types, tu] = compile_program(

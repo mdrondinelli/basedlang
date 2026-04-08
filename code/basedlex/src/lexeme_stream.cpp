@@ -345,6 +345,21 @@ namespace basedlex
             text += (char) consume_non_newline();
             break;
           }
+          if (p && *p == '.')
+          {
+            text += (char) consume_non_newline();
+            state = 3;
+            break;
+          }
+          if (p && (*p == 'f' || *p == 'd'))
+          {
+            text += (char) consume_non_newline();
+            return Lexeme{
+              .text = text,
+              .token = Token::float_literal,
+              .location = token_location,
+            };
+          }
           if (p && *p == 'i')
           {
             text += (char) consume_non_newline();
@@ -368,6 +383,24 @@ namespace basedlex
           return Lexeme{
             .text = text,
             .token = Token::int_literal,
+            .location = token_location,
+          };
+        }
+      case 3:
+        {
+          auto const p = _reader.peek();
+          if (p && *p <= 0x7F && std::isdigit((int) *p))
+          {
+            text += (char) consume_non_newline();
+            break;
+          }
+          if (p && (*p == 'f' || *p == 'd'))
+          {
+            text += (char) consume_non_newline();
+          }
+          return Lexeme{
+            .text = text,
+            .token = Token::float_literal,
             .location = token_location,
           };
         }

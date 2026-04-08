@@ -100,6 +100,20 @@ namespace based
           );
         }
         else if (i < param_types.size() &&
+                 std::holds_alternative<basedhlir::Float32_type>(
+                   param_types[i]->data
+                 ))
+        {
+          constant_args.push_back(std::stof(std::string{arg}));
+        }
+        else if (i < param_types.size() &&
+                 std::holds_alternative<basedhlir::Float64_type>(
+                   param_types[i]->data
+                 ))
+        {
+          constant_args.push_back(std::stod(std::string{arg}));
+        }
+        else if (i < param_types.size() &&
                  std::holds_alternative<basedhlir::Int64_type>(
                    param_types[i]->data
                  ))
@@ -125,18 +139,6 @@ namespace based
           {
             out << static_cast<std::int32_t>(value) << '\n';
           }
-          else if constexpr (std::is_same_v<T, std::int16_t>)
-          {
-            out << value << '\n';
-          }
-          else if constexpr (std::is_same_v<T, std::int32_t>)
-          {
-            out << value << '\n';
-          }
-          else if constexpr (std::is_same_v<T, std::int64_t>)
-          {
-            out << value << '\n';
-          }
           else if constexpr (std::is_same_v<T, bool>)
           {
             out << (value ? "true" : "false") << '\n';
@@ -152,6 +154,10 @@ namespace based
           else if constexpr (std::is_same_v<T, basedhlir::Function_value>)
           {
             out << "<function>\n";
+          }
+          else
+          {
+            out << value << '\n';
           }
         },
         result

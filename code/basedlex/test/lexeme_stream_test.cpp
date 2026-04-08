@@ -412,3 +412,92 @@ TEST_CASE("Lexeme_stream - ^mut column tracking")
   CHECK(y.text == "y");
   CHECK(y.location.column == 8);
 }
+
+TEST_CASE("Lexeme_stream lexes unsuffixed float literal")
+{
+  auto ss = std::istringstream{"3.14"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "3.14");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes f-suffixed float literal")
+{
+  auto ss = std::istringstream{"1.5f"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "1.5f");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes d-suffixed float literal")
+{
+  auto ss = std::istringstream{"1.5d"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "1.5d");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes integer with f suffix as float literal")
+{
+  auto ss = std::istringstream{"1f"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "1f");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes integer with d suffix as float literal")
+{
+  auto ss = std::istringstream{"1d"};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "1d");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream - integer with space before dot stays int")
+{
+  // "1 ." — the 1 is an int_literal; the dot is not consumed by the int lex
+  auto ss = std::istringstream{"1 ."};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const first = stream.lex();
+  CHECK(first.text == "1");
+  CHECK(first.token == basedlex::Token::int_literal);
+}
+
+TEST_CASE("Lexeme_stream - integer with trailing dot lexes as float literal")
+{
+  auto ss = std::istringstream{"1."};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "1.");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}
+
+TEST_CASE("Lexeme_stream lexes f suffix without trailing digits as float literal")
+{
+  auto ss = std::istringstream{"3.14f "};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "3.14f");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
+}

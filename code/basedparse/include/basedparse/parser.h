@@ -32,6 +32,8 @@ namespace basedparse
 
     basedast::Int_literal_expression parse_int_literal_expression();
 
+    basedast::Float_literal_expression parse_float_literal_expression();
+
     basedast::Identifier_expression parse_identifier_expression();
 
     basedast::Paren_expression parse_paren_expression();

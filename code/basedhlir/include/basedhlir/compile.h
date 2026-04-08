@@ -132,6 +132,8 @@ namespace basedhlir
 
     Operand compile_expression(basedast::Int_literal_expression const &expr);
 
+    Operand compile_expression(basedast::Float_literal_expression const &expr);
+
     Operand compile_expression(basedast::Identifier_expression const &expr);
 
     Operand compile_expression(basedast::Recurse_expression const &expr);
@@ -159,6 +161,11 @@ namespace basedhlir
     Operand compile_int_literal(
       std::string_view text,
       bool negate,
+      basedlex::Lexeme const &token
+    );
+
+    Operand compile_float_literal(
+      std::string_view text,
       basedlex::Lexeme const &token
     );
 

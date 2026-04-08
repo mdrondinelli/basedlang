@@ -1,7 +1,9 @@
 #include "run.h"
 
+#include <charconv>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <variant>
 #include <vector>
@@ -76,57 +78,101 @@ namespace based
         if (arg == "true")
         {
           constant_args.push_back(true);
+          continue;
         }
-        else if (arg == "false")
+        if (arg == "false")
         {
           constant_args.push_back(false);
+          continue;
         }
-        else if (i < param_types.size() &&
-                 std::holds_alternative<basedhlir::Int8_type>(
-                   param_types[i]->data
-                 ))
+        auto const *target_type =
+          (i < param_types.size()) ? param_types[i] : nullptr;
+        if (target_type &&
+            std::holds_alternative<basedhlir::Float32_type>(target_type->data))
         {
-          constant_args.push_back(
-            static_cast<std::int8_t>(std::stoi(std::string{arg}))
-          );
+          float val{};
+          auto const [ptr, ec] =
+            std::from_chars(arg.data(), arg.data() + arg.size(), val);
+          if (ec != std::errc{} || ptr != arg.data() + arg.size())
+          {
+            err << "error: invalid Float32 argument: " << arg << '\n';
+            return 1;
+          }
+          constant_args.push_back(val);
         }
-        else if (i < param_types.size() &&
-                 std::holds_alternative<basedhlir::Int16_type>(
-                   param_types[i]->data
-                 ))
-        {
-          constant_args.push_back(
-            static_cast<std::int16_t>(std::stoi(std::string{arg}))
-          );
-        }
-        else if (i < param_types.size() &&
-                 std::holds_alternative<basedhlir::Float32_type>(
-                   param_types[i]->data
-                 ))
-        {
-          constant_args.push_back(std::stof(std::string{arg}));
-        }
-        else if (i < param_types.size() &&
+        else if (target_type &&
                  std::holds_alternative<basedhlir::Float64_type>(
-                   param_types[i]->data
+                   target_type->data
                  ))
         {
-          constant_args.push_back(std::stod(std::string{arg}));
+          double val{};
+          auto const [ptr, ec] =
+            std::from_chars(arg.data(), arg.data() + arg.size(), val);
+          if (ec != std::errc{} || ptr != arg.data() + arg.size())
+          {
+            err << "error: invalid Float64 argument: " << arg << '\n';
+            return 1;
+          }
+          constant_args.push_back(val);
         }
-        else if (i < param_types.size() &&
-                 std::holds_alternative<basedhlir::Int64_type>(
-                   param_types[i]->data
+        else if (target_type &&
+                 std::holds_alternative<basedhlir::Int8_type>(target_type->data))
+        {
+          std::int32_t val{};
+          auto const [ptr, ec] =
+            std::from_chars(arg.data(), arg.data() + arg.size(), val);
+          if (ec != std::errc{} || ptr != arg.data() + arg.size() ||
+              val < std::numeric_limits<std::int8_t>::min() ||
+              val > std::numeric_limits<std::int8_t>::max())
+          {
+            err << "error: invalid Int8 argument: " << arg << '\n';
+            return 1;
+          }
+          constant_args.push_back(static_cast<std::int8_t>(val));
+        }
+        else if (target_type &&
+                 std::holds_alternative<basedhlir::Int16_type>(
+                   target_type->data
                  ))
         {
-          constant_args.push_back(
-            static_cast<std::int64_t>(std::stoll(std::string{arg}))
-          );
+          std::int32_t val{};
+          auto const [ptr, ec] =
+            std::from_chars(arg.data(), arg.data() + arg.size(), val);
+          if (ec != std::errc{} || ptr != arg.data() + arg.size() ||
+              val < std::numeric_limits<std::int16_t>::min() ||
+              val > std::numeric_limits<std::int16_t>::max())
+          {
+            err << "error: invalid Int16 argument: " << arg << '\n';
+            return 1;
+          }
+          constant_args.push_back(static_cast<std::int16_t>(val));
+        }
+        else if (target_type &&
+                 std::holds_alternative<basedhlir::Int64_type>(
+                   target_type->data
+                 ))
+        {
+          std::int64_t val{};
+          auto const [ptr, ec] =
+            std::from_chars(arg.data(), arg.data() + arg.size(), val);
+          if (ec != std::errc{} || ptr != arg.data() + arg.size())
+          {
+            err << "error: invalid Int64 argument: " << arg << '\n';
+            return 1;
+          }
+          constant_args.push_back(val);
         }
         else
         {
-          constant_args.push_back(
-            static_cast<std::int32_t>(std::stoi(std::string{arg}))
-          );
+          std::int32_t val{};
+          auto const [ptr, ec] =
+            std::from_chars(arg.data(), arg.data() + arg.size(), val);
+          if (ec != std::errc{} || ptr != arg.data() + arg.size())
+          {
+            err << "error: invalid Int32 argument: " << arg << '\n';
+            return 1;
+          }
+          constant_args.push_back(val);
         }
       }
 

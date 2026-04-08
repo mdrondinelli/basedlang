@@ -92,8 +92,8 @@ T evaluate_constant_as(
         (fixture.compiler),                     \
         (source)                                \
       ) == (expected)                           \
-    )                                           \
-    while (false)
+    );                                          \
+  } while (false)
 
 TEST_CASE("validate_int_literal")
 {

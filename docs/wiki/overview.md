@@ -1,36 +1,36 @@
 # Architecture and pipeline overview
 
-basedlang currently has five main modules:
+kalelang currently has five main modules:
 
-1. `basedlex`
-2. `basedast`
-3. `basedparse`
-4. `basedhlir`
-5. `based`
+1. `kalelex`
+2. `kaleast`
+3. `kaleparse`
+4. `kalehlir`
+5. `kale`
 
 The pipeline is simple:
 
 1. bytes are decoded into Unicode characters
 2. characters are lexed into `Lexeme` values
-3. lexemes are parsed into an AST (defined by `basedast`, produced by `basedparse`)
+3. lexemes are parsed into an AST (defined by `kaleast`, produced by `kaleparse`)
 4. the AST is compiled into HLIR with name resolution, type evaluation, diagnostics, and constant evaluation
-5. the `based` executable can currently interpret a chosen HLIR function
+5. the `kale` executable can currently interpret a chosen HLIR function
 
 ## Module boundaries
 
-### `basedlex`
+### `kalelex`
 
 Owns tokenization, source locations, and character/token lookahead.
 
-### `basedast`
+### `kaleast`
 
 Owns the AST data model: expression and statement node types, operator identity, and source spans over AST nodes.
 
-### `basedparse`
+### `kaleparse`
 
-Owns syntax: consuming lexemes and constructing the `basedast` data model. Owns precedence rules.
+Owns syntax: consuming lexemes and constructing the `kaleast` data model. Owns precedence rules.
 
-### `basedhlir`
+### `kalehlir`
 
 Owns semantics:
 
@@ -41,7 +41,7 @@ Owns semantics:
 - lowering to HLIR
 - HLIR interpretation
 
-### `based`
+### `kale`
 
 Owns command-line wiring. It is basically a throwaway tool at this point.
 

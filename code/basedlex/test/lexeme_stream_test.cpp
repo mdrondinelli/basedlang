@@ -446,7 +446,7 @@ TEST_CASE("Lexeme_stream lexes f64 float literal")
   CHECK(lexeme.token == basedlex::Token::float_literal);
 }
 
-TEST_CASE("Lexeme_stream - integer with dot but no following digit stays int")
+TEST_CASE("Lexeme_stream - integer with space before dot stays int")
 {
   // "1 ." — the 1 is an int_literal; the dot is not consumed by the int lex
   auto ss = std::istringstream{"1 ."};
@@ -456,6 +456,17 @@ TEST_CASE("Lexeme_stream - integer with dot but no following digit stays int")
   auto const first = stream.lex();
   CHECK(first.text == "1");
   CHECK(first.token == basedlex::Token::int_literal);
+}
+
+TEST_CASE("Lexeme_stream - integer with trailing dot lexes as float literal")
+{
+  auto ss = std::istringstream{"1."};
+  auto binary = basedlex::Istream_binary_stream{&ss};
+  auto chars = basedlex::Utf8_char_stream{&binary};
+  auto stream = basedlex::Lexeme_stream{&chars};
+  auto const lexeme = stream.lex();
+  CHECK(lexeme.text == "1.");
+  CHECK(lexeme.token == basedlex::Token::float_literal);
 }
 
 TEST_CASE("Lexeme_stream throws on bare f suffix in float literal")

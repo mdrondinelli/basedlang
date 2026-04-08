@@ -347,13 +347,9 @@ namespace basedlex
           }
           if (p && *p == '.')
           {
-            auto const p1 = _reader.peek(1);
-            if (p1 && *p1 <= 0x7F && std::isdigit((int) *p1))
-            {
-              text += (char) consume_non_newline();
-              state = 3;
-              break;
-            }
+            text += (char) consume_non_newline();
+            state = 3;
+            break;
           }
           if (p && *p == 'i')
           {

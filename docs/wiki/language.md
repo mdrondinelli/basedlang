@@ -6,14 +6,14 @@ This page is the current language-surface reference.
 
 ### Fully implemented today
 
-The features marked as implemented below are supported by the current parser and by `kalehlir`.
+The features marked as implemented below are supported by the current parser and by `bensonhlir`.
 
-### Parsed or designed, but not fully implemented in `kalehlir`
+### Parsed or designed, but not fully implemented in `bensonhlir`
 
 These surface forms exist in the parser or language design, but are not fully supported semantically yet:
 
 - `let mut` bindings parse, but mutable bindings are not implemented
-- `while` statements parse, but are rejected in `kalehlir`
+- `while` statements parse, but are rejected in `bensonhlir`
 - postfix dereference `p^` parses, but dereference is rejected in expression compilation
 - index expressions `arr[i]` parse, but index expression compilation is not implemented
 - assignment expressions parse as operators, but are not implemented semantically
@@ -24,7 +24,7 @@ When future language work is still in flux, keep it separate from the fully impl
 
 A program is currently a sequence of top-level `let` bindings. In practice, programs are usually built from named function definitions:
 
-```kale
+```benson
 let main = fn(): Int32 => {
   return 0;
 };
@@ -40,7 +40,7 @@ Statements appear inside block bodies:
 - `return <expr>;`
 - `<expr>;`
 
-Parsed but not fully implemented in `kalehlir`:
+Parsed but not fully implemented in `bensonhlir`:
 
 - `let mut x = <expr>;`
 - `while <expr> { ... }`
@@ -61,11 +61,11 @@ Implemented primary expression forms:
 - `if` expressions: `if condition { ... } else { ... }`
 - function expressions with explicit return type: `fn(params): ReturnType => expression`
 
-Parsed but not fully implemented in `kalehlir`:
+Parsed but not fully implemented in `bensonhlir`:
 
 Function parameters are immutable by default. Parameter bindings may be written with `mut`:
 
-```kale
+```benson
 let f = fn(mut x: Int32): Void => { };
 ```
 
@@ -87,7 +87,7 @@ Precedence from tightest to loosest:
 
 Binary operators are left-associative except assignment, which is right-associative.
 
-Parsed but not fully implemented in `kalehlir`:
+Parsed but not fully implemented in `bensonhlir`:
 
 - assignment expressions such as `a = b`
 
@@ -145,7 +145,7 @@ The `[n]` form accepts any compile-time constant integer expression as the size,
 
 Function with parameters and return type:
 
-```kale
+```benson
 let add = fn(a: Int32, b: Int32): Int32 => {
   return a + b;
 };
@@ -153,19 +153,19 @@ let add = fn(a: Int32, b: Int32): Int32 => {
 
 Function taking a pointer to a mutable array type:
 
-```kale
+```benson
 let zero_fill = fn(buf: ^mut []Int32, len: Int32): Void => { };
 ```
 
 Nested calls:
 
-```kale
+```benson
 let x = first(id(42), 0);
 ```
 
 Block expression:
 
-```kale
+```benson
 let x = {
   let a = 1;
   let b = 2;
@@ -175,35 +175,35 @@ let x = {
 
 Block with no tail expression:
 
-```kale
+```benson
 { do_something(); };
 ```
 
 If / else expression:
 
-```kale
+```benson
 let max = if a > b { a } else { b };
 ```
 
 Else-if chain:
 
-```kale
+```benson
 let sign = if x > 0 { 1 } else if x < 0 { -1 } else { 0 };
 ```
 
 While loop:
 
-```kale
+```benson
 while n > 0 {
   n = n - 1;
 }
 ```
 
-This syntax parses, but `while` is not fully implemented in `kalehlir` yet.
+This syntax parses, but `while` is not fully implemented in `bensonhlir` yet.
 
 Recursive call with `recurse`:
 
-```kale
+```benson
 let factorial = fn(n: Int32): Int32 => {
   return if n == 0 { 1 } else { n * recurse(n - 1) };
 };
@@ -211,13 +211,13 @@ let factorial = fn(n: Int32): Int32 => {
 
 Dereference and unary/binary operators:
 
-```kale
+```benson
 let val = p^;
 let first = buf[0]^;
 let y = -x + 2 * (a - b);
 ```
 
-Only the arithmetic and comparison forms here are fully implemented today. Dereference and indexing syntax exist, but are not fully implemented in `kalehlir`.
+Only the arithmetic and comparison forms here are fully implemented today. Dereference and indexing syntax exist, but are not fully implemented in `bensonhlir`.
 
 ## Keywords
 

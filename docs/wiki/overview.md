@@ -1,36 +1,36 @@
 # Architecture and pipeline overview
 
-kalelang currently has five main modules:
+bensonlang currently has five main modules:
 
-1. `kalelex`
-2. `kaleast`
-3. `kaleparse`
-4. `kalehlir`
-5. `kale`
+1. `bensonlex`
+2. `bensonast`
+3. `bensonparse`
+4. `bensonhlir`
+5. `benson`
 
 The pipeline is simple:
 
 1. bytes are decoded into Unicode characters
 2. characters are lexed into `Lexeme` values
-3. lexemes are parsed into an AST (defined by `kaleast`, produced by `kaleparse`)
+3. lexemes are parsed into an AST (defined by `bensonast`, produced by `bensonparse`)
 4. the AST is compiled into HLIR with name resolution, type evaluation, diagnostics, and constant evaluation
-5. the `kale` executable can currently interpret a chosen HLIR function
+5. the `benson` executable can currently interpret a chosen HLIR function
 
 ## Module boundaries
 
-### `kalelex`
+### `bensonlex`
 
 Owns tokenization, source locations, and character/token lookahead.
 
-### `kaleast`
+### `bensonast`
 
 Owns the AST data model: expression and statement node types, operator identity, and source spans over AST nodes.
 
-### `kaleparse`
+### `bensonparse`
 
-Owns syntax: consuming lexemes and constructing the `kaleast` data model. Owns precedence rules.
+Owns syntax: consuming lexemes and constructing the `bensonast` data model. Owns precedence rules.
 
-### `kalehlir`
+### `bensonhlir`
 
 Owns semantics:
 
@@ -41,7 +41,7 @@ Owns semantics:
 - lowering to HLIR
 - HLIR interpretation
 
-### `kale`
+### `benson`
 
 Owns command-line wiring. It is basically a throwaway tool at this point.
 

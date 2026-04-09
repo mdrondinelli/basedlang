@@ -1,0 +1,41 @@
+#ifndef BASEDLEX_LEXEME_STREAM_H
+#define BASEDLEX_LEXEME_STREAM_H
+
+#include <stdexcept>
+
+#include "char_stream_reader.h"
+#include "lexeme.h"
+
+namespace bensonlex
+{
+
+  class Lexeme_stream
+  {
+  public:
+    class Lex_error: public std::runtime_error
+    {
+    public:
+      explicit Lex_error(Source_location location)
+          : std::runtime_error{"lex error"}, location{location}
+      {
+      }
+
+      Source_location location;
+    };
+
+    explicit Lexeme_stream(Char_stream *stream) noexcept;
+
+    Lexeme lex();
+
+  private:
+    void consume_newline();
+
+    char32_t consume_non_newline();
+
+    Char_stream_reader _reader;
+    Source_location _location;
+  };
+
+} // namespace bensonlex
+
+#endif // BASEDLEX_LEXEME_STREAM_H

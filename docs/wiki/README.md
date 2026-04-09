@@ -1,4 +1,4 @@
-# kalelang Wiki
+# bensonlang Wiki
 
 This wiki is the maintainer-facing map of the project.
 
@@ -14,11 +14,11 @@ The pages below are organized to support fast navigation rather than linear read
 - [Tutorial: first change](./tutorial-first-change.md)
 - [Language reference](./language.md)
 - [Architecture and pipeline overview](./overview.md)
-- [`kalelex`](./kalelex.md)
-- [`kaleast`](./kaleast.md)
-- [`kaleparse`](./kaleparse.md)
-- [`kalehlir`](./kalehlir.md)
-- [`kale`](./kale.md)
+- [`bensonlex`](./bensonlex.md)
+- [`bensonast`](./bensonast.md)
+- [`bensonparse`](./bensonparse.md)
+- [`bensonhlir`](./bensonhlir.md)
+- [`benson`](./benson.md)
 - [Project structure](./project-structure.md)
 - [Conventions](./conventions.md)
 - [Formatting](./formatting.md)
@@ -34,7 +34,7 @@ Read these first:
 
 - [PR review guide](./pr-review-guide.md)
 - [Architecture and pipeline overview](./overview.md)
-- [`kalehlir`](./kalehlir.md)
+- [`bensonhlir`](./bensonhlir.md)
 
 Then jump to the module page for the code being changed.
 
@@ -55,4 +55,4 @@ Then jump to the module page for the area you are editing.
 Use this sequence:
 
 1. [Architecture and pipeline overview](./overview.md)
-2. [`kalelex`](./kalelex.md), [`kaleparse`](./kaleparse.md), [`kalehlir`](./kalehlir.md), or [`kale`](./kale.md)
+2. [`bensonlex`](./bensonlex.md), [`bensonparse`](./bensonparse.md), [`bensonhlir`](./bensonhlir.md), or [`benson`](./benson.md)

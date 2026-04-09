@@ -13,16 +13,16 @@ Use this order for most PRs:
 
 ## Which page to open
 
-- Lexer changes: [`kalelex`](./kalelex.md)
-- AST changes: [`kaleast`](./kaleast.md)
-- Parser changes: [`kaleparse`](./kaleparse.md)
-- Semantic, lowering, or interpreter changes: [`kalehlir`](./kalehlir.md)
-- CLI wiring changes: [`kale`](./kale.md)
+- Lexer changes: [`bensonlex`](./bensonlex.md)
+- AST changes: [`bensonast`](./bensonast.md)
+- Parser changes: [`bensonparse`](./bensonparse.md)
+- Semantic, lowering, or interpreter changes: [`bensonhlir`](./bensonhlir.md)
+- CLI wiring changes: [`benson`](./benson.md)
 - Cross-cutting changes: [Architecture and pipeline overview](./overview.md)
 
 ## Module-specific review heuristics
 
-### `kalelex`
+### `bensonlex`
 
 Look for:
 
@@ -31,7 +31,7 @@ Look for:
 - source-location correctness
 - lookahead/buffering correctness
 
-### `kaleast`
+### `bensonast`
 
 Look for:
 
@@ -39,7 +39,7 @@ Look for:
 - implementation of `span_of` for any new AST node
 
 
-### `kaleparse`
+### `bensonparse`
 
 Look for:
 
@@ -47,7 +47,7 @@ Look for:
 - precedence and associativity consistency
 - edge cases which could parse in an unexpected way
 
-### `kalehlir`
+### `bensonhlir`
 
 Look for:
 
@@ -59,7 +59,7 @@ Look for:
 - diagnostic quality
 - interpreter consistency if executable semantics changed
 
-### `kale`
+### `benson`
 
 Look for:
 

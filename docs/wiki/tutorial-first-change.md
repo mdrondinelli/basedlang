@@ -52,31 +52,31 @@ Start from "which layer owns this behavior?"
 
 Understand:
 
-- [`kalelex`](./kalelex.md)
+- [`bensonlex`](./bensonlex.md)
 
 ### If you are changing parsing
 
 Understand:
 
-- [`kaleparse`](./kaleparse.md)
+- [`bensonparse`](./bensonparse.md)
 
 ### If you are changing semantics or lowering
 
 Understand:
 
-- [`kalehlir`](./kalehlir.md)
+- [`bensonhlir`](./bensonhlir.md)
 
 ### If you are changing interpretation
 
 Understand:
 
-- [`kalehlir`](./kalehlir.md)
+- [`bensonhlir`](./bensonhlir.md)
 
 ### If you are changing executable wiring
 
 Understand:
 
-- [`kale`](./kale.md)
+- [`benson`](./benson.md)
 
 ## Step 4: Make the smallest coherent change
 
@@ -110,9 +110,9 @@ cmake --build build
 Run the relevant test binary directly:
 
 ```sh
-./build/kalelex-tests
-./build/kaleparse-tests
-./build/kalehlir-tests
+./build/bensonlex-tests
+./build/bensonparse-tests
+./build/bensonhlir-tests
 ```
 
 Before committing, format the changed code. See [Formatting](./formatting.md).

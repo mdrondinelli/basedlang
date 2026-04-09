@@ -4,25 +4,25 @@ This page describes the repository in stable conceptual terms. It intentionally 
 
 ## Main code areas
 
-### `code/kalelex`
+### `code/bensonlex`
 
 The lexer library. Owns character input, buffering/lookahead, tokenization, and source-location tracking at the token level.
 
-See [`kalelex`](./kalelex.md).
+See [`bensonlex`](./bensonlex.md).
 
-### `code/kaleast`
+### `code/bensonast`
 
 The AST library. Owns the data model for all syntax forms: expression and statement node types, operator identity, and source-span utilities.
 
-See [`kaleast`](./kaleast.md).
+See [`bensonast`](./bensonast.md).
 
-### `code/kaleparse`
+### `code/bensonparse`
 
-The parser library. Owns expression precedence, statement parsing, and AST construction via the types defined in `kaleast`.
+The parser library. Owns expression precedence, statement parsing, and AST construction via the types defined in `bensonast`.
 
-See [`kaleparse`](./kaleparse.md).
+See [`bensonparse`](./bensonparse.md).
 
-### `code/kalehlir`
+### `code/bensonhlir`
 
 The semantic and execution core. Owns:
 
@@ -33,13 +33,13 @@ The semantic and execution core. Owns:
 - lowering to HLIR
 - interpretation of HLIR
 
-See [`kalehlir`](./kalehlir.md).
+See [`bensonhlir`](./bensonhlir.md).
 
-### `code/kale`
+### `code/benson`
 
 The CLI entrypoint.
 
-See [`kale`](./kale.md).
+See [`benson`](./benson.md).
 
 ## Supporting areas
 

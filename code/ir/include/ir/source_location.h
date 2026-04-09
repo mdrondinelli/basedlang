@@ -1,12 +1,12 @@
 #ifndef BASEDHLIR_SOURCE_LOCATION_H
 #define BASEDHLIR_SOURCE_LOCATION_H
 
-#include <ast/source_location.h>
+#include <lexing/source_location.h>
 
 namespace benson::ir
 {
 
-  using ast::Source_location;
+  using benson::Source_location;
 
 } // namespace benson::ir
 

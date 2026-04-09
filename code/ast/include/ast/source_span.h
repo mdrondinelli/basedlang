@@ -2,7 +2,7 @@
 #define BASEDAST_SOURCE_SPAN_H
 
 #include "ast.h"
-#include "source_location.h"
+#include <lexing/source_location.h>
 
 namespace benson::ast
 {

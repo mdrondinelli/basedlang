@@ -49,69 +49,69 @@ namespace benson::ast
     }
   }
 
-  std::optional<Operator> get_prefix_operator(benson::Token token)
+  std::optional<Operator> get_prefix_operator(Token token)
   {
     switch (token)
     {
-    case benson::Token::ampersand:
+    case Token::ampersand:
       return Operator::address_of;
-    case benson::Token::ampersand_mut:
+    case Token::ampersand_mut:
       return Operator::address_of_mut;
-    case benson::Token::caret:
+    case Token::caret:
       return Operator::pointer_to;
-    case benson::Token::caret_mut:
+    case Token::caret_mut:
       return Operator::pointer_to_mut;
-    case benson::Token::plus:
+    case Token::plus:
       return Operator::unary_plus;
-    case benson::Token::minus:
+    case Token::minus:
       return Operator::unary_minus;
     default:
       return std::nullopt;
     }
   }
 
-  std::optional<Operator> get_postfix_operator(benson::Token token)
+  std::optional<Operator> get_postfix_operator(Token token)
   {
     switch (token)
     {
-    case benson::Token::lparen:
+    case Token::lparen:
       return Operator::call;
-    case benson::Token::lbracket:
+    case Token::lbracket:
       return Operator::index;
-    case benson::Token::caret:
+    case Token::caret:
       return Operator::dereference;
     default:
       return std::nullopt;
     }
   }
 
-  std::optional<Operator> get_binary_operator(benson::Token token)
+  std::optional<Operator> get_binary_operator(Token token)
   {
     switch (token)
     {
-    case benson::Token::star:
+    case Token::star:
       return Operator::multiply;
-    case benson::Token::slash:
+    case Token::slash:
       return Operator::divide;
-    case benson::Token::percent:
+    case Token::percent:
       return Operator::modulo;
-    case benson::Token::plus:
+    case Token::plus:
       return Operator::add;
-    case benson::Token::minus:
+    case Token::minus:
       return Operator::subtract;
-    case benson::Token::lt:
+    case Token::lt:
       return Operator::less;
-    case benson::Token::le:
+    case Token::le:
       return Operator::less_eq;
-    case benson::Token::gt:
+    case Token::gt:
       return Operator::greater;
-    case benson::Token::ge:
+    case Token::ge:
       return Operator::greater_eq;
-    case benson::Token::eq_eq:
+    case Token::eq_eq:
       return Operator::equal;
-    case benson::Token::bang_eq:
+    case Token::bang_eq:
       return Operator::not_equal;
-    case benson::Token::eq:
+    case Token::eq:
       return Operator::assign;
     default:
       return std::nullopt;

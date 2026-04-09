@@ -19,7 +19,7 @@ namespace benson::ast
   /// Returns the source span of a lexeme.
   /// @c start points to the first character of the lexeme text; @c end points
   /// to the last character.
-  Source_span span_of(benson::Lexeme const &lexeme);
+  Source_span span_of(Lexeme const &lexeme);
 
   /// Returns the smallest span whose @c start comes from @p begin and whose
   /// @c end comes from @p end.  Use this to build the span of a composite

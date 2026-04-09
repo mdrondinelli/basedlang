@@ -19,37 +19,37 @@ namespace benson::ast
 
   struct Int_literal_expression
   {
-    benson::Lexeme literal;
+    Lexeme literal;
   };
 
   struct Float_literal_expression
   {
-    benson::Lexeme literal;
+    Lexeme literal;
   };
 
   struct Identifier_expression
   {
-    benson::Lexeme identifier;
+    Lexeme identifier;
   };
 
   struct Recurse_expression
   {
-    benson::Lexeme kw_recurse;
+    Lexeme kw_recurse;
   };
 
   struct Fn_expression
   {
     struct Parameter_declaration
     {
-      std::optional<benson::Lexeme> kw_mut;
-      benson::Lexeme name;
-      benson::Lexeme colon;
+      std::optional<Lexeme> kw_mut;
+      Lexeme name;
+      Lexeme colon;
       std::unique_ptr<Expression> type;
     };
 
     struct Return_type_specifier
     {
-      benson::Lexeme colon;
+      Lexeme colon;
       std::unique_ptr<Expression> type;
     };
 
@@ -61,13 +61,13 @@ namespace benson::ast
 
     Fn_expression &operator=(Fn_expression &&) noexcept = default;
 
-    benson::Lexeme kw_fn;
-    benson::Lexeme lparen;
+    Lexeme kw_fn;
+    Lexeme lparen;
     std::vector<Parameter_declaration> parameters;
-    std::vector<benson::Lexeme> parameter_commas;
-    benson::Lexeme rparen;
+    std::vector<Lexeme> parameter_commas;
+    Lexeme rparen;
     Return_type_specifier return_type_specifier;
-    benson::Lexeme arrow;
+    Lexeme arrow;
     std::unique_ptr<Expression> body;
   };
 
@@ -81,9 +81,9 @@ namespace benson::ast
 
     Paren_expression &operator=(Paren_expression &&) noexcept = default;
 
-    benson::Lexeme lparen;
+    Lexeme lparen;
     std::unique_ptr<Expression> inner;
-    benson::Lexeme rparen;
+    Lexeme rparen;
   };
 
   struct Prefix_expression
@@ -96,7 +96,7 @@ namespace benson::ast
 
     Prefix_expression &operator=(Prefix_expression &&) noexcept = default;
 
-    benson::Lexeme op;
+    Lexeme op;
     std::unique_ptr<Expression> operand;
   };
 
@@ -111,7 +111,7 @@ namespace benson::ast
     Postfix_expression &operator=(Postfix_expression &&) noexcept = default;
 
     std::unique_ptr<Expression> operand;
-    benson::Lexeme op;
+    Lexeme op;
   };
 
   struct Binary_expression
@@ -125,7 +125,7 @@ namespace benson::ast
     Binary_expression &operator=(Binary_expression &&) noexcept = default;
 
     std::unique_ptr<Expression> left;
-    benson::Lexeme op;
+    Lexeme op;
     std::unique_ptr<Expression> right;
   };
 
@@ -140,10 +140,10 @@ namespace benson::ast
     Call_expression &operator=(Call_expression &&) noexcept = default;
 
     std::unique_ptr<Expression> callee;
-    benson::Lexeme lparen;
+    Lexeme lparen;
     std::vector<Expression> arguments;
-    std::vector<benson::Lexeme> argument_commas;
-    benson::Lexeme rparen;
+    std::vector<Lexeme> argument_commas;
+    Lexeme rparen;
   };
 
   struct Index_expression
@@ -157,9 +157,9 @@ namespace benson::ast
     Index_expression &operator=(Index_expression &&) noexcept = default;
 
     std::unique_ptr<Expression> operand;
-    benson::Lexeme lbracket;
+    Lexeme lbracket;
     std::unique_ptr<Expression> index;
-    benson::Lexeme rbracket;
+    Lexeme rbracket;
   };
 
   struct Prefix_bracket_expression
@@ -173,9 +173,9 @@ namespace benson::ast
     Prefix_bracket_expression &
     operator=(Prefix_bracket_expression &&) noexcept = default;
 
-    benson::Lexeme lbracket;
+    Lexeme lbracket;
     std::unique_ptr<Expression> size;
-    benson::Lexeme rbracket;
+    Lexeme rbracket;
     std::unique_ptr<Expression> operand;
   };
 
@@ -189,10 +189,10 @@ namespace benson::ast
 
     Block_expression &operator=(Block_expression &&) noexcept = default;
 
-    benson::Lexeme lbrace;
+    Lexeme lbrace;
     std::vector<Statement> statements;
     std::unique_ptr<Expression> tail;
-    benson::Lexeme rbrace;
+    Lexeme rbrace;
   };
 
   struct If_expression
@@ -207,15 +207,15 @@ namespace benson::ast
 
       Else_if_part &operator=(Else_if_part &&) noexcept = default;
 
-      benson::Lexeme kw_else;
-      benson::Lexeme kw_if;
+      Lexeme kw_else;
+      Lexeme kw_if;
       std::unique_ptr<Expression> condition;
       Block_expression body;
     };
 
     struct Else_part
     {
-      benson::Lexeme kw_else;
+      Lexeme kw_else;
       Block_expression body;
     };
 
@@ -227,7 +227,7 @@ namespace benson::ast
 
     If_expression &operator=(If_expression &&) noexcept = default;
 
-    benson::Lexeme kw_if;
+    Lexeme kw_if;
     std::unique_ptr<Expression> condition;
     Block_expression then_block;
     std::vector<Else_if_part> else_if_parts;
@@ -267,32 +267,32 @@ namespace benson::ast
 
     While_statement &operator=(While_statement &&) noexcept = default;
 
-    benson::Lexeme kw_while;
+    Lexeme kw_while;
     std::unique_ptr<Expression> condition;
     Block_expression body;
   };
 
   struct Let_statement
   {
-    benson::Lexeme kw_let;
-    std::optional<benson::Lexeme> kw_mut;
-    benson::Lexeme name;
-    benson::Lexeme eq;
+    Lexeme kw_let;
+    std::optional<Lexeme> kw_mut;
+    Lexeme name;
+    Lexeme eq;
     Expression initializer;
-    benson::Lexeme semicolon;
+    Lexeme semicolon;
   };
 
   struct Return_statement
   {
-    benson::Lexeme kw_return;
+    Lexeme kw_return;
     Expression value;
-    benson::Lexeme semicolon;
+    Lexeme semicolon;
   };
 
   struct Expression_statement
   {
     Expression expression;
-    benson::Lexeme semicolon;
+    Lexeme semicolon;
   };
 
   struct Statement

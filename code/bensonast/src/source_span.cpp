@@ -5,7 +5,7 @@
 namespace benson::ast
 {
 
-  Source_span span_of(benson::Lexeme const &lexeme)
+  Source_span span_of(Lexeme const &lexeme)
   {
     auto const end = Source_location{
       .line = lexeme.location.line,

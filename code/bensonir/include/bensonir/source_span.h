@@ -6,7 +6,7 @@
 namespace benson::ir
 {
 
-  using benson::ast::Source_span;
+  using ast::Source_span;
 
 } // namespace benson::ir
 

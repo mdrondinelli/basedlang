@@ -6,7 +6,7 @@
 namespace benson::ir
 {
 
-  using benson::ast::Source_location;
+  using ast::Source_location;
 
 } // namespace benson::ir
 

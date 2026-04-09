@@ -28,24 +28,24 @@ namespace benson
     std::ostream &err
   )
   {
-    auto bs = benson::Istream_binary_stream{&input};
-    auto cs = benson::Utf8_char_stream{&bs};
-    auto ls = benson::Lexeme_stream{&cs};
-    auto lr = benson::Lexeme_stream_reader{&ls};
-    auto parser = benson::Parser{&lr};
+    auto bs = Istream_binary_stream{&input};
+    auto cs = Utf8_char_stream{&bs};
+    auto ls = Lexeme_stream{&cs};
+    auto lr = Lexeme_stream_reader{&ls};
+    auto parser = Parser{&lr};
 
-    benson::ast::Translation_unit ast;
+    ast::Translation_unit ast;
     try
     {
       ast = parser.parse_translation_unit();
     }
-    catch (benson::Lexeme_stream::Lex_error const &e)
+    catch (Lexeme_stream::Lex_error const &e)
     {
       err << "lex error at " << e.location.line << ":" << e.location.column
           << '\n';
       return 1;
     }
-    catch (benson::Utf8_char_stream::Decode_error const &e)
+    catch (Utf8_char_stream::Decode_error const &e)
     {
       err << e.what() << '\n';
       return 1;
@@ -56,10 +56,10 @@ namespace benson
       return 1;
     }
 
-    auto types = benson::ir::Type_pool{};
+    auto types = ir::Type_pool{};
     try
     {
-      auto const tu = benson::ir::compile(ast, &types);
+      auto const tu = ir::compile(ast, &types);
       auto const it = tu.function_table.find(std::string{function_name});
       if (it == tu.function_table.end())
       {
@@ -69,8 +69,8 @@ namespace benson
 
       auto const &func = *it->second;
       auto const &param_types =
-        std::get<benson::ir::Function_type>(func.type->data).parameter_types;
-      auto constant_args = std::vector<benson::ir::Constant_value>{};
+        std::get<ir::Function_type>(func.type->data).parameter_types;
+      auto constant_args = std::vector<ir::Constant_value>{};
       constant_args.reserve(args.size());
       for (auto i = std::size_t{}; i < args.size(); ++i)
       {
@@ -88,7 +88,7 @@ namespace benson
         auto const *target_type =
           (i < param_types.size()) ? param_types[i] : nullptr;
         if (target_type &&
-            std::holds_alternative<benson::ir::Float32_type>(target_type->data))
+            std::holds_alternative<ir::Float32_type>(target_type->data))
         {
           float val{};
           auto const [ptr, ec] =
@@ -101,7 +101,7 @@ namespace benson
           constant_args.push_back(val);
         }
         else if (target_type &&
-                 std::holds_alternative<benson::ir::Float64_type>(
+                 std::holds_alternative<ir::Float64_type>(
                    target_type->data
                  ))
         {
@@ -116,7 +116,7 @@ namespace benson
           constant_args.push_back(val);
         }
         else if (target_type &&
-                 std::holds_alternative<benson::ir::Int8_type>(target_type->data))
+                 std::holds_alternative<ir::Int8_type>(target_type->data))
         {
           std::int32_t val{};
           auto const [ptr, ec] =
@@ -131,7 +131,7 @@ namespace benson
           constant_args.push_back(static_cast<std::int8_t>(val));
         }
         else if (target_type &&
-                 std::holds_alternative<benson::ir::Int16_type>(
+                 std::holds_alternative<ir::Int16_type>(
                    target_type->data
                  ))
         {
@@ -148,7 +148,7 @@ namespace benson
           constant_args.push_back(static_cast<std::int16_t>(val));
         }
         else if (target_type &&
-                 std::holds_alternative<benson::ir::Int64_type>(
+                 std::holds_alternative<ir::Int64_type>(
                    target_type->data
                  ))
         {
@@ -176,7 +176,7 @@ namespace benson
         }
       }
 
-      auto const result = benson::ir::interpret(func, constant_args);
+      auto const result = ir::interpret(func, constant_args);
       std::visit(
         [&](auto const &value)
         {
@@ -189,15 +189,15 @@ namespace benson
           {
             out << (value ? "true" : "false") << '\n';
           }
-          else if constexpr (std::is_same_v<T, benson::ir::Void_value>)
+          else if constexpr (std::is_same_v<T, ir::Void_value>)
           {
             out << "void\n";
           }
-          else if constexpr (std::is_same_v<T, benson::ir::Type_value>)
+          else if constexpr (std::is_same_v<T, ir::Type_value>)
           {
             out << "<type>\n";
           }
-          else if constexpr (std::is_same_v<T, benson::ir::Function_value>)
+          else if constexpr (std::is_same_v<T, ir::Function_value>)
           {
             out << "<function>\n";
           }
@@ -209,7 +209,7 @@ namespace benson
         result
       );
     }
-    catch (benson::ir::Compilation_failure const &e)
+    catch (ir::Compilation_failure const &e)
     {
       err << e.what();
       return 1;

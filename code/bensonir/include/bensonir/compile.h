@@ -85,7 +85,7 @@ namespace benson::ir
   public:
     explicit Compilation_context(Type_pool *type_pool);
 
-    Translation_unit compile(benson::ast::Translation_unit const &ast);
+    Translation_unit compile(ast::Translation_unit const &ast);
 
     Type *type_of_constant(Constant_value const &value);
 
@@ -94,25 +94,25 @@ namespace benson::ir
     template <typename T>
     [[noreturn]] void emit_error(std::string message, T const &node)
     {
-      emit_error(std::move(message), benson::ast::span_of(node));
+      emit_error(std::move(message), ast::span_of(node));
     }
 
-    Symbol *try_lookup_identifier(benson::Lexeme const &identifier);
+    Symbol *try_lookup_identifier(Lexeme const &identifier);
 
-    Symbol *lookup_identifier(benson::Lexeme const &identifier);
+    Symbol *lookup_identifier(Lexeme const &identifier);
 
     Unary_operator_overload *
-    find_unary_overload(benson::ast::Operator op, Type *operand_type);
+    find_unary_overload(ast::Operator op, Type *operand_type);
 
     Binary_operator_overload *
-    find_binary_overload(benson::ast::Operator op, Type *lhs_type, Type *rhs_type);
+    find_binary_overload(ast::Operator op, Type *lhs_type, Type *rhs_type);
 
     bool is_type_compatible(Type *parameter_type, Type *argument_type);
 
-    Type *compile_type_expression(benson::ast::Expression const &expr);
+    Type *compile_type_expression(ast::Expression const &expr);
 
     Constant_value
-    evaluate_constant_expression(benson::ast::Expression const &expr);
+    evaluate_constant_expression(ast::Expression const &expr);
 
     Basic_block *new_block();
 
@@ -128,58 +128,58 @@ namespace benson::ir
 
     void emit(Instruction instruction);
 
-    Operand compile_expression(benson::ast::Expression const &expr);
+    Operand compile_expression(ast::Expression const &expr);
 
-    Operand compile_expression(benson::ast::Int_literal_expression const &expr);
+    Operand compile_expression(ast::Int_literal_expression const &expr);
 
-    Operand compile_expression(benson::ast::Float_literal_expression const &expr);
+    Operand compile_expression(ast::Float_literal_expression const &expr);
 
-    Operand compile_expression(benson::ast::Identifier_expression const &expr);
+    Operand compile_expression(ast::Identifier_expression const &expr);
 
-    Operand compile_expression(benson::ast::Recurse_expression const &expr);
+    Operand compile_expression(ast::Recurse_expression const &expr);
 
-    Operand compile_expression(benson::ast::Fn_expression const &expr);
+    Operand compile_expression(ast::Fn_expression const &expr);
 
-    Operand compile_expression(benson::ast::Paren_expression const &expr);
+    Operand compile_expression(ast::Paren_expression const &expr);
 
-    Operand compile_expression(benson::ast::Prefix_expression const &expr);
+    Operand compile_expression(ast::Prefix_expression const &expr);
 
-    Operand compile_expression(benson::ast::Postfix_expression const &expr);
+    Operand compile_expression(ast::Postfix_expression const &expr);
 
-    Operand compile_expression(benson::ast::Binary_expression const &expr);
+    Operand compile_expression(ast::Binary_expression const &expr);
 
-    Operand compile_expression(benson::ast::Call_expression const &expr);
+    Operand compile_expression(ast::Call_expression const &expr);
 
-    Operand compile_expression(benson::ast::Index_expression const &expr);
+    Operand compile_expression(ast::Index_expression const &expr);
 
-    Operand compile_expression(benson::ast::Prefix_bracket_expression const &expr);
+    Operand compile_expression(ast::Prefix_bracket_expression const &expr);
 
-    Operand compile_expression(benson::ast::Block_expression const &expr);
+    Operand compile_expression(ast::Block_expression const &expr);
 
-    Operand compile_expression(benson::ast::If_expression const &expr);
+    Operand compile_expression(ast::If_expression const &expr);
 
     Operand compile_int_literal(
       std::string_view text,
       bool negate,
-      benson::Lexeme const &token
+      Lexeme const &token
     );
 
     Operand compile_float_literal(
       std::string_view text,
-      benson::Lexeme const &token
+      Lexeme const &token
     );
 
-    void compile_statement(benson::ast::Statement const &stmt);
+    void compile_statement(ast::Statement const &stmt);
 
-    void compile_statement(benson::ast::Let_statement const &stmt);
+    void compile_statement(ast::Let_statement const &stmt);
 
-    void compile_statement(benson::ast::While_statement const &stmt);
+    void compile_statement(ast::While_statement const &stmt);
 
-    void compile_statement(benson::ast::Return_statement const &stmt);
+    void compile_statement(ast::Return_statement const &stmt);
 
-    void compile_statement(benson::ast::Expression_statement const &stmt);
+    void compile_statement(ast::Expression_statement const &stmt);
 
-    Function *compile_function(benson::ast::Fn_expression const &expr);
+    Function *compile_function(ast::Fn_expression const &expr);
 
     bool is_top_level() const;
 
@@ -192,19 +192,19 @@ namespace benson::ir
     std::vector<Type *> _register_types;
     std::vector<Diagnostic> _diagnostics;
     std::unordered_map<
-      benson::ast::Operator,
+      ast::Operator,
       std::vector<std::unique_ptr<Unary_operator_overload>>
     >
       _unary_overloads;
     std::unordered_map<
-      benson::ast::Operator,
+      ast::Operator,
       std::vector<std::unique_ptr<Binary_operator_overload>>
     >
       _binary_overloads;
   };
 
   Translation_unit
-  compile(benson::ast::Translation_unit const &ast, Type_pool *type_pool);
+  compile(ast::Translation_unit const &ast, Type_pool *type_pool);
 
   std::optional<std::uint64_t>
   validate_int_literal(std::string_view digits, std::uint64_t max_value);

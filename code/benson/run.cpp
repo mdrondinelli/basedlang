@@ -8,14 +8,14 @@
 #include <variant>
 #include <vector>
 
-#include <bensonir/compile.h>
-#include <bensonir/interpret.h>
-#include <bensonir/type.h>
-#include <bensonlex/istream_binary_stream.h>
-#include <bensonlex/lexeme_stream.h>
-#include <bensonlex/lexeme_stream_reader.h>
-#include <bensonlex/utf8_char_stream.h>
-#include <bensonparse/parser.h>
+#include <ir/compile.h>
+#include <ir/interpret.h>
+#include <ir/type.h>
+#include <lexing/istream_binary_stream.h>
+#include <lexing/lexeme_stream.h>
+#include <lexing/lexeme_stream_reader.h>
+#include <lexing/utf8_char_stream.h>
+#include <parsing/parser.h>
 
 namespace benson
 {
@@ -101,9 +101,7 @@ namespace benson
           constant_args.push_back(val);
         }
         else if (target_type &&
-                 std::holds_alternative<ir::Float64_type>(
-                   target_type->data
-                 ))
+                 std::holds_alternative<ir::Float64_type>(target_type->data))
         {
           double val{};
           auto const [ptr, ec] =
@@ -131,9 +129,7 @@ namespace benson
           constant_args.push_back(static_cast<std::int8_t>(val));
         }
         else if (target_type &&
-                 std::holds_alternative<ir::Int16_type>(
-                   target_type->data
-                 ))
+                 std::holds_alternative<ir::Int16_type>(target_type->data))
         {
           std::int32_t val{};
           auto const [ptr, ec] =
@@ -148,9 +144,7 @@ namespace benson
           constant_args.push_back(static_cast<std::int16_t>(val));
         }
         else if (target_type &&
-                 std::holds_alternative<ir::Int64_type>(
-                   target_type->data
-                 ))
+                 std::holds_alternative<ir::Int64_type>(target_type->data))
         {
           std::int64_t val{};
           auto const [ptr, ec] =

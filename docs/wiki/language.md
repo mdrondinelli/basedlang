@@ -6,14 +6,14 @@ This page is the current language-surface reference.
 
 ### Fully implemented today
 
-The features marked as implemented below are supported by the current parser and by `bensonir`.
+The features marked as implemented below are supported by the current parser and by `ir`.
 
-### Parsed or designed, but not fully implemented in `bensonir`
+### Parsed or designed, but not fully implemented in `ir`
 
 These surface forms exist in the parser or language design, but are not fully supported semantically yet:
 
 - `let mut` bindings parse, but mutable bindings are not implemented
-- `while` statements parse, but are rejected in `bensonir`
+- `while` statements parse, but are rejected in `ir`
 - postfix dereference `p^` parses, but dereference is rejected in expression compilation
 - index expressions `arr[i]` parse, but index expression compilation is not implemented
 - assignment expressions parse as operators, but are not implemented semantically
@@ -40,7 +40,7 @@ Statements appear inside block bodies:
 - `return <expr>;`
 - `<expr>;`
 
-Parsed but not fully implemented in `bensonir`:
+Parsed but not fully implemented in `ir`:
 
 - `let mut x = <expr>;`
 - `while <expr> { ... }`
@@ -61,7 +61,7 @@ Implemented primary expression forms:
 - `if` expressions: `if condition { ... } else { ... }`
 - function expressions with explicit return type: `fn(params): ReturnType => expression`
 
-Parsed but not fully implemented in `bensonir`:
+Parsed but not fully implemented in `ir`:
 
 Function parameters are immutable by default. Parameter bindings may be written with `mut`:
 
@@ -87,7 +87,7 @@ Precedence from tightest to loosest:
 
 Binary operators are left-associative except assignment, which is right-associative.
 
-Parsed but not fully implemented in `bensonir`:
+Parsed but not fully implemented in `ir`:
 
 - assignment expressions such as `a = b`
 
@@ -199,7 +199,7 @@ while n > 0 {
 }
 ```
 
-This syntax parses, but `while` is not fully implemented in `bensonir` yet.
+This syntax parses, but `while` is not fully implemented in `ir` yet.
 
 Recursive call with `recurse`:
 
@@ -217,7 +217,7 @@ let first = buf[0]^;
 let y = -x + 2 * (a - b);
 ```
 
-Only the arithmetic and comparison forms here are fully implemented today. Dereference and indexing syntax exist, but are not fully implemented in `bensonir`.
+Only the arithmetic and comparison forms here are fully implemented today. Dereference and indexing syntax exist, but are not fully implemented in `ir`.
 
 ## Keywords
 

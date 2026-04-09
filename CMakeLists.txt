@@ -9,70 +9,70 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 add_subdirectory(extern/Catch2-3.13.0)
 
-add_library(bensonlex
-  code/bensonlex/src/char_stream_reader.cpp
-  code/bensonlex/src/istream_binary_stream.cpp
-  code/bensonlex/src/lexeme_stream.cpp
-  code/bensonlex/src/lexeme_stream_reader.cpp
-  code/bensonlex/src/utf8_char_stream.cpp
+add_library(lexing
+  code/lexing/src/char_stream_reader.cpp
+  code/lexing/src/istream_binary_stream.cpp
+  code/lexing/src/lexeme_stream.cpp
+  code/lexing/src/lexeme_stream_reader.cpp
+  code/lexing/src/utf8_char_stream.cpp
 )
-target_include_directories(bensonlex PUBLIC code/bensonlex/include)
+target_include_directories(lexing PUBLIC code/lexing/include)
 
-add_library(bensonast
-  code/bensonast/src/ast.cpp
-  code/bensonast/src/operator.cpp
-  code/bensonast/src/source_span.cpp
+add_library(ast
+  code/ast/src/ast.cpp
+  code/ast/src/operator.cpp
+  code/ast/src/source_span.cpp
 )
-target_include_directories(bensonast PUBLIC code/bensonast/include)
-target_link_libraries(bensonast PUBLIC bensonlex)
+target_include_directories(ast PUBLIC code/ast/include)
+target_link_libraries(ast PUBLIC lexing)
 
-add_library(bensonparse
-  code/bensonparse/src/parser.cpp
+add_library(parsing
+  code/parsing/src/parser.cpp
 )
-target_include_directories(bensonparse PUBLIC code/bensonparse/include)
-target_link_libraries(bensonparse PUBLIC bensonast)
+target_include_directories(parsing PUBLIC code/parsing/include)
+target_link_libraries(parsing PUBLIC ast)
 
-add_library(bensonir
-  code/bensonir/src/compile.cpp
-  code/bensonir/src/interpret.cpp
-  code/bensonir/src/symbol_table.cpp
-  code/bensonir/src/type.cpp
+add_library(ir
+  code/ir/src/compile.cpp
+  code/ir/src/interpret.cpp
+  code/ir/src/symbol_table.cpp
+  code/ir/src/type.cpp
 )
-target_include_directories(bensonir PUBLIC code/bensonir/include)
-target_link_libraries(bensonir PUBLIC bensonast)
+target_include_directories(ir PUBLIC code/ir/include)
+target_link_libraries(ir PUBLIC ast)
 
 add_library(bensoncli
   code/benson/run.cpp
 )
 target_include_directories(bensoncli PUBLIC code/benson)
-target_link_libraries(bensoncli PUBLIC bensonir bensonparse)
+target_link_libraries(bensoncli PUBLIC ir parsing)
 
 add_executable(benson
   code/benson/main.cpp
 )
 target_link_libraries(benson PRIVATE bensoncli)
 
-add_executable(bensonlex-tests
-  code/bensonlex/test/lexeme_stream_test.cpp
-  code/bensonlex/test/ring_buffer_test.cpp
-  code/bensonlex/test/utf8_char_stream_test.cpp
+add_executable(lexing-tests
+  code/lexing/test/lexeme_stream_test.cpp
+  code/lexing/test/ring_buffer_test.cpp
+  code/lexing/test/utf8_char_stream_test.cpp
 )
-target_link_libraries(bensonlex-tests PRIVATE bensonlex Catch2::Catch2WithMain)
-target_compile_definitions(bensonlex-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+target_link_libraries(lexing-tests PRIVATE lexing Catch2::Catch2WithMain)
+target_compile_definitions(lexing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
-add_executable(bensonparse-tests
-  code/bensonparse/test/parser_test.cpp
+add_executable(parsing-tests
+  code/parsing/test/parser_test.cpp
 )
-target_link_libraries(bensonparse-tests PRIVATE bensonparse Catch2::Catch2WithMain)
-target_compile_definitions(bensonparse-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+target_link_libraries(parsing-tests PRIVATE parsing Catch2::Catch2WithMain)
+target_compile_definitions(parsing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
-add_executable(bensonir-tests
-  code/bensonir/test/symbol_table_test.cpp
-  code/bensonir/test/type_test.cpp
-  code/bensonir/test/compile_test.cpp
+add_executable(ir-tests
+  code/ir/test/symbol_table_test.cpp
+  code/ir/test/type_test.cpp
+  code/ir/test/compile_test.cpp
 )
-target_link_libraries(bensonir-tests PRIVATE bensonir bensonparse Catch2::Catch2WithMain)
-target_compile_definitions(bensonir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+target_link_libraries(ir-tests PRIVATE ir parsing Catch2::Catch2WithMain)
+target_compile_definitions(ir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(benson-tests
   code/benson/test/run_test.cpp

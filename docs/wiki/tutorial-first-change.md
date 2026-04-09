@@ -52,25 +52,25 @@ Start from "which layer owns this behavior?"
 
 Understand:
 
-- [`bensonlex`](./bensonlex.md)
+- [`lexing`](./lexing.md)
 
 ### If you are changing parsing
 
 Understand:
 
-- [`bensonparse`](./bensonparse.md)
+- [`parsing`](./parsing.md)
 
 ### If you are changing semantics or lowering
 
 Understand:
 
-- [`bensonir`](./bensonir.md)
+- [`ir`](./ir.md)
 
 ### If you are changing interpretation
 
 Understand:
 
-- [`bensonir`](./bensonir.md)
+- [`ir`](./ir.md)
 
 ### If you are changing executable wiring
 
@@ -110,9 +110,9 @@ cmake --build build
 Run the relevant test binary directly:
 
 ```sh
-./build/bensonlex-tests
-./build/bensonparse-tests
-./build/bensonir-tests
+./build/lexing-tests
+./build/parsing-tests
+./build/ir-tests
 ```
 
 Before committing, format the changed code. See [Formatting](./formatting.md).

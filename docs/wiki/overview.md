@@ -2,35 +2,35 @@
 
 bensonlang currently has five main modules:
 
-1. `bensonlex`
-2. `bensonast`
-3. `bensonparse`
-4. `bensonir`
+1. `lexing`
+2. `ast`
+3. `parsing`
+4. `ir`
 5. `benson`
 
 The pipeline is simple:
 
 1. bytes are decoded into Unicode characters
 2. characters are lexed into `Lexeme` values
-3. lexemes are parsed into an AST (defined by `bensonast`, produced by `bensonparse`)
+3. lexemes are parsed into an AST (defined by `ast`, produced by `parsing`)
 4. the AST is compiled into HLIR with name resolution, type evaluation, diagnostics, and constant evaluation
 5. the `benson` executable can currently interpret a chosen HLIR function
 
 ## Module boundaries
 
-### `bensonlex`
+### `lexing`
 
 Owns tokenization, source locations, and character/token lookahead.
 
-### `bensonast`
+### `ast`
 
 Owns the AST data model: expression and statement node types, operator identity, and source spans over AST nodes.
 
-### `bensonparse`
+### `parsing`
 
-Owns syntax: consuming lexemes and constructing the `bensonast` data model. Owns precedence rules.
+Owns syntax: consuming lexemes and constructing the `ast` data model. Owns precedence rules.
 
-### `bensonir`
+### `ir`
 
 Owns semantics:
 

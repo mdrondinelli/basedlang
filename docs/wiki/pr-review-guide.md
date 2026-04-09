@@ -13,16 +13,16 @@ Use this order for most PRs:
 
 ## Which page to open
 
-- Lexer changes: [`bensonlex`](./bensonlex.md)
-- AST changes: [`bensonast`](./bensonast.md)
-- Parser changes: [`bensonparse`](./bensonparse.md)
-- Semantic, lowering, or interpreter changes: [`bensonir`](./bensonir.md)
+- Lexer changes: [`lexing`](./lexing.md)
+- AST changes: [`ast`](./ast.md)
+- Parser changes: [`parsing`](./parsing.md)
+- Semantic, lowering, or interpreter changes: [`ir`](./ir.md)
 - CLI wiring changes: [`benson`](./benson.md)
 - Cross-cutting changes: [Architecture and pipeline overview](./overview.md)
 
 ## Module-specific review heuristics
 
-### `bensonlex`
+### `lexing`
 
 Look for:
 
@@ -31,7 +31,7 @@ Look for:
 - source-location correctness
 - lookahead/buffering correctness
 
-### `bensonast`
+### `ast`
 
 Look for:
 
@@ -39,7 +39,7 @@ Look for:
 - implementation of `span_of` for any new AST node
 
 
-### `bensonparse`
+### `parsing`
 
 Look for:
 
@@ -47,7 +47,7 @@ Look for:
 - precedence and associativity consistency
 - edge cases which could parse in an unexpected way
 
-### `bensonir`
+### `ir`
 
 Look for:
 

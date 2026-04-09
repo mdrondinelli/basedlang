@@ -97,9 +97,9 @@ namespace benson::ir
       emit_error(std::move(message), benson::ast::span_of(node));
     }
 
-    Symbol *try_lookup_identifier(bensonlex::Lexeme const &identifier);
+    Symbol *try_lookup_identifier(benson::Lexeme const &identifier);
 
-    Symbol *lookup_identifier(bensonlex::Lexeme const &identifier);
+    Symbol *lookup_identifier(benson::Lexeme const &identifier);
 
     Unary_operator_overload *
     find_unary_overload(benson::ast::Operator op, Type *operand_type);
@@ -161,12 +161,12 @@ namespace benson::ir
     Operand compile_int_literal(
       std::string_view text,
       bool negate,
-      bensonlex::Lexeme const &token
+      benson::Lexeme const &token
     );
 
     Operand compile_float_literal(
       std::string_view text,
-      bensonlex::Lexeme const &token
+      benson::Lexeme const &token
     );
 
     void compile_statement(benson::ast::Statement const &stmt);

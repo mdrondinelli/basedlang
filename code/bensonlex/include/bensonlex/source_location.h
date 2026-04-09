@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace bensonlex
+namespace benson
 {
 
   /// A position in source code, given as a 1-based line and column number.
@@ -13,6 +13,6 @@ namespace bensonlex
     std::int32_t column; ///< 1-based column number.
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_SOURCE_LOCATION_H

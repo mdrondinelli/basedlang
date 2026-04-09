@@ -6,7 +6,7 @@
 
 TEST_CASE("Ring_buffer - push_back and operator[]")
 {
-  auto buf = bensonlex::Ring_buffer<int>{};
+  auto buf = benson::Ring_buffer<int>{};
   REQUIRE(buf.size() == 0);
   buf.push_back(1);
   buf.push_back(2);
@@ -19,7 +19,7 @@ TEST_CASE("Ring_buffer - push_back and operator[]")
 
 TEST_CASE("Ring_buffer - pop_front")
 {
-  auto buf = bensonlex::Ring_buffer<int>{};
+  auto buf = benson::Ring_buffer<int>{};
   buf.push_back(1);
   buf.push_back(2);
   buf.push_back(3);
@@ -31,7 +31,7 @@ TEST_CASE("Ring_buffer - pop_front")
 
 TEST_CASE("Ring_buffer - wraparound")
 {
-  auto buf = bensonlex::Ring_buffer<int>{};
+  auto buf = benson::Ring_buffer<int>{};
   buf.push_back(1);
   buf.push_back(2);
   buf.push_back(3);
@@ -49,7 +49,7 @@ TEST_CASE("Ring_buffer - wraparound")
 
 TEST_CASE("Ring_buffer - growth")
 {
-  auto buf = bensonlex::Ring_buffer<int>{};
+  auto buf = benson::Ring_buffer<int>{};
   buf.push_back(1);
   buf.push_back(2);
   buf.push_back(3);
@@ -65,7 +65,7 @@ TEST_CASE("Ring_buffer - growth")
 
 TEST_CASE("Ring_buffer - growth with wrapped head")
 {
-  auto buf = bensonlex::Ring_buffer<int>{};
+  auto buf = benson::Ring_buffer<int>{};
   buf.push_back(1);
   buf.push_back(2);
   buf.push_back(3);
@@ -85,7 +85,7 @@ TEST_CASE("Ring_buffer - growth with wrapped head")
 
 TEST_CASE("Ring_buffer - move semantics")
 {
-  auto buf = bensonlex::Ring_buffer<std::string>{};
+  auto buf = benson::Ring_buffer<std::string>{};
   buf.push_back("hello");
   buf.push_back("world");
   REQUIRE(buf.size() == 2);

@@ -6,7 +6,7 @@
 namespace benson::ast
 {
 
-  using bensonlex::Source_location;
+  using benson::Source_location;
 
 } // namespace benson::ast
 

@@ -11,8 +11,8 @@ TEST_CASE("Utf8_char_stream - valid sequences")
   auto const with_stream = [](std::string const &bytes, auto &&fn)
   {
     auto ss = std::istringstream{bytes};
-    auto binary = bensonlex::Istream_binary_stream{&ss};
-    auto chars = bensonlex::Utf8_char_stream{&binary};
+    auto binary = benson::Istream_binary_stream{&ss};
+    auto chars = benson::Utf8_char_stream{&binary};
     fn(chars);
   };
   SECTION("empty stream returns nullopt")
@@ -93,11 +93,11 @@ TEST_CASE("Utf8_char_stream - invalid sequences throw Decode_error")
   auto const throws = [](std::string const &bytes)
   {
     auto ss = std::istringstream{bytes};
-    auto binary = bensonlex::Istream_binary_stream{&ss};
-    auto chars = bensonlex::Utf8_char_stream{&binary};
+    auto binary = benson::Istream_binary_stream{&ss};
+    auto chars = benson::Utf8_char_stream{&binary};
     REQUIRE_THROWS_AS(
       chars.read_character(),
-      bensonlex::Utf8_char_stream::Decode_error
+      benson::Utf8_char_stream::Decode_error
     );
   };
   SECTION("continuation byte at start")

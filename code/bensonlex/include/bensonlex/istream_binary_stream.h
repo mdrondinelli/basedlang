@@ -7,7 +7,7 @@
 
 #include "binary_stream.h"
 
-namespace bensonlex
+namespace benson
 {
 
   class Istream_binary_stream: public Binary_stream
@@ -21,6 +21,6 @@ namespace bensonlex
     std::istream *_stream;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_ISTREAM_BINARY_STREAM_H

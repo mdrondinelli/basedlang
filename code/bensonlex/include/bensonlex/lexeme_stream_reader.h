@@ -4,7 +4,7 @@
 #include "lexeme.h"
 #include "ring_buffer.h"
 
-namespace bensonlex
+namespace benson
 {
 
   class Lexeme_stream;
@@ -27,6 +27,6 @@ namespace bensonlex
     Ring_buffer<Lexeme> _buffer;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_LEXEME_STREAM_READER_H

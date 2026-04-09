@@ -4,7 +4,7 @@
 
 #include "bensonlex/char_stream.h"
 
-namespace bensonlex
+namespace benson
 {
 
   Char_stream_reader::Char_stream_reader(Char_stream *stream) noexcept
@@ -49,4 +49,4 @@ namespace bensonlex
     }
   }
 
-} // namespace bensonlex
+} // namespace benson

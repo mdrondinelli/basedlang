@@ -15,11 +15,11 @@
 struct Parse_fixture
 {
   std::istringstream stream;
-  bensonlex::Istream_binary_stream binary_stream;
-  bensonlex::Utf8_char_stream char_stream;
-  bensonlex::Lexeme_stream lexeme_stream;
-  bensonlex::Lexeme_stream_reader reader;
-  bensonparse::Parser parser;
+  benson::Istream_binary_stream binary_stream;
+  benson::Utf8_char_stream char_stream;
+  benson::Lexeme_stream lexeme_stream;
+  benson::Lexeme_stream_reader reader;
+  benson::Parser parser;
 
   explicit Parse_fixture(std::string const &source)
       : stream{source},
@@ -49,11 +49,11 @@ static bool parses(std::string const &source)
 TEST_CASE("Parser - first.benson produces a declaration")
 {
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/first.benson"};
-  auto binary_stream = bensonlex::Istream_binary_stream{&file};
-  auto char_stream = bensonlex::Utf8_char_stream{&binary_stream};
-  auto lexeme_stream = bensonlex::Lexeme_stream{&char_stream};
-  auto reader = bensonlex::Lexeme_stream_reader{&lexeme_stream};
-  auto parser = bensonparse::Parser{&reader};
+  auto binary_stream = benson::Istream_binary_stream{&file};
+  auto char_stream = benson::Utf8_char_stream{&binary_stream};
+  auto lexeme_stream = benson::Lexeme_stream{&char_stream};
+  auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
+  auto parser = benson::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
   REQUIRE(unit.let_statements.size() == 1);
   auto const &decl = unit.let_statements[0];
@@ -92,11 +92,11 @@ TEST_CASE("Parser - first.benson produces a declaration")
 TEST_CASE("Parser - parameters.benson parses successfully")
 {
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/parameters.benson"};
-  auto binary_stream = bensonlex::Istream_binary_stream{&file};
-  auto char_stream = bensonlex::Utf8_char_stream{&binary_stream};
-  auto lexeme_stream = bensonlex::Lexeme_stream{&char_stream};
-  auto reader = bensonlex::Lexeme_stream_reader{&lexeme_stream};
-  auto parser = bensonparse::Parser{&reader};
+  auto binary_stream = benson::Istream_binary_stream{&file};
+  auto char_stream = benson::Utf8_char_stream{&binary_stream};
+  auto lexeme_stream = benson::Lexeme_stream{&char_stream};
+  auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
+  auto parser = benson::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
   REQUIRE(unit.let_statements.size() == 3);
   auto const &id_decl = unit.let_statements[0];
@@ -214,11 +214,11 @@ TEST_CASE("Parser - call_expression.benson parses successfully")
 {
   auto file =
     std::ifstream{std::string{EXAMPLES_PATH} + "/call_expression.benson"};
-  auto binary_stream = bensonlex::Istream_binary_stream{&file};
-  auto char_stream = bensonlex::Utf8_char_stream{&binary_stream};
-  auto lexeme_stream = bensonlex::Lexeme_stream{&char_stream};
-  auto reader = bensonlex::Lexeme_stream_reader{&lexeme_stream};
-  auto parser = bensonparse::Parser{&reader};
+  auto binary_stream = benson::Istream_binary_stream{&file};
+  auto char_stream = benson::Utf8_char_stream{&binary_stream};
+  auto lexeme_stream = benson::Lexeme_stream{&char_stream};
+  auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
+  auto parser = benson::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
   REQUIRE(unit.let_statements.size() == 2);
   auto const &foo_decl = unit.let_statements[0];
@@ -1245,11 +1245,11 @@ TEST_CASE("parse_let_statement - mut")
 TEST_CASE("Parser - quicksort.benson parses successfully")
 {
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/quicksort.benson"};
-  auto binary_stream = bensonlex::Istream_binary_stream{&file};
-  auto char_stream = bensonlex::Utf8_char_stream{&binary_stream};
-  auto lexeme_stream = bensonlex::Lexeme_stream{&char_stream};
-  auto reader = bensonlex::Lexeme_stream_reader{&lexeme_stream};
-  auto parser = bensonparse::Parser{&reader};
+  auto binary_stream = benson::Istream_binary_stream{&file};
+  auto char_stream = benson::Utf8_char_stream{&binary_stream};
+  auto lexeme_stream = benson::Lexeme_stream{&char_stream};
+  auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
+  auto parser = benson::Parser{&reader};
   auto const unit = parser.parse_translation_unit();
   CHECK(unit.let_statements.size() == 3);
 }
@@ -1314,7 +1314,7 @@ TEST_CASE("parse_expression - ^mut prefix")
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
   CHECK(unary->op.text == "^mut");
-  CHECK(unary->op.token == bensonlex::Token::caret_mut);
+  CHECK(unary->op.token == benson::Token::caret_mut);
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&unary->operand->value);
   REQUIRE(operand != nullptr);
@@ -1327,7 +1327,7 @@ TEST_CASE("parse_expression - ^mut []Int32 as mutable pointer to unsized array")
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
-  CHECK(unary->op.token == bensonlex::Token::caret_mut);
+  CHECK(unary->op.token == benson::Token::caret_mut);
   auto const prefix =
     std::get_if<benson::ast::Prefix_bracket_expression>(&unary->operand->value);
   REQUIRE(prefix != nullptr);

@@ -376,13 +376,13 @@ namespace benson::ir
   }
 
   Symbol *
-  Compilation_context::try_lookup_identifier(bensonlex::Lexeme const &identifier)
+  Compilation_context::try_lookup_identifier(benson::Lexeme const &identifier)
   {
     return _symbol_table.lookup(identifier.text);
   }
 
   Symbol *
-  Compilation_context::lookup_identifier(bensonlex::Lexeme const &identifier)
+  Compilation_context::lookup_identifier(benson::Lexeme const &identifier)
   {
     auto const sym = try_lookup_identifier(identifier);
     if (sym == nullptr)
@@ -1223,7 +1223,7 @@ namespace benson::ir
   Operand Compilation_context::compile_int_literal(
     std::string_view text,
     bool negate,
-    bensonlex::Lexeme const &token
+    benson::Lexeme const &token
   )
   {
     auto const suffix_pos = text.rfind('i');
@@ -1290,7 +1290,7 @@ namespace benson::ir
 
   Operand Compilation_context::compile_float_literal(
     std::string_view text,
-    bensonlex::Lexeme const &token
+    benson::Lexeme const &token
   )
   {
     assert(!text.empty());

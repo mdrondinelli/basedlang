@@ -4,7 +4,7 @@
 
 #include "bensonlex/lexeme_stream.h"
 
-namespace bensonlex
+namespace benson
 {
 
   Lexeme_stream::Lexeme_stream(Char_stream *stream) noexcept
@@ -408,4 +408,4 @@ namespace bensonlex
     }
   }
 
-} // namespace bensonlex
+} // namespace benson

@@ -43,11 +43,11 @@ namespace benson::ast
 
   Operator_associativity get_precedence_associativity(int precedence);
 
-  std::optional<Operator> get_prefix_operator(bensonlex::Token token);
+  std::optional<Operator> get_prefix_operator(benson::Token token);
 
-  std::optional<Operator> get_postfix_operator(bensonlex::Token token);
+  std::optional<Operator> get_postfix_operator(benson::Token token);
 
-  std::optional<Operator> get_binary_operator(bensonlex::Token token);
+  std::optional<Operator> get_binary_operator(benson::Token token);
 
 } // namespace benson::ast
 

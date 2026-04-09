@@ -13,11 +13,11 @@ TEST_CASE("Lexeme_stream lexes first.benson")
 {
   auto file = std::ifstream{EXAMPLES_PATH "/first.benson"};
   REQUIRE(file.is_open());
-  auto binary = bensonlex::Istream_binary_stream{&file};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&file};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const expect =
-    [&](std::string const &text, bensonlex::Token token, int line, int column)
+    [&](std::string const &text, benson::Token token, int line, int column)
   {
     auto const lexeme = stream.lex();
     CHECK(lexeme.text == text);
@@ -25,7 +25,7 @@ TEST_CASE("Lexeme_stream lexes first.benson")
     CHECK(lexeme.location.line == line);
     CHECK(lexeme.location.column == column);
   };
-  using enum bensonlex::Token;
+  using enum benson::Token;
   expect("let", kw_let, 1, 1);
   expect("main", identifier, 1, 5);
   expect("=", eq, 1, 10);
@@ -47,11 +47,11 @@ TEST_CASE("Lexeme_stream lexes first.benson")
 TEST_CASE("Lexeme_stream lexes arithmetic operators")
 {
   auto ss = std::istringstream{"+ - * / %"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
-  using enum bensonlex::Token;
-  auto const expect = [&](std::string const &text, bensonlex::Token token)
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
+  using enum benson::Token;
+  auto const expect = [&](std::string const &text, benson::Token token)
   {
     auto const lexeme = stream.lex();
     CHECK(lexeme.text == text);
@@ -67,21 +67,21 @@ TEST_CASE("Lexeme_stream lexes arithmetic operators")
 TEST_CASE("Lexeme_stream - minus before arrow still lexes as arrow")
 {
   auto ss = std::istringstream{"->"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "->");
-  CHECK(lexeme.token == bensonlex::Token::arrow);
+  CHECK(lexeme.token == benson::Token::arrow);
 }
 
 TEST_CASE("Lexeme_stream - minus adjacent to digits lexes as separate tokens")
 {
   auto ss = std::istringstream{"1-2"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
-  using enum bensonlex::Token;
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
+  using enum benson::Token;
   auto const first = stream.lex();
   CHECK(first.text == "1");
   CHECK(first.token == int_literal);
@@ -96,76 +96,76 @@ TEST_CASE("Lexeme_stream - minus adjacent to digits lexes as separate tokens")
 TEST_CASE("Lexeme_stream lexes i8 integer literal")
 {
   auto ss = std::istringstream{"42i8"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "42i8");
-  CHECK(lexeme.token == bensonlex::Token::int_literal);
+  CHECK(lexeme.token == benson::Token::int_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes i16 integer literal")
 {
   auto ss = std::istringstream{"100i16"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "100i16");
-  CHECK(lexeme.token == bensonlex::Token::int_literal);
+  CHECK(lexeme.token == benson::Token::int_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes i32 integer literal")
 {
   auto ss = std::istringstream{"100i32"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "100i32");
-  CHECK(lexeme.token == bensonlex::Token::int_literal);
+  CHECK(lexeme.token == benson::Token::int_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes i64 integer literal")
 {
   auto ss = std::istringstream{"100i64"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "100i64");
-  CHECK(lexeme.token == bensonlex::Token::int_literal);
+  CHECK(lexeme.token == benson::Token::int_literal);
 }
 
 TEST_CASE("Lexeme_stream throws on bare i suffix")
 {
   auto ss = std::istringstream{"42i "};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
-  CHECK_THROWS_AS(stream.lex(), bensonlex::Lexeme_stream::Lex_error);
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
+  CHECK_THROWS_AS(stream.lex(), benson::Lexeme_stream::Lex_error);
 }
 
 TEST_CASE("Lexeme_stream lexes unknown integer suffix as token")
 {
   auto ss = std::istringstream{"42i7"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "42i7");
-  CHECK(lexeme.token == bensonlex::Token::int_literal);
+  CHECK(lexeme.token == benson::Token::int_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes colon")
 {
   auto ss = std::istringstream{":"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == ":");
-  CHECK(lexeme.token == bensonlex::Token::colon);
+  CHECK(lexeme.token == benson::Token::colon);
   CHECK(lexeme.location.line == 1);
   CHECK(lexeme.location.column == 1);
 }
@@ -173,12 +173,12 @@ TEST_CASE("Lexeme_stream lexes colon")
 TEST_CASE("Lexeme_stream lexes comma")
 {
   auto ss = std::istringstream{","};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == ",");
-  CHECK(lexeme.token == bensonlex::Token::comma);
+  CHECK(lexeme.token == benson::Token::comma);
   CHECK(lexeme.location.line == 1);
   CHECK(lexeme.location.column == 1);
 }
@@ -186,17 +186,17 @@ TEST_CASE("Lexeme_stream lexes comma")
 TEST_CASE("Lexeme_stream lexes brackets")
 {
   auto ss = std::istringstream{"[]"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const open = stream.lex();
   CHECK(open.text == "[");
-  CHECK(open.token == bensonlex::Token::lbracket);
+  CHECK(open.token == benson::Token::lbracket);
   CHECK(open.location.line == 1);
   CHECK(open.location.column == 1);
   auto const close = stream.lex();
   CHECK(close.text == "]");
-  CHECK(close.token == bensonlex::Token::rbracket);
+  CHECK(close.token == benson::Token::rbracket);
   CHECK(close.location.line == 1);
   CHECK(close.location.column == 2);
 }
@@ -204,110 +204,110 @@ TEST_CASE("Lexeme_stream lexes brackets")
 TEST_CASE("Lexeme_stream - &mut lexes as ampersand_mut")
 {
   auto ss = std::istringstream{"&mut"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "&mut");
-  CHECK(lexeme.token == bensonlex::Token::ampersand_mut);
+  CHECK(lexeme.token == benson::Token::ampersand_mut);
   CHECK(lexeme.location.line == 1);
   CHECK(lexeme.location.column == 1);
-  CHECK(stream.lex().token == bensonlex::Token::eof);
+  CHECK(stream.lex().token == benson::Token::eof);
 }
 
 TEST_CASE("Lexeme_stream - &mut with space after lexes as ampersand_mut")
 {
   auto ss = std::istringstream{"&mut x"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const amp_mut = stream.lex();
   CHECK(amp_mut.text == "&mut");
-  CHECK(amp_mut.token == bensonlex::Token::ampersand_mut);
+  CHECK(amp_mut.token == benson::Token::ampersand_mut);
   auto const id = stream.lex();
   CHECK(id.text == "x");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - &mutable lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"&mutable"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const amp = stream.lex();
   CHECK(amp.text == "&");
-  CHECK(amp.token == bensonlex::Token::ampersand);
+  CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
   CHECK(id.text == "mutable");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - &mut_ lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"&mut_"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const amp = stream.lex();
   CHECK(amp.text == "&");
-  CHECK(amp.token == bensonlex::Token::ampersand);
+  CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
   CHECK(id.text == "mut_");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - &mut2 lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"&mut2"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const amp = stream.lex();
   CHECK(amp.text == "&");
-  CHECK(amp.token == bensonlex::Token::ampersand);
+  CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
   CHECK(id.text == "mut2");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - & alone lexes as ampersand")
 {
   auto ss = std::istringstream{"&"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "&");
-  CHECK(lexeme.token == bensonlex::Token::ampersand);
-  CHECK(stream.lex().token == bensonlex::Token::eof);
+  CHECK(lexeme.token == benson::Token::ampersand);
+  CHECK(stream.lex().token == benson::Token::eof);
 }
 
 TEST_CASE("Lexeme_stream - & x lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"& x"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const amp = stream.lex();
   CHECK(amp.text == "&");
-  CHECK(amp.token == bensonlex::Token::ampersand);
+  CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
   CHECK(id.text == "x");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - &mut column tracking")
 {
   auto ss = std::istringstream{"x &mut y"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const x = stream.lex();
   CHECK(x.location.column == 1);
   auto const amp_mut = stream.lex();
   CHECK(amp_mut.text == "&mut");
-  CHECK(amp_mut.token == bensonlex::Token::ampersand_mut);
+  CHECK(amp_mut.token == benson::Token::ampersand_mut);
   CHECK(amp_mut.location.column == 3);
   auto const y = stream.lex();
   CHECK(y.text == "y");
@@ -317,96 +317,96 @@ TEST_CASE("Lexeme_stream - &mut column tracking")
 TEST_CASE("Lexeme_stream - &mu lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"&mu"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const amp = stream.lex();
   CHECK(amp.text == "&");
-  CHECK(amp.token == bensonlex::Token::ampersand);
+  CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
   CHECK(id.text == "mu");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - ^mut lexes as caret_mut")
 {
   auto ss = std::istringstream{"^mut"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "^mut");
-  CHECK(lexeme.token == bensonlex::Token::caret_mut);
+  CHECK(lexeme.token == benson::Token::caret_mut);
   CHECK(lexeme.location.line == 1);
   CHECK(lexeme.location.column == 1);
-  CHECK(stream.lex().token == bensonlex::Token::eof);
+  CHECK(stream.lex().token == benson::Token::eof);
 }
 
 TEST_CASE("Lexeme_stream - ^mut with space after lexes as caret_mut")
 {
   auto ss = std::istringstream{"^mut x"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const caret_mut = stream.lex();
   CHECK(caret_mut.text == "^mut");
-  CHECK(caret_mut.token == bensonlex::Token::caret_mut);
+  CHECK(caret_mut.token == benson::Token::caret_mut);
   auto const id = stream.lex();
   CHECK(id.text == "x");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - ^mutable lexes as caret + identifier")
 {
   auto ss = std::istringstream{"^mutable"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const caret = stream.lex();
   CHECK(caret.text == "^");
-  CHECK(caret.token == bensonlex::Token::caret);
+  CHECK(caret.token == benson::Token::caret);
   auto const id = stream.lex();
   CHECK(id.text == "mutable");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - ^mut_ lexes as caret + identifier")
 {
   auto ss = std::istringstream{"^mut_"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const caret = stream.lex();
   CHECK(caret.text == "^");
-  CHECK(caret.token == bensonlex::Token::caret);
+  CHECK(caret.token == benson::Token::caret);
   auto const id = stream.lex();
   CHECK(id.text == "mut_");
-  CHECK(id.token == bensonlex::Token::identifier);
+  CHECK(id.token == benson::Token::identifier);
 }
 
 TEST_CASE("Lexeme_stream - ^ alone lexes as caret")
 {
   auto ss = std::istringstream{"^"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "^");
-  CHECK(lexeme.token == bensonlex::Token::caret);
-  CHECK(stream.lex().token == bensonlex::Token::eof);
+  CHECK(lexeme.token == benson::Token::caret);
+  CHECK(stream.lex().token == benson::Token::eof);
 }
 
 TEST_CASE("Lexeme_stream - ^mut column tracking")
 {
   auto ss = std::istringstream{"x ^mut y"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const x = stream.lex();
   CHECK(x.location.column == 1);
   auto const caret_mut = stream.lex();
   CHECK(caret_mut.text == "^mut");
-  CHECK(caret_mut.token == bensonlex::Token::caret_mut);
+  CHECK(caret_mut.token == benson::Token::caret_mut);
   CHECK(caret_mut.location.column == 3);
   auto const y = stream.lex();
   CHECK(y.text == "y");
@@ -416,88 +416,88 @@ TEST_CASE("Lexeme_stream - ^mut column tracking")
 TEST_CASE("Lexeme_stream lexes unsuffixed float literal")
 {
   auto ss = std::istringstream{"3.14"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "3.14");
-  CHECK(lexeme.token == bensonlex::Token::float_literal);
+  CHECK(lexeme.token == benson::Token::float_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes f-suffixed float literal")
 {
   auto ss = std::istringstream{"1.5f"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "1.5f");
-  CHECK(lexeme.token == bensonlex::Token::float_literal);
+  CHECK(lexeme.token == benson::Token::float_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes d-suffixed float literal")
 {
   auto ss = std::istringstream{"1.5d"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "1.5d");
-  CHECK(lexeme.token == bensonlex::Token::float_literal);
+  CHECK(lexeme.token == benson::Token::float_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes integer with f suffix as float literal")
 {
   auto ss = std::istringstream{"1f"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "1f");
-  CHECK(lexeme.token == bensonlex::Token::float_literal);
+  CHECK(lexeme.token == benson::Token::float_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes integer with d suffix as float literal")
 {
   auto ss = std::istringstream{"1d"};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "1d");
-  CHECK(lexeme.token == bensonlex::Token::float_literal);
+  CHECK(lexeme.token == benson::Token::float_literal);
 }
 
 TEST_CASE("Lexeme_stream - integer with space before dot stays int")
 {
   // "1 ." — the 1 is an int_literal; the dot is not consumed by the int lex
   auto ss = std::istringstream{"1 ."};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const first = stream.lex();
   CHECK(first.text == "1");
-  CHECK(first.token == bensonlex::Token::int_literal);
+  CHECK(first.token == benson::Token::int_literal);
 }
 
 TEST_CASE("Lexeme_stream - integer with trailing dot lexes as float literal")
 {
   auto ss = std::istringstream{"1."};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "1.");
-  CHECK(lexeme.token == bensonlex::Token::float_literal);
+  CHECK(lexeme.token == benson::Token::float_literal);
 }
 
 TEST_CASE("Lexeme_stream lexes f suffix without trailing digits as float literal")
 {
   auto ss = std::istringstream{"3.14f "};
-  auto binary = bensonlex::Istream_binary_stream{&ss};
-  auto chars = bensonlex::Utf8_char_stream{&binary};
-  auto stream = bensonlex::Lexeme_stream{&chars};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto stream = benson::Lexeme_stream{&chars};
   auto const lexeme = stream.lex();
   CHECK(lexeme.text == "3.14f");
-  CHECK(lexeme.token == bensonlex::Token::float_literal);
+  CHECK(lexeme.token == benson::Token::float_literal);
 }

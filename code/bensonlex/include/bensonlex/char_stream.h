@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace bensonlex
+namespace benson
 {
 
   /// Abstract source of Unicode characters. Implement this to feed text into
@@ -19,6 +19,6 @@ namespace bensonlex
     virtual std::optional<uint32_t> read_character() = 0;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_CHAR_STREAM_H

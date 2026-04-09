@@ -1,6 +1,6 @@
 #include "bensonlex/istream_binary_stream.h"
 
-namespace bensonlex
+namespace benson
 {
 
   Istream_binary_stream::Istream_binary_stream(std::istream *stream) noexcept
@@ -18,4 +18,4 @@ namespace bensonlex
     return static_cast<uint8_t>(c);
   }
 
-} // namespace bensonlex
+} // namespace benson

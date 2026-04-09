@@ -20,11 +20,11 @@
 struct Parse_fixture
 {
   std::istringstream stream;
-  bensonlex::Istream_binary_stream binary_stream;
-  bensonlex::Utf8_char_stream char_stream;
-  bensonlex::Lexeme_stream lexeme_stream;
-  bensonlex::Lexeme_stream_reader reader;
-  bensonparse::Parser parser;
+  benson::Istream_binary_stream binary_stream;
+  benson::Utf8_char_stream char_stream;
+  benson::Lexeme_stream lexeme_stream;
+  benson::Lexeme_stream_reader reader;
+  benson::Parser parser;
 
   explicit Parse_fixture(std::string source)
       : stream{std::move(source)},

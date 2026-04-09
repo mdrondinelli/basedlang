@@ -8,7 +8,7 @@
 
 #include "char_stream.h"
 
-namespace bensonlex
+namespace benson
 {
 
   /// Wraps a Char_stream with arbitrary lookahead, exposing peek/read
@@ -29,6 +29,6 @@ namespace bensonlex
     std::vector<uint32_t> _buffer;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_CHAR_STREAM_READER_H

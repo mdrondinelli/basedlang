@@ -6,7 +6,7 @@
 #include "source_location.h"
 #include "token.h"
 
-namespace bensonlex
+namespace benson
 {
 
   /// A single token produced by the lexer, including its text and source
@@ -18,6 +18,6 @@ namespace bensonlex
     Source_location location;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_LEXEME_H

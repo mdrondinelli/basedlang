@@ -7,7 +7,7 @@
 
 #include "char_stream.h"
 
-namespace bensonlex
+namespace benson
 {
 
   class Binary_stream;
@@ -34,6 +34,6 @@ namespace bensonlex
     Binary_stream *_stream;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_UTF8_CHAR_STREAM_H

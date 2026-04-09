@@ -8,13 +8,13 @@
 #include <bensonast/ast.h>
 #include <bensonast/operator.h>
 
-namespace bensonparse
+namespace benson
 {
 
   class Parser
   {
   public:
-    explicit Parser(bensonlex::Lexeme_stream_reader *reader) noexcept;
+    explicit Parser(benson::Lexeme_stream_reader *reader) noexcept;
 
     benson::ast::Translation_unit parse_translation_unit();
 
@@ -53,11 +53,11 @@ namespace bensonparse
     std::unique_ptr<benson::ast::Expression>
     parse_expression(int current_precedence);
 
-    bensonlex::Lexeme expect(bensonlex::Token token);
+    benson::Lexeme expect(benson::Token token);
 
-    bensonlex::Lexeme_stream_reader *_reader;
+    benson::Lexeme_stream_reader *_reader;
   };
 
-} // namespace bensonparse
+} // namespace benson
 
 #endif // BASEDPARSE_PARSER_H

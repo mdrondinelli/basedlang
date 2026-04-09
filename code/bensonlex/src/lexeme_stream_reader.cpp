@@ -2,7 +2,7 @@
 
 #include "bensonlex/lexeme_stream.h"
 
-namespace bensonlex
+namespace benson
 {
 
   Lexeme_stream_reader::Lexeme_stream_reader(Lexeme_stream *stream) noexcept
@@ -31,4 +31,4 @@ namespace bensonlex
     return lexeme;
   }
 
-} // namespace bensonlex
+} // namespace benson

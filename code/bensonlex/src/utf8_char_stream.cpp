@@ -2,7 +2,7 @@
 
 #include "bensonlex/binary_stream.h"
 
-namespace bensonlex
+namespace benson
 {
 
   Utf8_char_stream::Utf8_char_stream(Binary_stream *stream) noexcept
@@ -51,4 +51,4 @@ namespace bensonlex
     return codepoint;
   }
 
-} // namespace bensonlex
+} // namespace benson

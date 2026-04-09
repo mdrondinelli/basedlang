@@ -5,7 +5,7 @@
 #include <new>
 #include <utility>
 
-namespace bensonlex
+namespace benson
 {
 
   template <typename T>
@@ -81,6 +81,6 @@ namespace bensonlex
     std::size_t _size;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_RING_BUFFER_H

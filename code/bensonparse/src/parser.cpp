@@ -16,10 +16,10 @@
 
 #include "bensonparse/parser.h"
 
-namespace bensonparse
+namespace benson
 {
 
-  Parser::Parser(bensonlex::Lexeme_stream_reader *reader) noexcept
+  Parser::Parser(benson::Lexeme_stream_reader *reader) noexcept
       : _reader{reader}
   {
   }
@@ -27,7 +27,7 @@ namespace bensonparse
   benson::ast::Translation_unit Parser::parse_translation_unit()
   {
     auto unit = benson::ast::Translation_unit{};
-    while (_reader->peek().token != bensonlex::Token::eof)
+    while (_reader->peek().token != benson::Token::eof)
     {
       unit.let_statements.push_back(parse_let_statement());
     }
@@ -37,15 +37,15 @@ namespace bensonparse
   benson::ast::Statement Parser::parse_statement()
   {
     auto const &next = _reader->peek();
-    if (next.token == bensonlex::Token::kw_let)
+    if (next.token == benson::Token::kw_let)
     {
       return benson::ast::Statement{parse_let_statement()};
     }
-    if (next.token == bensonlex::Token::kw_return)
+    if (next.token == benson::Token::kw_return)
     {
       return benson::ast::Statement{parse_return_statement()};
     }
-    if (next.token == bensonlex::Token::kw_while)
+    if (next.token == benson::Token::kw_while)
     {
       return benson::ast::Statement{parse_while_statement()};
     }
@@ -55,24 +55,24 @@ namespace bensonparse
   benson::ast::Let_statement Parser::parse_let_statement()
   {
     auto stmt = benson::ast::Let_statement{};
-    stmt.kw_let = expect(bensonlex::Token::kw_let);
-    if (_reader->peek().token == bensonlex::Token::kw_mut)
+    stmt.kw_let = expect(benson::Token::kw_let);
+    if (_reader->peek().token == benson::Token::kw_mut)
     {
-      stmt.kw_mut = expect(bensonlex::Token::kw_mut);
+      stmt.kw_mut = expect(benson::Token::kw_mut);
     }
-    stmt.name = expect(bensonlex::Token::identifier);
-    stmt.eq = expect(bensonlex::Token::eq);
+    stmt.name = expect(benson::Token::identifier);
+    stmt.eq = expect(benson::Token::eq);
     stmt.initializer = std::move(*parse_expression());
-    stmt.semicolon = expect(bensonlex::Token::semicolon);
+    stmt.semicolon = expect(benson::Token::semicolon);
     return stmt;
   }
 
   benson::ast::Return_statement Parser::parse_return_statement()
   {
     auto stmt = benson::ast::Return_statement{};
-    stmt.kw_return = expect(bensonlex::Token::kw_return);
+    stmt.kw_return = expect(benson::Token::kw_return);
     stmt.value = std::move(*parse_expression());
-    stmt.semicolon = expect(bensonlex::Token::semicolon);
+    stmt.semicolon = expect(benson::Token::semicolon);
     return stmt;
   }
 
@@ -80,28 +80,28 @@ namespace bensonparse
   {
     auto stmt = benson::ast::Expression_statement{};
     stmt.expression = std::move(*parse_expression());
-    stmt.semicolon = expect(bensonlex::Token::semicolon);
+    stmt.semicolon = expect(benson::Token::semicolon);
     return stmt;
   }
 
   benson::ast::Block_expression Parser::parse_block_expression()
   {
     auto block = benson::ast::Block_expression{};
-    block.lbrace = expect(bensonlex::Token::lbrace);
-    while (_reader->peek().token != bensonlex::Token::rbrace)
+    block.lbrace = expect(benson::Token::lbrace);
+    while (_reader->peek().token != benson::Token::rbrace)
     {
       auto const &next = _reader->peek();
-      if (next.token == bensonlex::Token::kw_let)
+      if (next.token == benson::Token::kw_let)
       {
         block.statements.push_back(benson::ast::Statement{parse_let_statement()});
       }
-      else if (next.token == bensonlex::Token::kw_return)
+      else if (next.token == benson::Token::kw_return)
       {
         block.statements.push_back(
           benson::ast::Statement{parse_return_statement()}
         );
       }
-      else if (next.token == bensonlex::Token::kw_while)
+      else if (next.token == benson::Token::kw_while)
       {
         block.statements.push_back(
           benson::ast::Statement{parse_while_statement()}
@@ -110,11 +110,11 @@ namespace bensonparse
       else
       {
         auto expr = parse_expression();
-        if (_reader->peek().token == bensonlex::Token::semicolon)
+        if (_reader->peek().token == benson::Token::semicolon)
         {
           auto stmt = benson::ast::Expression_statement{};
           stmt.expression = std::move(*expr);
-          stmt.semicolon = expect(bensonlex::Token::semicolon);
+          stmt.semicolon = expect(benson::Token::semicolon);
           block.statements.push_back(benson::ast::Statement{std::move(stmt)});
         }
         else
@@ -124,7 +124,7 @@ namespace bensonparse
         }
       }
     }
-    block.rbrace = expect(bensonlex::Token::rbrace);
+    block.rbrace = expect(benson::Token::rbrace);
     return block;
   }
 
@@ -167,7 +167,7 @@ namespace bensonparse
   /// - 6: `=` (right-associative)
   ///
   /// **To add a new operator:**
-  /// 1. Add a token to `bensonlex::Token` (token.h) and lex it in
+  /// 1. Add a token to `benson::Token` (token.h) and lex it in
   /// lexeme_stream.cpp.
   /// 2. Add a variant to `benson::ast::Operator` (operator.h).
   /// 3. Assign it a precedence in `get_operator_precedence` (operator.cpp).
@@ -191,16 +191,16 @@ namespace bensonparse
           parse_expression(benson::ast::get_operator_precedence(*prefix_op));
         return std::make_unique<benson::ast::Expression>(std::move(prefix));
       }
-      if (_reader->peek().token == bensonlex::Token::lbracket &&
+      if (_reader->peek().token == benson::Token::lbracket &&
           1 <= current_precedence)
       {
         auto prefix = benson::ast::Prefix_bracket_expression{};
-        prefix.lbracket = expect(bensonlex::Token::lbracket);
-        if (_reader->peek().token != bensonlex::Token::rbracket)
+        prefix.lbracket = expect(benson::Token::lbracket);
+        if (_reader->peek().token != benson::Token::rbracket)
         {
           prefix.size = parse_expression();
         }
-        prefix.rbracket = expect(bensonlex::Token::rbracket);
+        prefix.rbracket = expect(benson::Token::rbracket);
         prefix.operand = parse_expression(1);
         return std::make_unique<benson::ast::Expression>(std::move(prefix));
       }
@@ -216,30 +216,30 @@ namespace bensonparse
           {
             auto call = benson::ast::Call_expression{};
             call.callee = std::move(primary);
-            call.lparen = expect(bensonlex::Token::lparen);
+            call.lparen = expect(benson::Token::lparen);
             for (;;)
             {
-              if (_reader->peek().token == bensonlex::Token::rparen)
+              if (_reader->peek().token == benson::Token::rparen)
               {
                 break;
               }
               call.arguments.push_back(std::move(*parse_expression()));
-              if (_reader->peek().token != bensonlex::Token::comma)
+              if (_reader->peek().token != benson::Token::comma)
               {
                 break;
               }
-              call.argument_commas.push_back(expect(bensonlex::Token::comma));
+              call.argument_commas.push_back(expect(benson::Token::comma));
             }
-            call.rparen = expect(bensonlex::Token::rparen);
+            call.rparen = expect(benson::Token::rparen);
             primary = std::make_unique<benson::ast::Expression>(std::move(call));
           }
           else if (*postfix_op == benson::ast::Operator::index)
           {
             auto idx = benson::ast::Index_expression{};
             idx.operand = std::move(primary);
-            idx.lbracket = expect(bensonlex::Token::lbracket);
+            idx.lbracket = expect(benson::Token::lbracket);
             idx.index = parse_expression();
-            idx.rbracket = expect(bensonlex::Token::rbracket);
+            idx.rbracket = expect(benson::Token::rbracket);
             primary = std::make_unique<benson::ast::Expression>(std::move(idx));
           }
           else
@@ -287,43 +287,43 @@ namespace bensonparse
   std::unique_ptr<benson::ast::Expression> Parser::parse_primary_expression()
   {
     auto const &next = _reader->peek();
-    if (next.token == bensonlex::Token::int_literal)
+    if (next.token == benson::Token::int_literal)
     {
       return std::make_unique<benson::ast::Expression>(
         parse_int_literal_expression()
       );
     }
-    if (next.token == bensonlex::Token::float_literal)
+    if (next.token == benson::Token::float_literal)
     {
       return std::make_unique<benson::ast::Expression>(
         parse_float_literal_expression()
       );
     }
-    if (next.token == bensonlex::Token::identifier)
+    if (next.token == benson::Token::identifier)
     {
       return std::make_unique<benson::ast::Expression>(
         parse_identifier_expression()
       );
     }
-    if (next.token == bensonlex::Token::kw_recurse)
+    if (next.token == benson::Token::kw_recurse)
     {
       return std::make_unique<benson::ast::Expression>(
         benson::ast::Recurse_expression{.kw_recurse = _reader->read()}
       );
     }
-    if (next.token == bensonlex::Token::kw_if)
+    if (next.token == benson::Token::kw_if)
     {
       return std::make_unique<benson::ast::Expression>(parse_if_expression());
     }
-    if (next.token == bensonlex::Token::lbrace)
+    if (next.token == benson::Token::lbrace)
     {
       return std::make_unique<benson::ast::Expression>(parse_block_expression());
     }
-    if (next.token == bensonlex::Token::lparen)
+    if (next.token == benson::Token::lparen)
     {
       return std::make_unique<benson::ast::Expression>(parse_paren_expression());
     }
-    if (next.token == bensonlex::Token::kw_fn)
+    if (next.token == benson::Token::kw_fn)
     {
       return std::make_unique<benson::ast::Expression>(parse_fn_expression());
     }
@@ -337,32 +337,32 @@ namespace bensonparse
   benson::ast::Fn_expression Parser::parse_fn_expression()
   {
     auto fn = benson::ast::Fn_expression{};
-    fn.kw_fn = expect(bensonlex::Token::kw_fn);
-    fn.lparen = expect(bensonlex::Token::lparen);
+    fn.kw_fn = expect(benson::Token::kw_fn);
+    fn.lparen = expect(benson::Token::lparen);
     for (;;)
     {
-      if (_reader->peek().token == bensonlex::Token::rparen)
+      if (_reader->peek().token == benson::Token::rparen)
       {
         break;
       }
       auto param = benson::ast::Fn_expression::Parameter_declaration{};
-      if (_reader->peek().token == bensonlex::Token::kw_mut)
+      if (_reader->peek().token == benson::Token::kw_mut)
       {
-        param.kw_mut = expect(bensonlex::Token::kw_mut);
+        param.kw_mut = expect(benson::Token::kw_mut);
       }
-      param.name = expect(bensonlex::Token::identifier);
-      param.colon = expect(bensonlex::Token::colon);
+      param.name = expect(benson::Token::identifier);
+      param.colon = expect(benson::Token::colon);
       param.type = parse_expression();
       fn.parameters.push_back(std::move(param));
-      if (_reader->peek().token != bensonlex::Token::comma)
+      if (_reader->peek().token != benson::Token::comma)
       {
         break;
       }
-      fn.parameter_commas.push_back(expect(bensonlex::Token::comma));
+      fn.parameter_commas.push_back(expect(benson::Token::comma));
     }
-    fn.rparen = expect(bensonlex::Token::rparen);
+    fn.rparen = expect(benson::Token::rparen);
     fn.return_type_specifier = parse_return_type_specifier();
-    fn.arrow = expect(bensonlex::Token::fat_arrow);
+    fn.arrow = expect(benson::Token::fat_arrow);
     fn.body = parse_expression();
     return fn;
   }
@@ -371,7 +371,7 @@ namespace bensonparse
   Parser::parse_return_type_specifier()
   {
     auto spec = benson::ast::Fn_expression::Return_type_specifier{};
-    spec.colon = expect(bensonlex::Token::colon);
+    spec.colon = expect(benson::Token::colon);
     spec.type = parse_expression();
     return spec;
   }
@@ -379,47 +379,47 @@ namespace bensonparse
   benson::ast::Int_literal_expression Parser::parse_int_literal_expression()
   {
     return benson::ast::Int_literal_expression{
-      .literal = expect(bensonlex::Token::int_literal)
+      .literal = expect(benson::Token::int_literal)
     };
   }
 
   benson::ast::Float_literal_expression Parser::parse_float_literal_expression()
   {
     return benson::ast::Float_literal_expression{
-      .literal = expect(bensonlex::Token::float_literal)
+      .literal = expect(benson::Token::float_literal)
     };
   }
 
   benson::ast::Identifier_expression Parser::parse_identifier_expression()
   {
     return benson::ast::Identifier_expression{
-      .identifier = expect(bensonlex::Token::identifier)
+      .identifier = expect(benson::Token::identifier)
     };
   }
 
   benson::ast::Paren_expression Parser::parse_paren_expression()
   {
     auto expr = benson::ast::Paren_expression{};
-    expr.lparen = expect(bensonlex::Token::lparen);
+    expr.lparen = expect(benson::Token::lparen);
     expr.inner = parse_expression();
-    expr.rparen = expect(bensonlex::Token::rparen);
+    expr.rparen = expect(benson::Token::rparen);
     return expr;
   }
 
   benson::ast::If_expression Parser::parse_if_expression()
   {
     auto expr = benson::ast::If_expression{};
-    expr.kw_if = expect(bensonlex::Token::kw_if);
+    expr.kw_if = expect(benson::Token::kw_if);
     expr.condition = parse_expression();
     expr.then_block = parse_block_expression();
-    while (_reader->peek().token == bensonlex::Token::kw_else)
+    while (_reader->peek().token == benson::Token::kw_else)
     {
-      auto kw_else = expect(bensonlex::Token::kw_else);
-      if (_reader->peek().token == bensonlex::Token::kw_if)
+      auto kw_else = expect(benson::Token::kw_else);
+      if (_reader->peek().token == benson::Token::kw_if)
       {
         auto part = benson::ast::If_expression::Else_if_part{};
         part.kw_else = kw_else;
-        part.kw_if = expect(bensonlex::Token::kw_if);
+        part.kw_if = expect(benson::Token::kw_if);
         part.condition = parse_expression();
         part.body = parse_block_expression();
         expr.else_if_parts.push_back(std::move(part));
@@ -439,13 +439,13 @@ namespace bensonparse
   benson::ast::While_statement Parser::parse_while_statement()
   {
     auto stmt = benson::ast::While_statement{};
-    stmt.kw_while = expect(bensonlex::Token::kw_while);
+    stmt.kw_while = expect(benson::Token::kw_while);
     stmt.condition = parse_expression();
     stmt.body = parse_block_expression();
     return stmt;
   }
 
-  bensonlex::Lexeme Parser::expect(bensonlex::Token token)
+  benson::Lexeme Parser::expect(benson::Token token)
   {
     auto lexeme = _reader->read();
     if (lexeme.token != token)
@@ -459,4 +459,4 @@ namespace bensonparse
     return lexeme;
   }
 
-} // namespace bensonparse
+} // namespace benson

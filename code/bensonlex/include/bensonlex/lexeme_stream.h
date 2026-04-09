@@ -6,7 +6,7 @@
 #include "char_stream_reader.h"
 #include "lexeme.h"
 
-namespace bensonlex
+namespace benson
 {
 
   class Lexeme_stream
@@ -36,6 +36,6 @@ namespace bensonlex
     Source_location _location;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_LEXEME_STREAM_H

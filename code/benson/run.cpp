@@ -28,24 +28,24 @@ namespace benson
     std::ostream &err
   )
   {
-    auto bs = bensonlex::Istream_binary_stream{&input};
-    auto cs = bensonlex::Utf8_char_stream{&bs};
-    auto ls = bensonlex::Lexeme_stream{&cs};
-    auto lr = bensonlex::Lexeme_stream_reader{&ls};
-    auto parser = bensonparse::Parser{&lr};
+    auto bs = benson::Istream_binary_stream{&input};
+    auto cs = benson::Utf8_char_stream{&bs};
+    auto ls = benson::Lexeme_stream{&cs};
+    auto lr = benson::Lexeme_stream_reader{&ls};
+    auto parser = benson::Parser{&lr};
 
     benson::ast::Translation_unit ast;
     try
     {
       ast = parser.parse_translation_unit();
     }
-    catch (bensonlex::Lexeme_stream::Lex_error const &e)
+    catch (benson::Lexeme_stream::Lex_error const &e)
     {
       err << "lex error at " << e.location.line << ":" << e.location.column
           << '\n';
       return 1;
     }
-    catch (bensonlex::Utf8_char_stream::Decode_error const &e)
+    catch (benson::Utf8_char_stream::Decode_error const &e)
     {
       err << e.what() << '\n';
       return 1;

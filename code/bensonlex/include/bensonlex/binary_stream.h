@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <optional>
 
-namespace bensonlex
+namespace benson
 {
 
   /// Abstract source of raw bytes. Implement this to feed binary data into a
@@ -18,6 +18,6 @@ namespace bensonlex
     virtual std::optional<uint8_t> read_byte() = 0;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_BINARY_STREAM_H

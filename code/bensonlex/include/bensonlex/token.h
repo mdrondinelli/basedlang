@@ -1,7 +1,7 @@
 #ifndef BASEDLEX_TOKEN_H
 #define BASEDLEX_TOKEN_H
 
-namespace bensonlex
+namespace benson
 {
 
   enum class Token
@@ -47,6 +47,6 @@ namespace bensonlex
     semicolon, // ;
   };
 
-} // namespace bensonlex
+} // namespace benson
 
 #endif // BASEDLEX_TOKEN_H

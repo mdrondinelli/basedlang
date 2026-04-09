@@ -4,9 +4,9 @@
 #include <variant>
 #include <vector>
 
-#include "bensonhlir/interpret.h"
+#include "bensonir/interpret.h"
 
-namespace bensonhlir
+namespace benson::ir
 {
 
   namespace
@@ -328,4 +328,4 @@ namespace bensonhlir
     return interpret(function, arguments, fuel);
   }
 
-} // namespace bensonhlir
+} // namespace benson::ir

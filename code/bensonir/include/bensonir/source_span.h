@@ -3,11 +3,11 @@
 
 #include <bensonast/source_span.h>
 
-namespace bensonhlir
+namespace benson::ir
 {
 
-  using bensonast::Source_span;
+  using benson::ast::Source_span;
 
-} // namespace bensonhlir
+} // namespace benson::ir
 
 #endif // BASEDHLIR_SOURCE_SPAN_H

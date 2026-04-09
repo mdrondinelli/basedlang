@@ -12,7 +12,7 @@
 #include "hlir.h"
 #include "type.h"
 
-namespace bensonhlir
+namespace benson::ir
 {
 
   struct Object_binding
@@ -58,6 +58,6 @@ namespace bensonhlir
     std::vector<Scope> _scopes;
   };
 
-} // namespace bensonhlir
+} // namespace benson::ir
 
 #endif

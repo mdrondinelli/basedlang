@@ -64,13 +64,13 @@ Understand:
 
 Understand:
 
-- [`bensonhlir`](./bensonhlir.md)
+- [`bensonir`](./bensonir.md)
 
 ### If you are changing interpretation
 
 Understand:
 
-- [`bensonhlir`](./bensonhlir.md)
+- [`bensonir`](./bensonir.md)
 
 ### If you are changing executable wiring
 
@@ -112,7 +112,7 @@ Run the relevant test binary directly:
 ```sh
 ./build/bensonlex-tests
 ./build/bensonparse-tests
-./build/bensonhlir-tests
+./build/bensonir-tests
 ```
 
 Before committing, format the changed code. See [Formatting](./formatting.md).

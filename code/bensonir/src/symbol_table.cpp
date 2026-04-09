@@ -1,8 +1,8 @@
 #include <utility>
 
-#include "bensonhlir/symbol_table.h"
+#include "bensonir/symbol_table.h"
 
-namespace bensonhlir
+namespace benson::ir
 {
 
   Symbol *Symbol_table::declare_object(
@@ -81,4 +81,4 @@ namespace bensonhlir
     _scopes.pop_back();
   }
 
-} // namespace bensonhlir
+} // namespace benson::ir

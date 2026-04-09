@@ -8,7 +8,7 @@
 
 #include "bensonlex/lexeme.h"
 
-namespace bensonast
+namespace benson::ast
 {
 
   struct Expression;
@@ -313,6 +313,6 @@ namespace bensonast
     std::vector<Let_statement> let_statements;
   };
 
-} // namespace bensonast
+} // namespace benson::ast
 
 #endif // BASEDAST_AST_H

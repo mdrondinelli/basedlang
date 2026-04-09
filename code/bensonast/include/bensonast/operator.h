@@ -5,7 +5,7 @@
 
 #include "bensonlex/token.h"
 
-namespace bensonast
+namespace benson::ast
 {
 
   enum class Operator
@@ -49,6 +49,6 @@ namespace bensonast
 
   std::optional<Operator> get_binary_operator(bensonlex::Token token);
 
-} // namespace bensonast
+} // namespace benson::ast
 
 #endif // BASEDAST_OPERATOR_H

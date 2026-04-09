@@ -3,11 +3,11 @@
 
 #include <bensonlex/source_location.h>
 
-namespace bensonast
+namespace benson::ast
 {
 
   using bensonlex::Source_location;
 
-} // namespace bensonast
+} // namespace benson::ast
 
 #endif // BASEDAST_SOURCE_LOCATION_H

@@ -16,7 +16,7 @@ Use this order for most PRs:
 - Lexer changes: [`bensonlex`](./bensonlex.md)
 - AST changes: [`bensonast`](./bensonast.md)
 - Parser changes: [`bensonparse`](./bensonparse.md)
-- Semantic, lowering, or interpreter changes: [`bensonhlir`](./bensonhlir.md)
+- Semantic, lowering, or interpreter changes: [`bensonir`](./bensonir.md)
 - CLI wiring changes: [`benson`](./benson.md)
 - Cross-cutting changes: [Architecture and pipeline overview](./overview.md)
 
@@ -47,7 +47,7 @@ Look for:
 - precedence and associativity consistency
 - edge cases which could parse in an unexpected way
 
-### `bensonhlir`
+### `bensonir`
 
 Look for:
 

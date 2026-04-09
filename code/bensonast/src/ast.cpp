@@ -1,6 +1,6 @@
 #include "bensonast/ast.h"
 
-namespace bensonast
+namespace benson::ast
 {
 
   Fn_expression::~Fn_expression() = default;
@@ -16,4 +16,4 @@ namespace bensonast
   If_expression::~If_expression() = default;
   While_statement::~While_statement() = default;
 
-} // namespace bensonast
+} // namespace benson::ast

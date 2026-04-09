@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <string_view>
 
-#include "bensonhlir/type.h"
+#include "bensonir/type.h"
 
-namespace bensonhlir
+namespace benson::ir
 {
 
   template <typename T>
@@ -89,6 +89,6 @@ namespace bensonhlir
     }
   };
 
-} // namespace bensonhlir
+} // namespace benson::ir
 
 #endif

@@ -1,6 +1,6 @@
-# `bensonhlir`
+# `bensonir`
 
-`bensonhlir` is the semantic core of the project.
+`bensonir` is the semantic core of the project.
 
 ## Interface
 

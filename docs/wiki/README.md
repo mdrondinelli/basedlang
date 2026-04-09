@@ -17,7 +17,7 @@ The pages below are organized to support fast navigation rather than linear read
 - [`bensonlex`](./bensonlex.md)
 - [`bensonast`](./bensonast.md)
 - [`bensonparse`](./bensonparse.md)
-- [`bensonhlir`](./bensonhlir.md)
+- [`bensonir`](./bensonir.md)
 - [`benson`](./benson.md)
 - [Project structure](./project-structure.md)
 - [Conventions](./conventions.md)
@@ -34,7 +34,7 @@ Read these first:
 
 - [PR review guide](./pr-review-guide.md)
 - [Architecture and pipeline overview](./overview.md)
-- [`bensonhlir`](./bensonhlir.md)
+- [`bensonir`](./bensonir.md)
 
 Then jump to the module page for the code being changed.
 
@@ -55,4 +55,4 @@ Then jump to the module page for the area you are editing.
 Use this sequence:
 
 1. [Architecture and pipeline overview](./overview.md)
-2. [`bensonlex`](./bensonlex.md), [`bensonparse`](./bensonparse.md), [`bensonhlir`](./bensonhlir.md), or [`benson`](./benson.md)
+2. [`bensonlex`](./bensonlex.md), [`bensonparse`](./bensonparse.md), [`bensonir`](./bensonir.md), or [`benson`](./benson.md)

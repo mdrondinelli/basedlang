@@ -5,10 +5,10 @@
 #include <stdexcept>
 #include <variant>
 
-#include "bensonhlir/compile.h"
+#include "bensonir/compile.h"
 #include "primitive_type_traits.h"
 
-namespace bensonhlir
+namespace benson::ir
 {
 
   template <
@@ -450,6 +450,6 @@ namespace bensonhlir
     }
   };
 
-} // namespace bensonhlir
+} // namespace benson::ir
 
 #endif

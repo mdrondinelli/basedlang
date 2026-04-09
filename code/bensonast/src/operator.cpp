@@ -1,6 +1,6 @@
 #include "bensonast/operator.h"
 
-namespace bensonast
+namespace benson::ast
 {
 
   int get_operator_precedence(Operator op)
@@ -118,4 +118,4 @@ namespace bensonast
     }
   }
 
-} // namespace bensonast
+} // namespace benson::ast

@@ -5,7 +5,7 @@ bensonlang currently has five main modules:
 1. `bensonlex`
 2. `bensonast`
 3. `bensonparse`
-4. `bensonhlir`
+4. `bensonir`
 5. `benson`
 
 The pipeline is simple:
@@ -30,7 +30,7 @@ Owns the AST data model: expression and statement node types, operator identity,
 
 Owns syntax: consuming lexemes and constructing the `bensonast` data model. Owns precedence rules.
 
-### `bensonhlir`
+### `bensonir`
 
 Owns semantics:
 

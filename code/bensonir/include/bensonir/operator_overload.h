@@ -3,7 +3,7 @@
 
 #include "hlir.h"
 
-namespace bensonhlir
+namespace benson::ir
 {
 
   class Compilation_context;
@@ -36,6 +36,6 @@ namespace bensonhlir
     compile(Compilation_context &ctx, Operand lhs, Operand rhs) const = 0;
   };
 
-} // namespace bensonhlir
+} // namespace benson::ir
 
 #endif

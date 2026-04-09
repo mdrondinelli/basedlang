@@ -3,11 +3,11 @@
 
 #include <bensonast/source_location.h>
 
-namespace bensonhlir
+namespace benson::ir
 {
 
-  using bensonast::Source_location;
+  using benson::ast::Source_location;
 
-} // namespace bensonhlir
+} // namespace benson::ir
 
 #endif // BASEDHLIR_SOURCE_LOCATION_H

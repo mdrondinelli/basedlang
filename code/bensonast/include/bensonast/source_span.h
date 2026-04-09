@@ -4,7 +4,7 @@
 #include "ast.h"
 #include "source_location.h"
 
-namespace bensonast
+namespace benson::ast
 {
 
   /// A closed range of source positions [start, end].
@@ -57,6 +57,6 @@ namespace bensonast
 
   /// @}
 
-} // namespace bensonast
+} // namespace benson::ast
 
 #endif // BASEDAST_SOURCE_SPAN_H

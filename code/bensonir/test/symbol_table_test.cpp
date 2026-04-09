@@ -1,16 +1,16 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "bensonhlir/constant_value.h"
-#include "bensonhlir/symbol_table.h"
+#include "bensonir/constant_value.h"
+#include "bensonir/symbol_table.h"
 
 TEST_CASE("Symbol_table - declare and lookup in global scope")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   auto const sym = table.declare_object("x", pool.int32_type(), false);
   REQUIRE(sym != nullptr);
   CHECK(sym->name == "x");
-  auto const ob = std::get_if<bensonhlir::Object_binding>(&sym->data);
+  auto const ob = std::get_if<benson::ir::Object_binding>(&sym->data);
   REQUIRE(ob != nullptr);
   CHECK(ob->type == pool.int32_type());
   CHECK(ob->is_mutable == false);
@@ -19,14 +19,14 @@ TEST_CASE("Symbol_table - declare and lookup in global scope")
 
 TEST_CASE("Symbol_table - declare_value and lookup")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   auto const sym =
-    table.declare_value("Int32", bensonhlir::Type_value{pool.int32_type()});
+    table.declare_value("Int32", benson::ir::Type_value{pool.int32_type()});
   REQUIRE(sym != nullptr);
-  auto const cv = std::get_if<bensonhlir::Constant_value>(&sym->data);
+  auto const cv = std::get_if<benson::ir::Constant_value>(&sym->data);
   REQUIRE(cv != nullptr);
-  auto const tv = std::get_if<bensonhlir::Type_value>(cv);
+  auto const tv = std::get_if<benson::ir::Type_value>(cv);
   REQUIRE(tv != nullptr);
   CHECK(tv->type == pool.int32_type());
   CHECK(table.lookup("Int32") == sym);
@@ -34,15 +34,15 @@ TEST_CASE("Symbol_table - declare_value and lookup")
 
 TEST_CASE("Symbol_table - lookup returns nullptr for undeclared name")
 {
-  auto table = bensonhlir::Symbol_table{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   CHECK(table.lookup("x") == nullptr);
 }
 
 TEST_CASE("Symbol_table - redeclaration in same scope shadows")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   auto const first = table.declare_object("x", pool.int32_type(), false);
   auto const second = table.declare_object("x", pool.bool_type(), true);
@@ -52,8 +52,8 @@ TEST_CASE("Symbol_table - redeclaration in same scope shadows")
 
 TEST_CASE("Symbol_table - inner scope shadows outer")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   auto const outer = table.declare_object("x", pool.int32_type(), false);
   table.push_scope();
@@ -64,8 +64,8 @@ TEST_CASE("Symbol_table - inner scope shadows outer")
 
 TEST_CASE("Symbol_table - pop scope restores outer symbol")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   auto const outer = table.declare_object("x", pool.int32_type(), false);
   table.push_scope();
@@ -76,8 +76,8 @@ TEST_CASE("Symbol_table - pop scope restores outer symbol")
 
 TEST_CASE("Symbol_table - inner scope finds outer declaration")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   auto const sym = table.declare_object("x", pool.int32_type(), false);
   table.push_scope();
@@ -86,21 +86,21 @@ TEST_CASE("Symbol_table - inner scope finds outer declaration")
 
 TEST_CASE("Symbol_table - symbols outlive scope pop")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   auto const sym = table.declare_object("x", pool.int32_type(), false);
   table.pop_scope();
   CHECK(sym->name == "x");
-  auto const ob = std::get_if<bensonhlir::Object_binding>(&sym->data);
+  auto const ob = std::get_if<benson::ir::Object_binding>(&sym->data);
   REQUIRE(ob != nullptr);
   CHECK(ob->type == pool.int32_type());
 }
 
 TEST_CASE("Symbol_table - barrier blocks lookup of outer locals")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   table.declare_object("x", pool.int32_type(), false);
   table.push_scope(true);
@@ -109,8 +109,8 @@ TEST_CASE("Symbol_table - barrier blocks lookup of outer locals")
 
 TEST_CASE("Symbol_table - barrier does not block globals")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   auto const global = table.declare_object("g", pool.int32_type(), false);
   table.push_scope();
   table.declare_object("x", pool.int32_type(), false);
@@ -121,8 +121,8 @@ TEST_CASE("Symbol_table - barrier does not block globals")
 
 TEST_CASE("Symbol_table - declaration inside barrier scope is visible")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   table.push_scope(true);
   auto const sym = table.declare_object("y", pool.bool_type(), true);
@@ -133,8 +133,8 @@ TEST_CASE(
   "Symbol_table - local scope inside barrier finds barrier-scope declarations"
 )
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   table.push_scope();
   table.push_scope(true);
   auto const sym = table.declare_object("p", pool.int32_type(), false);
@@ -144,8 +144,8 @@ TEST_CASE(
 
 TEST_CASE("Symbol_table - nested barriers")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   auto const global = table.declare_object("g", pool.int32_type(), false);
   table.push_scope(true);
   auto const outer_fn =
@@ -161,10 +161,10 @@ TEST_CASE("Symbol_table - nested barriers")
 
 TEST_CASE("Symbol_table - global value symbols visible through barrier")
 {
-  auto pool = bensonhlir::Type_pool{};
-  auto table = bensonhlir::Symbol_table{};
+  auto pool = benson::ir::Type_pool{};
+  auto table = benson::ir::Symbol_table{};
   auto const int32_sym =
-    table.declare_value("Int32", bensonhlir::Type_value{pool.int32_type()});
+    table.declare_value("Int32", benson::ir::Type_value{pool.int32_type()});
   table.push_scope(true);
   CHECK(table.lookup("Int32") == int32_sym);
 }

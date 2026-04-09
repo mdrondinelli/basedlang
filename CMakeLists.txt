@@ -32,20 +32,20 @@ add_library(bensonparse
 target_include_directories(bensonparse PUBLIC code/bensonparse/include)
 target_link_libraries(bensonparse PUBLIC bensonast)
 
-add_library(bensonhlir
-  code/bensonhlir/src/compile.cpp
-  code/bensonhlir/src/interpret.cpp
-  code/bensonhlir/src/symbol_table.cpp
-  code/bensonhlir/src/type.cpp
+add_library(bensonir
+  code/bensonir/src/compile.cpp
+  code/bensonir/src/interpret.cpp
+  code/bensonir/src/symbol_table.cpp
+  code/bensonir/src/type.cpp
 )
-target_include_directories(bensonhlir PUBLIC code/bensonhlir/include)
-target_link_libraries(bensonhlir PUBLIC bensonast)
+target_include_directories(bensonir PUBLIC code/bensonir/include)
+target_link_libraries(bensonir PUBLIC bensonast)
 
 add_library(bensoncli
   code/benson/run.cpp
 )
 target_include_directories(bensoncli PUBLIC code/benson)
-target_link_libraries(bensoncli PUBLIC bensonhlir bensonparse)
+target_link_libraries(bensoncli PUBLIC bensonir bensonparse)
 
 add_executable(benson
   code/benson/main.cpp
@@ -66,13 +66,13 @@ add_executable(bensonparse-tests
 target_link_libraries(bensonparse-tests PRIVATE bensonparse Catch2::Catch2WithMain)
 target_compile_definitions(bensonparse-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
-add_executable(bensonhlir-tests
-  code/bensonhlir/test/symbol_table_test.cpp
-  code/bensonhlir/test/type_test.cpp
-  code/bensonhlir/test/compile_test.cpp
+add_executable(bensonir-tests
+  code/bensonir/test/symbol_table_test.cpp
+  code/bensonir/test/type_test.cpp
+  code/bensonir/test/compile_test.cpp
 )
-target_link_libraries(bensonhlir-tests PRIVATE bensonhlir bensonparse Catch2::Catch2WithMain)
-target_compile_definitions(bensonhlir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+target_link_libraries(bensonir-tests PRIVATE bensonir bensonparse Catch2::Catch2WithMain)
+target_compile_definitions(bensonir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(benson-tests
   code/benson/test/run_test.cpp

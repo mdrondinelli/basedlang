@@ -11,7 +11,7 @@
 #include "constant_value.h"
 #include "type.h"
 
-namespace bensonhlir
+namespace benson::ir
 {
 
   class Register
@@ -320,6 +320,6 @@ namespace bensonhlir
     std::unordered_map<std::string, Function *> function_table;
   };
 
-} // namespace bensonhlir
+} // namespace benson::ir
 
 #endif

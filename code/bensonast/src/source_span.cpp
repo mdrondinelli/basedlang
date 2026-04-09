@@ -2,7 +2,7 @@
 
 #include "bensonast/source_span.h"
 
-namespace bensonast
+namespace benson::ast
 {
 
   Source_span span_of(bensonlex::Lexeme const &lexeme)
@@ -148,4 +148,4 @@ namespace bensonast
     return hull(span_of(node.expression), span_of(node.semicolon));
   }
 
-} // namespace bensonast
+} // namespace benson::ast

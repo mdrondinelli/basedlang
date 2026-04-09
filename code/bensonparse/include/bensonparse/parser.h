@@ -16,41 +16,41 @@ namespace bensonparse
   public:
     explicit Parser(bensonlex::Lexeme_stream_reader *reader) noexcept;
 
-    bensonast::Translation_unit parse_translation_unit();
+    benson::ast::Translation_unit parse_translation_unit();
 
-    bensonast::Statement parse_statement();
+    benson::ast::Statement parse_statement();
 
-    bensonast::Let_statement parse_let_statement();
+    benson::ast::Let_statement parse_let_statement();
 
-    bensonast::Return_statement parse_return_statement();
+    benson::ast::Return_statement parse_return_statement();
 
-    bensonast::Expression_statement parse_expression_statement();
+    benson::ast::Expression_statement parse_expression_statement();
 
-    std::unique_ptr<bensonast::Expression> parse_expression();
+    std::unique_ptr<benson::ast::Expression> parse_expression();
 
-    std::unique_ptr<bensonast::Expression> parse_primary_expression();
+    std::unique_ptr<benson::ast::Expression> parse_primary_expression();
 
-    bensonast::Int_literal_expression parse_int_literal_expression();
+    benson::ast::Int_literal_expression parse_int_literal_expression();
 
-    bensonast::Float_literal_expression parse_float_literal_expression();
+    benson::ast::Float_literal_expression parse_float_literal_expression();
 
-    bensonast::Identifier_expression parse_identifier_expression();
+    benson::ast::Identifier_expression parse_identifier_expression();
 
-    bensonast::Paren_expression parse_paren_expression();
+    benson::ast::Paren_expression parse_paren_expression();
 
-    bensonast::Block_expression parse_block_expression();
+    benson::ast::Block_expression parse_block_expression();
 
-    bensonast::If_expression parse_if_expression();
+    benson::ast::If_expression parse_if_expression();
 
-    bensonast::While_statement parse_while_statement();
+    benson::ast::While_statement parse_while_statement();
 
-    bensonast::Fn_expression parse_fn_expression();
+    benson::ast::Fn_expression parse_fn_expression();
 
-    bensonast::Fn_expression::Return_type_specifier
+    benson::ast::Fn_expression::Return_type_specifier
     parse_return_type_specifier();
 
   private:
-    std::unique_ptr<bensonast::Expression>
+    std::unique_ptr<benson::ast::Expression>
     parse_expression(int current_precedence);
 
     bensonlex::Lexeme expect(bensonlex::Token token);

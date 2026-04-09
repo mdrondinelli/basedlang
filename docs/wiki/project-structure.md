@@ -22,7 +22,7 @@ The parser library. Owns expression precedence, statement parsing, and AST const
 
 See [`bensonparse`](./bensonparse.md).
 
-### `code/bensonhlir`
+### `code/bensonir`
 
 The semantic and execution core. Owns:
 
@@ -33,7 +33,7 @@ The semantic and execution core. Owns:
 - lowering to HLIR
 - interpretation of HLIR
 
-See [`bensonhlir`](./bensonhlir.md).
+See [`bensonir`](./bensonir.md).
 
 ### `code/benson`
 

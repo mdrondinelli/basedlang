@@ -10,11 +10,11 @@
 
 #include <bensonast/source_span.h>
 
-#include "bensonhlir/compile.h"
-#include "bensonhlir/interpret.h"
+#include "bensonir/compile.h"
+#include "bensonir/interpret.h"
 #include "operator_functors.h"
 
-namespace bensonhlir
+namespace benson::ir
 {
 
   template <typename T>
@@ -61,238 +61,238 @@ namespace bensonhlir
     );
     _symbol_table.declare_value("true", true);
     _symbol_table.declare_value("false", false);
-    _unary_overloads[bensonast::Operator::unary_plus].push_back(
+    _unary_overloads[benson::ast::Operator::unary_plus].push_back(
       std::make_unique<Unary_plus>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::unary_minus].push_back(
+    _unary_overloads[benson::ast::Operator::unary_minus].push_back(
       std::make_unique<Negate<std::int8_t>>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::unary_minus].push_back(
+    _unary_overloads[benson::ast::Operator::unary_minus].push_back(
       std::make_unique<Negate<std::int16_t>>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::unary_minus].push_back(
+    _unary_overloads[benson::ast::Operator::unary_minus].push_back(
       std::make_unique<Negate<std::int32_t>>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::unary_minus].push_back(
+    _unary_overloads[benson::ast::Operator::unary_minus].push_back(
       std::make_unique<Negate<std::int64_t>>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::unary_minus].push_back(
+    _unary_overloads[benson::ast::Operator::unary_minus].push_back(
       std::make_unique<Negate<float>>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::unary_minus].push_back(
+    _unary_overloads[benson::ast::Operator::unary_minus].push_back(
       std::make_unique<Negate<double>>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::pointer_to].push_back(
+    _unary_overloads[benson::ast::Operator::pointer_to].push_back(
       std::make_unique<Pointer_to>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::pointer_to_mut].push_back(
+    _unary_overloads[benson::ast::Operator::pointer_to_mut].push_back(
       std::make_unique<Pointer_to_mut>(_type_pool)
     );
-    _unary_overloads[bensonast::Operator::dereference].push_back(
+    _unary_overloads[benson::ast::Operator::dereference].push_back(
       std::make_unique<Dereference>()
     );
-    _binary_overloads[bensonast::Operator::add].push_back(
+    _binary_overloads[benson::ast::Operator::add].push_back(
       std::make_unique<Add<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::add].push_back(
+    _binary_overloads[benson::ast::Operator::add].push_back(
       std::make_unique<Add<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::add].push_back(
+    _binary_overloads[benson::ast::Operator::add].push_back(
       std::make_unique<Add<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::add].push_back(
+    _binary_overloads[benson::ast::Operator::add].push_back(
       std::make_unique<Add<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::subtract].push_back(
+    _binary_overloads[benson::ast::Operator::subtract].push_back(
       std::make_unique<Subtract<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::subtract].push_back(
+    _binary_overloads[benson::ast::Operator::subtract].push_back(
       std::make_unique<Subtract<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::subtract].push_back(
+    _binary_overloads[benson::ast::Operator::subtract].push_back(
       std::make_unique<Subtract<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::subtract].push_back(
+    _binary_overloads[benson::ast::Operator::subtract].push_back(
       std::make_unique<Subtract<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::multiply].push_back(
+    _binary_overloads[benson::ast::Operator::multiply].push_back(
       std::make_unique<Multiply<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::multiply].push_back(
+    _binary_overloads[benson::ast::Operator::multiply].push_back(
       std::make_unique<Multiply<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::multiply].push_back(
+    _binary_overloads[benson::ast::Operator::multiply].push_back(
       std::make_unique<Multiply<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::multiply].push_back(
+    _binary_overloads[benson::ast::Operator::multiply].push_back(
       std::make_unique<Multiply<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::divide].push_back(
+    _binary_overloads[benson::ast::Operator::divide].push_back(
       std::make_unique<Divide<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::divide].push_back(
+    _binary_overloads[benson::ast::Operator::divide].push_back(
       std::make_unique<Divide<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::divide].push_back(
+    _binary_overloads[benson::ast::Operator::divide].push_back(
       std::make_unique<Divide<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::divide].push_back(
+    _binary_overloads[benson::ast::Operator::divide].push_back(
       std::make_unique<Divide<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::modulo].push_back(
+    _binary_overloads[benson::ast::Operator::modulo].push_back(
       std::make_unique<Modulo<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::modulo].push_back(
+    _binary_overloads[benson::ast::Operator::modulo].push_back(
       std::make_unique<Modulo<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::modulo].push_back(
+    _binary_overloads[benson::ast::Operator::modulo].push_back(
       std::make_unique<Modulo<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::modulo].push_back(
+    _binary_overloads[benson::ast::Operator::modulo].push_back(
       std::make_unique<Modulo<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::equal].push_back(
+    _binary_overloads[benson::ast::Operator::equal].push_back(
       std::make_unique<Equal<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::equal].push_back(
+    _binary_overloads[benson::ast::Operator::equal].push_back(
       std::make_unique<Equal<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::equal].push_back(
+    _binary_overloads[benson::ast::Operator::equal].push_back(
       std::make_unique<Equal<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::equal].push_back(
+    _binary_overloads[benson::ast::Operator::equal].push_back(
       std::make_unique<Equal<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::not_equal].push_back(
+    _binary_overloads[benson::ast::Operator::not_equal].push_back(
       std::make_unique<Not_equal<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::not_equal].push_back(
+    _binary_overloads[benson::ast::Operator::not_equal].push_back(
       std::make_unique<Not_equal<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::not_equal].push_back(
+    _binary_overloads[benson::ast::Operator::not_equal].push_back(
       std::make_unique<Not_equal<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::not_equal].push_back(
+    _binary_overloads[benson::ast::Operator::not_equal].push_back(
       std::make_unique<Not_equal<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less].push_back(
+    _binary_overloads[benson::ast::Operator::less].push_back(
       std::make_unique<Less<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less].push_back(
+    _binary_overloads[benson::ast::Operator::less].push_back(
       std::make_unique<Less<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less].push_back(
+    _binary_overloads[benson::ast::Operator::less].push_back(
       std::make_unique<Less<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less].push_back(
+    _binary_overloads[benson::ast::Operator::less].push_back(
       std::make_unique<Less<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less_eq].push_back(
+    _binary_overloads[benson::ast::Operator::less_eq].push_back(
       std::make_unique<Less_eq<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less_eq].push_back(
+    _binary_overloads[benson::ast::Operator::less_eq].push_back(
       std::make_unique<Less_eq<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less_eq].push_back(
+    _binary_overloads[benson::ast::Operator::less_eq].push_back(
       std::make_unique<Less_eq<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less_eq].push_back(
+    _binary_overloads[benson::ast::Operator::less_eq].push_back(
       std::make_unique<Less_eq<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater].push_back(
+    _binary_overloads[benson::ast::Operator::greater].push_back(
       std::make_unique<Greater<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater].push_back(
+    _binary_overloads[benson::ast::Operator::greater].push_back(
       std::make_unique<Greater<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater].push_back(
+    _binary_overloads[benson::ast::Operator::greater].push_back(
       std::make_unique<Greater<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater].push_back(
+    _binary_overloads[benson::ast::Operator::greater].push_back(
       std::make_unique<Greater<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater_eq].push_back(
+    _binary_overloads[benson::ast::Operator::greater_eq].push_back(
       std::make_unique<Greater_eq<std::int8_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater_eq].push_back(
+    _binary_overloads[benson::ast::Operator::greater_eq].push_back(
       std::make_unique<Greater_eq<std::int16_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater_eq].push_back(
+    _binary_overloads[benson::ast::Operator::greater_eq].push_back(
       std::make_unique<Greater_eq<std::int32_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater_eq].push_back(
+    _binary_overloads[benson::ast::Operator::greater_eq].push_back(
       std::make_unique<Greater_eq<std::int64_t>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::add].push_back(
+    _binary_overloads[benson::ast::Operator::add].push_back(
       std::make_unique<Add<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::add].push_back(
+    _binary_overloads[benson::ast::Operator::add].push_back(
       std::make_unique<Add<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::subtract].push_back(
+    _binary_overloads[benson::ast::Operator::subtract].push_back(
       std::make_unique<Subtract<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::subtract].push_back(
+    _binary_overloads[benson::ast::Operator::subtract].push_back(
       std::make_unique<Subtract<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::multiply].push_back(
+    _binary_overloads[benson::ast::Operator::multiply].push_back(
       std::make_unique<Multiply<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::multiply].push_back(
+    _binary_overloads[benson::ast::Operator::multiply].push_back(
       std::make_unique<Multiply<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::divide].push_back(
+    _binary_overloads[benson::ast::Operator::divide].push_back(
       std::make_unique<Divide<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::divide].push_back(
+    _binary_overloads[benson::ast::Operator::divide].push_back(
       std::make_unique<Divide<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::equal].push_back(
+    _binary_overloads[benson::ast::Operator::equal].push_back(
       std::make_unique<Equal<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::equal].push_back(
+    _binary_overloads[benson::ast::Operator::equal].push_back(
       std::make_unique<Equal<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::not_equal].push_back(
+    _binary_overloads[benson::ast::Operator::not_equal].push_back(
       std::make_unique<Not_equal<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::not_equal].push_back(
+    _binary_overloads[benson::ast::Operator::not_equal].push_back(
       std::make_unique<Not_equal<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less].push_back(
+    _binary_overloads[benson::ast::Operator::less].push_back(
       std::make_unique<Less<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less].push_back(
+    _binary_overloads[benson::ast::Operator::less].push_back(
       std::make_unique<Less<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less_eq].push_back(
+    _binary_overloads[benson::ast::Operator::less_eq].push_back(
       std::make_unique<Less_eq<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::less_eq].push_back(
+    _binary_overloads[benson::ast::Operator::less_eq].push_back(
       std::make_unique<Less_eq<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater].push_back(
+    _binary_overloads[benson::ast::Operator::greater].push_back(
       std::make_unique<Greater<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater].push_back(
+    _binary_overloads[benson::ast::Operator::greater].push_back(
       std::make_unique<Greater<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater_eq].push_back(
+    _binary_overloads[benson::ast::Operator::greater_eq].push_back(
       std::make_unique<Greater_eq<float>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::greater_eq].push_back(
+    _binary_overloads[benson::ast::Operator::greater_eq].push_back(
       std::make_unique<Greater_eq<double>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::equal].push_back(
+    _binary_overloads[benson::ast::Operator::equal].push_back(
       std::make_unique<Equal<bool>>(_type_pool)
     );
-    _binary_overloads[bensonast::Operator::not_equal].push_back(
+    _binary_overloads[benson::ast::Operator::not_equal].push_back(
       std::make_unique<Not_equal<bool>>(_type_pool)
     );
   }
 
   Translation_unit
-  Compilation_context::compile(bensonast::Translation_unit const &ast)
+  Compilation_context::compile(benson::ast::Translation_unit const &ast)
   {
     for (auto const &decl : ast.let_statements)
     {
@@ -396,7 +396,7 @@ namespace bensonhlir
   }
 
   Unary_operator_overload *Compilation_context::find_unary_overload(
-    bensonast::Operator op,
+    benson::ast::Operator op,
     Type *operand_type
   )
   {
@@ -415,7 +415,7 @@ namespace bensonhlir
   }
 
   Binary_operator_overload *Compilation_context::find_binary_overload(
-    bensonast::Operator op,
+    benson::ast::Operator op,
     Type *lhs_type,
     Type *rhs_type
   )
@@ -469,7 +469,7 @@ namespace bensonhlir
   }
 
   Type *
-  Compilation_context::compile_type_expression(bensonast::Expression const &expr)
+  Compilation_context::compile_type_expression(benson::ast::Expression const &expr)
   {
     auto const value = evaluate_constant_expression(expr);
     auto const tv = std::get_if<Type_value>(&value);
@@ -481,7 +481,7 @@ namespace bensonhlir
   }
 
   Constant_value Compilation_context::evaluate_constant_expression(
-    bensonast::Expression const &expr
+    benson::ast::Expression const &expr
   )
   {
     auto result = Operand{};
@@ -494,7 +494,7 @@ namespace bensonhlir
       _diagnostics.push_back(
         Diagnostic{
           .message = "expression is not a compile-time constant",
-          .location = e.expression_location.value_or(bensonast::span_of(expr)),
+          .location = e.expression_location.value_or(benson::ast::span_of(expr)),
           .notes = {},
         }
       );
@@ -505,7 +505,7 @@ namespace bensonhlir
       _diagnostics.push_back(
         Diagnostic{
           .message = "compile-time evaluation ran out of fuel",
-          .location = bensonast::span_of(expr),
+          .location = benson::ast::span_of(expr),
           .notes = {},
         }
       );
@@ -585,7 +585,7 @@ namespace bensonhlir
   }
 
   Operand
-  Compilation_context::compile_expression(bensonast::Expression const &expr)
+  Compilation_context::compile_expression(benson::ast::Expression const &expr)
   {
     try
     {
@@ -608,28 +608,28 @@ namespace bensonhlir
     {
       if (!e.expression_location.has_value())
       {
-        e.expression_location = bensonast::span_of(expr);
+        e.expression_location = benson::ast::span_of(expr);
       }
       throw;
     }
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Int_literal_expression const &expr
+    benson::ast::Int_literal_expression const &expr
   )
   {
     return compile_int_literal(expr.literal.text, false, expr.literal);
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Float_literal_expression const &expr
+    benson::ast::Float_literal_expression const &expr
   )
   {
     return compile_float_literal(expr.literal.text, expr.literal);
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Identifier_expression const &expr
+    benson::ast::Identifier_expression const &expr
   )
   {
     auto const sym = lookup_identifier(expr.identifier);
@@ -644,7 +644,7 @@ namespace bensonhlir
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Recurse_expression const &expr
+    benson::ast::Recurse_expression const &expr
   )
   {
     if (is_top_level())
@@ -655,32 +655,32 @@ namespace bensonhlir
   }
 
   Operand
-  Compilation_context::compile_expression(bensonast::Fn_expression const &expr)
+  Compilation_context::compile_expression(benson::ast::Fn_expression const &expr)
   {
     return Constant_value{Function_value{.function = compile_function(expr)}};
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Paren_expression const &expr
+    benson::ast::Paren_expression const &expr
   )
   {
     return compile_expression(*expr.inner);
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Prefix_expression const &expr
+    benson::ast::Prefix_expression const &expr
   )
   {
-    auto const op = bensonast::get_prefix_operator(expr.op.token);
+    auto const op = benson::ast::get_prefix_operator(expr.op.token);
     assert(op.has_value());
     // Special case: unary minus before int literal expression
-    if (*op == bensonast::Operator::unary_minus &&
-        std::holds_alternative<bensonast::Int_literal_expression>(
+    if (*op == benson::ast::Operator::unary_minus &&
+        std::holds_alternative<benson::ast::Int_literal_expression>(
           expr.operand->value
         ))
     {
       auto const &literal =
-        std::get<bensonast::Int_literal_expression>(expr.operand->value);
+        std::get<benson::ast::Int_literal_expression>(expr.operand->value);
       return compile_int_literal(literal.literal.text, true, literal.literal);
     }
     // General case
@@ -695,19 +695,19 @@ namespace bensonhlir
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Postfix_expression const &expr
+    benson::ast::Postfix_expression const &expr
   )
   {
     emit_error("dereference is not supported in this context", expr.op);
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Binary_expression const &expr
+    benson::ast::Binary_expression const &expr
   )
   {
     auto const lhs_result = compile_expression(*expr.left);
     auto const rhs_result = compile_expression(*expr.right);
-    auto const op = bensonast::get_binary_operator(expr.op.token);
+    auto const op = benson::ast::get_binary_operator(expr.op.token);
     assert(op.has_value());
     auto const lhs_type = type_of_operand(lhs_result);
     auto const rhs_type = type_of_operand(rhs_result);
@@ -717,7 +717,7 @@ namespace bensonhlir
   }
 
   Operand
-  Compilation_context::compile_expression(bensonast::Call_expression const &expr)
+  Compilation_context::compile_expression(benson::ast::Call_expression const &expr)
   {
     auto const callee_result = compile_expression(*expr.callee);
     auto const callee_type = type_of_operand(callee_result);
@@ -789,13 +789,13 @@ namespace bensonhlir
   }
 
   Operand
-  Compilation_context::compile_expression(bensonast::Index_expression const &)
+  Compilation_context::compile_expression(benson::ast::Index_expression const &)
   {
     throw std::runtime_error{"index expressions are not implemented"};
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Prefix_bracket_expression const &expr
+    benson::ast::Prefix_bracket_expression const &expr
   )
   {
     auto const element_result = compile_expression(*expr.operand);
@@ -836,7 +836,7 @@ namespace bensonhlir
   }
 
   Operand Compilation_context::compile_expression(
-    bensonast::Block_expression const &expr
+    benson::ast::Block_expression const &expr
   )
   {
     _symbol_table.push_scope();
@@ -851,7 +851,7 @@ namespace bensonhlir
   }
 
   Operand
-  Compilation_context::compile_expression(bensonast::If_expression const &expr)
+  Compilation_context::compile_expression(benson::ast::If_expression const &expr)
   {
     auto const cond_result = compile_expression(*expr.condition);
     auto const cond_type = type_of_operand(cond_result);
@@ -993,7 +993,7 @@ namespace bensonhlir
     return Constant_value{Void_value{}};
   }
 
-  void Compilation_context::compile_statement(bensonast::Statement const &stmt)
+  void Compilation_context::compile_statement(benson::ast::Statement const &stmt)
   {
     std::visit(
       [this](auto const &s)
@@ -1005,7 +1005,7 @@ namespace bensonhlir
   }
 
   void Compilation_context::compile_statement(
-    bensonast::Let_statement const &stmt
+    benson::ast::Let_statement const &stmt
   )
   {
     auto const is_mutable = stmt.kw_mut.has_value();
@@ -1024,10 +1024,10 @@ namespace bensonhlir
         Diagnostic{
           .message = "expression is not a compile-time constant",
           .location =
-            e.expression_location.value_or(bensonast::span_of(stmt.initializer)),
+            e.expression_location.value_or(benson::ast::span_of(stmt.initializer)),
           .notes = {Diagnostic_note{
             .message = "required by this top-level binding",
-            .location = bensonast::span_of(stmt),
+            .location = benson::ast::span_of(stmt),
           }},
         }
       );
@@ -1038,10 +1038,10 @@ namespace bensonhlir
       _diagnostics.push_back(
         Diagnostic{
           .message = "compile-time evaluation ran out of fuel",
-          .location = bensonast::span_of(stmt.initializer),
+          .location = benson::ast::span_of(stmt.initializer),
           .notes = {Diagnostic_note{
             .message = "required by this top-level binding",
-            .location = bensonast::span_of(stmt),
+            .location = benson::ast::span_of(stmt),
           }},
         }
       );
@@ -1061,10 +1061,10 @@ namespace bensonhlir
         _diagnostics.push_back(
           Diagnostic{
             .message = "expression is not a compile-time constant",
-            .location = bensonast::span_of(stmt.initializer),
+            .location = benson::ast::span_of(stmt.initializer),
             .notes = {Diagnostic_note{
               .message = "required by this top-level binding",
-              .location = bensonast::span_of(stmt),
+              .location = benson::ast::span_of(stmt),
             }},
           }
         );
@@ -1095,7 +1095,7 @@ namespace bensonhlir
   }
 
   void Compilation_context::compile_statement(
-    bensonast::While_statement const &stmt
+    benson::ast::While_statement const &stmt
   )
   {
     emit_error(
@@ -1105,7 +1105,7 @@ namespace bensonhlir
   }
 
   void Compilation_context::compile_statement(
-    bensonast::Return_statement const &stmt
+    benson::ast::Return_statement const &stmt
   )
   {
     auto const result = compile_expression(stmt.value);
@@ -1125,14 +1125,14 @@ namespace bensonhlir
   }
 
   void Compilation_context::compile_statement(
-    bensonast::Expression_statement const &stmt
+    benson::ast::Expression_statement const &stmt
   )
   {
     compile_expression(stmt.expression);
   }
 
   Function *
-  Compilation_context::compile_function(bensonast::Fn_expression const &expr)
+  Compilation_context::compile_function(benson::ast::Fn_expression const &expr)
   {
     auto parameter_types = std::vector<Type *>{};
     for (auto const &param : expr.parameters)
@@ -1193,7 +1193,7 @@ namespace bensonhlir
   }
 
   Translation_unit
-  compile(bensonast::Translation_unit const &ast, Type_pool *type_pool)
+  compile(benson::ast::Translation_unit const &ast, Type_pool *type_pool)
   {
     auto ctx = Compilation_context{type_pool};
     return ctx.compile(ast);
@@ -1324,4 +1324,4 @@ namespace bensonhlir
     }
   }
 
-} // namespace bensonhlir
+} // namespace benson::ir

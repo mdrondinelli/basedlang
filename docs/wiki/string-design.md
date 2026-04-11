@@ -123,7 +123,30 @@ This text type should:
 - support equality, hashing, and output encoding at the edges
 - avoid committing the compiler to one serialized encoding internally
 
-### 4. Keep the lexer responsible only for lexing
+### 4. Keep token-text allocation cheap for common cases
+
+The proposal should make allocation policy explicit.
+
+The compiler should not perform a separate heap allocation for every small token
+spelling.
+
+Recommended policy:
+
+- identifiers are always interned, including short identifiers
+- interning should happen once per distinct identifier spelling, not once per
+  occurrence
+- fixed-spelling tokens such as punctuation and keywords carry no owned text
+- small literal spellings should use inline storage where practical
+- larger literal spellings may spill to heap-backed storage
+
+Short identifiers are not a good exception to interning. They are among the
+most common and most repeated spellings in the program, so they benefit the
+most from canonicalization and cheap handle-based comparison.
+
+The main allocation goal is not "avoid interning short identifiers." It is
+"avoid per-occurrence allocation and avoid heap churn for tiny payloads."
+
+### 5. Keep the lexer responsible only for lexing
 
 The lexer should preserve literal spelling, not interpret it.
 
@@ -136,7 +159,7 @@ For string literals in particular:
 This separation matters because formatting and diagnostics care about original
 spelling, while semantic analysis cares about decoded values.
 
-### 5. Separate source spelling, interning, and semantic meaning
+### 6. Separate source spelling, interning, and semantic meaning
 
 The proposal should explicitly distinguish:
 
@@ -173,7 +196,7 @@ This gives the compiler room to:
 - compare identifier spellings through interned handles
 - evolve identifier policy later without redesigning formatting support
 
-### 6. Add identifier interning now
+### 7. Add identifier interning now
 
 Interning should be part of the design now, not deferred.
 
@@ -193,7 +216,7 @@ The AST still keeps lexemes with preserved source spelling. For identifiers,
 that preserved spelling should be represented by the same interned value carried
 on the lexeme and later used by lookup code.
 
-### 7. Keep diagnostics snippet rendering outside the compiler core
+### 8. Keep diagnostics snippet rendering outside the compiler core
 
 Diagnostics need accurate line/column positions and enough metadata to point
 back into the original source, but the compiler does not need to keep full
@@ -216,7 +239,7 @@ The intended future model is:
 
 - `Source_span`: a closed source range with explicit start and end positions
 - `Token_text`: compiler-owned preserved spelling for user-authored token text
-- `Interned_name`: canonical semantic-name handle
+- `Interned_name`: canonical identifier-spelling handle
 - `Lexeme`: token kind, exact span, and optional preserved spelling for tokens
   that carry user-authored text
 

@@ -28,8 +28,8 @@ The recommended direction is:
 - preserve original spelling for user-authored tokens so the AST can drive
   future pretty-printing
 - keep escape decoding out of the lexer
-- intern semantic identifier names early, while keeping source spelling
-  separate
+- intern identifier spellings early so later phases can use those interned
+  spellings for fast lookup
 - keep diagnostic snippet rendering outside the compiler core
 
 This gives the compiler four things it does not have today:
@@ -38,28 +38,7 @@ This gives the compiler four things it does not have today:
 2. a path to Unicode string literals without committing the compiler to UTF-8
    internally
 3. enough retained syntax text to support formatter-style source emission
-4. early semantic-name interning without sacrificing source fidelity
-
-## Current problem
-
-The current `Lexeme` shape mixes multiple concerns into `std::string text`:
-
-- source-facing spelling retained in the AST
-- semantic identifier text used for lookup
-- literal text used later for parsing
-- implicit span width through `text.size()`
-
-That is not a stable foundation for Unicode-aware lexemes or formatter-driven
-source emission.
-
-The main failure modes are:
-
-- byte length is being used as a proxy for source extent
-- lexeme storage assumes one text representation can satisfy source fidelity,
-  semantic identity, and literal parsing equally well
-- string literals will need preserved original spelling, but the current model
-  nudges the lexer toward premature decoding
-- delaying interning makes later symbol-table and IR refactors broader
+4. early identifier-spelling interning without sacrificing source fidelity
 
 ## Requirements
 
@@ -169,9 +148,9 @@ The proposal should explicitly distinguish:
   compilation
 
 The lexer is not deciding what an identifier means. It is only producing lexemes
-and, for identifier-like spellings, optionally interning their text early.
-Later semantic stages can then use those interned values for fast equality,
-hashing, and symbol-table lookup.
+and interning identifier-like spellings as it lexes them. Identifier lexemes
+should carry that interned handle directly. Later semantic stages can then use
+those interned values for fast equality, hashing, and symbol-table lookup.
 
 For identifiers specifically, the implementation does not need to duplicate the
 underlying text if one representation can serve both roles. In the common case,
@@ -200,8 +179,8 @@ Interning should be part of the design now, not deferred.
 
 Recommended boundary:
 
-- intern identifier-like semantic names used in lookup, symbol identity, and
-  later semantic caches
+- intern identifier-like spellings during lexing and attach the resulting
+  handle directly to identifier lexemes
 - do not require punctuation, keywords, or literal spellings to be interned
 
 The intern table should:
@@ -211,9 +190,8 @@ The intern table should:
 - support cheap equality and hashing by handle
 
 The AST still keeps lexemes with preserved source spelling. For identifiers,
-that preserved spelling may be represented by the same interned value used by
-later lookup code. For literals and other source-carrying tokens, preserved
-spelling remains separate from later semantic interpretation.
+that preserved spelling should be represented by the same interned value carried
+on the lexeme and later used by lookup code.
 
 ### 7. Keep diagnostics snippet rendering outside the compiler core
 
@@ -350,8 +328,6 @@ These do not block the recommendation, but they should be tracked explicitly:
   toward grapheme-aware presentation
 - whether preserved token spelling should store codepoints directly or use
   another encoding-agnostic representation derived from them
-- whether interned handles should be attached directly to identifier lexemes or
-  derived lazily later
 - whether semantic decoding of string literals should retain both raw spelling
   and decoded value in later stages
 

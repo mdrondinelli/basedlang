@@ -32,6 +32,23 @@ namespace benson
   {
     auto text = std::string{};
     auto token_location = Source_location{};
+    auto const make_lexeme =
+      [&](std::string text, Token token, Source_location start) -> Lexeme
+    {
+      auto end = start;
+      if (token != Token::eof)
+      {
+        end = Source_location{
+          .line = _location.line,
+          .column = _location.column - 1,
+        };
+      }
+      return Lexeme{
+        .text = std::move(text),
+        .token = token,
+        .span = Source_span{.start = start, .end = end},
+      };
+    };
     auto state = 0;
     for (;;)
     {
@@ -41,11 +58,7 @@ namespace benson
         {
           if (!_reader.peek())
           {
-            return Lexeme{
-              .text = "",
-              .token = Token::eof,
-              .location = _location,
-            };
+            return make_lexeme("", Token::eof, _location);
           }
           if (*_reader.peek() == '\n')
           {
@@ -76,17 +89,9 @@ namespace benson
             if (_reader.peek() && *_reader.peek() == '>')
             {
               consume_non_newline();
-              return Lexeme{
-                .text = "->",
-                .token = Token::arrow,
-                .location = token_location,
-              };
+              return make_lexeme("->", Token::arrow, token_location);
             }
-            return Lexeme{
-              .text = "-",
-              .token = Token::minus,
-              .location = token_location,
-            };
+            return make_lexeme("-", Token::minus, token_location);
           }
           switch (c)
           {
@@ -103,24 +108,16 @@ namespace benson
                 consume_non_newline();
                 consume_non_newline();
                 consume_non_newline();
-                return Lexeme{
-                  .text = "&mut",
-                  .token = Token::ampersand_mut,
-                  .location = token_location,
-                };
+                return make_lexeme(
+                  "&mut",
+                  Token::ampersand_mut,
+                  token_location
+                );
               }
-              return Lexeme{
-                .text = "&",
-                .token = Token::ampersand,
-                .location = token_location
-              };
+              return make_lexeme("&", Token::ampersand, token_location);
             }
           case '+':
-            return Lexeme{
-              .text = "+",
-              .token = Token::plus,
-              .location = token_location
-            };
+            return make_lexeme("+", Token::plus, token_location);
           case '^':
             {
               auto const p0 = _reader.peek(0);
@@ -134,155 +131,67 @@ namespace benson
                 consume_non_newline();
                 consume_non_newline();
                 consume_non_newline();
-                return Lexeme{
-                  .text = "^mut",
-                  .token = Token::caret_mut,
-                  .location = token_location,
-                };
+                return make_lexeme("^mut", Token::caret_mut, token_location);
               }
-              return Lexeme{
-                .text = "^",
-                .token = Token::caret,
-                .location = token_location
-              };
+              return make_lexeme("^", Token::caret, token_location);
             }
           case '*':
-            return Lexeme{
-              .text = "*",
-              .token = Token::star,
-              .location = token_location
-            };
+            return make_lexeme("*", Token::star, token_location);
           case '/':
-            return Lexeme{
-              .text = "/",
-              .token = Token::slash,
-              .location = token_location
-            };
+            return make_lexeme("/", Token::slash, token_location);
           case '%':
-            return Lexeme{
-              .text = "%",
-              .token = Token::percent,
-              .location = token_location
-            };
+            return make_lexeme("%", Token::percent, token_location);
           case '=':
             if (_reader.peek() && *_reader.peek() == '=')
             {
               consume_non_newline();
-              return Lexeme{
-                .text = "==",
-                .token = Token::eq_eq,
-                .location = token_location,
-              };
+              return make_lexeme("==", Token::eq_eq, token_location);
             }
             if (_reader.peek() && *_reader.peek() == '>')
             {
               consume_non_newline();
-              return Lexeme{
-                .text = "=>",
-                .token = Token::fat_arrow,
-                .location = token_location,
-              };
+              return make_lexeme("=>", Token::fat_arrow, token_location);
             }
-            return Lexeme{
-              .text = "=",
-              .token = Token::eq,
-              .location = token_location,
-            };
+            return make_lexeme("=", Token::eq, token_location);
           case '!':
             if (_reader.peek() && *_reader.peek() == '=')
             {
               consume_non_newline();
-              return Lexeme{
-                .text = "!=",
-                .token = Token::bang_eq,
-                .location = token_location
-              };
+              return make_lexeme("!=", Token::bang_eq, token_location);
             }
             throw Lex_error{token_location};
           case '<':
             if (_reader.peek() && *_reader.peek() == '=')
             {
               consume_non_newline();
-              return Lexeme{
-                .text = "<=",
-                .token = Token::le,
-                .location = token_location
-              };
+              return make_lexeme("<=", Token::le, token_location);
             }
-            return Lexeme{
-              .text = "<",
-              .token = Token::lt,
-              .location = token_location
-            };
+            return make_lexeme("<", Token::lt, token_location);
           case '>':
             if (_reader.peek() && *_reader.peek() == '=')
             {
               consume_non_newline();
-              return Lexeme{
-                .text = ">=",
-                .token = Token::ge,
-                .location = token_location
-              };
+              return make_lexeme(">=", Token::ge, token_location);
             }
-            return Lexeme{
-              .text = ">",
-              .token = Token::gt,
-              .location = token_location
-            };
+            return make_lexeme(">", Token::gt, token_location);
           case '{':
-            return Lexeme{
-              .text = "{",
-              .token = Token::lbrace,
-              .location = token_location
-            };
+            return make_lexeme("{", Token::lbrace, token_location);
           case '[':
-            return Lexeme{
-              .text = "[",
-              .token = Token::lbracket,
-              .location = token_location
-            };
+            return make_lexeme("[", Token::lbracket, token_location);
           case '}':
-            return Lexeme{
-              .text = "}",
-              .token = Token::rbrace,
-              .location = token_location
-            };
+            return make_lexeme("}", Token::rbrace, token_location);
           case ']':
-            return Lexeme{
-              .text = "]",
-              .token = Token::rbracket,
-              .location = token_location
-            };
+            return make_lexeme("]", Token::rbracket, token_location);
           case '(':
-            return Lexeme{
-              .text = "(",
-              .token = Token::lparen,
-              .location = token_location
-            };
+            return make_lexeme("(", Token::lparen, token_location);
           case ')':
-            return Lexeme{
-              .text = ")",
-              .token = Token::rparen,
-              .location = token_location
-            };
+            return make_lexeme(")", Token::rparen, token_location);
           case ':':
-            return Lexeme{
-              .text = ":",
-              .token = Token::colon,
-              .location = token_location
-            };
+            return make_lexeme(":", Token::colon, token_location);
           case ',':
-            return Lexeme{
-              .text = ",",
-              .token = Token::comma,
-              .location = token_location
-            };
+            return make_lexeme(",", Token::comma, token_location);
           case ';':
-            return Lexeme{
-              .text = ";",
-              .token = Token::semicolon,
-              .location = token_location
-            };
+            return make_lexeme(";", Token::semicolon, token_location);
           default:
             throw Lex_error{token_location};
           }
@@ -331,11 +240,7 @@ namespace benson
             }
             return Token::identifier;
           }();
-          return Lexeme{
-            .text = text,
-            .token = token,
-            .location = token_location,
-          };
+          return make_lexeme(std::move(text), token, token_location);
         }
       case 2:
         {
@@ -354,11 +259,11 @@ namespace benson
           if (p && (*p == 'f' || *p == 'd'))
           {
             text += (char) consume_non_newline();
-            return Lexeme{
-              .text = text,
-              .token = Token::float_literal,
-              .location = token_location,
-            };
+            return make_lexeme(
+              std::move(text),
+              Token::float_literal,
+              token_location
+            );
           }
           if (p && *p == 'i')
           {
@@ -380,11 +285,11 @@ namespace benson
               throw Lex_error{token_location};
             }
           }
-          return Lexeme{
-            .text = text,
-            .token = Token::int_literal,
-            .location = token_location,
-          };
+          return make_lexeme(
+            std::move(text),
+            Token::int_literal,
+            token_location
+          );
         }
       case 3:
         {
@@ -398,11 +303,11 @@ namespace benson
           {
             text += (char) consume_non_newline();
           }
-          return Lexeme{
-            .text = text,
-            .token = Token::float_literal,
-            .location = token_location,
-          };
+          return make_lexeme(
+            std::move(text),
+            Token::float_literal,
+            token_location
+          );
         }
       }
     }

@@ -47,7 +47,6 @@ namespace benson
         .text = std::move(text),
         .token = token,
         .span = Source_span{.start = start, .end = end},
-        .location = start,
       };
     };
     auto state = 0;

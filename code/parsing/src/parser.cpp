@@ -317,8 +317,8 @@ namespace benson
     }
     throw std::runtime_error{
       "unexpected token '" + next.text + "' at " +
-      std::to_string(next.location.line) + ":" +
-      std::to_string(next.location.column)
+      std::to_string(next.span.start.line) + ":" +
+      std::to_string(next.span.start.column)
     };
   }
 
@@ -436,8 +436,8 @@ namespace benson
     {
       throw std::runtime_error{
         "unexpected token '" + lexeme.text + "' at " +
-        std::to_string(lexeme.location.line) + ":" +
-        std::to_string(lexeme.location.column)
+        std::to_string(lexeme.span.start.line) + ":" +
+        std::to_string(lexeme.span.start.column)
       };
     }
     return lexeme;

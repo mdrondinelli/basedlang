@@ -16,9 +16,6 @@ namespace benson
     std::string text;
     Token token;
     Source_span span;
-    /// Compatibility start location for existing call sites. Equal to
-    /// @c span.start.
-    Source_location location;
   };
 
   /// Returns the source span of a lexeme.

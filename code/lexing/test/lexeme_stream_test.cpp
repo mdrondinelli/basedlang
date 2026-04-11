@@ -20,8 +20,6 @@ namespace
     int end_column
   )
   {
-    CHECK(lexeme.location.line == start_line);
-    CHECK(lexeme.location.column == start_column);
     CHECK(lexeme.span.start.line == start_line);
     CHECK(lexeme.span.start.column == start_column);
     CHECK(lexeme.span.end.line == end_line);
@@ -337,16 +335,16 @@ TEST_CASE("Lexeme_stream - &mut column tracking")
   auto chars = benson::Utf8_char_stream{&binary};
   auto stream = benson::Lexeme_stream{&chars};
   auto const x = stream.lex();
-  CHECK(x.location.column == 1);
+  CHECK(x.span.start.column == 1);
   CHECK(x.span.end.column == 1);
   auto const amp_mut = stream.lex();
   CHECK(amp_mut.text == "&mut");
   CHECK(amp_mut.token == benson::Token::ampersand_mut);
-  CHECK(amp_mut.location.column == 3);
+  CHECK(amp_mut.span.start.column == 3);
   CHECK(amp_mut.span.end.column == 6);
   auto const y = stream.lex();
   CHECK(y.text == "y");
-  CHECK(y.location.column == 8);
+  CHECK(y.span.start.column == 8);
   CHECK(y.span.end.column == 8);
 }
 
@@ -438,16 +436,16 @@ TEST_CASE("Lexeme_stream - ^mut column tracking")
   auto chars = benson::Utf8_char_stream{&binary};
   auto stream = benson::Lexeme_stream{&chars};
   auto const x = stream.lex();
-  CHECK(x.location.column == 1);
+  CHECK(x.span.start.column == 1);
   CHECK(x.span.end.column == 1);
   auto const caret_mut = stream.lex();
   CHECK(caret_mut.text == "^mut");
   CHECK(caret_mut.token == benson::Token::caret_mut);
-  CHECK(caret_mut.location.column == 3);
+  CHECK(caret_mut.span.start.column == 3);
   CHECK(caret_mut.span.end.column == 6);
   auto const y = stream.lex();
   CHECK(y.text == "y");
-  CHECK(y.location.column == 8);
+  CHECK(y.span.start.column == 8);
   CHECK(y.span.end.column == 8);
 }
 

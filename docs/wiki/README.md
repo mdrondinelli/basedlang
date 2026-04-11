@@ -56,3 +56,7 @@ Use this sequence:
 
 1. [Architecture and pipeline overview](./overview.md)
 2. [`lexing`](./lexing.md), [`parsing`](./parsing.md), [`ir`](./ir.md), or [`benson`](./benson.md)
+
+## Proposals
+
+- [Compiler string design proposal](./string-design.md)

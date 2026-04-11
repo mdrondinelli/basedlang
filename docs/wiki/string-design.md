@@ -15,7 +15,9 @@ when some of them may share storage in specific cases:
 
 - source location: where syntax came from
 - source spelling: how user-authored token text was written
-- semantic identity: how names are compared and looked up
+- interned spelling: a canonicalized stored spelling that later phases can
+  compare cheaply
+- semantic meaning: what a use of that spelling resolves to in context
 
 The recommended direction is:
 
@@ -155,35 +157,41 @@ For string literals in particular:
 This separation matters because formatting and diagnostics care about original
 spelling, while semantic analysis cares about decoded values.
 
-### 5. Separate source spelling from semantic identity
+### 5. Separate source spelling, interning, and semantic meaning
 
 The proposal should explicitly distinguish:
 
 - source spelling: what the user wrote, preserved for formatting and
   source-facing behavior
-- semantic identity: the canonical name used for lookup and binding
+- interned spelling: a canonicalized stored spelling reused across identical
+  identifier texts
+- semantic meaning: what a particular identifier occurrence resolves to during
+  compilation
 
-Those two concepts are often equal for identifiers, but they are not the same
-concept.
+The lexer is not deciding what an identifier means. It is only producing lexemes
+and, for identifier-like spellings, optionally interning their text early.
+Later semantic stages can then use those interned values for fast equality,
+hashing, and symbol-table lookup.
 
 For identifiers specifically, the implementation does not need to duplicate the
 underlying text if one representation can serve both roles. In the common case,
 an interned identifier handle can be the preserved spelling used for formatting
-as well as the semantic identity used for lookup.
+and also the canonical spelling key used by semantic lookup structures.
 
-The reason to keep the concepts separate in the proposal is architectural, not
+The reason to keep these concepts separate in the proposal is architectural, not
 to force duplicate storage:
 
 - literals already need preserved source spelling separate from semantic value
 - future identifier policy may introduce normalization or alternate comparison
   rules
-- formatting cares about "what was written", while semantic code cares about
-  "what name this denotes"
+- formatting cares about "what was written"
+- interning cares about "which spellings are textually the same"
+- semantic analysis cares about "what this identifier occurrence denotes"
 
 This gives the compiler room to:
 
 - pretty-print using preserved user-authored spellings
-- compare identifiers through interned handles
+- compare identifier spellings through interned handles
 - evolve identifier policy later without redesigning formatting support
 
 ### 6. Add identifier interning now
@@ -198,13 +206,13 @@ Recommended boundary:
 
 The intern table should:
 
-- own canonical semantic names
+- own canonicalized identifier spellings
 - return a stable lightweight handle
 - support cheap equality and hashing by handle
 
 The AST still keeps lexemes with preserved source spelling. For identifiers,
 that preserved spelling may be represented by the same interned value used by
-semantic code. For literals and other source-carrying tokens, preserved
+later lookup code. For literals and other source-carrying tokens, preserved
 spelling remains separate from later semantic interpretation.
 
 ### 7. Keep diagnostics snippet rendering outside the compiler core
@@ -238,7 +246,8 @@ The important separation is conceptual:
 
 - spans tell us where syntax came from
 - preserved token text tells us how user-authored syntax was spelled
-- interned names tell us how semantic names are compared
+- interned spellings tell us which identifier texts are the same
+- semantic analysis determines what those spellings mean in context
 
 ## Pretty-printing model
 
@@ -284,15 +293,15 @@ This design is the best near-term fit for the current compiler because it:
 - supports upcoming Unicode string literal work without forcing a UTF-8-only
   internal representation
 - preserves the AST's source-facing role for formatting
-- keeps source spelling and semantic identity cleanly separated
+- keeps source spelling, interning, and semantic meaning cleanly separated
 - introduces interning before more compiler layers depend on raw strings
 
 ## Rejected alternatives
 
 ### Keep `std::string` everywhere
 
-Rejected because it keeps source spelling, semantic identity, and source-extent
-computation tangled together.
+Rejected because it keeps source spelling, interning concerns, semantic use, and
+source-extent computation tangled together.
 
 ### Keep the whole source file in memory
 
@@ -325,8 +334,8 @@ The expected implementation sequence after this proposal is accepted:
    literals.
 3. Keep string literal tokens raw and move escape decoding to semantic
    compilation.
-4. Add interning for semantic identifier names and move lookup paths to interned
-   handles.
+4. Add interning for identifier spellings and move lookup paths to use interned
+   handles as their fast key.
 5. Build pretty-printing on AST structure plus preserved spellings and
    canonical whitespace rules.
 6. Add richer source-backed diagnostic rendering outside the compiler core.
@@ -354,7 +363,7 @@ The compiler should move to a split model based on:
 - explicit stored spans on lexemes
 - preserved original spelling for user-authored token text
 - deferred literal escape decoding
-- interned semantic identifier names
+- interned identifier spellings
 - external source access for rich diagnostic rendering
 
 That is the recommended foundation for upcoming Unicode string literal work and

@@ -6,14 +6,14 @@ This page is the current language-surface reference.
 
 ### Fully implemented today
 
-The features marked as implemented below are supported by the current parser and by `basedhlir`.
+The features marked as implemented below are supported by the current parser and by `ir`.
 
-### Parsed or designed, but not fully implemented in `basedhlir`
+### Parsed or designed, but not fully implemented in `ir`
 
 These surface forms exist in the parser or language design, but are not fully supported semantically yet:
 
 - `let mut` bindings parse, but mutable bindings are not implemented
-- `while` statements parse, but are rejected in `basedhlir`
+- `while` statements parse, but are rejected in `ir`
 - postfix dereference `p^` parses, but dereference is rejected in expression compilation
 - index expressions `arr[i]` parse, but index expression compilation is not implemented
 - assignment expressions parse as operators, but are not implemented semantically
@@ -24,7 +24,7 @@ When future language work is still in flux, keep it separate from the fully impl
 
 A program is currently a sequence of top-level `let` bindings. In practice, programs are usually built from named function definitions:
 
-```based
+```benson
 let main = fn(): Int32 => {
   return 0;
 };
@@ -40,7 +40,7 @@ Statements appear inside block bodies:
 - `return <expr>;`
 - `<expr>;`
 
-Parsed but not fully implemented in `basedhlir`:
+Parsed but not fully implemented in `ir`:
 
 - `let mut x = <expr>;`
 - `while <expr> { ... }`
@@ -61,11 +61,11 @@ Implemented primary expression forms:
 - `if` expressions: `if condition { ... } else { ... }`
 - function expressions with explicit return type: `fn(params): ReturnType => expression`
 
-Parsed but not fully implemented in `basedhlir`:
+Parsed but not fully implemented in `ir`:
 
 Function parameters are immutable by default. Parameter bindings may be written with `mut`:
 
-```based
+```benson
 let f = fn(mut x: Int32): Void => { };
 ```
 
@@ -87,7 +87,7 @@ Precedence from tightest to loosest:
 
 Binary operators are left-associative except assignment, which is right-associative.
 
-Parsed but not fully implemented in `basedhlir`:
+Parsed but not fully implemented in `ir`:
 
 - assignment expressions such as `a = b`
 
@@ -145,7 +145,7 @@ The `[n]` form accepts any compile-time constant integer expression as the size,
 
 Function with parameters and return type:
 
-```based
+```benson
 let add = fn(a: Int32, b: Int32): Int32 => {
   return a + b;
 };
@@ -153,19 +153,19 @@ let add = fn(a: Int32, b: Int32): Int32 => {
 
 Function taking a pointer to a mutable array type:
 
-```based
+```benson
 let zero_fill = fn(buf: ^mut []Int32, len: Int32): Void => { };
 ```
 
 Nested calls:
 
-```based
+```benson
 let x = first(id(42), 0);
 ```
 
 Block expression:
 
-```based
+```benson
 let x = {
   let a = 1;
   let b = 2;
@@ -175,35 +175,35 @@ let x = {
 
 Block with no tail expression:
 
-```based
+```benson
 { do_something(); };
 ```
 
 If / else expression:
 
-```based
+```benson
 let max = if a > b { a } else { b };
 ```
 
 Else-if chain:
 
-```based
+```benson
 let sign = if x > 0 { 1 } else if x < 0 { -1 } else { 0 };
 ```
 
 While loop:
 
-```based
+```benson
 while n > 0 {
   n = n - 1;
 }
 ```
 
-This syntax parses, but `while` is not fully implemented in `basedhlir` yet.
+This syntax parses, but `while` is not fully implemented in `ir` yet.
 
 Recursive call with `recurse`:
 
-```based
+```benson
 let factorial = fn(n: Int32): Int32 => {
   return if n == 0 { 1 } else { n * recurse(n - 1) };
 };
@@ -211,13 +211,13 @@ let factorial = fn(n: Int32): Int32 => {
 
 Dereference and unary/binary operators:
 
-```based
+```benson
 let val = p^;
 let first = buf[0]^;
 let y = -x + 2 * (a - b);
 ```
 
-Only the arithmetic and comparison forms here are fully implemented today. Dereference and indexing syntax exist, but are not fully implemented in `basedhlir`.
+Only the arithmetic and comparison forms here are fully implemented today. Dereference and indexing syntax exist, but are not fully implemented in `ir`.
 
 ## Keywords
 

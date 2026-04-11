@@ -100,7 +100,7 @@ within the same library:
 #include <cstdint>
 #include <vector>
 
-#include "token.h"      // relative, not <basedlex/token.h>
+#include "token.h"      // relative, not <lexing/token.h>
 ```
 
 ## Formatting conventions

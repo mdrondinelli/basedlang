@@ -1,6 +1,5 @@
 # TODO
 
-* Come up with a better name than `basedlang`
 * Split up HLIR data model from AST -> HLIR compiler
 * Make lexer actually handle the 32-bit unicode codepoints the character stream
   already emits

@@ -13,16 +13,16 @@ Use this order for most PRs:
 
 ## Which page to open
 
-- Lexer changes: [`basedlex`](./basedlex.md)
-- AST changes: [`basedast`](./basedast.md)
-- Parser changes: [`basedparse`](./basedparse.md)
-- Semantic, lowering, or interpreter changes: [`basedhlir`](./basedhlir.md)
-- CLI wiring changes: [`based`](./based.md)
+- Lexer changes: [`lexing`](./lexing.md)
+- AST changes: [`ast`](./ast.md)
+- Parser changes: [`parsing`](./parsing.md)
+- Semantic, lowering, or interpreter changes: [`ir`](./ir.md)
+- CLI wiring changes: [`benson`](./benson.md)
 - Cross-cutting changes: [Architecture and pipeline overview](./overview.md)
 
 ## Module-specific review heuristics
 
-### `basedlex`
+### `lexing`
 
 Look for:
 
@@ -31,7 +31,7 @@ Look for:
 - source-location correctness
 - lookahead/buffering correctness
 
-### `basedast`
+### `ast`
 
 Look for:
 
@@ -39,7 +39,7 @@ Look for:
 - implementation of `span_of` for any new AST node
 
 
-### `basedparse`
+### `parsing`
 
 Look for:
 
@@ -47,7 +47,7 @@ Look for:
 - precedence and associativity consistency
 - edge cases which could parse in an unexpected way
 
-### `basedhlir`
+### `ir`
 
 Look for:
 
@@ -59,7 +59,7 @@ Look for:
 - diagnostic quality
 - interpreter consistency if executable semantics changed
 
-### `based`
+### `benson`
 
 Look for:
 

@@ -4,25 +4,25 @@ This page describes the repository in stable conceptual terms. It intentionally 
 
 ## Main code areas
 
-### `code/basedlex`
+### `code/lexing`
 
 The lexer library. Owns character input, buffering/lookahead, tokenization, and source-location tracking at the token level.
 
-See [`basedlex`](./basedlex.md).
+See [`lexing`](./lexing.md).
 
-### `code/basedast`
+### `code/ast`
 
 The AST library. Owns the data model for all syntax forms: expression and statement node types, operator identity, and source-span utilities.
 
-See [`basedast`](./basedast.md).
+See [`ast`](./ast.md).
 
-### `code/basedparse`
+### `code/parsing`
 
-The parser library. Owns expression precedence, statement parsing, and AST construction via the types defined in `basedast`.
+The parser library. Owns expression precedence, statement parsing, and AST construction via the types defined in `ast`.
 
-See [`basedparse`](./basedparse.md).
+See [`parsing`](./parsing.md).
 
-### `code/basedhlir`
+### `code/ir`
 
 The semantic and execution core. Owns:
 
@@ -33,13 +33,13 @@ The semantic and execution core. Owns:
 - lowering to HLIR
 - interpretation of HLIR
 
-See [`basedhlir`](./basedhlir.md).
+See [`ir`](./ir.md).
 
-### `code/based`
+### `code/benson`
 
 The CLI entrypoint.
 
-See [`based`](./based.md).
+See [`benson`](./benson.md).
 
 ## Supporting areas
 

@@ -1,4 +1,4 @@
-# basedlang Wiki
+# bensonlang Wiki
 
 This wiki is the maintainer-facing map of the project.
 
@@ -14,11 +14,11 @@ The pages below are organized to support fast navigation rather than linear read
 - [Tutorial: first change](./tutorial-first-change.md)
 - [Language reference](./language.md)
 - [Architecture and pipeline overview](./overview.md)
-- [`basedlex`](./basedlex.md)
-- [`basedast`](./basedast.md)
-- [`basedparse`](./basedparse.md)
-- [`basedhlir`](./basedhlir.md)
-- [`based`](./based.md)
+- [`lexing`](./lexing.md)
+- [`ast`](./ast.md)
+- [`parsing`](./parsing.md)
+- [`ir`](./ir.md)
+- [`benson`](./benson.md)
 - [Project structure](./project-structure.md)
 - [Conventions](./conventions.md)
 - [Formatting](./formatting.md)
@@ -34,7 +34,7 @@ Read these first:
 
 - [PR review guide](./pr-review-guide.md)
 - [Architecture and pipeline overview](./overview.md)
-- [`basedhlir`](./basedhlir.md)
+- [`ir`](./ir.md)
 
 Then jump to the module page for the code being changed.
 
@@ -55,4 +55,4 @@ Then jump to the module page for the area you are editing.
 Use this sequence:
 
 1. [Architecture and pipeline overview](./overview.md)
-2. [`basedlex`](./basedlex.md), [`basedparse`](./basedparse.md), [`basedhlir`](./basedhlir.md), or [`based`](./based.md)
+2. [`lexing`](./lexing.md), [`parsing`](./parsing.md), [`ir`](./ir.md), or [`benson`](./benson.md)

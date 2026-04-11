@@ -52,31 +52,31 @@ Start from "which layer owns this behavior?"
 
 Understand:
 
-- [`basedlex`](./basedlex.md)
+- [`lexing`](./lexing.md)
 
 ### If you are changing parsing
 
 Understand:
 
-- [`basedparse`](./basedparse.md)
+- [`parsing`](./parsing.md)
 
 ### If you are changing semantics or lowering
 
 Understand:
 
-- [`basedhlir`](./basedhlir.md)
+- [`ir`](./ir.md)
 
 ### If you are changing interpretation
 
 Understand:
 
-- [`basedhlir`](./basedhlir.md)
+- [`ir`](./ir.md)
 
 ### If you are changing executable wiring
 
 Understand:
 
-- [`based`](./based.md)
+- [`benson`](./benson.md)
 
 ## Step 4: Make the smallest coherent change
 
@@ -110,9 +110,9 @@ cmake --build build
 Run the relevant test binary directly:
 
 ```sh
-./build/basedlex-tests
-./build/basedparse-tests
-./build/basedhlir-tests
+./build/lexing-tests
+./build/parsing-tests
+./build/ir-tests
 ```
 
 Before committing, format the changed code. See [Formatting](./formatting.md).

@@ -8,7 +8,16 @@ It makes one concrete recommendation.
 
 ## Summary
 
-Adopt a split model built around the lexer's codepoint boundary:
+Adopt a split model built around the lexer's codepoint boundary.
+
+Here, "split model" means the compiler treats these as separate concerns even
+when some of them may share storage in specific cases:
+
+- source location: where syntax came from
+- source spelling: how user-authored token text was written
+- semantic identity: how names are compared and looked up
+
+The recommended direction is:
 
 - treat Unicode codepoints from `Char_stream` as the compiler's stable text
   input
@@ -154,8 +163,22 @@ The proposal should explicitly distinguish:
   source-facing behavior
 - semantic identity: the canonical name used for lookup and binding
 
-Those two concepts are often equal for identifiers, but they should not be the
-same storage slot or the same ownership story.
+Those two concepts are often equal for identifiers, but they are not the same
+concept.
+
+For identifiers specifically, the implementation does not need to duplicate the
+underlying text if one representation can serve both roles. In the common case,
+an interned identifier handle can be the preserved spelling used for formatting
+as well as the semantic identity used for lookup.
+
+The reason to keep the concepts separate in the proposal is architectural, not
+to force duplicate storage:
+
+- literals already need preserved source spelling separate from semantic value
+- future identifier policy may introduce normalization or alternate comparison
+  rules
+- formatting cares about "what was written", while semantic code cares about
+  "what name this denotes"
 
 This gives the compiler room to:
 
@@ -179,9 +202,10 @@ The intern table should:
 - return a stable lightweight handle
 - support cheap equality and hashing by handle
 
-The AST still keeps lexemes with preserved source spelling. The semantic
-pipeline derives or caches interned names when identifier lexemes are used as
-identifiers.
+The AST still keeps lexemes with preserved source spelling. For identifiers,
+that preserved spelling may be represented by the same interned value used by
+semantic code. For literals and other source-carrying tokens, preserved
+spelling remains separate from later semantic interpretation.
 
 ### 7. Keep diagnostics snippet rendering outside the compiler core
 
@@ -210,7 +234,7 @@ The intended future model is:
 - `Lexeme`: token kind, exact span, and optional preserved spelling for tokens
   that carry user-authored text
 
-The important separation is:
+The important separation is conceptual:
 
 - spans tell us where syntax came from
 - preserved token text tells us how user-authored syntax was spelled

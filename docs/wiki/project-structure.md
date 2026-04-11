@@ -43,6 +43,12 @@ See [`benson`](./benson.md).
 
 ## Supporting areas
 
+### `code/text`
+
+Shared compiler text storage primitives. Owns string-table-backed compiler text
+handles that can be reused across front-end layers without forcing one
+particular serialized encoding into the compiler core.
+
 ### `examples`
 
 Small source programs used as runnable examples and as useful behavioral anchors when developing features.

@@ -9,6 +9,9 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 add_subdirectory(extern/Catch2-3.13.0)
 
+add_library(text INTERFACE)
+target_include_directories(text INTERFACE code/text/include)
+
 add_library(lexing
   code/lexing/src/char_stream_reader.cpp
   code/lexing/src/istream_binary_stream.cpp
@@ -60,6 +63,11 @@ add_executable(lexing-tests
 )
 target_link_libraries(lexing-tests PRIVATE lexing Catch2::Catch2WithMain)
 target_compile_definitions(lexing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+
+add_executable(text-tests
+  code/text/test/string_table_test.cpp
+)
+target_link_libraries(text-tests PRIVATE text Catch2::Catch2WithMain)
 
 add_executable(parsing-tests
   code/parsing/test/parser_test.cpp

@@ -28,8 +28,7 @@ The recommended direction is:
 - preserve original spelling for user-authored tokens so the AST can drive
   future pretty-printing
 - keep escape decoding out of the lexer
-- intern identifier spellings early so later phases can use those interned
-  spellings for fast lookup
+- store variable-spelling token text in a shared reclaimable string table
 - keep diagnostic snippet rendering outside the compiler core
 
 This gives the compiler four things it does not have today:
@@ -38,7 +37,7 @@ This gives the compiler four things it does not have today:
 2. a path to Unicode string literals without committing the compiler to UTF-8
    internally
 3. enough retained syntax text to support formatter-style source emission
-4. early identifier-spelling interning without sacrificing source fidelity
+4. shared token-text storage without per-lexeme heap churn
 
 ## Requirements
 
@@ -122,22 +121,27 @@ This text type should:
 - preserve the original sequence of codepoints seen by the lexer
 - support equality, hashing, and output encoding at the edges
 - avoid committing the compiler to one serialized encoding internally
+- be represented as a move-only handle to table-owned spelling storage rather
+  than an owned string buffer per lexeme
 
 ### 4. Keep token-text allocation cheap for common cases
 
 The proposal should make allocation policy explicit.
 
-The compiler should not perform a separate heap allocation for every small token
-spelling.
+The compiler should not perform a separate heap allocation for every lexeme that
+has variable spelling.
 
 Recommended policy:
 
+- all variable-spelling token text goes through a shared string table
 - identifiers are always interned, including short identifiers
-- interning should happen once per distinct identifier spelling, not once per
-  occurrence
+- literals may use the same table-backed representation rather than lexeme-owned
+  storage
+- refcounts live on string-table rows
 - fixed-spelling tokens such as punctuation and keywords carry no owned text
-- small literal spellings should use inline storage where practical
-- larger literal spellings may spill to heap-backed storage
+- rows are reclaimed when their non-atomic refcount drops to zero
+- small spellings should avoid extra heap churn beyond the row allocation where
+  practical
 
 Short identifiers are not a good exception to interning. They are among the
 most common and most repeated spellings in the program, so they benefit the
@@ -145,6 +149,16 @@ most from canonicalization and cheap handle-based comparison.
 
 The main allocation goal is not "avoid interning short identifiers." It is
 "avoid per-occurrence allocation and avoid heap churn for tiny payloads."
+
+The string-table handle should have explicit ownership semantics:
+
+- the handle is move-only
+- moving transfers ownership without touching the refcount
+- `.clone()` increments the row refcount and returns a new handle
+- `.clone()` should be non-`const` so the API makes the non-threadsafe mutation
+  obvious
+
+This proposal assumes a single-threaded ownership model for these handles.
 
 ### 5. Keep the lexer responsible only for lexing
 
@@ -166,18 +180,20 @@ The proposal should explicitly distinguish:
 - source spelling: what the user wrote, preserved for formatting and
   source-facing behavior
 - interned spelling: a canonicalized stored spelling reused across identical
-  identifier texts
+  token texts stored in the string table
 - semantic meaning: what a particular identifier occurrence resolves to during
   compilation
 
 The lexer is not deciding what an identifier means. It is only producing lexemes
-and interning identifier-like spellings as it lexes them. Identifier lexemes
-should carry that interned handle directly. Later semantic stages can then use
-those interned values for fast equality, hashing, and symbol-table lookup.
+and assigning table-backed spelling handles as it lexes variable-spelling
+tokens. Identifier lexemes should carry the same table-backed handle type used
+for other variable-spelling tokens. Later semantic stages can then use those
+interned identifier spellings for fast equality, hashing, and symbol-table
+lookup.
 
 For identifiers specifically, the implementation does not need to duplicate the
 underlying text if one representation can serve both roles. In the common case,
-an interned identifier handle can be the preserved spelling used for formatting
+a table-backed spelling handle can be the preserved spelling used for formatting
 and also the canonical spelling key used by semantic lookup structures.
 
 The reason to keep these concepts separate in the proposal is architectural, not
@@ -196,25 +212,29 @@ This gives the compiler room to:
 - compare identifier spellings through interned handles
 - evolve identifier policy later without redesigning formatting support
 
-### 7. Add identifier interning now
+### 7. Add shared string-table storage now
 
-Interning should be part of the design now, not deferred.
+Shared string-table storage should be part of the design now, not deferred.
 
 Recommended boundary:
 
-- intern identifier-like spellings during lexing and attach the resulting
-  handle directly to identifier lexemes
-- do not require punctuation, keywords, or literal spellings to be interned
+- attach table-backed spelling handles during lexing for every token that has
+  variable user-authored text
+- do not allocate text storage for punctuation, keywords, or other fixed
+  spellings
 
-The intern table should:
+The string table should:
 
-- own canonicalized identifier spellings
-- return a stable lightweight handle
+- own canonicalized spellings in rows that carry a non-atomic refcount
+- return stable lightweight handles
+- reclaim rows when the last handle releases them
 - support cheap equality and hashing by handle
 
 The AST still keeps lexemes with preserved source spelling. For identifiers,
-that preserved spelling should be represented by the same interned value carried
-on the lexeme and later used by lookup code.
+that preserved spelling should be represented by the same table-backed handle
+carried on the lexeme and later used by lookup code. For literals and other
+source-carrying tokens, the lexeme should carry the same kind of spelling
+handle, but later semantic interpretation remains separate.
 
 ### 8. Keep diagnostics snippet rendering outside the compiler core
 
@@ -238,8 +258,8 @@ diagnostics.
 The intended future model is:
 
 - `Source_span`: a closed source range with explicit start and end positions
-- `Token_text`: compiler-owned preserved spelling for user-authored token text
-- `Interned_name`: canonical identifier-spelling handle
+- `Token_text`: move-only handle to string-table-owned preserved spelling for
+  user-authored token text
 - `Lexeme`: token kind, exact span, and optional preserved spelling for tokens
   that carry user-authored text
 

@@ -13,11 +13,12 @@
 
 #include <ast/ast.h>
 #include <ast/operator.h>
+#include <ast/source_span.h>
+#include <lexing/source_span.h>
 
 #include "constant_value.h"
 #include "hlir.h"
 #include "operator_overload.h"
-#include "source_span.h"
 #include "symbol_table.h"
 #include "type.h"
 
@@ -94,7 +95,7 @@ namespace benson::ir
     template <typename T>
     [[noreturn]] void emit_error(std::string message, T const &node)
     {
-      emit_error(std::move(message), ast::span_of(node));
+      emit_error(std::move(message), span_of(node));
     }
 
     Symbol *try_lookup_identifier(Lexeme const &identifier);

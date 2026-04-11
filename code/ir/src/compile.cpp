@@ -8,8 +8,6 @@
 #include <variant>
 #include <vector>
 
-#include <ast/source_span.h>
-
 #include "ir/compile.h"
 #include "ir/interpret.h"
 #include "operator_functors.h"

@@ -2,29 +2,10 @@
 #define BASEDAST_SOURCE_SPAN_H
 
 #include "ast.h"
-#include <lexing/source_location.h>
+#include <lexing/source_span.h>
 
 namespace benson::ast
 {
-
-  /// A closed range of source positions [start, end].
-  /// Both @c start and @c end are inclusive: @c start is the position of the
-  /// first character and @c end is the position of the last character.
-  struct Source_span
-  {
-    Source_location start; ///< Position of the first character (inclusive).
-    Source_location end; ///< Position of the last character (inclusive).
-  };
-
-  /// Returns the source span of a lexeme.
-  /// @c start points to the first character of the lexeme text; @c end points
-  /// to the last character.
-  Source_span span_of(Lexeme const &lexeme);
-
-  /// Returns the smallest span whose @c start comes from @p begin and whose
-  /// @c end comes from @p end.  Use this to build the span of a composite
-  /// construct from the spans of its outermost tokens or sub-nodes.
-  Source_span hull(Source_span begin, Source_span end);
 
   /// @name AST span_of overloads
   /// Each overload returns the source span of the corresponding AST node,

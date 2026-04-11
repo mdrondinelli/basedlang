@@ -14,6 +14,7 @@ add_library(lexing
   code/lexing/src/istream_binary_stream.cpp
   code/lexing/src/lexeme_stream.cpp
   code/lexing/src/lexeme_stream_reader.cpp
+  code/lexing/src/source_span.cpp
   code/lexing/src/utf8_char_stream.cpp
 )
 target_include_directories(lexing PUBLIC code/lexing/include)

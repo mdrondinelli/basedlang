@@ -10,12 +10,14 @@
 namespace benson
 {
 
-  /// A single token produced by the lexer, including its text and source
-  /// location.
+  /// A single token produced by the lexer, including its text and source span.
   struct Lexeme
   {
     std::string text;
     Token token;
+    Source_span span;
+    /// Compatibility start location for existing call sites. Equal to
+    /// @c span.start.
     Source_location location;
   };
 

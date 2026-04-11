@@ -23,7 +23,7 @@ The closed set of token kinds in the language.
 
 ### `Lexeme`
 
-A token plus its source text and source location.
+A token plus its source text and source span.
 
 ### `Char_stream`
 
@@ -47,7 +47,7 @@ The important lexer data is small:
 
 - token kind
 - original token text
-- source location
+- source span
 
 The lexer does not build a larger intermediate structure.
 

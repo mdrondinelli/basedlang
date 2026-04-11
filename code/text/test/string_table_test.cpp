@@ -1,8 +1,12 @@
+#include <type_traits>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "text/string_table.h"
+
+static_assert(!std::is_move_constructible_v<benson::String_table>);
+static_assert(!std::is_move_assignable_v<benson::String_table>);
 
 TEST_CASE("String_table interns identical spellings into one row")
 {

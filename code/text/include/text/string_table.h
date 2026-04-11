@@ -16,6 +16,8 @@ namespace benson
 
   class String_table;
 
+  // Interned_string is only valid while its originating String_table remains
+  // alive.
   class Interned_string
   {
   public:
@@ -106,6 +108,18 @@ namespace benson
   class String_table
   {
   public:
+    String_table() = default;
+
+    String_table(String_table const &) = delete;
+
+    auto operator=(String_table const &) -> String_table & = delete;
+
+    String_table(String_table &&) = delete;
+
+    auto operator=(String_table &&) -> String_table & = delete;
+
+    // The table must outlive every Interned_string it creates because handles
+    // store raw pointers into table-owned rows.
     [[nodiscard]] auto intern(std::u32string_view spelling) -> Interned_string
     {
       if (auto const it = _rows.find(spelling); it != _rows.end())

@@ -1,271 +1,337 @@
 # Compiler String Design Proposal
 
-This document proposes how the compiler should represent source text, lexeme
-text, and semantic names as the language grows beyond its current ASCII-heavy
-surface.
+This document proposes how the compiler should represent token text, semantic
+names, and source locations as the language grows beyond its current
+ASCII-heavy surface.
 
-It is written to make one concrete recommendation, not to leave the design
-open-ended.
+It makes one concrete recommendation.
 
 ## Summary
 
-Adopt a split text model:
+Adopt a split model built around the lexer's codepoint boundary:
 
-- keep the original source file bytes as the source of truth for fidelity
-- make spans point into that source directly, without deriving end positions
-  from stored token byte length
-- introduce a project-owned text type for lexeme payloads that need Unicode
-  content
-- intern semantic identifier names early, while preserving original lexeme text
-  for diagnostics and future reformatting
+- treat Unicode codepoints from `Char_stream` as the compiler's stable text
+  input
+- store explicit spans on lexemes instead of deriving span width from stored
+  text length
+- preserve original spelling for user-authored tokens so the AST can drive
+  future pretty-printing
+- keep escape decoding out of the lexer
+- intern semantic identifier names early, while keeping source spelling
+  separate
+- keep diagnostic snippet rendering outside the compiler core
 
-This gives the compiler three things it does not have today:
+This gives the compiler four things it does not have today:
 
-1. source-faithful diagnostics for any token or AST node
-2. a clean path to Unicode string literals
-3. a way to add Unicode identifiers later without redesigning the compiler's
-   text ownership model
+1. accurate spans for any token or AST node
+2. a path to Unicode string literals without committing the compiler to UTF-8
+   internally
+3. enough retained syntax text to support formatter-style source emission
+4. early semantic-name interning without sacrificing source fidelity
 
 ## Current problem
 
-The current code mixes two different concerns into `Lexeme.text`:
+The current `Lexeme` shape mixes multiple concerns into `std::string text`:
 
-- source-facing text, used for diagnostics and retained in the AST
-- semantic text, used for identifier lookup and literal parsing
+- source-facing spelling retained in the AST
+- semantic identifier text used for lookup
+- literal text used later for parsing
+- implicit span width through `text.size()`
 
-Today that field is a `std::string`, and some span math depends on
-`lexeme.text.size()`. That is workable for ASCII-only lexemes, but it is the
-wrong foundation for general Unicode support.
+That is not a stable foundation for Unicode-aware lexemes or formatter-driven
+source emission.
 
-The key failure modes are:
+The main failure modes are:
 
-- byte length is not the same thing as source column width or codepoint count
-- semantic operations like identifier lookup do not need the same
-  representation as source-preserving lexeme text
-- deferring interning makes later IR and symbol-table changes more invasive
-- future AST-to-formatted-code output will need stable access to original token
-  text and exact source ranges
+- byte length is being used as a proxy for source extent
+- lexeme storage assumes one text representation can satisfy source fidelity,
+  semantic identity, and literal parsing equally well
+- string literals will need preserved original spelling, but the current model
+  nudges the lexer toward premature decoding
+- delaying interning makes later symbol-table and IR refactors broader
 
 ## Requirements
 
 The string design must satisfy all of these:
 
-- Every lexeme must have a source-faithful span.
+- Every lexeme must have a faithful source span.
 - Every AST node must continue to derive a faithful span from its constituent
   lexemes.
-- The AST must retain enough information to emit formatted code in the future.
-- The lexer must be able to store Unicode lexeme payloads now, especially for
-  upcoming string literals.
+- The AST must retain enough information to drive pretty-printing later.
+- The compiler must not require keeping the whole source file in memory.
+- The compiler must not depend on the original input encoding after the source
+  has been decoded into codepoints for `Char_stream`.
+- The lexer must be able to preserve Unicode spelling in lexeme payloads.
 - The immediate implementation does not need Unicode whitespace or Unicode
   identifiers.
 - The design must leave room for Unicode identifiers later without replacing
   the core text model.
+- String literal escape decoding must happen after lexing.
 - Interning must be part of the architecture now.
 
 ## Recommendation
 
-### 1. Make source text a first-class object
+### 1. Treat codepoints as the compiler's text boundary
 
-Introduce a source-file abstraction that owns the original bytes for a parsed
-file. Lexemes and diagnostics should refer back to this source rather than
-trying to reconstruct exact source positions from copied token strings.
+The compiler should not rely on source bytes or on UTF-8 specifically after
+text enters `Char_stream`. The stable compiler-facing boundary is the stream of
+Unicode codepoints already emitted by the character layer.
 
-The source object should support:
+That means:
 
-- immutable ownership of file contents
-- translation between offsets and human-readable line/column positions
-- slicing by span for diagnostics and later formatting work
+- lexer text storage should be defined in terms of codepoints or an
+  encoding-agnostic owned representation derived from codepoints
+- later compiler layers should not assume a particular source-file encoding
+- output encoding should be chosen when pretty-printing or displaying text, not
+  baked into token storage
 
-This is the foundation that lets the AST preserve formatting-relevant source
-information without forcing every token to duplicate enough metadata to recover
-it later.
+The existing `Utf8_char_stream` remains a useful adapter for one input format,
+but it should not define the compiler's internal string model.
 
-### 2. Define spans in terms of source positions, not token text length
+### 2. Store spans explicitly on lexemes
 
-`Source_span` should remain the primary range type, but lexeme spans should no
-longer depend on `text.size()`.
+`Source_span` should remain the core range type, but lexeme spans should no
+longer be derived from token text length.
 
 The recommended direction is:
 
-- lexing records the start and end source positions as each token is consumed
+- lexing records both start and end positions as each token is consumed
+- `Lexeme` stores its span directly
 - `span_of(Lexeme)` returns the stored span directly
-- AST `span_of(...)` functions continue to compose spans from child lexemes and
-  nodes
+- AST `span_of(...)` functions continue to compose node spans from child
+  lexemes and nodes
 
-This preserves the current AST model while removing the byte-counting bug from
-the lexing layer.
+This fixes the current length-based bug without changing the AST's overall
+source-span model.
 
-### 3. Introduce a project-owned Unicode-capable text type
+### 3. Preserve source spelling for user-authored token text
 
-Replace naked `std::string` at syntax boundaries with a project-owned text
-type. The recommended representation is UTF-8 storage with explicit source and
-Unicode-aware helpers, not a whole-compiler switch to a codepoint container.
+Future source emission is formatter-style reconstruction, not byte-for-byte
+source replay. Even so, the AST needs the original spelling of tokens whose
+text is chosen by the user.
 
-The text type should:
+Preserve original spelling for:
 
-- own UTF-8 bytes
-- support construction from lexer codepoints
-- expose byte-oriented access for source slicing and symbol lookup
-- expose codepoint iteration when needed
-- make it explicit whether an operation is byte-based or codepoint-based
+- identifiers
+- numeric literals
+- string literals and other future literal forms
 
-Why UTF-8 as the stored form:
+Canonical regeneration is acceptable for:
 
-- it matches the existing source encoding
-- it minimizes churn in parser, AST, IR, diagnostics, and symbol lookup
-- it keeps string literals and emitted source text naturally serializable
-- it still allows Unicode-aware traversal where needed
+- punctuation tokens
+- keywords
+- other fixed-spelling syntax
 
-This should be a compiler type, not a thin alias. The point is to force the
-compiler to separate text ownership and text semantics intentionally.
+The proposal should recommend a project-owned token-text type for preserved
+spellings. It should not just be a `std::string` typedef. The point is to make
+source spelling an intentional compiler concept rather than an incidental byte
+buffer.
 
-### 4. Split source lexeme text from semantic identifier names
+This text type should:
 
-Not every consumer needs the same view of text.
+- preserve the original sequence of codepoints seen by the lexer
+- support equality, hashing, and output encoding at the edges
+- avoid committing the compiler to one serialized encoding internally
 
-The proposal should treat these as different things:
+### 4. Keep the lexer responsible only for lexing
 
-- source lexeme text: exact spelling as it appeared in source
-- semantic identifier name: canonical name used for lookup and binding
+The lexer should preserve literal spelling, not interpret it.
 
-For now those will often contain the same UTF-8 bytes, but the ownership model
-should not assume they are the same forever.
+For string literals in particular:
 
-That split is useful immediately:
+- the lexer stores the raw literal spelling
+- the parser and AST retain that raw spelling
+- later semantic compilation performs escape decoding and validation
 
-- diagnostics and future formatting care about source spelling
-- symbol lookup and IR care about stable semantic identity
+This separation matters because formatting and diagnostics care about original
+spelling, while semantic analysis cares about decoded values.
 
-### 5. Add identifier interning now
+### 5. Separate source spelling from semantic identity
 
-Identifier-like semantic names should be interned as part of the design, not as
-future cleanup.
+The proposal should explicitly distinguish:
+
+- source spelling: what the user wrote, preserved for formatting and
+  source-facing behavior
+- semantic identity: the canonical name used for lookup and binding
+
+Those two concepts are often equal for identifiers, but they should not be the
+same storage slot or the same ownership story.
+
+This gives the compiler room to:
+
+- pretty-print using preserved user-authored spellings
+- compare identifiers through interned handles
+- evolve identifier policy later without redesigning formatting support
+
+### 6. Add identifier interning now
+
+Interning should be part of the design now, not deferred.
 
 Recommended boundary:
 
-- intern identifiers and keyword-like semantic names that participate in lookup
-  or symbol identity
-- do not intern punctuation tokens
-- do not require numeric or string literal spellings to be interned
+- intern identifier-like semantic names used in lookup, symbol identity, and
+  later semantic caches
+- do not require punctuation, keywords, or literal spellings to be interned
 
 The intern table should:
 
-- own canonical UTF-8 text for semantic names
+- own canonical semantic names
 - return a stable lightweight handle
 - support cheap equality and hashing by handle
 
-The AST should still preserve the original lexeme for diagnostics and source
-reconstruction. The compiler can derive or cache an interned handle when a
-lexeme is used as an identifier.
+The AST still keeps lexemes with preserved source spelling. The semantic
+pipeline derives or caches interned names when identifier lexemes are used as
+identifiers.
 
-### 6. Keep lexemes in the AST
+### 7. Keep diagnostics snippet rendering outside the compiler core
 
-The current AST model, where nodes retain their constituent lexemes, is the
-right direction and should remain stable.
+Diagnostics need accurate line/column positions and enough metadata to point
+back into the original source, but the compiler does not need to keep full
+source text in memory to do that.
 
-For future formatted-code emission, retaining lexemes gives us:
+The proposal should recommend:
 
-- exact token spellings
-- exact token order
-- precise subnode spans
+- compiler diagnostics carry precise spans
+- diagnostics also carry enough source identity or offset metadata for a caller
+  to reopen or seek the original source later
+- the outer presentation layer is responsible for reading lines, showing
+  context, and adding ANSI highlighting
 
-The proposal should not assume that spans alone are sufficient to regenerate
-formatted code. Formatting will likely want both:
-
-- AST structure
-- access to original token/source text
-
-Source ownership plus lexeme retention covers both needs.
+This keeps compiler data structures small while still supporting rich
+diagnostics.
 
 ## Proposed conceptual model
 
 The intended future model is:
 
-- `Source_file`: owns the original UTF-8 bytes and line index
-- `Source_span`: closed range into a specific source file
-- `Text`: owned UTF-8 text for lexeme payloads that need to survive beyond the
-  source reader
-- `Interned_string`: canonical semantic-name handle
-- `Lexeme`: token kind, exact source span, and optional payload text where the
-  token carries user text
+- `Source_span`: a closed source range with explicit start and end positions
+- `Token_text`: compiler-owned preserved spelling for user-authored token text
+- `Interned_name`: canonical semantic-name handle
+- `Lexeme`: token kind, exact span, and optional preserved spelling for tokens
+  that carry user-authored text
 
 The important separation is:
 
-- spans tell us where something came from
-- `Text` tells us what user-authored content the token carries
-- interned handles tell us how semantic names are compared
+- spans tell us where syntax came from
+- preserved token text tells us how user-authored syntax was spelled
+- interned names tell us how semantic names are compared
+
+## Pretty-printing model
+
+The formatter should reconstruct source from AST structure plus retained token
+spellings, not from original source slices.
+
+The target is canonical pretty-printing with spaces and newlines only.
+
+That implies:
+
+- original identifier and literal spellings remain available to print
+- fixed-spelling syntax is emitted canonically from token kind or AST shape
+- whitespace is regenerated by formatting rules, not preserved as trivia
+
+This is enough to support source emission from AST nodes without requiring
+whole-file source retention.
+
+## Diagnostics model
+
+Diagnostics and formatting have different needs and should not share one text
+strategy.
+
+Formatting needs:
+
+- AST structure
+- preserved spelling for user-authored tokens
+
+Diagnostics need:
+
+- accurate line and column numbers
+- enough source identity and position data to reopen the original source and
+  highlight the right range
+
+The compiler should provide the second set and leave snippet extraction and
+colorization to a higher layer.
 
 ## Why this is the right recommendation
 
 This design is the best near-term fit for the current compiler because it:
 
-- fixes the real source-fidelity problem at its root
-- supports Unicode string literals without requiring a full codepoint-native
-  rewrite
-- preserves the current AST shape and span composition strategy
-- lets symbol-table and IR code move to interned names in an incremental way
-- avoids coupling source formatting fidelity to the semantic symbol model
+- aligns the text model with the actual `Char_stream` boundary
+- removes incorrect span-width assumptions
+- supports upcoming Unicode string literal work without forcing a UTF-8-only
+  internal representation
+- preserves the AST's source-facing role for formatting
+- keeps source spelling and semantic identity cleanly separated
+- introduces interning before more compiler layers depend on raw strings
 
 ## Rejected alternatives
 
 ### Keep `std::string` everywhere
 
-Rejected because it keeps source fidelity, semantic identity, and Unicode
-handling conflated. It also makes interning a later cross-cutting retrofit.
+Rejected because it keeps source spelling, semantic identity, and source-extent
+computation tangled together.
 
-### Make all compiler text codepoint-native
+### Keep the whole source file in memory
 
-Rejected as the primary design because it would force broad churn across
-parsing, AST, IR, diagnostics, containers, and output code without solving the
-main architectural problem better than source-owned UTF-8 plus explicit helpers.
+Rejected because diagnostics do not require it, and formatter-style source
+emission can be driven from AST structure plus retained token spellings.
 
-Codepoint iteration is still important, but it should be a capability of the
-text layer, not the storage format for every compiler string.
+### Make UTF-8 the compiler's canonical internal text model
+
+Rejected because the compiler is already conceptually downstream of
+`Char_stream`, and future source adapters should not be forced through one
+serialized encoding choice after that boundary.
+
+### Decode string literal escapes in the lexer
+
+Rejected because it destroys original spelling too early and mixes lexical
+tokenization with later semantic interpretation.
 
 ### Defer interning
 
 Rejected because identifier text already crosses lexer, parser, AST, and IR
-boundaries. Waiting longer increases the amount of code that will later need to
-change shape around symbol identity.
+boundaries. Waiting longer only makes semantic-name migration broader.
 
 ## Migration plan
 
 The expected implementation sequence after this proposal is accepted:
 
-1. Introduce a source-file owner and make lexeme spans explicit.
-2. Stop deriving lexeme span end positions from token text length.
-3. Introduce the project-owned UTF-8 text type for lexeme payloads.
-4. Add an interning facility and move identifier lookup paths to interned
-   semantic names.
-5. Add Unicode-capable string literal lexing and parsing on top of the new text
-   model.
-6. Revisit Unicode identifiers later as a policy choice, not a storage-model
-   rewrite.
-
-This order keeps source fidelity and Unicode lexeme storage ahead of policy
-expansion.
+1. Add explicit spans to `Lexeme` and stop deriving span end positions from
+   stored text length.
+2. Introduce a project-owned preserved-token-text type for identifiers and
+   literals.
+3. Keep string literal tokens raw and move escape decoding to semantic
+   compilation.
+4. Add interning for semantic identifier names and move lookup paths to interned
+   handles.
+5. Build pretty-printing on AST structure plus preserved spellings and
+   canonical whitespace rules.
+6. Add richer source-backed diagnostic rendering outside the compiler core.
+7. Revisit Unicode identifiers later as a policy decision rather than a storage
+   redesign.
 
 ## Risks and follow-on questions
 
 These do not block the recommendation, but they should be tracked explicitly:
 
-- Whether displayed diagnostic columns should remain codepoint-counted,
-  byte-counted, or later evolve toward grapheme-aware presentation.
-- How much trivia retention a future formatter will need beyond token spellings
-  and spans.
-- Whether interned handles should be attached directly to identifier lexemes or
-  derived lazily by later stages.
-- Whether string literal escape processing should store both raw spelling and
-  decoded value.
+- whether diagnostic columns should remain codepoint-counted or later move
+  toward grapheme-aware presentation
+- whether preserved token spelling should store codepoints directly or use
+  another encoding-agnostic representation derived from them
+- whether interned handles should be attached directly to identifier lexemes or
+  derived lazily later
+- whether semantic decoding of string literals should retain both raw spelling
+  and decoded value in later stages
 
 ## Decision
 
 The compiler should move to a split model based on:
 
-- source-owned UTF-8 bytes for fidelity
+- codepoint-oriented compiler text after `Char_stream`
 - explicit stored spans on lexemes
-- a project-owned UTF-8 text type for Unicode lexeme payloads
+- preserved original spelling for user-authored token text
+- deferred literal escape decoding
 - interned semantic identifier names
+- external source access for rich diagnostic rendering
 
 That is the recommended foundation for upcoming Unicode string literal work and
-for future source-preserving tooling built on the AST.
+future formatter-style source emission from the AST.

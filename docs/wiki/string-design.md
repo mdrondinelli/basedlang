@@ -351,17 +351,70 @@ The expected implementation sequence after this proposal is accepted:
 
 1. Add explicit spans to `Lexeme` and stop deriving span end positions from
    stored text length.
-2. Introduce a project-owned preserved-token-text type for identifiers and
-   literals.
-3. Keep string literal tokens raw and move escape decoding to semantic
+2. Introduce the shared string table, row refcounts, and move-only `Token_text`
+   handle with explicit `.clone()`.
+3. Move variable-spelling lexeme payloads onto `Token_text`, while keeping
+   fixed-spelling tokens allocation-free.
+4. Intern identifier spellings through the same string-table path and update
+   lookup code to use handle-based equality and hashing.
+5. Keep string literal tokens raw and move escape decoding to semantic
    compilation.
-4. Add interning for identifier spellings and move lookup paths to use interned
-   handles as their fast key.
-5. Build pretty-printing on AST structure plus preserved spellings and
+6. Build pretty-printing on AST structure plus preserved spellings and
    canonical whitespace rules.
-6. Add richer source-backed diagnostic rendering outside the compiler core.
-7. Revisit Unicode identifiers later as a policy decision rather than a storage
+7. Add richer source-backed diagnostic rendering outside the compiler core.
+8. Revisit Unicode identifiers later as a policy decision rather than a storage
    redesign.
+
+## Recommended implementation phases
+
+To reduce risk, the implementation should be split into these PR-sized phases:
+
+### Phase 1: Span correctness
+
+- add explicit `Source_span` storage to `Lexeme`
+- update `span_of(Lexeme)` and dependent code to use stored spans directly
+- keep existing text storage temporarily so the source-location change lands on
+  its own
+
+### Phase 2: String table foundation
+
+- add the shared string table
+- add row-level non-atomic refcounts
+- add the move-only `Token_text` handle and non-`const` `.clone()`
+- add tests for handle lifetime, move behavior, cloning, and reclamation
+
+### Phase 3: Lexeme payload migration
+
+- move identifier and literal spellings from raw owned strings to `Token_text`
+- keep punctuation and keywords allocation-free
+- update parser and AST storage to carry the new handle type
+
+### Phase 4: Identifier lookup migration
+
+- switch symbol-table and semantic lookup paths to use the handle-based
+  identifier spelling directly
+- remove redundant identifier string comparisons where handle comparison is
+  enough
+
+### Phase 5: Raw string literal preservation
+
+- ensure string literal tokens preserve raw spelling only
+- move escape decoding and validation fully out of the lexer
+- add tests that distinguish raw spelling retention from decoded semantic value
+
+### Phase 6: Formatter-facing support
+
+- build pretty-printing on AST structure plus preserved token spellings
+- enforce canonical spaces/newlines policy
+- verify identifiers and literals print from preserved spelling while fixed
+  syntax prints canonically
+
+### Phase 7: Diagnostic presentation integration
+
+- keep compiler diagnostics span-based
+- add or wire up an outer source-reading layer that reopens/seeks source for
+  snippet rendering
+- verify line/column reporting and highlight ranges remain correct
 
 ## Risks and follow-on questions
 

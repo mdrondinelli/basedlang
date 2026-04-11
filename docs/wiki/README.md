@@ -13,6 +13,7 @@ The pages below are organized to support fast navigation rather than linear read
 
 - [Tutorial: first change](./tutorial-first-change.md)
 - [Language reference](./language.md)
+- [Compiler string design proposal](./string-design.md)
 - [Architecture and pipeline overview](./overview.md)
 - [`lexing`](./lexing.md)
 - [`ast`](./ast.md)

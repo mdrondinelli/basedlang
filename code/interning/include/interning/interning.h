@@ -94,6 +94,13 @@ namespace benson
       assert(std::has_single_bit(static_cast<std::uint64_t>(bucket_count)));
     }
 
+    void swap(String_pool &other) noexcept
+    {
+      std::swap(_buckets, other._buckets);
+      std::swap(_head, other._head);
+      std::swap(_size, other._size);
+    }
+
     auto insert_node(Node *node) -> void
     {
       assert(node != nullptr);
@@ -126,14 +133,6 @@ namespace benson
       }
       _buckets[bucket_index] = node;
       ++_size;
-    }
-
-
-    void swap(String_pool &other) noexcept
-    {
-      std::swap(_buckets, other._buckets);
-      std::swap(_head, other._head);
-      std::swap(_size, other._size);
     }
 
     void destroy_node(Node *node) noexcept

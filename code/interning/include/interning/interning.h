@@ -91,17 +91,13 @@ namespace benson
       assert(node != nullptr);
       assert(node->prev == nullptr);
       assert(node->next == nullptr);
-
       auto const bucket_index = index_for_hash(node->hash, _buckets.size());
       auto const bucket_head = _buckets[bucket_index];
-      auto const bucket_count = static_cast<std::int64_t>(_buckets.size());
-
       if (bucket_head != nullptr)
       {
         node->prev = bucket_head->prev;
         node->next = bucket_head;
         bucket_head->prev = node;
-
         if (node->prev != nullptr)
         {
           node->prev->next = node;
@@ -110,56 +106,16 @@ namespace benson
         {
           _head = node;
         }
-
-        _buckets[bucket_index] = node;
-        ++_size;
-        return;
       }
-
-      auto next_bucket_index = bucket_index + 1;
-      while (next_bucket_index < bucket_count &&
-             _buckets[next_bucket_index] == nullptr)
+      else
       {
-        ++next_bucket_index;
-      }
-
-      if (next_bucket_index < bucket_count)
-      {
-        auto const next_bucket_head = _buckets[next_bucket_index];
-        node->prev = next_bucket_head->prev;
-        node->next = next_bucket_head;
-        next_bucket_head->prev = node;
-
-        if (node->prev != nullptr)
+        node->next = _head;
+        if (_head != nullptr)
         {
-          node->prev->next = node;
+          _head->prev = node;
         }
-        else
-        {
-          _head = node;
-        }
-
-        _buckets[bucket_index] = node;
-        ++_size;
-        return;
-      }
-
-      if (_head == nullptr)
-      {
         _head = node;
-        _buckets[bucket_index] = node;
-        ++_size;
-        return;
       }
-
-      auto tail = _head;
-      while (tail->next != nullptr)
-      {
-        tail = tail->next;
-      }
-
-      tail->next = node;
-      node->prev = tail;
       _buckets[bucket_index] = node;
       ++_size;
     }

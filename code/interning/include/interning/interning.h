@@ -67,15 +67,6 @@ namespace benson
     }
 
   private:
-    friend class String_ref;
-
-    explicit String_pool(std::int64_t bucket_count)
-        : _buckets(static_cast<std::size_t>(bucket_count), nullptr)
-    {
-      assert(bucket_count > 0);
-      assert(std::has_single_bit(static_cast<std::uint64_t>(bucket_count)));
-    }
-
     struct Node
     {
       String_pool *owner{};
@@ -85,6 +76,23 @@ namespace benson
       std::uint64_t hash{};
       std::int32_t refcount{};
     };
+
+    friend class String_ref;
+
+    [[nodiscard]] static std::int64_t
+    index_for_hash(std::uint64_t hash, std::size_t bucket_count) noexcept
+    {
+      assert(bucket_count > 0);
+      assert(std::has_single_bit(bucket_count));
+      return static_cast<std::int64_t>(hash & (bucket_count - 1));
+    }
+
+    explicit String_pool(std::int64_t bucket_count)
+        : _buckets(static_cast<std::size_t>(bucket_count), nullptr)
+    {
+      assert(bucket_count > 0);
+      assert(std::has_single_bit(static_cast<std::uint64_t>(bucket_count)));
+    }
 
     auto insert_node(Node *node) -> void
     {
@@ -120,15 +128,8 @@ namespace benson
       ++_size;
     }
 
-    [[nodiscard]] std::int64_t
-    index_for_hash(std::uint64_t hash, std::size_t bucket_count) noexcept
-    {
-      assert(bucket_count > 0);
-      assert(std::has_single_bit(bucket_count));
-      return static_cast<std::int64_t>(hash & (bucket_count - 1));
-    }
 
-    auto swap(String_pool &other) noexcept -> void
+    void swap(String_pool &other) noexcept
     {
       std::swap(_buckets, other._buckets);
       std::swap(_head, other._head);

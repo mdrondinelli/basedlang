@@ -258,7 +258,7 @@ diagnostics.
 The intended future model is:
 
 - `Source_span`: a closed source range with explicit start and end positions
-- `Token_text`: move-only handle to string-table-owned preserved spelling for
+- `Interned_string`: move-only handle to string-table-owned preserved spelling for
   user-authored token text
 - `Lexeme`: token kind, exact span, and optional preserved spelling for tokens
   that carry user-authored text
@@ -351,9 +351,9 @@ The expected implementation sequence after this proposal is accepted:
 
 1. Add explicit spans to `Lexeme` and stop deriving span end positions from
    stored text length.
-2. Introduce the shared string table, row refcounts, and move-only `Token_text`
+2. Introduce the shared string table, row refcounts, and move-only `Interned_string`
    handle with explicit `.clone()`.
-3. Move variable-spelling lexeme payloads onto `Token_text`, while keeping
+3. Move variable-spelling lexeme payloads onto `Interned_string`, while keeping
    fixed-spelling tokens allocation-free.
 4. Intern identifier spellings through the same string-table path and update
    lookup code to use handle-based equality and hashing.
@@ -380,12 +380,12 @@ To reduce risk, the implementation should be split into these PR-sized phases:
 
 - add the shared string table
 - add row-level non-atomic refcounts
-- add the move-only `Token_text` handle and non-`const` `.clone()`
+- add the move-only `Interned_string` handle and non-`const` `.clone()`
 - add tests for handle lifetime, move behavior, cloning, and reclamation
 
 ### Phase 3: Lexeme payload migration
 
-- move identifier and literal spellings from raw owned strings to `Token_text`
+- move identifier and literal spellings from raw owned strings to `Interned_string`
 - keep punctuation and keywords allocation-free
 - update parser and AST storage to carry the new handle type
 

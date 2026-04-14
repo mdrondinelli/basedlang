@@ -89,11 +89,6 @@ namespace benson::ir
 
     Translation_unit compile(ast::Translation_unit const &ast);
 
-    Spelling_table &spellings()
-    {
-      return *_spellings;
-    }
-
     Type *type_of_constant(Constant_value const &value);
 
     [[noreturn]] void emit_error(std::string message, Source_span location);

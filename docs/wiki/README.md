@@ -15,6 +15,7 @@ The pages below are organized to support fast navigation rather than linear read
 - [Language reference](./language.md)
 - [Architecture and pipeline overview](./overview.md)
 - [`lexing`](./lexing.md)
+- [`spelling`](./spelling.md)
 - [`ast`](./ast.md)
 - [`parsing`](./parsing.md)
 - [`ir`](./ir.md)

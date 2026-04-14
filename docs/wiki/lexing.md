@@ -23,7 +23,7 @@ The closed set of token kinds in the language.
 
 ### `Lexeme`
 
-A token plus its source text and source span.
+A token plus its preserved text payload, if any, and source span.
 
 ### `Char_stream`
 
@@ -46,7 +46,7 @@ Token-level buffered lookahead for the parser.
 The important lexer data is small:
 
 - token kind
-- original token text
+- preserved token text when the token kind requires it
 - source span
 
 The lexer does not build a larger intermediate structure.
@@ -66,6 +66,12 @@ At a high level, `Lexeme_stream` does this each time a token is requested:
 Integer literals may carry an optional size suffix — `i8`, `i16`, `i32`, or `i64` — that is lexed as part of the same token and determines the integer type.
 
 Identifier-like sequences are consumed first and then classified as keywords or identifiers. Punctuation-heavy tokens use lookahead and longest-match behavior for things like `==`, `!=`, `<=`, `>=`, `=>`, `&mut`, and `^mut`.
+
+The string-storage refactor is changing how token text is represented. Phase 2
+introduced the shared `spelling` module, which provides `Spelling_table` and
+`Spelling` for preserved variable-spelling tokens. Phase 3 will migrate
+`Lexeme` away from owned text toward compact spelling handles for identifiers
+and literals while keeping fixed-spelling tokens allocation-free.
 
 ## What to keep stable
 

@@ -1,20 +1,19 @@
 #ifndef BASEDLEX_LEXEME_H
 #define BASEDLEX_LEXEME_H
 
-#include <string>
-
-#include "source_location.h"
 #include "source_span.h"
+#include "spelling/spelling.h"
 #include "token.h"
 
 namespace benson
 {
 
-  /// A single token produced by the lexer, including its text and source span.
+  /// A single token produced by the lexer, including its spelling and source
+  /// span.
   struct Lexeme
   {
-    std::string text;
     Token token;
+    Spelling spelling;
     Source_span span;
   };
 

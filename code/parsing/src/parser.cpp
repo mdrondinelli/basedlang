@@ -19,8 +19,23 @@
 namespace benson
 {
 
-  Parser::Parser(Lexeme_stream_reader *reader) noexcept
-      : _reader{reader}
+  namespace
+  {
+
+    auto describe(Spelling_table const &spellings, Lexeme const &lexeme)
+      -> std::string
+    {
+      return lexeme.spelling ? std::string{spellings.lookup(lexeme.spelling)}
+                             : std::string{};
+    }
+
+  } // namespace
+
+  Parser::Parser(
+    Lexeme_stream_reader *reader,
+    Spelling_table const *spellings
+  ) noexcept
+      : _reader{reader}, _spellings{spellings}
   {
   }
 
@@ -316,7 +331,7 @@ namespace benson
       return std::make_unique<ast::Expression>(parse_fn_expression());
     }
     throw std::runtime_error{
-      "unexpected token '" + next.text + "' at " +
+      "unexpected token '" + describe(*_spellings, next) + "' at " +
       std::to_string(next.span.start.line) + ":" +
       std::to_string(next.span.start.column)
     };
@@ -435,7 +450,7 @@ namespace benson
     if (lexeme.token != token)
     {
       throw std::runtime_error{
-        "unexpected token '" + lexeme.text + "' at " +
+        "unexpected token '" + describe(*_spellings, lexeme) + "' at " +
         std::to_string(lexeme.span.start.line) + ":" +
         std::to_string(lexeme.span.start.column)
       };

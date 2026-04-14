@@ -15,6 +15,7 @@
 #include <ast/operator.h>
 #include <ast/source_span.h>
 #include <lexing/source_span.h>
+#include <spelling/spelling.h>
 
 #include "constant_value.h"
 #include "hlir.h"
@@ -84,9 +85,14 @@ namespace benson::ir
   class Compilation_context
   {
   public:
-    explicit Compilation_context(Type_pool *type_pool);
+    Compilation_context(Type_pool *type_pool, Spelling_table *spellings);
 
     Translation_unit compile(ast::Translation_unit const &ast);
+
+    Spelling_table &spellings()
+    {
+      return *_spellings;
+    }
 
     Type *type_of_constant(Constant_value const &value);
 
@@ -182,6 +188,7 @@ namespace benson::ir
 
   private:
     Type_pool *_type_pool;
+    Spelling_table *_spellings;
     Translation_unit _translation_unit;
     Symbol_table _symbol_table;
     Function *_current_function{};
@@ -200,8 +207,11 @@ namespace benson::ir
       _binary_overloads;
   };
 
-  Translation_unit
-  compile(ast::Translation_unit const &ast, Type_pool *type_pool);
+  Translation_unit compile(
+    ast::Translation_unit const &ast,
+    Spelling_table *spellings,
+    Type_pool *type_pool
+  );
 
   std::optional<std::uint64_t>
   validate_int_literal(std::string_view digits, std::uint64_t max_value);

@@ -4,6 +4,7 @@
 #include <bit>
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -168,6 +169,13 @@ namespace benson
       };
     }
 
+    [[nodiscard]] auto intern(std::string_view text) -> Spelling
+    {
+      auto build = builder();
+      build.append(text);
+      return std::move(build).finalize();
+    }
+
     [[nodiscard]] auto size() const noexcept -> std::uint32_t
     {
       return static_cast<std::uint32_t>(_entries.size());
@@ -265,5 +273,14 @@ namespace benson
   };
 
 } // namespace benson
+
+template <>
+struct std::hash<benson::Spelling>
+{
+  auto operator()(benson::Spelling spelling) const noexcept -> std::size_t
+  {
+    return std::hash<std::uint32_t>{}(spelling.value);
+  }
+};
 
 #endif

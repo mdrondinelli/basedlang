@@ -16,6 +16,7 @@
 #include <lexing/lexeme_stream_reader.h>
 #include <lexing/utf8_char_stream.h>
 #include <parsing/parser.h>
+#include <spelling/spelling.h>
 
 namespace benson
 {
@@ -30,9 +31,10 @@ namespace benson
   {
     auto bs = Istream_binary_stream{&input};
     auto cs = Utf8_char_stream{&bs};
-    auto ls = Lexeme_stream{&cs};
+    auto spellings = Spelling_table{};
+    auto ls = Lexeme_stream{&cs, &spellings};
     auto lr = Lexeme_stream_reader{&ls};
-    auto parser = Parser{&lr};
+    auto parser = Parser{&lr, &spellings};
 
     ast::Translation_unit ast;
     try
@@ -59,8 +61,8 @@ namespace benson
     auto types = ir::Type_pool{};
     try
     {
-      auto const tu = ir::compile(ast, &types);
-      auto const it = tu.function_table.find(std::string{function_name});
+      auto const tu = ir::compile(ast, &spellings, &types);
+      auto const it = tu.function_table.find(spellings.intern(function_name));
       if (it == tu.function_table.end())
       {
         err << "error: no function named '" << function_name << "'\n";

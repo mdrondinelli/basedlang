@@ -1,6 +1,8 @@
 #include <array>
 #include <exception>
 #include <limits>
+#include <sstream>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -16,6 +18,7 @@
 #include "ir/compile.h"
 #include "ir/interpret.h"
 #include "ir/type.h"
+#include "spelling/spelling.h"
 
 struct Parse_fixture
 {
@@ -26,13 +29,13 @@ struct Parse_fixture
   benson::Lexeme_stream_reader reader;
   benson::Parser parser;
 
-  explicit Parse_fixture(std::string source)
+  Parse_fixture(std::string source, benson::Spelling_table *spellings)
       : stream{std::move(source)},
         binary_stream{&stream},
         char_stream{&binary_stream},
-        lexeme_stream{&char_stream},
+        lexeme_stream{&char_stream, spellings},
         reader{&lexeme_stream},
-        parser{&reader}
+        parser{&reader, spellings}
   {
   }
 
@@ -43,11 +46,12 @@ struct Parse_fixture
 
 struct Compile_fixture
 {
+  benson::Spelling_table spellings;
   benson::ir::Type_pool types;
   benson::ir::Compilation_context compiler;
 
   explicit Compile_fixture()
-      : compiler{&types}
+      : spellings{}, compiler{&types, &spellings}
   {
   }
 
@@ -61,7 +65,8 @@ benson::ir::Constant_value evaluate_constant(
   std::string_view source
 )
 {
-  auto parse_fixture = Parse_fixture{std::string{source}};
+  auto parse_fixture =
+    Parse_fixture{std::string{source}, &compiler.spellings()};
   auto const expr = parse_fixture.parser.parse_expression();
   return compiler.evaluate_constant_expression(*expr);
 }
@@ -69,7 +74,8 @@ benson::ir::Constant_value evaluate_constant(
 benson::ir::Type *
 compile_type(benson::ir::Compilation_context &compiler, std::string_view source)
 {
-  auto parse_fixture = Parse_fixture{std::string{source}};
+  auto parse_fixture =
+    Parse_fixture{std::string{source}, &compiler.spellings()};
   auto const expr = parse_fixture.parser.parse_expression();
   return compiler.compile_type_expression(*expr);
 }
@@ -321,10 +327,11 @@ TEST_CASE("evaluate_constant_expression - bool equality")
 std::pair<benson::ir::Type_pool, benson::ir::Translation_unit>
 compile_program(std::string source)
 {
-  auto parse_fixture = Parse_fixture{std::move(source)};
+  auto spellings = benson::Spelling_table{};
+  auto parse_fixture = Parse_fixture{std::move(source), &spellings};
   auto const ast = parse_fixture.parser.parse_translation_unit();
   auto types = benson::ir::Type_pool{};
-  auto tu = benson::ir::compile(ast, &types);
+  auto tu = benson::ir::compile(ast, &spellings, &types);
   return {std::move(types), std::move(tu)};
 }
 

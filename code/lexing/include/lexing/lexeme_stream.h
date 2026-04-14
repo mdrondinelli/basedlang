@@ -5,6 +5,7 @@
 
 #include "char_stream_reader.h"
 #include "lexeme.h"
+#include "spelling/spelling.h"
 
 namespace benson
 {
@@ -23,7 +24,7 @@ namespace benson
       Source_location location;
     };
 
-    explicit Lexeme_stream(Char_stream *stream) noexcept;
+    Lexeme_stream(Char_stream *stream, Spelling_table *spellings) noexcept;
 
     Lexeme lex();
 
@@ -33,6 +34,7 @@ namespace benson
     char32_t consume_non_newline();
 
     Char_stream_reader _reader;
+    Spelling_table *_spellings;
     Source_location _location;
   };
 

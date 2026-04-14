@@ -1,15 +1,19 @@
+#include "lexing/lexeme_stream.h"
 #include <cassert>
 #include <cctype>
-#include <string>
-
-#include "lexing/lexeme_stream.h"
 
 namespace benson
 {
 
-  Lexeme_stream::Lexeme_stream(Char_stream *stream) noexcept
-      : _reader{stream}, _location{.line = 1, .column = 1}
+  Lexeme_stream::Lexeme_stream(
+    Char_stream *stream,
+    Spelling_table *spellings
+  ) noexcept
+      : _reader{stream},
+        _spellings{spellings},
+        _location{.line = 1, .column = 1}
   {
+    assert(_spellings != nullptr);
   }
 
   void Lexeme_stream::consume_newline()
@@ -30,10 +34,14 @@ namespace benson
 
   Lexeme Lexeme_stream::lex()
   {
-    auto text = std::string{};
     auto token_location = Source_location{};
+    auto build = _spellings->builder();
+    auto const append = [&](char32_t c)
+    {
+      build.append(static_cast<char>(c));
+    };
     auto const make_lexeme =
-      [&](std::string text, Token token, Source_location start) -> Lexeme
+      [&](Token token, Source_location start, Spelling spelling = {}) -> Lexeme
     {
       auto end = start;
       if (token != Token::eof)
@@ -42,10 +50,14 @@ namespace benson
           .line = _location.line,
           .column = _location.column - 1,
         };
+        if (!spelling.has_value())
+        {
+          spelling = std::move(build).finalize();
+        }
       }
       return Lexeme{
-        .text = std::move(text),
         .token = token,
+        .spelling = spelling,
         .span = Source_span{.start = start, .end = end},
       };
     };
@@ -58,7 +70,7 @@ namespace benson
         {
           if (!_reader.peek())
           {
-            return make_lexeme("", Token::eof, _location);
+            return make_lexeme(Token::eof, _location);
           }
           if (*_reader.peek() == '\n')
           {
@@ -74,13 +86,13 @@ namespace benson
           token_location = c_location;
           if (c <= 0x7F && (std::isalpha((int) c) || c == '_'))
           {
-            text += (char) c;
+            append(c);
             state = 1;
             break;
           }
           if (c <= 0x7F && std::isdigit((int) c))
           {
-            text += (char) c;
+            append(c);
             state = 2;
             break;
           }
@@ -88,10 +100,12 @@ namespace benson
           {
             if (_reader.peek() && *_reader.peek() == '>')
             {
-              consume_non_newline();
-              return make_lexeme("->", Token::arrow, token_location);
+              append(c);
+              append(consume_non_newline());
+              return make_lexeme(Token::arrow, token_location);
             }
-            return make_lexeme("-", Token::minus, token_location);
+            append(c);
+            return make_lexeme(Token::minus, token_location);
           }
           switch (c)
           {
@@ -105,19 +119,18 @@ namespace benson
                   (!p3 ||
                    !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
               {
-                consume_non_newline();
-                consume_non_newline();
-                consume_non_newline();
-                return make_lexeme(
-                  "&mut",
-                  Token::ampersand_mut,
-                  token_location
-                );
+                append(c);
+                append(consume_non_newline());
+                append(consume_non_newline());
+                append(consume_non_newline());
+                return make_lexeme(Token::ampersand_mut, token_location);
               }
-              return make_lexeme("&", Token::ampersand, token_location);
+              append(c);
+              return make_lexeme(Token::ampersand, token_location);
             }
           case '+':
-            return make_lexeme("+", Token::plus, token_location);
+            append(c);
+            return make_lexeme(Token::plus, token_location);
           case '^':
             {
               auto const p0 = _reader.peek(0);
@@ -128,70 +141,92 @@ namespace benson
                   (!p3 ||
                    !(*p3 <= 0x7F && (std::isalnum((int) *p3) || *p3 == '_'))))
               {
-                consume_non_newline();
-                consume_non_newline();
-                consume_non_newline();
-                return make_lexeme("^mut", Token::caret_mut, token_location);
+                append(c);
+                append(consume_non_newline());
+                append(consume_non_newline());
+                append(consume_non_newline());
+                return make_lexeme(Token::caret_mut, token_location);
               }
-              return make_lexeme("^", Token::caret, token_location);
+              append(c);
+              return make_lexeme(Token::caret, token_location);
             }
           case '*':
-            return make_lexeme("*", Token::star, token_location);
+            append(c);
+            return make_lexeme(Token::star, token_location);
           case '/':
-            return make_lexeme("/", Token::slash, token_location);
+            append(c);
+            return make_lexeme(Token::slash, token_location);
           case '%':
-            return make_lexeme("%", Token::percent, token_location);
+            append(c);
+            return make_lexeme(Token::percent, token_location);
           case '=':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              consume_non_newline();
-              return make_lexeme("==", Token::eq_eq, token_location);
+              append(c);
+              append(consume_non_newline());
+              return make_lexeme(Token::eq_eq, token_location);
             }
             if (_reader.peek() && *_reader.peek() == '>')
             {
-              consume_non_newline();
-              return make_lexeme("=>", Token::fat_arrow, token_location);
+              append(c);
+              append(consume_non_newline());
+              return make_lexeme(Token::fat_arrow, token_location);
             }
-            return make_lexeme("=", Token::eq, token_location);
+            append(c);
+            return make_lexeme(Token::eq, token_location);
           case '!':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              consume_non_newline();
-              return make_lexeme("!=", Token::bang_eq, token_location);
+              append(c);
+              append(consume_non_newline());
+              return make_lexeme(Token::bang_eq, token_location);
             }
             throw Lex_error{token_location};
           case '<':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              consume_non_newline();
-              return make_lexeme("<=", Token::le, token_location);
+              append(c);
+              append(consume_non_newline());
+              return make_lexeme(Token::le, token_location);
             }
-            return make_lexeme("<", Token::lt, token_location);
+            append(c);
+            return make_lexeme(Token::lt, token_location);
           case '>':
             if (_reader.peek() && *_reader.peek() == '=')
             {
-              consume_non_newline();
-              return make_lexeme(">=", Token::ge, token_location);
+              append(c);
+              append(consume_non_newline());
+              return make_lexeme(Token::ge, token_location);
             }
-            return make_lexeme(">", Token::gt, token_location);
+            append(c);
+            return make_lexeme(Token::gt, token_location);
           case '{':
-            return make_lexeme("{", Token::lbrace, token_location);
+            append(c);
+            return make_lexeme(Token::lbrace, token_location);
           case '[':
-            return make_lexeme("[", Token::lbracket, token_location);
+            append(c);
+            return make_lexeme(Token::lbracket, token_location);
           case '}':
-            return make_lexeme("}", Token::rbrace, token_location);
+            append(c);
+            return make_lexeme(Token::rbrace, token_location);
           case ']':
-            return make_lexeme("]", Token::rbracket, token_location);
+            append(c);
+            return make_lexeme(Token::rbracket, token_location);
           case '(':
-            return make_lexeme("(", Token::lparen, token_location);
+            append(c);
+            return make_lexeme(Token::lparen, token_location);
           case ')':
-            return make_lexeme(")", Token::rparen, token_location);
+            append(c);
+            return make_lexeme(Token::rparen, token_location);
           case ':':
-            return make_lexeme(":", Token::colon, token_location);
+            append(c);
+            return make_lexeme(Token::colon, token_location);
           case ',':
-            return make_lexeme(",", Token::comma, token_location);
+            append(c);
+            return make_lexeme(Token::comma, token_location);
           case ';':
-            return make_lexeme(";", Token::semicolon, token_location);
+            append(c);
+            return make_lexeme(Token::semicolon, token_location);
           default:
             throw Lex_error{token_location};
           }
@@ -201,9 +236,11 @@ namespace benson
           auto const p = _reader.peek();
           if (p && *p <= 0x7F && (std::isalnum((int) *p) || *p == '_'))
           {
-            text += (char) consume_non_newline();
+            append(consume_non_newline());
             break;
           }
+          auto const spelling = std::move(build).finalize();
+          auto const text = _spellings->lookup(spelling);
           auto const token = [&]() -> Token
           {
             if (text == "else")
@@ -240,34 +277,30 @@ namespace benson
             }
             return Token::identifier;
           }();
-          return make_lexeme(std::move(text), token, token_location);
+          return make_lexeme(token, token_location, spelling);
         }
       case 2:
         {
           auto const p = _reader.peek();
           if (p && *p <= 0x7F && std::isdigit((int) *p))
           {
-            text += (char) consume_non_newline();
+            append(consume_non_newline());
             break;
           }
           if (p && *p == '.')
           {
-            text += (char) consume_non_newline();
+            append(consume_non_newline());
             state = 3;
             break;
           }
           if (p && (*p == 'f' || *p == 'd'))
           {
-            text += (char) consume_non_newline();
-            return make_lexeme(
-              std::move(text),
-              Token::float_literal,
-              token_location
-            );
+            append(consume_non_newline());
+            return make_lexeme(Token::float_literal, token_location);
           }
           if (p && *p == 'i')
           {
-            text += (char) consume_non_newline();
+            append(consume_non_newline());
             auto suffix_digit_count = 0;
             for (;;)
             {
@@ -277,7 +310,7 @@ namespace benson
               {
                 break;
               }
-              text += (char) consume_non_newline();
+              append(consume_non_newline());
               ++suffix_digit_count;
             }
             if (suffix_digit_count == 0)
@@ -285,29 +318,21 @@ namespace benson
               throw Lex_error{token_location};
             }
           }
-          return make_lexeme(
-            std::move(text),
-            Token::int_literal,
-            token_location
-          );
+          return make_lexeme(Token::int_literal, token_location);
         }
       case 3:
         {
           auto const p = _reader.peek();
           if (p && *p <= 0x7F && std::isdigit((int) *p))
           {
-            text += (char) consume_non_newline();
+            append(consume_non_newline());
             break;
           }
           if (p && (*p == 'f' || *p == 'd'))
           {
-            text += (char) consume_non_newline();
+            append(consume_non_newline());
           }
-          return make_lexeme(
-            std::move(text),
-            Token::float_literal,
-            token_location
-          );
+          return make_lexeme(Token::float_literal, token_location);
         }
       }
     }

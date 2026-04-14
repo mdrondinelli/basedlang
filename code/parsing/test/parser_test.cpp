@@ -60,8 +60,9 @@ TEST_CASE("Parser - first.benson produces a declaration")
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
   auto parser = benson::Parser{&reader, &spellings};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit.let_statements.size() == 1);
-  auto const &decl = unit.let_statements[0];
+  REQUIRE(unit.statements.size() == 1);
+  auto const &decl =
+    std::get<benson::ast::Let_statement>(unit.statements[0].value);
   CHECK(spellings.lookup(decl.kw_let.spelling) == "let");
   CHECK(spellings.lookup(decl.name.spelling) == "main");
   CHECK(spellings.lookup(decl.eq.spelling) == "=");
@@ -106,10 +107,13 @@ TEST_CASE("Parser - parameters.benson parses successfully")
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
   auto parser = benson::Parser{&reader, &spellings};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit.let_statements.size() == 3);
-  auto const &id_decl = unit.let_statements[0];
-  auto const &first_decl = unit.let_statements[1];
-  auto const &main_decl = unit.let_statements[2];
+  REQUIRE(unit.statements.size() == 3);
+  auto const &id_decl =
+    std::get<benson::ast::Let_statement>(unit.statements[0].value);
+  auto const &first_decl =
+    std::get<benson::ast::Let_statement>(unit.statements[1].value);
+  auto const &main_decl =
+    std::get<benson::ast::Let_statement>(unit.statements[2].value);
   CHECK(spellings.lookup(id_decl.name.spelling) == "id");
   CHECK(spellings.lookup(first_decl.name.spelling) == "first");
   CHECK(spellings.lookup(main_decl.name.spelling) == "main");
@@ -232,9 +236,11 @@ TEST_CASE("Parser - call_expression.benson parses successfully")
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
   auto parser = benson::Parser{&reader, &spellings};
   auto const unit = parser.parse_translation_unit();
-  REQUIRE(unit.let_statements.size() == 2);
-  auto const &foo_decl = unit.let_statements[0];
-  auto const &main_decl = unit.let_statements[1];
+  REQUIRE(unit.statements.size() == 2);
+  auto const &foo_decl =
+    std::get<benson::ast::Let_statement>(unit.statements[0].value);
+  auto const &main_decl =
+    std::get<benson::ast::Let_statement>(unit.statements[1].value);
   CHECK(spellings.lookup(foo_decl.name.spelling) == "foo");
   CHECK(spellings.lookup(main_decl.name.spelling) == "main");
   auto const foo_fn =
@@ -304,6 +310,10 @@ TEST_CASE("Parser - accepts valid code")
   CHECK(parses("let main = fn(): Void => { f(1, 2); };"));
   CHECK(parses("let main = fn(): Void => { f(1,); };"));
   CHECK(parses("let x = 42;"));
+  // named function expression syntax
+  CHECK(parses("fn main(): Int32 => { return 0; };"));
+  CHECK(parses("fn add(x: Int32, y: Int32): Int32 => x + y;"));
+  CHECK(parses("fn f(n: Int32): Int32 => f(n);"));
 }
 
 TEST_CASE("Parser - rejects invalid code")
@@ -316,7 +326,6 @@ TEST_CASE("Parser - rejects invalid code")
   CHECK_FALSE(parses("let x = fn() => Int32"));
   CHECK_FALSE(parses("let x = fn(): Int32 => {"));
   CHECK_FALSE(parses("let x = fn(): Int32 => { }"));
-  CHECK_FALSE(parses("return 0;"));
   CHECK_FALSE(parses("{"));
   CHECK_FALSE(parses("42"));
   CHECK_FALSE(parses("let = fn(): Int32 => { };"));
@@ -347,7 +356,7 @@ TEST_CASE("parse_translation_unit - empty")
 {
   auto fixture = Parse_fixture{""};
   auto const unit = fixture.parser.parse_translation_unit();
-  CHECK(unit.let_statements.empty());
+  CHECK(unit.statements.empty());
 }
 
 TEST_CASE("parse_translation_unit - multiple let statements")
@@ -356,9 +365,13 @@ TEST_CASE("parse_translation_unit - multiple let statements")
                                "let b = fn(): Int32 => { return 2; };"};
   auto const &spellings = fixture.spellings;
   auto const unit = fixture.parser.parse_translation_unit();
-  REQUIRE(unit.let_statements.size() == 2);
-  CHECK(spellings.lookup(unit.let_statements[0].name.spelling) == "a");
-  CHECK(spellings.lookup(unit.let_statements[1].name.spelling) == "b");
+  REQUIRE(unit.statements.size() == 2);
+  auto const &stmt_a =
+    std::get<benson::ast::Let_statement>(unit.statements[0].value);
+  auto const &stmt_b =
+    std::get<benson::ast::Let_statement>(unit.statements[1].value);
+  CHECK(spellings.lookup(stmt_a.name.spelling) == "a");
+  CHECK(spellings.lookup(stmt_b.name.spelling) == "b");
 }
 
 TEST_CASE("parse_let_statement - function declaration")
@@ -1339,7 +1352,7 @@ TEST_CASE("Parser - quicksort.benson parses successfully")
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
   auto parser = benson::Parser{&reader, &spellings};
   auto const unit = parser.parse_translation_unit();
-  CHECK(unit.let_statements.size() == 3);
+  CHECK(unit.statements.size() == 3);
 }
 
 TEST_CASE("parse_expression - prefix bracket unsized array type")
@@ -1440,4 +1453,52 @@ TEST_CASE("Parser - accepts prefix type syntax")
   CHECK(parses("let f = fn(x: ^mut []Int32): Void => { };"));
   CHECK(parses("let f = fn(x: ^[]Int32): Void => { };"));
   CHECK(parses("let f = fn(x: [][4]Int32): Void => { };"));
+}
+
+TEST_CASE("parse_fn_expression - named function expression")
+{
+  auto fixture = Parse_fixture{"fn main(): Int32 => { return 0; };"};
+  auto const &spellings = fixture.spellings;
+  auto const stmt = fixture.parser.parse_expression_statement();
+  auto const fn =
+    std::get_if<benson::ast::Fn_expression>(&stmt.expression.value);
+  REQUIRE(fn != nullptr);
+  CHECK(spellings.lookup(fn->kw_fn.spelling) == "fn");
+  REQUIRE(fn->name.has_value());
+  CHECK(spellings.lookup(fn->name->spelling) == "main");
+  CHECK(fn->parameters.empty());
+  auto const ret_type = std::get_if<benson::ast::Identifier_expression>(
+    &fn->return_type_specifier.type->value
+  );
+  REQUIRE(ret_type != nullptr);
+  CHECK(spellings.lookup(ret_type->identifier.spelling) == "Int32");
+}
+
+TEST_CASE("parse_fn_expression - anonymous function has no name")
+{
+  auto fixture = Parse_fixture{"fn(): Int32 => 0"};
+  auto const expr = fixture.parser.parse_expression();
+  auto const fn = std::get_if<benson::ast::Fn_expression>(&expr->value);
+  REQUIRE(fn != nullptr);
+  CHECK_FALSE(fn->name.has_value());
+}
+
+TEST_CASE("parse_translation_unit - named fn statement")
+{
+  auto fixture = Parse_fixture{
+    "fn add(x: Int32, y: Int32): Int32 => x + y;"
+  };
+  auto const &spellings = fixture.spellings;
+  auto const unit = fixture.parser.parse_translation_unit();
+  REQUIRE(unit.statements.size() == 1);
+  auto const &stmt =
+    std::get<benson::ast::Expression_statement>(unit.statements[0].value);
+  auto const fn =
+    std::get_if<benson::ast::Fn_expression>(&stmt.expression.value);
+  REQUIRE(fn != nullptr);
+  REQUIRE(fn->name.has_value());
+  CHECK(spellings.lookup(fn->name->spelling) == "add");
+  REQUIRE(fn->parameters.size() == 2);
+  CHECK(spellings.lookup(fn->parameters[0].name.spelling) == "x");
+  CHECK(spellings.lookup(fn->parameters[1].name.spelling) == "y");
 }

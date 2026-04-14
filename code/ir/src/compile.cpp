@@ -314,11 +314,11 @@ namespace benson::ir
   Translation_unit
   Compilation_context::compile(ast::Translation_unit const &ast)
   {
-    for (auto const &decl : ast.let_statements)
+    for (auto const &stmt : ast.statements)
     {
       try
       {
-        compile_statement(decl);
+        compile_statement(stmt);
       }
       catch (Compilation_error const &)
       {
@@ -680,7 +680,17 @@ namespace benson::ir
   Operand
   Compilation_context::compile_expression(ast::Fn_expression const &expr)
   {
-    return Constant_value{Function_value{.function = compile_function(expr)}};
+    auto const func = compile_function(expr);
+    auto const cv = Constant_value{Function_value{.function = func}};
+    if (expr.name)
+    {
+      _symbol_table.declare_value(expr.name->spelling, cv);
+      if (is_top_level())
+      {
+        _translation_unit.function_table[expr.name->spelling] = func;
+      }
+    }
+    return cv;
   }
 
   Operand
@@ -1179,6 +1189,13 @@ namespace benson::ir
     auto const entry = new_block();
     set_current_block(entry);
     _symbol_table.push_scope(true);
+    if (expr.name)
+    {
+      _symbol_table.declare_value(
+        expr.name->spelling,
+        Constant_value{Function_value{.function = func_ptr}}
+      );
+    }
     for (auto i = std::size_t{}; i < expr.parameters.size(); ++i)
     {
       auto const reg = allocate_register(ft.parameter_types[i]);

@@ -62,6 +62,7 @@ namespace benson::ast
     Fn_expression &operator=(Fn_expression &&) noexcept = default;
 
     Lexeme kw_fn;
+    std::optional<Lexeme> name;
     Lexeme lparen;
     std::vector<Parameter_declaration> parameters;
     std::vector<Lexeme> parameter_commas;
@@ -310,7 +311,7 @@ namespace benson::ast
 
   struct Translation_unit
   {
-    std::vector<Let_statement> let_statements;
+    std::vector<Statement> statements;
   };
 
 } // namespace benson::ast

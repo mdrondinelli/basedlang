@@ -33,7 +33,7 @@ namespace benson
     auto unit = ast::Translation_unit{};
     while (_reader->peek().token != Token::eof)
     {
-      unit.let_statements.push_back(parse_let_statement());
+      unit.statements.push_back(parse_statement());
     }
     return unit;
   }
@@ -333,6 +333,10 @@ namespace benson
   {
     auto fn = ast::Fn_expression{};
     fn.kw_fn = expect(Token::kw_fn);
+    if (_reader->peek().token == Token::identifier)
+    {
+      fn.name = expect(Token::identifier);
+    }
     fn.lparen = expect(Token::lparen);
     for (;;)
     {

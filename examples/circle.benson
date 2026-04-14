@@ -1,5 +1,5 @@
-let pi = fn(): Float64 => 3.14159265358979;
+fn pi(): Float64 => 3.14159265358979;
 
-let area = fn(r: Float64): Float64 => pi() * r * r;
+fn area(r: Float64): Float64 => pi() * r * r;
 
-let circumference = fn(r: Float64): Float64 => 2.0 * pi() * r;
+fn circumference(r: Float64): Float64 => 2.0 * pi() * r;

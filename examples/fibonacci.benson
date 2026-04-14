@@ -1,8 +1,8 @@
-let fib = fn(n: Int32): Int32 =>
+fn fib(n: Int32): Int32 =>
   if n < 2 {
     n
   } else {
-    recurse(n - 1) + recurse(n - 2)
+    fib(n - 1) + fib(n - 2)
   };
 
-let main = fn(): Int32 => fib(10);
+fn main(): Int32 => fib(10);

@@ -1,14 +1,14 @@
-let id = fn(x: Int32): Int32 =>
+fn id(x: Int32): Int32 =>
 {
   return x;
 };
 
-let first = fn(x: Int32, y: Int32): Int32 =>
+fn first(x: Int32, y: Int32): Int32 =>
 {
   return x;
 };
 
-let main = fn(): Int32 =>
+fn main(): Int32 =>
 {
   return first(id(42), 0);
 };

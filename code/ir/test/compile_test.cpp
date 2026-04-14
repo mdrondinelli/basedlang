@@ -860,3 +860,70 @@ TEST_CASE("compile - bool operators")
     std::array<benson::ir::Constant_value, 2>{std::int32_t{1}, std::int32_t{2}};
   CHECK(std::get<bool>(benson::ir::interpret(f, args2)) == false);
 }
+
+// --- named function expression syntax ---
+
+TEST_CASE("compile - named fn expression returning literal")
+{
+  auto const [types, tu] =
+    compile_program("fn f(): Int32 => { return 42; };");
+  REQUIRE(tu.functions.size() == 1);
+  auto const result = benson::ir::interpret(*tu.functions[0], {});
+  CHECK(std::get<std::int32_t>(result) == 42);
+}
+
+TEST_CASE("compile - named fn expression with parameter")
+{
+  auto const [types, tu] =
+    compile_program("fn id(x: Int32): Int32 => x;");
+  REQUIRE(tu.functions.size() == 1);
+  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{7}};
+  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  CHECK(std::get<std::int32_t>(result) == 7);
+}
+
+TEST_CASE("compile - named fn callable by name from another function")
+{
+  auto const [types, tu] = compile_program(
+    "fn double(x: Int32): Int32 => x * 2;"
+    "fn main(): Int32 => double(21);"
+  );
+  REQUIRE(tu.functions.size() == 2);
+  auto const result = benson::ir::interpret(*tu.functions[1], {});
+  CHECK(std::get<std::int32_t>(result) == 42);
+}
+
+TEST_CASE("compile - named fn recursion by name")
+{
+  auto const [types, tu] = compile_program(
+    "fn factorial(n: Int32): Int32 =>"
+    "  if n == 0 { 1 } else { n * factorial(n - 1) };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{5}};
+  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  CHECK(std::get<std::int32_t>(result) == 120);
+}
+
+TEST_CASE("compile - named fn fibonacci recursion by name")
+{
+  auto const [types, tu] = compile_program(
+    "fn fib(n: Int32): Int32 =>"
+    "  if n < 2 { n } else { fib(n - 1) + fib(n - 2) };"
+  );
+  REQUIRE(tu.functions.size() == 1);
+  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{10}};
+  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  CHECK(std::get<std::int32_t>(result) == 55);
+}
+
+TEST_CASE("compile - named fn and let fn can coexist")
+{
+  auto const [types, tu] = compile_program(
+    "fn inc(x: Int32): Int32 => x + 1;"
+    "let main = fn(): Int32 => { return inc(41); };"
+  );
+  REQUIRE(tu.functions.size() == 2);
+  auto const result = benson::ir::interpret(*tu.functions[1], {});
+  CHECK(std::get<std::int32_t>(result) == 42);
+}

@@ -59,12 +59,6 @@ namespace benson
         }
       }
 
-    private:
-      constexpr void swap(Builder &other) noexcept
-      {
-        std::swap(_table, other._table);
-      }
-
       void append(char c)
       {
         assert(_table != nullptr);
@@ -128,6 +122,11 @@ namespace benson
       }
 
     private:
+      constexpr void swap(Builder &other) noexcept
+      {
+        std::swap(_table, other._table);
+      }
+
       friend class Spelling_table;
 
       constexpr explicit Builder(Spelling_table *table) noexcept

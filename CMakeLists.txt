@@ -64,6 +64,11 @@ add_executable(lexing-tests
 target_link_libraries(lexing-tests PRIVATE lexing Catch2::Catch2WithMain)
 target_compile_definitions(lexing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
+add_executable(spelling-tests
+  code/spelling/test/spelling_test.cpp
+)
+target_link_libraries(spelling-tests PRIVATE spelling Catch2::Catch2WithMain)
+
 add_executable(parsing-tests
   code/parsing/test/parser_test.cpp
 )

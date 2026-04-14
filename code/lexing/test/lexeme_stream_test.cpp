@@ -32,15 +32,6 @@ namespace
     CHECK(benson::span_of(lexeme).end.column == end_column);
   }
 
-  auto text_of(
-    benson::Spelling_table const &spellings,
-    benson::Lexeme const &lexeme
-  ) -> std::string_view
-  {
-    return lexeme.spelling ? spellings.lookup(lexeme.spelling)
-                           : std::string_view{};
-  }
-
 } // namespace
 
 TEST_CASE("Lexeme_stream lexes first.benson")
@@ -60,7 +51,7 @@ TEST_CASE("Lexeme_stream lexes first.benson")
                       )
   {
     auto const lexeme = stream.lex();
-    CHECK(text_of(spellings, lexeme) == text);
+    CHECK(spellings.lookup(lexeme.spelling) == text);
     CHECK(lexeme.token == token);
     check_span(lexeme, line, column, line, end_column);
   };
@@ -94,7 +85,7 @@ TEST_CASE("Lexeme_stream lexes arithmetic operators")
   auto const expect = [&](std::string const &text, benson::Token token)
   {
     auto const lexeme = stream.lex();
-    CHECK(text_of(spellings, lexeme) == text);
+    CHECK(spellings.lookup(lexeme.spelling) == text);
     CHECK(lexeme.token == token);
   };
   expect("+", plus);
@@ -112,7 +103,7 @@ TEST_CASE("Lexeme_stream - minus before arrow still lexes as arrow")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "->");
+  CHECK(spellings.lookup(lexeme.spelling) == "->");
   CHECK(lexeme.token == benson::Token::arrow);
   check_span(lexeme, 1, 1, 1, 2);
 }
@@ -126,15 +117,15 @@ TEST_CASE("Lexeme_stream - minus adjacent to digits lexes as separate tokens")
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   using enum benson::Token;
   auto const first = stream.lex();
-  CHECK(text_of(spellings, first) == "1");
+  CHECK(spellings.lookup(first.spelling) == "1");
   CHECK(first.token == int_literal);
   check_span(first, 1, 1, 1, 1);
   auto const op = stream.lex();
-  CHECK(text_of(spellings, op) == "-");
+  CHECK(spellings.lookup(op.spelling) == "-");
   CHECK(op.token == minus);
   check_span(op, 1, 2, 1, 2);
   auto const second = stream.lex();
-  CHECK(text_of(spellings, second) == "2");
+  CHECK(spellings.lookup(second.spelling) == "2");
   CHECK(second.token == int_literal);
   check_span(second, 1, 3, 1, 3);
 }
@@ -147,7 +138,7 @@ TEST_CASE("Lexeme_stream lexes i8 integer literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "42i8");
+  CHECK(spellings.lookup(lexeme.spelling) == "42i8");
   CHECK(lexeme.token == benson::Token::int_literal);
   check_span(lexeme, 1, 1, 1, 4);
 }
@@ -160,7 +151,7 @@ TEST_CASE("Lexeme_stream lexes i16 integer literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "100i16");
+  CHECK(spellings.lookup(lexeme.spelling) == "100i16");
   CHECK(lexeme.token == benson::Token::int_literal);
   check_span(lexeme, 1, 1, 1, 6);
 }
@@ -173,7 +164,7 @@ TEST_CASE("Lexeme_stream lexes i32 integer literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "100i32");
+  CHECK(spellings.lookup(lexeme.spelling) == "100i32");
   CHECK(lexeme.token == benson::Token::int_literal);
   check_span(lexeme, 1, 1, 1, 6);
 }
@@ -186,7 +177,7 @@ TEST_CASE("Lexeme_stream lexes i64 integer literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "100i64");
+  CHECK(spellings.lookup(lexeme.spelling) == "100i64");
   CHECK(lexeme.token == benson::Token::int_literal);
   check_span(lexeme, 1, 1, 1, 6);
 }
@@ -209,7 +200,7 @@ TEST_CASE("Lexeme_stream lexes unknown integer suffix as token")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "42i7");
+  CHECK(spellings.lookup(lexeme.spelling) == "42i7");
   CHECK(lexeme.token == benson::Token::int_literal);
   check_span(lexeme, 1, 1, 1, 4);
 }
@@ -222,7 +213,7 @@ TEST_CASE("Lexeme_stream lexes colon")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == ":");
+  CHECK(spellings.lookup(lexeme.spelling) == ":");
   CHECK(lexeme.token == benson::Token::colon);
   check_span(lexeme, 1, 1, 1, 1);
 }
@@ -235,7 +226,7 @@ TEST_CASE("Lexeme_stream lexes comma")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == ",");
+  CHECK(spellings.lookup(lexeme.spelling) == ",");
   CHECK(lexeme.token == benson::Token::comma);
   check_span(lexeme, 1, 1, 1, 1);
 }
@@ -248,11 +239,11 @@ TEST_CASE("Lexeme_stream lexes brackets")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const open = stream.lex();
-  CHECK(text_of(spellings, open) == "[");
+  CHECK(spellings.lookup(open.spelling) == "[");
   CHECK(open.token == benson::Token::lbracket);
   check_span(open, 1, 1, 1, 1);
   auto const close = stream.lex();
-  CHECK(text_of(spellings, close) == "]");
+  CHECK(spellings.lookup(close.spelling) == "]");
   CHECK(close.token == benson::Token::rbracket);
   check_span(close, 1, 2, 1, 2);
 }
@@ -265,7 +256,7 @@ TEST_CASE("Lexeme_stream - &mut lexes as ampersand_mut")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "&mut");
+  CHECK(spellings.lookup(lexeme.spelling) == "&mut");
   CHECK(lexeme.token == benson::Token::ampersand_mut);
   check_span(lexeme, 1, 1, 1, 4);
   check_span(stream.lex(), 1, 5, 1, 5);
@@ -279,10 +270,10 @@ TEST_CASE("Lexeme_stream - &mut with space after lexes as ampersand_mut")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp_mut = stream.lex();
-  CHECK(text_of(spellings, amp_mut) == "&mut");
+  CHECK(spellings.lookup(amp_mut.spelling) == "&mut");
   CHECK(amp_mut.token == benson::Token::ampersand_mut);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "x");
+  CHECK(spellings.lookup(id.spelling) == "x");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -294,10 +285,10 @@ TEST_CASE("Lexeme_stream - &mutable lexes as ampersand + identifier")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
-  CHECK(text_of(spellings, amp) == "&");
+  CHECK(spellings.lookup(amp.spelling) == "&");
   CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "mutable");
+  CHECK(spellings.lookup(id.spelling) == "mutable");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -309,10 +300,10 @@ TEST_CASE("Lexeme_stream - &mut_ lexes as ampersand + identifier")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
-  CHECK(text_of(spellings, amp) == "&");
+  CHECK(spellings.lookup(amp.spelling) == "&");
   CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "mut_");
+  CHECK(spellings.lookup(id.spelling) == "mut_");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -324,10 +315,10 @@ TEST_CASE("Lexeme_stream - &mut2 lexes as ampersand + identifier")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
-  CHECK(text_of(spellings, amp) == "&");
+  CHECK(spellings.lookup(amp.spelling) == "&");
   CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "mut2");
+  CHECK(spellings.lookup(id.spelling) == "mut2");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -339,7 +330,7 @@ TEST_CASE("Lexeme_stream - & alone lexes as ampersand")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "&");
+  CHECK(spellings.lookup(lexeme.spelling) == "&");
   CHECK(lexeme.token == benson::Token::ampersand);
   CHECK(stream.lex().token == benson::Token::eof);
 }
@@ -352,10 +343,10 @@ TEST_CASE("Lexeme_stream - & x lexes as ampersand + identifier")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
-  CHECK(text_of(spellings, amp) == "&");
+  CHECK(spellings.lookup(amp.spelling) == "&");
   CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "x");
+  CHECK(spellings.lookup(id.spelling) == "x");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -370,12 +361,12 @@ TEST_CASE("Lexeme_stream - &mut column tracking")
   CHECK(x.span.start.column == 1);
   CHECK(x.span.end.column == 1);
   auto const amp_mut = stream.lex();
-  CHECK(text_of(spellings, amp_mut) == "&mut");
+  CHECK(spellings.lookup(amp_mut.spelling) == "&mut");
   CHECK(amp_mut.token == benson::Token::ampersand_mut);
   CHECK(amp_mut.span.start.column == 3);
   CHECK(amp_mut.span.end.column == 6);
   auto const y = stream.lex();
-  CHECK(text_of(spellings, y) == "y");
+  CHECK(spellings.lookup(y.spelling) == "y");
   CHECK(y.span.start.column == 8);
   CHECK(y.span.end.column == 8);
 }
@@ -388,10 +379,10 @@ TEST_CASE("Lexeme_stream - &mu lexes as ampersand + identifier")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
-  CHECK(text_of(spellings, amp) == "&");
+  CHECK(spellings.lookup(amp.spelling) == "&");
   CHECK(amp.token == benson::Token::ampersand);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "mu");
+  CHECK(spellings.lookup(id.spelling) == "mu");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -403,7 +394,7 @@ TEST_CASE("Lexeme_stream - ^mut lexes as caret_mut")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "^mut");
+  CHECK(spellings.lookup(lexeme.spelling) == "^mut");
   CHECK(lexeme.token == benson::Token::caret_mut);
   check_span(lexeme, 1, 1, 1, 4);
   check_span(stream.lex(), 1, 5, 1, 5);
@@ -417,10 +408,10 @@ TEST_CASE("Lexeme_stream - ^mut with space after lexes as caret_mut")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const caret_mut = stream.lex();
-  CHECK(text_of(spellings, caret_mut) == "^mut");
+  CHECK(spellings.lookup(caret_mut.spelling) == "^mut");
   CHECK(caret_mut.token == benson::Token::caret_mut);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "x");
+  CHECK(spellings.lookup(id.spelling) == "x");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -432,10 +423,10 @@ TEST_CASE("Lexeme_stream - ^mutable lexes as caret + identifier")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const caret = stream.lex();
-  CHECK(text_of(spellings, caret) == "^");
+  CHECK(spellings.lookup(caret.spelling) == "^");
   CHECK(caret.token == benson::Token::caret);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "mutable");
+  CHECK(spellings.lookup(id.spelling) == "mutable");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -447,10 +438,10 @@ TEST_CASE("Lexeme_stream - ^mut_ lexes as caret + identifier")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const caret = stream.lex();
-  CHECK(text_of(spellings, caret) == "^");
+  CHECK(spellings.lookup(caret.spelling) == "^");
   CHECK(caret.token == benson::Token::caret);
   auto const id = stream.lex();
-  CHECK(text_of(spellings, id) == "mut_");
+  CHECK(spellings.lookup(id.spelling) == "mut_");
   CHECK(id.token == benson::Token::identifier);
 }
 
@@ -462,7 +453,7 @@ TEST_CASE("Lexeme_stream - ^ alone lexes as caret")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "^");
+  CHECK(spellings.lookup(lexeme.spelling) == "^");
   CHECK(lexeme.token == benson::Token::caret);
   CHECK(stream.lex().token == benson::Token::eof);
 }
@@ -478,12 +469,12 @@ TEST_CASE("Lexeme_stream - ^mut column tracking")
   CHECK(x.span.start.column == 1);
   CHECK(x.span.end.column == 1);
   auto const caret_mut = stream.lex();
-  CHECK(text_of(spellings, caret_mut) == "^mut");
+  CHECK(spellings.lookup(caret_mut.spelling) == "^mut");
   CHECK(caret_mut.token == benson::Token::caret_mut);
   CHECK(caret_mut.span.start.column == 3);
   CHECK(caret_mut.span.end.column == 6);
   auto const y = stream.lex();
-  CHECK(text_of(spellings, y) == "y");
+  CHECK(spellings.lookup(y.spelling) == "y");
   CHECK(y.span.start.column == 8);
   CHECK(y.span.end.column == 8);
 }
@@ -496,7 +487,7 @@ TEST_CASE("Lexeme_stream lexes unsuffixed float literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "3.14");
+  CHECK(spellings.lookup(lexeme.spelling) == "3.14");
   CHECK(lexeme.token == benson::Token::float_literal);
   check_span(lexeme, 1, 1, 1, 4);
 }
@@ -509,7 +500,7 @@ TEST_CASE("Lexeme_stream lexes f-suffixed float literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "1.5f");
+  CHECK(spellings.lookup(lexeme.spelling) == "1.5f");
   CHECK(lexeme.token == benson::Token::float_literal);
   check_span(lexeme, 1, 1, 1, 4);
 }
@@ -522,7 +513,7 @@ TEST_CASE("Lexeme_stream lexes d-suffixed float literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "1.5d");
+  CHECK(spellings.lookup(lexeme.spelling) == "1.5d");
   CHECK(lexeme.token == benson::Token::float_literal);
   check_span(lexeme, 1, 1, 1, 4);
 }
@@ -535,7 +526,7 @@ TEST_CASE("Lexeme_stream lexes integer with f suffix as float literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "1f");
+  CHECK(spellings.lookup(lexeme.spelling) == "1f");
   CHECK(lexeme.token == benson::Token::float_literal);
   check_span(lexeme, 1, 1, 1, 2);
 }
@@ -548,7 +539,7 @@ TEST_CASE("Lexeme_stream lexes integer with d suffix as float literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "1d");
+  CHECK(spellings.lookup(lexeme.spelling) == "1d");
   CHECK(lexeme.token == benson::Token::float_literal);
   check_span(lexeme, 1, 1, 1, 2);
 }
@@ -562,7 +553,7 @@ TEST_CASE("Lexeme_stream - integer with space before dot stays int")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const first = stream.lex();
-  CHECK(text_of(spellings, first) == "1");
+  CHECK(spellings.lookup(first.spelling) == "1");
   CHECK(first.token == benson::Token::int_literal);
   check_span(first, 1, 1, 1, 1);
 }
@@ -575,7 +566,7 @@ TEST_CASE("Lexeme_stream - integer with trailing dot lexes as float literal")
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "1.");
+  CHECK(spellings.lookup(lexeme.spelling) == "1.");
   CHECK(lexeme.token == benson::Token::float_literal);
   check_span(lexeme, 1, 1, 1, 2);
 }
@@ -590,12 +581,12 @@ TEST_CASE(
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
-  CHECK(text_of(spellings, lexeme) == "3.14f");
+  CHECK(spellings.lookup(lexeme.spelling) == "3.14f");
   CHECK(lexeme.token == benson::Token::float_literal);
   check_span(lexeme, 1, 1, 1, 5);
 }
 
-TEST_CASE("Lexeme_stream assigns spelling to every non-eof token")
+TEST_CASE("Lexeme_stream assigns spelling to every token")
 {
   auto ss = std::istringstream{"let x = 42;"};
   auto binary = benson::Istream_binary_stream{&ss};
@@ -606,12 +597,12 @@ TEST_CASE("Lexeme_stream assigns spelling to every non-eof token")
   for (;;)
   {
     auto const lexeme = stream.lex();
+    CHECK(lexeme.spelling.has_value());
     if (lexeme.token == benson::Token::eof)
     {
-      CHECK_FALSE(lexeme.spelling.has_value());
+      CHECK(spellings.lookup(lexeme.spelling).empty());
       break;
     }
-    CHECK(lexeme.spelling.has_value());
   }
 }
 

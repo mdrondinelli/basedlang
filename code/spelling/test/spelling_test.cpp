@@ -7,19 +7,6 @@
 
 #include "spelling/spelling.h"
 
-namespace
-{
-
-  auto spell(benson::Spelling_table &table, std::string_view text)
-    -> benson::Spelling
-  {
-    auto builder = table.builder();
-    builder.append(text);
-    return std::move(builder).finalize();
-  }
-
-} // namespace
-
 static_assert(!std::is_copy_constructible_v<benson::Spelling_table>);
 static_assert(!std::is_copy_assignable_v<benson::Spelling_table>);
 static_assert(!std::is_copy_constructible_v<benson::Spelling_table::Builder>);
@@ -35,8 +22,8 @@ TEST_CASE("Spelling_table starts with thirty-two buckets")
 TEST_CASE("equal spellings deduplicate to the same handle")
 {
   auto table = benson::Spelling_table{};
-  auto const first = spell(table, "main");
-  auto const second = spell(table, "main");
+  auto const first = table.intern("main");
+  auto const second = table.intern("main");
   CHECK(first.has_value());
   CHECK(first == second);
   CHECK(table.size() == 1);
@@ -46,8 +33,8 @@ TEST_CASE("equal spellings deduplicate to the same handle")
 TEST_CASE("different spellings produce distinct handles")
 {
   auto table = benson::Spelling_table{};
-  auto const first = spell(table, "main");
-  auto const second = spell(table, "helper");
+  auto const first = table.intern("main");
+  auto const second = table.intern("helper");
   CHECK(first != second);
   CHECK(table.size() == 2);
   CHECK(table.lookup(first) == "main");
@@ -73,7 +60,7 @@ TEST_CASE("destroying an unfinished builder rolls back the build")
     auto builder = table.builder();
     builder.append("temporary");
   }
-  auto const spelling = spell(table, "stable");
+  auto const spelling = table.intern("stable");
   CHECK(table.size() == 1);
   CHECK(table.lookup(spelling) == "stable");
 }
@@ -87,6 +74,15 @@ TEST_CASE("moving a builder preserves the in-progress spelling")
   second.append("llo");
   auto const spelling = std::move(second).finalize();
   CHECK(table.lookup(spelling) == "hello");
+}
+
+TEST_CASE("lookup by text returns stored handle without mutating table")
+{
+  auto table = benson::Spelling_table{};
+  auto const spelling = table.intern("main");
+  CHECK(table.lookup("main") == spelling);
+  CHECK(table.lookup("missing") == benson::Spelling{});
+  CHECK(table.size() == 1);
 }
 
 TEST_CASE("empty spellings deduplicate and remain addressable")

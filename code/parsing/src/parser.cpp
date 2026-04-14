@@ -8,6 +8,7 @@
 ///
 /// See grammar.md for the full grammar.
 
+#include <format>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -18,18 +19,6 @@
 
 namespace benson
 {
-
-  namespace
-  {
-
-    auto describe(Spelling_table const &spellings, Lexeme const &lexeme)
-      -> std::string
-    {
-      return lexeme.spelling ? std::string{spellings.lookup(lexeme.spelling)}
-                             : std::string{};
-    }
-
-  } // namespace
 
   Parser::Parser(
     Lexeme_stream_reader *reader,
@@ -331,9 +320,12 @@ namespace benson
       return std::make_unique<ast::Expression>(parse_fn_expression());
     }
     throw std::runtime_error{
-      "unexpected token '" + describe(*_spellings, next) + "' at " +
-      std::to_string(next.span.start.line) + ":" +
-      std::to_string(next.span.start.column)
+      std::format(
+        "unexpected token '{}' at {}:{}",
+        _spellings->lookup(next.spelling),
+        next.span.start.line,
+        next.span.start.column
+      )
     };
   }
 
@@ -450,9 +442,12 @@ namespace benson
     if (lexeme.token != token)
     {
       throw std::runtime_error{
-        "unexpected token '" + describe(*_spellings, lexeme) + "' at " +
-        std::to_string(lexeme.span.start.line) + ":" +
-        std::to_string(lexeme.span.start.column)
+        std::format(
+          "unexpected token '{}' at {}:{}",
+          _spellings->lookup(lexeme.spelling),
+          lexeme.span.start.line,
+          lexeme.span.start.column
+        )
       };
     }
     return lexeme;

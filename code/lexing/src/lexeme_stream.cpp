@@ -44,16 +44,16 @@ namespace benson
       [&](Token token, Source_location start, Spelling spelling = {}) -> Lexeme
     {
       auto end = start;
+      if (!spelling.has_value())
+      {
+        spelling = std::move(build).finalize();
+      }
       if (token != Token::eof)
       {
         end = Source_location{
           .line = _location.line,
           .column = _location.column - 1,
         };
-        if (!spelling.has_value())
-        {
-          spelling = std::move(build).finalize();
-        }
       }
       return Lexeme{
         .token = token,

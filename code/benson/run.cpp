@@ -62,7 +62,13 @@ namespace benson
     try
     {
       auto const tu = ir::compile(ast, &spellings, &types);
-      auto const it = tu.function_table.find(spellings.intern(function_name));
+      auto const function = spellings.lookup(function_name);
+      if (!function)
+      {
+        err << "error: no function named '" << function_name << "'\n";
+        return 1;
+      }
+      auto const it = tu.function_table.find(function);
       if (it == tu.function_table.end())
       {
         err << "error: no function named '" << function_name << "'\n";

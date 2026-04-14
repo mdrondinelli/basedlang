@@ -169,11 +169,69 @@ namespace benson
       };
     }
 
+    [[nodiscard]] auto lookup(std::string_view text) const noexcept -> Spelling
+    {
+      auto const hash = hash_bytes(text);
+      auto index = bucket_index(hash, _buckets.size());
+      auto const mask = _buckets.size() - 1;
+      for (;;)
+      {
+        auto const spelling = _buckets[index];
+        if (!spelling.has_value())
+        {
+          return {};
+        }
+        auto const &entry = _entries[spelling.value - 1];
+        if (entry_view(entry) == text)
+        {
+          return spelling;
+        }
+        index = (index + 1) & mask;
+      }
+    }
+
     [[nodiscard]] auto intern(std::string_view text) -> Spelling
     {
-      auto build = builder();
-      build.append(text);
-      return std::move(build).finalize();
+      auto const hash = hash_bytes(text);
+      auto index = bucket_index(hash, _buckets.size());
+      auto const mask = _buckets.size() - 1;
+      for (;;)
+      {
+        auto const spelling = _buckets[index];
+        if (!spelling.has_value())
+        {
+          break;
+        }
+        auto const &entry = _entries[spelling.value - 1];
+        if (entry_view(entry) == text)
+        {
+          return spelling;
+        }
+        index = (index + 1) & mask;
+      }
+      if ((_entries.size() + 1) * 3 > _buckets.size() * 2)
+      {
+        rehash(_buckets.size() * 2);
+        index = bucket_index(hash, _buckets.size());
+        auto const rehash_mask = _buckets.size() - 1;
+        while (_buckets[index].has_value())
+        {
+          index = (index + 1) & rehash_mask;
+        }
+      }
+      auto const offset = static_cast<std::uint32_t>(_bytes.size());
+      _bytes.append(text);
+      _entries.push_back(
+        Entry{
+          .offset = offset,
+          .length = static_cast<std::uint32_t>(text.size()),
+        }
+      );
+      auto const spelling = Spelling{
+        static_cast<std::uint32_t>(_entries.size()),
+      };
+      _buckets[index] = spelling;
+      return spelling;
     }
 
     [[nodiscard]] auto size() const noexcept -> std::uint32_t

@@ -15,17 +15,6 @@
 namespace benson::ir
 {
 
-  namespace
-  {
-
-    auto text_of(Spelling_table const &spellings, Lexeme const &lexeme)
-      -> std::string_view
-    {
-      return spellings.lookup(lexeme.spelling);
-    }
-
-  } // namespace
-
   template <typename T>
   class Scoped_assign
   {
@@ -419,7 +408,7 @@ namespace benson::ir
       emit_error(
         std::format(
           "undefined identifier: {}",
-          text_of(*_spellings, identifier)
+          _spellings->lookup(identifier.spelling)
         ),
         identifier
       );
@@ -647,7 +636,7 @@ namespace benson::ir
   )
   {
     return compile_int_literal(
-      text_of(*_spellings, expr.literal),
+      _spellings->lookup(expr.literal.spelling),
       false,
       expr.literal
     );
@@ -658,7 +647,7 @@ namespace benson::ir
   )
   {
     return compile_float_literal(
-      text_of(*_spellings, expr.literal),
+      _spellings->lookup(expr.literal.spelling),
       expr.literal
     );
   }
@@ -714,7 +703,7 @@ namespace benson::ir
       auto const &literal =
         std::get<ast::Int_literal_expression>(expr.operand->value);
       return compile_int_literal(
-        text_of(*_spellings, literal.literal),
+        _spellings->lookup(literal.literal.spelling),
         true,
         literal.literal
       );

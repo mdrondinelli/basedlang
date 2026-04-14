@@ -10,6 +10,14 @@ The lexer library. Owns character input, buffering/lookahead, tokenization, and 
 
 See [`lexing`](./lexing.md).
 
+### `code/spelling`
+
+Shared preserved-spelling storage for the front end. Owns `Spelling`,
+`Spelling_table`, and the builder/finalize API used to construct and deduplicate
+variable token spellings without per-lexeme owned strings.
+
+See [`spelling`](./spelling.md).
+
 ### `code/ast`
 
 The AST library. Owns the data model for all syntax forms: expression and statement node types, operator identity, and source-span utilities.
@@ -43,12 +51,6 @@ See [`benson`](./benson.md).
 
 ## Supporting areas
 
-### `code/text`
-
-Shared compiler text storage primitives. Owns string-table-backed compiler text
-handles that can be reused across front-end layers without forcing one
-particular serialized encoding into the compiler core.
-
 ### `examples`
 
 Small source programs used as runnable examples and as useful behavioral anchors when developing features.
@@ -73,13 +75,15 @@ When deciding where a change belongs, ask this in order:
 4. Is this about meaning, type checking, lowering, or diagnostics?
 5. Is this only about wiring the executable?
 
-Those map directly to the five main modules.
+Those map directly to the main modules, with shared preserved-spelling storage
+living between lexing and later front-end consumers.
 
 ## Stability guidelines
 
 The repo may be reorganized internally over time. The stable structure to preserve in docs and reviews is:
 
 - lexer
+- spelling storage
 - AST data model
 - parser
 - semantic compiler / HLIR

@@ -6,7 +6,7 @@ namespace benson::ir
 {
 
   Symbol *Symbol_table::declare_object(
-    std::string name,
+    Spelling name,
     Type *type,
     bool is_mutable,
     Register reg
@@ -16,7 +16,7 @@ namespace benson::ir
       _symbols
         .emplace_back(
           std::make_unique<Symbol>(
-            std::move(name),
+            name,
             Object_binding{.type = type, .is_mutable = is_mutable, .reg = reg}
           )
         )
@@ -33,11 +33,10 @@ namespace benson::ir
   }
 
   Symbol *
-  Symbol_table::declare_value(std::string name, Constant_value const &value)
+  Symbol_table::declare_value(Spelling name, Constant_value const &value)
   {
     auto const sym =
-      _symbols.emplace_back(std::make_unique<Symbol>(std::move(name), value))
-        .get();
+      _symbols.emplace_back(std::make_unique<Symbol>(name, value)).get();
     if (_scopes.empty())
     {
       _global_scope.insert_or_assign(sym->name, sym);
@@ -49,7 +48,7 @@ namespace benson::ir
     return sym;
   }
 
-  Symbol *Symbol_table::lookup(std::string_view name) const
+  Symbol *Symbol_table::lookup(Spelling name) const
   {
     for (auto it = _scopes.rbegin(); it != _scopes.rend(); ++it)
     {

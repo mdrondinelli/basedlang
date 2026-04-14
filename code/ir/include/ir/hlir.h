@@ -3,12 +3,12 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <unordered_map>
 #include <variant>
 #include <vector>
 
 #include "constant_value.h"
+#include "spelling/spelling.h"
 #include "type.h"
 
 namespace benson::ir
@@ -317,7 +317,7 @@ namespace benson::ir
   struct Translation_unit
   {
     std::vector<std::unique_ptr<Function>> functions;
-    std::unordered_map<std::string, Function *> function_table;
+    std::unordered_map<Spelling, Function *> function_table;
   };
 
 } // namespace benson::ir

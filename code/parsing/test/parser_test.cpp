@@ -2,6 +2,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -11,12 +12,14 @@
 #include "lexing/utf8_char_stream.h"
 
 #include "parsing/parser.h"
+#include "spelling/spelling.h"
 
 struct Parse_fixture
 {
   std::istringstream stream;
   benson::Istream_binary_stream binary_stream;
   benson::Utf8_char_stream char_stream;
+  benson::Spelling_table spellings;
   benson::Lexeme_stream lexeme_stream;
   benson::Lexeme_stream_reader reader;
   benson::Parser parser;
@@ -25,9 +28,10 @@ struct Parse_fixture
       : stream{source},
         binary_stream{&stream},
         char_stream{&binary_stream},
-        lexeme_stream{&char_stream},
+        spellings{},
+        lexeme_stream{&char_stream, &spellings},
         reader{&lexeme_stream},
-        parser{&reader}
+        parser{&reader, &spellings}
   {
   }
 };
@@ -51,44 +55,45 @@ TEST_CASE("Parser - first.benson produces a declaration")
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/first.benson"};
   auto binary_stream = benson::Istream_binary_stream{&file};
   auto char_stream = benson::Utf8_char_stream{&binary_stream};
-  auto lexeme_stream = benson::Lexeme_stream{&char_stream};
+  auto spellings = benson::Spelling_table{};
+  auto lexeme_stream = benson::Lexeme_stream{&char_stream, &spellings};
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
-  auto parser = benson::Parser{&reader};
+  auto parser = benson::Parser{&reader, &spellings};
   auto const unit = parser.parse_translation_unit();
   REQUIRE(unit.let_statements.size() == 1);
   auto const &decl = unit.let_statements[0];
-  CHECK(decl.kw_let.text == "let");
-  CHECK(decl.name.text == "main");
-  CHECK(decl.eq.text == "=");
+  CHECK(spellings.lookup(decl.kw_let.spelling) == "let");
+  CHECK(spellings.lookup(decl.name.spelling) == "main");
+  CHECK(spellings.lookup(decl.eq.spelling) == "=");
   auto const fn =
     std::get_if<benson::ast::Fn_expression>(&decl.initializer.value);
   REQUIRE(fn != nullptr);
-  CHECK(fn->kw_fn.text == "fn");
-  CHECK(fn->lparen.text == "(");
-  CHECK(fn->rparen.text == ")");
-  CHECK(fn->return_type_specifier.colon.text == ":");
+  CHECK(spellings.lookup(fn->kw_fn.spelling) == "fn");
+  CHECK(spellings.lookup(fn->lparen.spelling) == "(");
+  CHECK(spellings.lookup(fn->rparen.spelling) == ")");
+  CHECK(spellings.lookup(fn->return_type_specifier.colon.spelling) == ":");
   auto const return_type = std::get_if<benson::ast::Identifier_expression>(
     &fn->return_type_specifier.type->value
   );
   REQUIRE(return_type != nullptr);
-  CHECK(return_type->identifier.text == "Int32");
-  CHECK(fn->arrow.text == "=>");
+  CHECK(spellings.lookup(return_type->identifier.spelling) == "Int32");
+  CHECK(spellings.lookup(fn->arrow.spelling) == "=>");
   REQUIRE(fn->body != nullptr);
   auto const body =
     std::get_if<benson::ast::Block_expression>(&fn->body->value);
   REQUIRE(body != nullptr);
-  CHECK(body->lbrace.text == "{");
+  CHECK(spellings.lookup(body->lbrace.spelling) == "{");
   REQUIRE(body->statements.size() == 1);
   auto const ret_stmt =
     std::get_if<benson::ast::Return_statement>(&body->statements[0].value);
   REQUIRE(ret_stmt != nullptr);
-  CHECK(ret_stmt->kw_return.text == "return");
+  CHECK(spellings.lookup(ret_stmt->kw_return.spelling) == "return");
   auto const int_lit =
     std::get_if<benson::ast::Int_literal_expression>(&ret_stmt->value.value);
   REQUIRE(int_lit != nullptr);
-  CHECK(int_lit->literal.text == "0");
-  CHECK(ret_stmt->semicolon.text == ";");
-  CHECK(body->rbrace.text == "}");
+  CHECK(spellings.lookup(int_lit->literal.spelling) == "0");
+  CHECK(spellings.lookup(ret_stmt->semicolon.spelling) == ";");
+  CHECK(spellings.lookup(body->rbrace.spelling) == "}");
 }
 
 TEST_CASE("Parser - parameters.benson parses successfully")
@@ -96,17 +101,18 @@ TEST_CASE("Parser - parameters.benson parses successfully")
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/parameters.benson"};
   auto binary_stream = benson::Istream_binary_stream{&file};
   auto char_stream = benson::Utf8_char_stream{&binary_stream};
-  auto lexeme_stream = benson::Lexeme_stream{&char_stream};
+  auto spellings = benson::Spelling_table{};
+  auto lexeme_stream = benson::Lexeme_stream{&char_stream, &spellings};
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
-  auto parser = benson::Parser{&reader};
+  auto parser = benson::Parser{&reader, &spellings};
   auto const unit = parser.parse_translation_unit();
   REQUIRE(unit.let_statements.size() == 3);
   auto const &id_decl = unit.let_statements[0];
   auto const &first_decl = unit.let_statements[1];
   auto const &main_decl = unit.let_statements[2];
-  CHECK(id_decl.name.text == "id");
-  CHECK(first_decl.name.text == "first");
-  CHECK(main_decl.name.text == "main");
+  CHECK(spellings.lookup(id_decl.name.spelling) == "id");
+  CHECK(spellings.lookup(first_decl.name.spelling) == "first");
+  CHECK(spellings.lookup(main_decl.name.spelling) == "main");
   auto const id_fn =
     std::get_if<benson::ast::Fn_expression>(&id_decl.initializer.value);
   REQUIRE(id_fn != nullptr);
@@ -118,17 +124,17 @@ TEST_CASE("Parser - parameters.benson parses successfully")
   REQUIRE(main_fn != nullptr);
   // id: fn(x: Int32): Int32 => { return x; }
   REQUIRE(id_fn->parameters.size() == 1);
-  CHECK(id_fn->parameters[0].name.text == "x");
+  CHECK(spellings.lookup(id_fn->parameters[0].name.spelling) == "x");
   auto const id_param_type = std::get_if<benson::ast::Identifier_expression>(
     &id_fn->parameters[0].type->value
   );
   REQUIRE(id_param_type != nullptr);
-  CHECK(id_param_type->identifier.text == "Int32");
+  CHECK(spellings.lookup(id_param_type->identifier.spelling) == "Int32");
   auto const id_ret_type = std::get_if<benson::ast::Identifier_expression>(
     &id_fn->return_type_specifier.type->value
   );
   REQUIRE(id_ret_type != nullptr);
-  CHECK(id_ret_type->identifier.text == "Int32");
+  CHECK(spellings.lookup(id_ret_type->identifier.spelling) == "Int32");
   auto const id_body =
     std::get_if<benson::ast::Block_expression>(&id_fn->body->value);
   REQUIRE(id_body != nullptr);
@@ -139,28 +145,28 @@ TEST_CASE("Parser - parameters.benson parses successfully")
   auto const id_ret_val =
     std::get_if<benson::ast::Identifier_expression>(&id_ret->value.value);
   REQUIRE(id_ret_val != nullptr);
-  CHECK(id_ret_val->identifier.text == "x");
+  CHECK(spellings.lookup(id_ret_val->identifier.spelling) == "x");
   // first: fn(x: Int32, y: Int32): Int32 => { return x; }
   REQUIRE(first_fn->parameters.size() == 2);
-  CHECK(first_fn->parameters[0].name.text == "x");
+  CHECK(spellings.lookup(first_fn->parameters[0].name.spelling) == "x");
   auto const first_param0_type =
     std::get_if<benson::ast::Identifier_expression>(
       &first_fn->parameters[0].type->value
     );
   REQUIRE(first_param0_type != nullptr);
-  CHECK(first_param0_type->identifier.text == "Int32");
-  CHECK(first_fn->parameters[1].name.text == "y");
+  CHECK(spellings.lookup(first_param0_type->identifier.spelling) == "Int32");
+  CHECK(spellings.lookup(first_fn->parameters[1].name.spelling) == "y");
   auto const first_param1_type =
     std::get_if<benson::ast::Identifier_expression>(
       &first_fn->parameters[1].type->value
     );
   REQUIRE(first_param1_type != nullptr);
-  CHECK(first_param1_type->identifier.text == "Int32");
+  CHECK(spellings.lookup(first_param1_type->identifier.spelling) == "Int32");
   auto const first_ret_type = std::get_if<benson::ast::Identifier_expression>(
     &first_fn->return_type_specifier.type->value
   );
   REQUIRE(first_ret_type != nullptr);
-  CHECK(first_ret_type->identifier.text == "Int32");
+  CHECK(spellings.lookup(first_ret_type->identifier.spelling) == "Int32");
   auto const first_body =
     std::get_if<benson::ast::Block_expression>(&first_fn->body->value);
   REQUIRE(first_body != nullptr);
@@ -172,13 +178,13 @@ TEST_CASE("Parser - parameters.benson parses successfully")
   auto const first_ret_val =
     std::get_if<benson::ast::Identifier_expression>(&first_ret->value.value);
   REQUIRE(first_ret_val != nullptr);
-  CHECK(first_ret_val->identifier.text == "x");
+  CHECK(spellings.lookup(first_ret_val->identifier.spelling) == "x");
   // main: fn(): Int32 => { return first(id(42), 0); }
   auto const main_ret_type = std::get_if<benson::ast::Identifier_expression>(
     &main_fn->return_type_specifier.type->value
   );
   REQUIRE(main_ret_type != nullptr);
-  CHECK(main_ret_type->identifier.text == "Int32");
+  CHECK(spellings.lookup(main_ret_type->identifier.spelling) == "Int32");
   auto const main_body =
     std::get_if<benson::ast::Block_expression>(&main_fn->body->value);
   REQUIRE(main_body != nullptr);
@@ -193,7 +199,7 @@ TEST_CASE("Parser - parameters.benson parses successfully")
   auto const outer_callee =
     std::get_if<benson::ast::Identifier_expression>(&outer_call->callee->value);
   REQUIRE(outer_callee != nullptr);
-  CHECK(outer_callee->identifier.text == "first");
+  CHECK(spellings.lookup(outer_callee->identifier.spelling) == "first");
   REQUIRE(outer_call->arguments.size() == 2);
   auto const inner_call =
     std::get_if<benson::ast::Call_expression>(&outer_call->arguments[0].value);
@@ -201,18 +207,18 @@ TEST_CASE("Parser - parameters.benson parses successfully")
   auto const inner_callee =
     std::get_if<benson::ast::Identifier_expression>(&inner_call->callee->value);
   REQUIRE(inner_callee != nullptr);
-  CHECK(inner_callee->identifier.text == "id");
+  CHECK(spellings.lookup(inner_callee->identifier.spelling) == "id");
   REQUIRE(inner_call->arguments.size() == 1);
   auto const inner_arg = std::get_if<benson::ast::Int_literal_expression>(
     &inner_call->arguments[0].value
   );
   REQUIRE(inner_arg != nullptr);
-  CHECK(inner_arg->literal.text == "42");
+  CHECK(spellings.lookup(inner_arg->literal.spelling) == "42");
   auto const outer_arg1 = std::get_if<benson::ast::Int_literal_expression>(
     &outer_call->arguments[1].value
   );
   REQUIRE(outer_arg1 != nullptr);
-  CHECK(outer_arg1->literal.text == "0");
+  CHECK(spellings.lookup(outer_arg1->literal.spelling) == "0");
 }
 
 TEST_CASE("Parser - call_expression.benson parses successfully")
@@ -221,15 +227,16 @@ TEST_CASE("Parser - call_expression.benson parses successfully")
     std::ifstream{std::string{EXAMPLES_PATH} + "/call_expression.benson"};
   auto binary_stream = benson::Istream_binary_stream{&file};
   auto char_stream = benson::Utf8_char_stream{&binary_stream};
-  auto lexeme_stream = benson::Lexeme_stream{&char_stream};
+  auto spellings = benson::Spelling_table{};
+  auto lexeme_stream = benson::Lexeme_stream{&char_stream, &spellings};
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
-  auto parser = benson::Parser{&reader};
+  auto parser = benson::Parser{&reader, &spellings};
   auto const unit = parser.parse_translation_unit();
   REQUIRE(unit.let_statements.size() == 2);
   auto const &foo_decl = unit.let_statements[0];
   auto const &main_decl = unit.let_statements[1];
-  CHECK(foo_decl.name.text == "foo");
-  CHECK(main_decl.name.text == "main");
+  CHECK(spellings.lookup(foo_decl.name.spelling) == "foo");
+  CHECK(spellings.lookup(main_decl.name.spelling) == "main");
   auto const foo_fn =
     std::get_if<benson::ast::Fn_expression>(&foo_decl.initializer.value);
   REQUIRE(foo_fn != nullptr);
@@ -248,8 +255,8 @@ TEST_CASE("Parser - call_expression.benson parses successfully")
   auto const foo_call =
     std::get_if<benson::ast::Call_expression>(&foo_ret->value.value);
   REQUIRE(foo_call != nullptr);
-  CHECK(foo_call->lparen.text == "(");
-  CHECK(foo_call->rparen.text == ")");
+  CHECK(spellings.lookup(foo_call->lparen.spelling) == "(");
+  CHECK(spellings.lookup(foo_call->rparen.spelling) == ")");
   auto const foo_paren =
     std::get_if<benson::ast::Paren_expression>(&foo_call->callee->value);
   REQUIRE(foo_paren != nullptr);
@@ -267,12 +274,12 @@ TEST_CASE("Parser - call_expression.benson parses successfully")
   auto const main_call =
     std::get_if<benson::ast::Call_expression>(&main_ret->value.value);
   REQUIRE(main_call != nullptr);
-  CHECK(main_call->lparen.text == "(");
-  CHECK(main_call->rparen.text == ")");
+  CHECK(spellings.lookup(main_call->lparen.spelling) == "(");
+  CHECK(spellings.lookup(main_call->rparen.spelling) == ")");
   auto const callee =
     std::get_if<benson::ast::Identifier_expression>(&main_call->callee->value);
   REQUIRE(callee != nullptr);
-  CHECK(callee->identifier.text == "foo");
+  CHECK(spellings.lookup(callee->identifier.spelling) == "foo");
 }
 
 TEST_CASE("Parser - accepts valid code")
@@ -347,23 +354,25 @@ TEST_CASE("parse_translation_unit - multiple let statements")
 {
   auto fixture = Parse_fixture{"let a = fn(): Int32 => { return 1; };\n"
                                "let b = fn(): Int32 => { return 2; };"};
+  auto const &spellings = fixture.spellings;
   auto const unit = fixture.parser.parse_translation_unit();
   REQUIRE(unit.let_statements.size() == 2);
-  CHECK(unit.let_statements[0].name.text == "a");
-  CHECK(unit.let_statements[1].name.text == "b");
+  CHECK(spellings.lookup(unit.let_statements[0].name.spelling) == "a");
+  CHECK(spellings.lookup(unit.let_statements[1].name.spelling) == "b");
 }
 
 TEST_CASE("parse_let_statement - function declaration")
 {
   auto fixture = Parse_fixture{"let main = fn(): Int32 => { return 0; };"};
+  auto const &spellings = fixture.spellings;
   auto const stmt = fixture.parser.parse_let_statement();
-  CHECK(stmt.kw_let.text == "let");
-  CHECK(stmt.name.text == "main");
-  CHECK(stmt.eq.text == "=");
+  CHECK(spellings.lookup(stmt.kw_let.spelling) == "let");
+  CHECK(spellings.lookup(stmt.name.spelling) == "main");
+  CHECK(spellings.lookup(stmt.eq.spelling) == "=");
   auto const fn =
     std::get_if<benson::ast::Fn_expression>(&stmt.initializer.value);
   REQUIRE(fn != nullptr);
-  CHECK(fn->kw_fn.text == "fn");
+  CHECK(spellings.lookup(fn->kw_fn.spelling) == "fn");
   REQUIRE(fn->body != nullptr);
   auto const body =
     std::get_if<benson::ast::Block_expression>(&fn->body->value);
@@ -374,45 +383,49 @@ TEST_CASE("parse_let_statement - function declaration")
 TEST_CASE("parse_let_statement")
 {
   auto fixture = Parse_fixture{"let x = 42;"};
+  auto const &spellings = fixture.spellings;
   auto const stmt = fixture.parser.parse_let_statement();
-  CHECK(stmt.kw_let.text == "let");
-  CHECK(stmt.name.text == "x");
-  CHECK(stmt.eq.text == "=");
+  CHECK(spellings.lookup(stmt.kw_let.spelling) == "let");
+  CHECK(spellings.lookup(stmt.name.spelling) == "x");
+  CHECK(spellings.lookup(stmt.eq.spelling) == "=");
   auto const lit =
     std::get_if<benson::ast::Int_literal_expression>(&stmt.initializer.value);
   REQUIRE(lit != nullptr);
-  CHECK(lit->literal.text == "42");
-  CHECK(stmt.semicolon.text == ";");
+  CHECK(spellings.lookup(lit->literal.spelling) == "42");
+  CHECK(spellings.lookup(stmt.semicolon.spelling) == ";");
 }
 
 TEST_CASE("parse_return_statement")
 {
   auto fixture = Parse_fixture{"return 99;"};
+  auto const &spellings = fixture.spellings;
   auto const stmt = fixture.parser.parse_return_statement();
-  CHECK(stmt.kw_return.text == "return");
+  CHECK(spellings.lookup(stmt.kw_return.spelling) == "return");
   auto const lit =
     std::get_if<benson::ast::Int_literal_expression>(&stmt.value.value);
   REQUIRE(lit != nullptr);
-  CHECK(lit->literal.text == "99");
-  CHECK(stmt.semicolon.text == ";");
+  CHECK(spellings.lookup(lit->literal.spelling) == "99");
+  CHECK(spellings.lookup(stmt.semicolon.spelling) == ";");
 }
 
 TEST_CASE("parse_expression_statement")
 {
   auto fixture = Parse_fixture{"foo;"};
+  auto const &spellings = fixture.spellings;
   auto const stmt = fixture.parser.parse_expression_statement();
   auto const id =
     std::get_if<benson::ast::Identifier_expression>(&stmt.expression.value);
   REQUIRE(id != nullptr);
-  CHECK(id->identifier.text == "foo");
-  CHECK(stmt.semicolon.text == ";");
+  CHECK(spellings.lookup(id->identifier.spelling) == "foo");
+  CHECK(spellings.lookup(stmt.semicolon.spelling) == ";");
 }
 
 TEST_CASE("parse_block_expression")
 {
   auto fixture = Parse_fixture{"{ return 1; let x = 2; }"};
+  auto const &spellings = fixture.spellings;
   auto const block = fixture.parser.parse_block_expression();
-  CHECK(block.lbrace.text == "{");
+  CHECK(spellings.lookup(block.lbrace.spelling) == "{");
   REQUIRE(block.statements.size() == 2);
   CHECK(
     std::get_if<benson::ast::Return_statement>(&block.statements[0].value) !=
@@ -422,34 +435,37 @@ TEST_CASE("parse_block_expression")
     std::get_if<benson::ast::Let_statement>(&block.statements[1].value) !=
     nullptr
   );
-  CHECK(block.rbrace.text == "}");
+  CHECK(spellings.lookup(block.rbrace.spelling) == "}");
 }
 
 TEST_CASE("parse_block_expression - empty")
 {
   auto fixture = Parse_fixture{"{ }"};
+  auto const &spellings = fixture.spellings;
   auto const block = fixture.parser.parse_block_expression();
-  CHECK(block.lbrace.text == "{");
+  CHECK(spellings.lookup(block.lbrace.spelling) == "{");
   CHECK(block.statements.empty());
   CHECK(block.tail == nullptr);
-  CHECK(block.rbrace.text == "}");
+  CHECK(spellings.lookup(block.rbrace.spelling) == "}");
 }
 
 TEST_CASE("parse_block_expression - tail expression")
 {
   auto fixture = Parse_fixture{"{ 42 }"};
+  auto const &spellings = fixture.spellings;
   auto const block = fixture.parser.parse_block_expression();
   CHECK(block.statements.empty());
   REQUIRE(block.tail != nullptr);
   auto const lit =
     std::get_if<benson::ast::Int_literal_expression>(&block.tail->value);
   REQUIRE(lit != nullptr);
-  CHECK(lit->literal.text == "42");
+  CHECK(spellings.lookup(lit->literal.spelling) == "42");
 }
 
 TEST_CASE("parse_block_expression - statements then tail")
 {
   auto fixture = Parse_fixture{"{ let x = 1; x + 1 }"};
+  auto const &spellings = fixture.spellings;
   auto const block = fixture.parser.parse_block_expression();
   REQUIRE(block.statements.size() == 1);
   CHECK(
@@ -460,7 +476,7 @@ TEST_CASE("parse_block_expression - statements then tail")
   auto const bin =
     std::get_if<benson::ast::Binary_expression>(&block.tail->value);
   REQUIRE(bin != nullptr);
-  CHECK(bin->op.text == "+");
+  CHECK(spellings.lookup(bin->op.spelling) == "+");
 }
 
 TEST_CASE("parse_block_expression - no tail with semicolon")
@@ -519,6 +535,7 @@ TEST_CASE("parse_expression - block as initializer")
 TEST_CASE("parse_block_expression - fn body parses tail syntactically")
 {
   auto fixture = Parse_fixture{"fn(): Int32 => { 42 }"};
+  auto const &spellings = fixture.spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.body != nullptr);
   auto const body = std::get_if<benson::ast::Block_expression>(&fn.body->value);
@@ -528,23 +545,24 @@ TEST_CASE("parse_block_expression - fn body parses tail syntactically")
   auto const lit =
     std::get_if<benson::ast::Int_literal_expression>(&body->tail->value);
   REQUIRE(lit != nullptr);
-  CHECK(lit->literal.text == "42");
+  CHECK(spellings.lookup(lit->literal.spelling) == "42");
 }
 
 TEST_CASE("parse_fn_expression")
 {
   auto fixture = Parse_fixture{"fn(): Int32 => { return 0; }"};
+  auto const &spellings = fixture.spellings;
   auto const fn = fixture.parser.parse_fn_expression();
-  CHECK(fn.kw_fn.text == "fn");
-  CHECK(fn.lparen.text == "(");
-  CHECK(fn.rparen.text == ")");
-  CHECK(fn.return_type_specifier.colon.text == ":");
+  CHECK(spellings.lookup(fn.kw_fn.spelling) == "fn");
+  CHECK(spellings.lookup(fn.lparen.spelling) == "(");
+  CHECK(spellings.lookup(fn.rparen.spelling) == ")");
+  CHECK(spellings.lookup(fn.return_type_specifier.colon.spelling) == ":");
   auto const ret_type = std::get_if<benson::ast::Identifier_expression>(
     &fn.return_type_specifier.type->value
   );
   REQUIRE(ret_type != nullptr);
-  CHECK(ret_type->identifier.text == "Int32");
-  CHECK(fn.arrow.text == "=>");
+  CHECK(spellings.lookup(ret_type->identifier.spelling) == "Int32");
+  CHECK(spellings.lookup(fn.arrow.spelling) == "=>");
   REQUIRE(fn.body != nullptr);
   auto const body = std::get_if<benson::ast::Block_expression>(&fn.body->value);
   REQUIRE(body != nullptr);
@@ -554,22 +572,24 @@ TEST_CASE("parse_fn_expression")
 TEST_CASE("parse_fn_expression - mut parameter")
 {
   auto fixture = Parse_fixture{"fn(mut x: Int32): Void => { }"};
+  auto const &spellings = fixture.spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 1);
   REQUIRE(fn.parameters[0].kw_mut.has_value());
-  CHECK(fn.parameters[0].kw_mut->text == "mut");
-  CHECK(fn.parameters[0].name.text == "x");
+  CHECK(spellings.lookup(fn.parameters[0].kw_mut->spelling) == "mut");
+  CHECK(spellings.lookup(fn.parameters[0].name.spelling) == "x");
 }
 
 TEST_CASE("parse_fn_expression - mixed mut and non-mut parameters")
 {
   auto fixture = Parse_fixture{"fn(x: Int32, mut y: Int32): Void => { }"};
+  auto const &spellings = fixture.spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 2);
   CHECK_FALSE(fn.parameters[0].kw_mut.has_value());
-  CHECK(fn.parameters[0].name.text == "x");
+  CHECK(spellings.lookup(fn.parameters[0].name.spelling) == "x");
   REQUIRE(fn.parameters[1].kw_mut.has_value());
-  CHECK(fn.parameters[1].name.text == "y");
+  CHECK(spellings.lookup(fn.parameters[1].name.spelling) == "y");
 }
 
 TEST_CASE("parse_fn_expression - requires return type")
@@ -581,43 +601,47 @@ TEST_CASE("parse_fn_expression - requires return type")
 TEST_CASE("parse_int_literal_expression")
 {
   auto fixture = Parse_fixture{"42"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_int_literal_expression();
-  CHECK(expr.literal.text == "42");
+  CHECK(spellings.lookup(expr.literal.spelling) == "42");
 }
 
 TEST_CASE("parse_identifier_expression")
 {
   auto fixture = Parse_fixture{"foo"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_identifier_expression();
-  CHECK(expr.identifier.text == "foo");
+  CHECK(spellings.lookup(expr.identifier.spelling) == "foo");
 }
 
 TEST_CASE("parse_paren_expression")
 {
   auto fixture = Parse_fixture{"(42)"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_paren_expression();
-  CHECK(expr.lparen.text == "(");
+  CHECK(spellings.lookup(expr.lparen.spelling) == "(");
   auto const inner =
     std::get_if<benson::ast::Int_literal_expression>(&expr.inner->value);
   REQUIRE(inner != nullptr);
-  CHECK(inner->literal.text == "42");
-  CHECK(expr.rparen.text == ")");
+  CHECK(spellings.lookup(inner->literal.spelling) == "42");
+  CHECK(spellings.lookup(expr.rparen.spelling) == ")");
 }
 
 TEST_CASE("parse_paren_expression - nested")
 {
   auto fixture = Parse_fixture{"((x))"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_paren_expression();
-  CHECK(expr.lparen.text == "(");
+  CHECK(spellings.lookup(expr.lparen.spelling) == "(");
   auto const inner =
     std::get_if<benson::ast::Paren_expression>(&expr.inner->value);
   REQUIRE(inner != nullptr);
   auto const id =
     std::get_if<benson::ast::Identifier_expression>(&inner->inner->value);
   REQUIRE(id != nullptr);
-  CHECK(id->identifier.text == "x");
-  CHECK(inner->rparen.text == ")");
-  CHECK(expr.rparen.text == ")");
+  CHECK(spellings.lookup(id->identifier.spelling) == "x");
+  CHECK(spellings.lookup(inner->rparen.spelling) == ")");
+  CHECK(spellings.lookup(expr.rparen.spelling) == ")");
 }
 
 TEST_CASE("parse_primary_expression - dispatches to int literal")
@@ -655,58 +679,61 @@ TEST_CASE("parse_primary_expression - dispatches to paren")
 TEST_CASE("parse_expression - simple binary expression")
 {
   auto fixture = Parse_fixture{"1 + 2"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const bin = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(bin != nullptr);
   auto const left =
     std::get_if<benson::ast::Int_literal_expression>(&bin->left->value);
   REQUIRE(left != nullptr);
-  CHECK(left->literal.text == "1");
-  CHECK(bin->op.text == "+");
+  CHECK(spellings.lookup(left->literal.spelling) == "1");
+  CHECK(spellings.lookup(bin->op.spelling) == "+");
   auto const right =
     std::get_if<benson::ast::Int_literal_expression>(&bin->right->value);
   REQUIRE(right != nullptr);
-  CHECK(right->literal.text == "2");
+  CHECK(spellings.lookup(right->literal.spelling) == "2");
 }
 
 TEST_CASE("parse_expression - multiplicative before additive")
 {
   // 1 + 2 * 3 should parse as 1 + (2 * 3)
   auto fixture = Parse_fixture{"1 + 2 * 3"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
-  CHECK(add->op.text == "+");
+  CHECK(spellings.lookup(add->op.spelling) == "+");
   auto const mul =
     std::get_if<benson::ast::Binary_expression>(&add->right->value);
   REQUIRE(mul != nullptr);
-  CHECK(mul->op.text == "*");
+  CHECK(spellings.lookup(mul->op.spelling) == "*");
   auto const two =
     std::get_if<benson::ast::Int_literal_expression>(&mul->left->value);
   REQUIRE(two != nullptr);
-  CHECK(two->literal.text == "2");
+  CHECK(spellings.lookup(two->literal.spelling) == "2");
   auto const three =
     std::get_if<benson::ast::Int_literal_expression>(&mul->right->value);
   REQUIRE(three != nullptr);
-  CHECK(three->literal.text == "3");
+  CHECK(spellings.lookup(three->literal.spelling) == "3");
 }
 
 TEST_CASE("parse_expression - left associativity")
 {
   // 1 - 2 - 3 should parse as (1 - 2) - 3
   auto fixture = Parse_fixture{"1 - 2 - 3"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const outer = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(outer != nullptr);
-  CHECK(outer->op.text == "-");
+  CHECK(spellings.lookup(outer->op.spelling) == "-");
   auto const inner =
     std::get_if<benson::ast::Binary_expression>(&outer->left->value);
   REQUIRE(inner != nullptr);
-  CHECK(inner->op.text == "-");
+  CHECK(spellings.lookup(inner->op.spelling) == "-");
   auto const three =
     std::get_if<benson::ast::Int_literal_expression>(&outer->right->value);
   REQUIRE(three != nullptr);
-  CHECK(three->literal.text == "3");
+  CHECK(spellings.lookup(three->literal.spelling) == "3");
 }
 
 TEST_CASE("parse_expression - all operators")
@@ -714,58 +741,60 @@ TEST_CASE("parse_expression - all operators")
   // -f() + +2 - 3 * 4 / 5 % 6
   // parses as (-(f()) + (+2)) - (((3 * 4) / 5) % 6)
   auto fixture = Parse_fixture{"-f() + +2 - 3 * 4 / 5 % 6"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   // outer: (-f() + +2) - (...)
   auto const sub = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(sub != nullptr);
-  CHECK(sub->op.text == "-");
+  CHECK(spellings.lookup(sub->op.spelling) == "-");
   // left of -: -f() + +2
   auto const add =
     std::get_if<benson::ast::Binary_expression>(&sub->left->value);
   REQUIRE(add != nullptr);
-  CHECK(add->op.text == "+");
+  CHECK(spellings.lookup(add->op.spelling) == "+");
   // left of +: -f()
   auto const unary_minus =
     std::get_if<benson::ast::Prefix_expression>(&add->left->value);
   REQUIRE(unary_minus != nullptr);
-  CHECK(unary_minus->op.text == "-");
+  CHECK(spellings.lookup(unary_minus->op.spelling) == "-");
   auto const call =
     std::get_if<benson::ast::Call_expression>(&unary_minus->operand->value);
   REQUIRE(call != nullptr);
   auto const callee =
     std::get_if<benson::ast::Identifier_expression>(&call->callee->value);
   REQUIRE(callee != nullptr);
-  CHECK(callee->identifier.text == "f");
+  CHECK(spellings.lookup(callee->identifier.spelling) == "f");
   // right of +: +2
   auto const unary_plus =
     std::get_if<benson::ast::Prefix_expression>(&add->right->value);
   REQUIRE(unary_plus != nullptr);
-  CHECK(unary_plus->op.text == "+");
+  CHECK(spellings.lookup(unary_plus->op.spelling) == "+");
   // right of -: ((3 * 4) / 5) % 6
   auto const mod =
     std::get_if<benson::ast::Binary_expression>(&sub->right->value);
   REQUIRE(mod != nullptr);
-  CHECK(mod->op.text == "%");
+  CHECK(spellings.lookup(mod->op.spelling) == "%");
   // left of %: (3 * 4) / 5
   auto const div =
     std::get_if<benson::ast::Binary_expression>(&mod->left->value);
   REQUIRE(div != nullptr);
-  CHECK(div->op.text == "/");
+  CHECK(spellings.lookup(div->op.spelling) == "/");
   // left of /: 3 * 4
   auto const mul =
     std::get_if<benson::ast::Binary_expression>(&div->left->value);
   REQUIRE(mul != nullptr);
-  CHECK(mul->op.text == "*");
+  CHECK(spellings.lookup(mul->op.spelling) == "*");
 }
 
 TEST_CASE("parse_expression - call binds tighter than binary op")
 {
   // f() + 1 should parse as (f()) + 1
   auto fixture = Parse_fixture{"f() + 1"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
-  CHECK(add->op.text == "+");
+  CHECK(spellings.lookup(add->op.spelling) == "+");
   CHECK(
     std::get_if<benson::ast::Call_expression>(&add->left->value) != nullptr
   );
@@ -796,10 +825,11 @@ TEST_CASE("parse_expression - unary minus: call binds tighter")
 {
   // -f() should parse as -(f()), not (-f)()
   auto fixture = Parse_fixture{"-f()"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
-  CHECK(unary->op.text == "-");
+  CHECK(spellings.lookup(unary->op.spelling) == "-");
   CHECK(
     std::get_if<benson::ast::Call_expression>(&unary->operand->value) != nullptr
   );
@@ -808,9 +838,10 @@ TEST_CASE("parse_expression - unary minus: call binds tighter")
 TEST_CASE("parse_fn_expression - array parameter")
 {
   auto fixture = Parse_fixture{"fn(buf: Int32[4]): Void => { }"};
+  auto const &spellings = fixture.spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 1);
-  CHECK(fn.parameters[0].name.text == "buf");
+  CHECK(spellings.lookup(fn.parameters[0].name.spelling) == "buf");
   auto const param_type =
     std::get_if<benson::ast::Index_expression>(&fn.parameters[0].type->value);
   REQUIRE(param_type != nullptr);
@@ -818,75 +849,79 @@ TEST_CASE("parse_fn_expression - array parameter")
     &param_type->operand->value
   );
   REQUIRE(elem != nullptr);
-  CHECK(elem->identifier.text == "Int32");
+  CHECK(spellings.lookup(elem->identifier.spelling) == "Int32");
   auto const size =
     std::get_if<benson::ast::Int_literal_expression>(&param_type->index->value);
   REQUIRE(size != nullptr);
-  CHECK(size->literal.text == "4");
+  CHECK(spellings.lookup(size->literal.spelling) == "4");
 }
 
 TEST_CASE("parse_expression - index: simple")
 {
   auto fixture = Parse_fixture{"arr[0]"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const idx = std::get_if<benson::ast::Index_expression>(&expr->value);
   REQUIRE(idx != nullptr);
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&idx->operand->value);
   REQUIRE(operand != nullptr);
-  CHECK(operand->identifier.text == "arr");
-  CHECK(idx->lbracket.text == "[");
+  CHECK(spellings.lookup(operand->identifier.spelling) == "arr");
+  CHECK(spellings.lookup(idx->lbracket.spelling) == "[");
   auto const index =
     std::get_if<benson::ast::Int_literal_expression>(&idx->index->value);
   REQUIRE(index != nullptr);
-  CHECK(index->literal.text == "0");
-  CHECK(idx->rbracket.text == "]");
+  CHECK(spellings.lookup(index->literal.spelling) == "0");
+  CHECK(spellings.lookup(idx->rbracket.spelling) == "]");
 }
 
 TEST_CASE("parse_expression - index: chained")
 {
   // arr[0][1] should parse as (arr[0])[1]
   auto fixture = Parse_fixture{"arr[0][1]"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const outer = std::get_if<benson::ast::Index_expression>(&expr->value);
   REQUIRE(outer != nullptr);
   auto const outer_index =
     std::get_if<benson::ast::Int_literal_expression>(&outer->index->value);
   REQUIRE(outer_index != nullptr);
-  CHECK(outer_index->literal.text == "1");
+  CHECK(spellings.lookup(outer_index->literal.spelling) == "1");
   auto const inner =
     std::get_if<benson::ast::Index_expression>(&outer->operand->value);
   REQUIRE(inner != nullptr);
   auto const inner_operand =
     std::get_if<benson::ast::Identifier_expression>(&inner->operand->value);
   REQUIRE(inner_operand != nullptr);
-  CHECK(inner_operand->identifier.text == "arr");
+  CHECK(spellings.lookup(inner_operand->identifier.spelling) == "arr");
   auto const inner_index =
     std::get_if<benson::ast::Int_literal_expression>(&inner->index->value);
   REQUIRE(inner_index != nullptr);
-  CHECK(inner_index->literal.text == "0");
+  CHECK(spellings.lookup(inner_index->literal.spelling) == "0");
 }
 
 TEST_CASE("parse_expression - index: expression index")
 {
   auto fixture = Parse_fixture{"arr[i + 1]"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const idx = std::get_if<benson::ast::Index_expression>(&expr->value);
   REQUIRE(idx != nullptr);
   auto const index =
     std::get_if<benson::ast::Binary_expression>(&idx->index->value);
   REQUIRE(index != nullptr);
-  CHECK(index->op.text == "+");
+  CHECK(spellings.lookup(index->op.spelling) == "+");
 }
 
 TEST_CASE("parse_expression - index: binds tighter than binary op")
 {
   // arr[0] + 1 should parse as (arr[0]) + 1
   auto fixture = Parse_fixture{"arr[0] + 1"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
-  CHECK(add->op.text == "+");
+  CHECK(spellings.lookup(add->op.spelling) == "+");
   CHECK(
     std::get_if<benson::ast::Index_expression>(&add->left->value) != nullptr
   );
@@ -921,26 +956,28 @@ TEST_CASE("parse_expression - index: rejects")
 TEST_CASE("parse_expression - dereference")
 {
   auto fixture = Parse_fixture{"p^"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const postfix =
     std::get_if<benson::ast::Postfix_expression>(&expr->value);
   REQUIRE(postfix != nullptr);
-  CHECK(postfix->op.text == "^");
+  CHECK(spellings.lookup(postfix->op.spelling) == "^");
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&postfix->operand->value);
   REQUIRE(operand != nullptr);
-  CHECK(operand->identifier.text == "p");
+  CHECK(spellings.lookup(operand->identifier.spelling) == "p");
 }
 
 TEST_CASE("parse_expression - dereference: index then deref")
 {
   // p[0]^ should parse as (p[0])^
   auto fixture = Parse_fixture{"p[0]^"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const postfix =
     std::get_if<benson::ast::Postfix_expression>(&expr->value);
   REQUIRE(postfix != nullptr);
-  CHECK(postfix->op.text == "^");
+  CHECK(spellings.lookup(postfix->op.spelling) == "^");
   CHECK(
     std::get_if<benson::ast::Index_expression>(&postfix->operand->value) !=
     nullptr
@@ -951,18 +988,19 @@ TEST_CASE("parse_expression - dereference: in binary expression")
 {
   // a^ + b^ should parse as (a^) + (b^)
   auto fixture = Parse_fixture{"a^ + b^"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
-  CHECK(add->op.text == "+");
+  CHECK(spellings.lookup(add->op.spelling) == "+");
   auto const left =
     std::get_if<benson::ast::Postfix_expression>(&add->left->value);
   REQUIRE(left != nullptr);
-  CHECK(left->op.text == "^");
+  CHECK(spellings.lookup(left->op.spelling) == "^");
   auto const right =
     std::get_if<benson::ast::Postfix_expression>(&add->right->value);
   REQUIRE(right != nullptr);
-  CHECK(right->op.text == "^");
+  CHECK(spellings.lookup(right->op.spelling) == "^");
 }
 
 TEST_CASE("parse_expression - dereference: in full program")
@@ -974,24 +1012,26 @@ TEST_CASE("parse_expression - dereference: in full program")
 TEST_CASE("parse_expression - address-of")
 {
   auto fixture = Parse_fixture{"&x"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
-  CHECK(unary->op.text == "&");
+  CHECK(spellings.lookup(unary->op.spelling) == "&");
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&unary->operand->value);
   REQUIRE(operand != nullptr);
-  CHECK(operand->identifier.text == "x");
+  CHECK(spellings.lookup(operand->identifier.spelling) == "x");
 }
 
 TEST_CASE("parse_expression - address-of: postfix binds tighter")
 {
   // &a[0] should parse as &(a[0])
   auto fixture = Parse_fixture{"&a[0]"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
-  CHECK(unary->op.text == "&");
+  CHECK(spellings.lookup(unary->op.spelling) == "&");
   CHECK(
     std::get_if<benson::ast::Index_expression>(&unary->operand->value) !=
     nullptr
@@ -1002,18 +1042,19 @@ TEST_CASE("parse_expression - address-of: in binary expression")
 {
   // &a + &b should parse as (&a) + (&b)
   auto fixture = Parse_fixture{"&a + &b"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
-  CHECK(add->op.text == "+");
+  CHECK(spellings.lookup(add->op.spelling) == "+");
   auto const left =
     std::get_if<benson::ast::Prefix_expression>(&add->left->value);
   REQUIRE(left != nullptr);
-  CHECK(left->op.text == "&");
+  CHECK(spellings.lookup(left->op.spelling) == "&");
   auto const right =
     std::get_if<benson::ast::Prefix_expression>(&add->right->value);
   REQUIRE(right != nullptr);
-  CHECK(right->op.text == "&");
+  CHECK(spellings.lookup(right->op.spelling) == "&");
 }
 
 TEST_CASE("parse_expression - address-of: in full program")
@@ -1024,14 +1065,15 @@ TEST_CASE("parse_expression - address-of: in full program")
 TEST_CASE("parse_expression - if: simple")
 {
   auto fixture = Parse_fixture{"if x { 1 }"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const if_expr = std::get_if<benson::ast::If_expression>(&expr->value);
   REQUIRE(if_expr != nullptr);
-  CHECK(if_expr->kw_if.text == "if");
+  CHECK(spellings.lookup(if_expr->kw_if.spelling) == "if");
   auto const cond =
     std::get_if<benson::ast::Identifier_expression>(&if_expr->condition->value);
   REQUIRE(cond != nullptr);
-  CHECK(cond->identifier.text == "x");
+  CHECK(spellings.lookup(cond->identifier.spelling) == "x");
   REQUIRE(if_expr->then_block.tail != nullptr);
   CHECK(if_expr->else_if_parts.empty());
   CHECK_FALSE(if_expr->else_part.has_value());
@@ -1040,29 +1082,31 @@ TEST_CASE("parse_expression - if: simple")
 TEST_CASE("parse_expression - if else")
 {
   auto fixture = Parse_fixture{"if x { 1 } else { 0 }"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const if_expr = std::get_if<benson::ast::If_expression>(&expr->value);
   REQUIRE(if_expr != nullptr);
   CHECK(if_expr->else_if_parts.empty());
   REQUIRE(if_expr->else_part.has_value());
-  CHECK(if_expr->else_part->kw_else.text == "else");
+  CHECK(spellings.lookup(if_expr->else_part->kw_else.spelling) == "else");
   REQUIRE(if_expr->else_part->body.tail != nullptr);
 }
 
 TEST_CASE("parse_expression - else if chain")
 {
   auto fixture = Parse_fixture{"if a { 1 } else if b { 2 } else { 3 }"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const if_expr = std::get_if<benson::ast::If_expression>(&expr->value);
   REQUIRE(if_expr != nullptr);
   REQUIRE(if_expr->else_if_parts.size() == 1);
-  CHECK(if_expr->else_if_parts[0].kw_else.text == "else");
-  CHECK(if_expr->else_if_parts[0].kw_if.text == "if");
+  CHECK(spellings.lookup(if_expr->else_if_parts[0].kw_else.spelling) == "else");
+  CHECK(spellings.lookup(if_expr->else_if_parts[0].kw_if.spelling) == "if");
   auto const cond = std::get_if<benson::ast::Identifier_expression>(
     &if_expr->else_if_parts[0].condition->value
   );
   REQUIRE(cond != nullptr);
-  CHECK(cond->identifier.text == "b");
+  CHECK(spellings.lookup(cond->identifier.spelling) == "b");
   REQUIRE(if_expr->else_if_parts[0].body.tail != nullptr);
   REQUIRE(if_expr->else_part.has_value());
   REQUIRE(if_expr->else_part->body.tail != nullptr);
@@ -1104,18 +1148,19 @@ TEST_CASE("parse_expression - comparison operators")
   for (auto const op : {"<", "<=", ">", ">=", "==", "!="})
   {
     auto fixture = Parse_fixture{std::string{"1 "} + op + " 2"};
+    auto const &spellings = fixture.spellings;
     auto const expr = fixture.parser.parse_expression();
     auto const bin = std::get_if<benson::ast::Binary_expression>(&expr->value);
     REQUIRE(bin != nullptr);
-    CHECK(bin->op.text == op);
+    CHECK(spellings.lookup(bin->op.spelling) == op);
     auto const left =
       std::get_if<benson::ast::Int_literal_expression>(&bin->left->value);
     REQUIRE(left != nullptr);
-    CHECK(left->literal.text == "1");
+    CHECK(spellings.lookup(left->literal.spelling) == "1");
     auto const right =
       std::get_if<benson::ast::Int_literal_expression>(&bin->right->value);
     REQUIRE(right != nullptr);
-    CHECK(right->literal.text == "2");
+    CHECK(spellings.lookup(right->literal.spelling) == "2");
   }
 }
 
@@ -1123,36 +1168,38 @@ TEST_CASE("parse_expression - additive before comparison")
 {
   // 1 + 2 < 3 + 4 should parse as (1 + 2) < (3 + 4)
   auto fixture = Parse_fixture{"1 + 2 < 3 + 4"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const lt = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(lt != nullptr);
-  CHECK(lt->op.text == "<");
+  CHECK(spellings.lookup(lt->op.spelling) == "<");
   auto const left =
     std::get_if<benson::ast::Binary_expression>(&lt->left->value);
   REQUIRE(left != nullptr);
-  CHECK(left->op.text == "+");
+  CHECK(spellings.lookup(left->op.spelling) == "+");
   auto const right =
     std::get_if<benson::ast::Binary_expression>(&lt->right->value);
   REQUIRE(right != nullptr);
-  CHECK(right->op.text == "+");
+  CHECK(spellings.lookup(right->op.spelling) == "+");
 }
 
 TEST_CASE("parse_expression - comparison before equality")
 {
   // 1 < 2 == 3 > 4 should parse as (1 < 2) == (3 > 4)
   auto fixture = Parse_fixture{"1 < 2 == 3 > 4"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const eq = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(eq != nullptr);
-  CHECK(eq->op.text == "==");
+  CHECK(spellings.lookup(eq->op.spelling) == "==");
   auto const left =
     std::get_if<benson::ast::Binary_expression>(&eq->left->value);
   REQUIRE(left != nullptr);
-  CHECK(left->op.text == "<");
+  CHECK(spellings.lookup(left->op.spelling) == "<");
   auto const right =
     std::get_if<benson::ast::Binary_expression>(&eq->right->value);
   REQUIRE(right != nullptr);
-  CHECK(right->op.text == ">");
+  CHECK(spellings.lookup(right->op.spelling) == ">");
 }
 
 TEST_CASE("parse_expression - comparison in full program")
@@ -1167,54 +1214,57 @@ TEST_CASE("parse_expression - comparison in full program")
 TEST_CASE("parse_expression - assign: simple")
 {
   auto fixture = Parse_fixture{"x = 1"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const bin = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(bin != nullptr);
-  CHECK(bin->op.text == "=");
+  CHECK(spellings.lookup(bin->op.spelling) == "=");
   auto const left =
     std::get_if<benson::ast::Identifier_expression>(&bin->left->value);
   REQUIRE(left != nullptr);
-  CHECK(left->identifier.text == "x");
+  CHECK(spellings.lookup(left->identifier.spelling) == "x");
   auto const right =
     std::get_if<benson::ast::Int_literal_expression>(&bin->right->value);
   REQUIRE(right != nullptr);
-  CHECK(right->literal.text == "1");
+  CHECK(spellings.lookup(right->literal.spelling) == "1");
 }
 
 TEST_CASE("parse_expression - assign: right-associative")
 {
   // a = b = 1 should parse as a = (b = 1)
   auto fixture = Parse_fixture{"a = b = 1"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const outer = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(outer != nullptr);
-  CHECK(outer->op.text == "=");
+  CHECK(spellings.lookup(outer->op.spelling) == "=");
   auto const left =
     std::get_if<benson::ast::Identifier_expression>(&outer->left->value);
   REQUIRE(left != nullptr);
-  CHECK(left->identifier.text == "a");
+  CHECK(spellings.lookup(left->identifier.spelling) == "a");
   auto const inner =
     std::get_if<benson::ast::Binary_expression>(&outer->right->value);
   REQUIRE(inner != nullptr);
-  CHECK(inner->op.text == "=");
+  CHECK(spellings.lookup(inner->op.spelling) == "=");
   auto const inner_left =
     std::get_if<benson::ast::Identifier_expression>(&inner->left->value);
   REQUIRE(inner_left != nullptr);
-  CHECK(inner_left->identifier.text == "b");
+  CHECK(spellings.lookup(inner_left->identifier.spelling) == "b");
 }
 
 TEST_CASE("parse_expression - assign: lower precedence than equality")
 {
   // x = a == b should parse as x = (a == b)
   auto fixture = Parse_fixture{"x = a == b"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const assign = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(assign != nullptr);
-  CHECK(assign->op.text == "=");
+  CHECK(spellings.lookup(assign->op.spelling) == "=");
   auto const rhs =
     std::get_if<benson::ast::Binary_expression>(&assign->right->value);
   REQUIRE(rhs != nullptr);
-  CHECK(rhs->op.text == "==");
+  CHECK(spellings.lookup(rhs->op.spelling) == "==");
 }
 
 TEST_CASE("parse_expression - assign: in full program")
@@ -1228,22 +1278,24 @@ TEST_CASE("parse_expression - assign: in full program")
 TEST_CASE("parse_statement - while: simple")
 {
   auto fixture = Parse_fixture{"while x { }"};
+  auto const &spellings = fixture.spellings;
   auto const stmt = fixture.parser.parse_statement();
   auto const while_stmt =
     std::get_if<benson::ast::While_statement>(&stmt.value);
   REQUIRE(while_stmt != nullptr);
-  CHECK(while_stmt->kw_while.text == "while");
+  CHECK(spellings.lookup(while_stmt->kw_while.spelling) == "while");
   auto const cond = std::get_if<benson::ast::Identifier_expression>(
     &while_stmt->condition->value
   );
   REQUIRE(cond != nullptr);
-  CHECK(cond->identifier.text == "x");
+  CHECK(spellings.lookup(cond->identifier.spelling) == "x");
   CHECK(while_stmt->body.statements.empty());
 }
 
 TEST_CASE("parse_statement - while: with body")
 {
   auto fixture = Parse_fixture{"while n > 0 { f(n); }"};
+  auto const &spellings = fixture.spellings;
   auto const stmt = fixture.parser.parse_statement();
   auto const while_stmt =
     std::get_if<benson::ast::While_statement>(&stmt.value);
@@ -1251,7 +1303,7 @@ TEST_CASE("parse_statement - while: with body")
   auto const cond =
     std::get_if<benson::ast::Binary_expression>(&while_stmt->condition->value);
   REQUIRE(cond != nullptr);
-  CHECK(cond->op.text == ">");
+  CHECK(spellings.lookup(cond->op.spelling) == ">");
   CHECK(while_stmt->body.statements.size() == 1);
 }
 
@@ -1268,12 +1320,13 @@ TEST_CASE("parse_statement - while: in full program")
 TEST_CASE("parse_let_statement - mut")
 {
   auto fixture = Parse_fixture{"let mut x = 0;"};
+  auto const &spellings = fixture.spellings;
   auto const stmt = fixture.parser.parse_statement();
   auto const let_stmt = std::get_if<benson::ast::Let_statement>(&stmt.value);
   REQUIRE(let_stmt != nullptr);
   CHECK(let_stmt->kw_mut.has_value());
-  CHECK(let_stmt->kw_mut->text == "mut");
-  CHECK(let_stmt->name.text == "x");
+  CHECK(spellings.lookup(let_stmt->kw_mut->spelling) == "mut");
+  CHECK(spellings.lookup(let_stmt->name.spelling) == "x");
 }
 
 TEST_CASE("Parser - quicksort.benson parses successfully")
@@ -1281,9 +1334,10 @@ TEST_CASE("Parser - quicksort.benson parses successfully")
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/quicksort.benson"};
   auto binary_stream = benson::Istream_binary_stream{&file};
   auto char_stream = benson::Utf8_char_stream{&binary_stream};
-  auto lexeme_stream = benson::Lexeme_stream{&char_stream};
+  auto spellings = benson::Spelling_table{};
+  auto lexeme_stream = benson::Lexeme_stream{&char_stream, &spellings};
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
-  auto parser = benson::Parser{&reader};
+  auto parser = benson::Parser{&reader, &spellings};
   auto const unit = parser.parse_translation_unit();
   CHECK(unit.let_statements.size() == 3);
 }
@@ -1291,46 +1345,49 @@ TEST_CASE("Parser - quicksort.benson parses successfully")
 TEST_CASE("parse_expression - prefix bracket unsized array type")
 {
   auto fixture = Parse_fixture{"[]Int32"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const prefix =
     std::get_if<benson::ast::Prefix_bracket_expression>(&expr->value);
   REQUIRE(prefix != nullptr);
-  CHECK(prefix->lbracket.text == "[");
+  CHECK(spellings.lookup(prefix->lbracket.spelling) == "[");
   CHECK(prefix->size == nullptr);
-  CHECK(prefix->rbracket.text == "]");
+  CHECK(spellings.lookup(prefix->rbracket.spelling) == "]");
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&prefix->operand->value);
   REQUIRE(operand != nullptr);
-  CHECK(operand->identifier.text == "Int32");
+  CHECK(spellings.lookup(operand->identifier.spelling) == "Int32");
 }
 
 TEST_CASE("parse_expression - prefix bracket sized array type")
 {
   auto fixture = Parse_fixture{"[4]Int32"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const prefix =
     std::get_if<benson::ast::Prefix_bracket_expression>(&expr->value);
   REQUIRE(prefix != nullptr);
-  CHECK(prefix->lbracket.text == "[");
+  CHECK(spellings.lookup(prefix->lbracket.spelling) == "[");
   REQUIRE(prefix->size != nullptr);
   auto const size =
     std::get_if<benson::ast::Int_literal_expression>(&prefix->size->value);
   REQUIRE(size != nullptr);
-  CHECK(size->literal.text == "4");
-  CHECK(prefix->rbracket.text == "]");
+  CHECK(spellings.lookup(size->literal.spelling) == "4");
+  CHECK(spellings.lookup(prefix->rbracket.spelling) == "]");
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&prefix->operand->value);
   REQUIRE(operand != nullptr);
-  CHECK(operand->identifier.text == "Int32");
+  CHECK(spellings.lookup(operand->identifier.spelling) == "Int32");
 }
 
 TEST_CASE("parse_expression - pointer to unsized array type")
 {
   auto fixture = Parse_fixture{"^[]Int32"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
-  CHECK(unary->op.text == "^");
+  CHECK(spellings.lookup(unary->op.spelling) == "^");
   auto const prefix =
     std::get_if<benson::ast::Prefix_bracket_expression>(&unary->operand->value);
   REQUIRE(prefix != nullptr);
@@ -1338,26 +1395,28 @@ TEST_CASE("parse_expression - pointer to unsized array type")
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&prefix->operand->value);
   REQUIRE(operand != nullptr);
-  CHECK(operand->identifier.text == "Int32");
+  CHECK(spellings.lookup(operand->identifier.spelling) == "Int32");
 }
 
 TEST_CASE("parse_expression - ^mut prefix")
 {
   auto fixture = Parse_fixture{"^mut Int32"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
-  CHECK(unary->op.text == "^mut");
+  CHECK(spellings.lookup(unary->op.spelling) == "^mut");
   CHECK(unary->op.token == benson::Token::caret_mut);
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&unary->operand->value);
   REQUIRE(operand != nullptr);
-  CHECK(operand->identifier.text == "Int32");
+  CHECK(spellings.lookup(operand->identifier.spelling) == "Int32");
 }
 
 TEST_CASE("parse_expression - ^mut []Int32 as mutable pointer to unsized array")
 {
   auto fixture = Parse_fixture{"^mut []Int32"};
+  auto const &spellings = fixture.spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
@@ -1369,7 +1428,7 @@ TEST_CASE("parse_expression - ^mut []Int32 as mutable pointer to unsized array")
   auto const operand =
     std::get_if<benson::ast::Identifier_expression>(&prefix->operand->value);
   REQUIRE(operand != nullptr);
-  CHECK(operand->identifier.text == "Int32");
+  CHECK(spellings.lookup(operand->identifier.spelling) == "Int32");
 }
 
 TEST_CASE("Parser - accepts prefix type syntax")

@@ -1,6 +1,8 @@
 #include <array>
 #include <exception>
 #include <limits>
+#include <sstream>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -16,6 +18,7 @@
 #include "ir/compile.h"
 #include "ir/interpret.h"
 #include "ir/type.h"
+#include "spelling/spelling.h"
 
 struct Parse_fixture
 {
@@ -26,13 +29,13 @@ struct Parse_fixture
   benson::Lexeme_stream_reader reader;
   benson::Parser parser;
 
-  explicit Parse_fixture(std::string source)
+  Parse_fixture(std::string source, benson::Spelling_table *spellings)
       : stream{std::move(source)},
         binary_stream{&stream},
         char_stream{&binary_stream},
-        lexeme_stream{&char_stream},
+        lexeme_stream{&char_stream, spellings},
         reader{&lexeme_stream},
-        parser{&reader}
+        parser{&reader, spellings}
   {
   }
 
@@ -43,11 +46,12 @@ struct Parse_fixture
 
 struct Compile_fixture
 {
+  benson::Spelling_table spellings;
   benson::ir::Type_pool types;
   benson::ir::Compilation_context compiler;
 
   explicit Compile_fixture()
-      : compiler{&types}
+      : spellings{}, compiler{&types, &spellings}
   {
   }
 
@@ -56,31 +60,25 @@ struct Compile_fixture
   Compile_fixture &operator=(Compile_fixture const &other) = delete;
 };
 
-benson::ir::Constant_value evaluate_constant(
-  benson::ir::Compilation_context &compiler,
-  std::string_view source
-)
+benson::ir::Constant_value
+evaluate_constant(Compile_fixture &fixture, std::string_view source)
 {
-  auto parse_fixture = Parse_fixture{std::string{source}};
+  auto parse_fixture = Parse_fixture{std::string{source}, &fixture.spellings};
   auto const expr = parse_fixture.parser.parse_expression();
-  return compiler.evaluate_constant_expression(*expr);
+  return fixture.compiler.evaluate_constant_expression(*expr);
 }
 
-benson::ir::Type *
-compile_type(benson::ir::Compilation_context &compiler, std::string_view source)
+benson::ir::Type *compile_type(Compile_fixture &fixture, std::string_view source)
 {
-  auto parse_fixture = Parse_fixture{std::string{source}};
+  auto parse_fixture = Parse_fixture{std::string{source}, &fixture.spellings};
   auto const expr = parse_fixture.parser.parse_expression();
-  return compiler.compile_type_expression(*expr);
+  return fixture.compiler.compile_type_expression(*expr);
 }
 
 template <typename T>
-T evaluate_constant_as(
-  benson::ir::Compilation_context &compiler,
-  std::string_view source
-)
+T evaluate_constant_as(Compile_fixture &fixture, std::string_view source)
 {
-  return std::get<T>(evaluate_constant(compiler, source));
+  return std::get<T>(evaluate_constant(fixture, source));
 }
 
 #define CHECK_CONSTANT(source, expected)        \
@@ -89,7 +87,7 @@ T evaluate_constant_as(
     auto fixture = Compile_fixture{};           \
     CHECK(                                      \
       evaluate_constant_as<decltype(expected)>( \
-        (fixture.compiler),                     \
+        (fixture),                              \
         (source)                                \
       ) == (expected)                           \
     );                                          \
@@ -165,7 +163,7 @@ TEST_CASE("compile_int_literal - i8 above max throws")
 {
   auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
-    evaluate_constant(fixture.compiler, "128i8"),
+    evaluate_constant(fixture, "128i8"),
     benson::ir::Compilation_error
   );
 }
@@ -265,7 +263,7 @@ TEST_CASE(
 TEST_CASE("compile_type_expression - sized array")
 {
   auto fixture = Compile_fixture{};
-  auto const type = compile_type(fixture.compiler, "[4]Int32");
+  auto const type = compile_type(fixture, "[4]Int32");
   auto const sa = std::get_if<benson::ir::Sized_array_type>(&type->data);
   REQUIRE(sa != nullptr);
   CHECK(sa->element == fixture.types.int32_type());
@@ -275,7 +273,7 @@ TEST_CASE("compile_type_expression - sized array")
 TEST_CASE("compile_type_expression - sized array with constant expression size")
 {
   auto fixture = Compile_fixture{};
-  auto const type = compile_type(fixture.compiler, "[2 + 2]Int32");
+  auto const type = compile_type(fixture, "[2 + 2]Int32");
   auto const sa = std::get_if<benson::ir::Sized_array_type>(&type->data);
   REQUIRE(sa != nullptr);
   CHECK(sa->element == fixture.types.int32_type());
@@ -286,7 +284,7 @@ TEST_CASE("compile_type_expression - sized array rejects zero size")
 {
   auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
-    compile_type(fixture.compiler, "[0]Int32"),
+    compile_type(fixture, "[0]Int32"),
     benson::ir::Compilation_error
   );
 }
@@ -295,7 +293,7 @@ TEST_CASE("compile_type_expression - sized array rejects negative size")
 {
   auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
-    compile_type(fixture.compiler, "[-1]Int32"),
+    compile_type(fixture, "[-1]Int32"),
     benson::ir::Compilation_error
   );
 }
@@ -304,7 +302,7 @@ TEST_CASE("compile_type_expression - sized array rejects non-integer size")
 {
   auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
-    compile_type(fixture.compiler, "[1 < 2]Int32"),
+    compile_type(fixture, "[1 < 2]Int32"),
     benson::ir::Compilation_error
   );
 }
@@ -321,10 +319,11 @@ TEST_CASE("evaluate_constant_expression - bool equality")
 std::pair<benson::ir::Type_pool, benson::ir::Translation_unit>
 compile_program(std::string source)
 {
-  auto parse_fixture = Parse_fixture{std::move(source)};
+  auto spellings = benson::Spelling_table{};
+  auto parse_fixture = Parse_fixture{std::move(source), &spellings};
   auto const ast = parse_fixture.parser.parse_translation_unit();
   auto types = benson::ir::Type_pool{};
-  auto tu = benson::ir::compile(ast, &types);
+  auto tu = benson::ir::compile(ast, &spellings, &types);
   return {std::move(types), std::move(tu)};
 }
 

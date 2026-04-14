@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "lexing/lexeme_stream_reader.h"
+#include "spelling/spelling.h"
 
 #include <ast/ast.h>
 #include <ast/operator.h>
@@ -14,7 +15,10 @@ namespace benson
   class Parser
   {
   public:
-    explicit Parser(benson::Lexeme_stream_reader *reader) noexcept;
+    Parser(
+      benson::Lexeme_stream_reader *reader,
+      benson::Spelling_table const *spellings
+    ) noexcept;
 
     benson::ast::Translation_unit parse_translation_unit();
 
@@ -56,6 +60,7 @@ namespace benson
     benson::Lexeme expect(benson::Token token);
 
     benson::Lexeme_stream_reader *_reader;
+    benson::Spelling_table const *_spellings;
   };
 
 } // namespace benson

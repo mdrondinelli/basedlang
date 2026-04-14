@@ -21,6 +21,7 @@ add_library(lexing
   code/lexing/src/utf8_char_stream.cpp
 )
 target_include_directories(lexing PUBLIC code/lexing/include)
+target_link_libraries(lexing PUBLIC spelling)
 
 add_library(ast
   code/ast/src/ast.cpp
@@ -43,7 +44,7 @@ add_library(ir
   code/ir/src/type.cpp
 )
 target_include_directories(ir PUBLIC code/ir/include)
-target_link_libraries(ir PUBLIC ast)
+target_link_libraries(ir PUBLIC ast spelling)
 
 add_library(bensoncli
   code/benson/run.cpp

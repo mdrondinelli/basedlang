@@ -39,26 +39,48 @@ namespace benson::ir
     T _previous;
   };
 
-  Compilation_context::Compilation_context(Type_pool *type_pool)
-      : _type_pool{type_pool}
+  Compilation_context::Compilation_context(
+    Type_pool *type_pool,
+    Spelling_table *spellings
+  )
+      : _type_pool{type_pool}, _spellings{spellings}
   {
     assert(_type_pool != nullptr);
-    _symbol_table.declare_value("Int8", Type_value{_type_pool->int8_type()});
-    _symbol_table.declare_value("Int16", Type_value{_type_pool->int16_type()});
-    _symbol_table.declare_value("Int32", Type_value{_type_pool->int32_type()});
-    _symbol_table.declare_value("Int64", Type_value{_type_pool->int64_type()});
-    _symbol_table.declare_value("Bool", Type_value{_type_pool->bool_type()});
-    _symbol_table.declare_value("Void", Type_value{_type_pool->void_type()});
+    assert(_spellings != nullptr);
     _symbol_table.declare_value(
-      "Float32",
+      _spellings->intern("Int8"),
+      Type_value{_type_pool->int8_type()}
+    );
+    _symbol_table.declare_value(
+      _spellings->intern("Int16"),
+      Type_value{_type_pool->int16_type()}
+    );
+    _symbol_table.declare_value(
+      _spellings->intern("Int32"),
+      Type_value{_type_pool->int32_type()}
+    );
+    _symbol_table.declare_value(
+      _spellings->intern("Int64"),
+      Type_value{_type_pool->int64_type()}
+    );
+    _symbol_table.declare_value(
+      _spellings->intern("Bool"),
+      Type_value{_type_pool->bool_type()}
+    );
+    _symbol_table.declare_value(
+      _spellings->intern("Void"),
+      Type_value{_type_pool->void_type()}
+    );
+    _symbol_table.declare_value(
+      _spellings->intern("Float32"),
       Type_value{_type_pool->float32_type()}
     );
     _symbol_table.declare_value(
-      "Float64",
+      _spellings->intern("Float64"),
       Type_value{_type_pool->float64_type()}
     );
-    _symbol_table.declare_value("true", true);
-    _symbol_table.declare_value("false", false);
+    _symbol_table.declare_value(_spellings->intern("true"), true);
+    _symbol_table.declare_value(_spellings->intern("false"), false);
     _unary_overloads[ast::Operator::unary_plus].push_back(
       std::make_unique<Unary_plus>(_type_pool)
     );
@@ -375,7 +397,7 @@ namespace benson::ir
 
   Symbol *Compilation_context::try_lookup_identifier(Lexeme const &identifier)
   {
-    return _symbol_table.lookup(identifier.text);
+    return _symbol_table.lookup(identifier.spelling);
   }
 
   Symbol *Compilation_context::lookup_identifier(Lexeme const &identifier)
@@ -384,7 +406,10 @@ namespace benson::ir
     if (sym == nullptr)
     {
       emit_error(
-        std::format("undefined identifier: {}", identifier.text),
+        std::format(
+          "undefined identifier: {}",
+          _spellings->lookup(identifier.spelling)
+        ),
         identifier
       );
     }
@@ -610,14 +635,21 @@ namespace benson::ir
     ast::Int_literal_expression const &expr
   )
   {
-    return compile_int_literal(expr.literal.text, false, expr.literal);
+    return compile_int_literal(
+      _spellings->lookup(expr.literal.spelling),
+      false,
+      expr.literal
+    );
   }
 
   Operand Compilation_context::compile_expression(
     ast::Float_literal_expression const &expr
   )
   {
-    return compile_float_literal(expr.literal.text, expr.literal);
+    return compile_float_literal(
+      _spellings->lookup(expr.literal.spelling),
+      expr.literal
+    );
   }
 
   Operand Compilation_context::compile_expression(
@@ -670,7 +702,11 @@ namespace benson::ir
     {
       auto const &literal =
         std::get<ast::Int_literal_expression>(expr.operand->value);
-      return compile_int_literal(literal.literal.text, true, literal.literal);
+      return compile_int_literal(
+        _spellings->lookup(literal.literal.spelling),
+        true,
+        literal.literal
+      );
     }
     // General case
     else
@@ -1053,10 +1089,10 @@ namespace benson::ir
         );
         throw Compilation_error{};
       }
-      _symbol_table.declare_value(stmt.name.text, *cv);
+      _symbol_table.declare_value(stmt.name.spelling, *cv);
       if (auto const fv = std::get_if<Function_value>(cv))
       {
-        _translation_unit.function_table[stmt.name.text] = fv->function;
+        _translation_unit.function_table[stmt.name.spelling] = fv->function;
       }
     }
     else if (is_mutable)
@@ -1067,12 +1103,12 @@ namespace benson::ir
     {
       if (auto const cv = std::get_if<Constant_value>(&result))
       {
-        _symbol_table.declare_value(stmt.name.text, *cv);
+        _symbol_table.declare_value(stmt.name.spelling, *cv);
       }
       else
       {
         auto const reg = std::get<Register>(result);
-        _symbol_table.declare_object(stmt.name.text, type, false, reg);
+        _symbol_table.declare_object(stmt.name.spelling, type, false, reg);
       }
     }
   }
@@ -1148,7 +1184,7 @@ namespace benson::ir
       auto const reg = allocate_register(ft.parameter_types[i]);
       entry->parameters.push_back(reg);
       _symbol_table.declare_object(
-        expr.parameters[i].name.text,
+        expr.parameters[i].name.spelling,
         ft.parameter_types[i],
         false,
         reg
@@ -1171,10 +1207,13 @@ namespace benson::ir
     return func_ptr;
   }
 
-  Translation_unit
-  compile(ast::Translation_unit const &ast, Type_pool *type_pool)
+  Translation_unit compile(
+    ast::Translation_unit const &ast,
+    Spelling_table *spellings,
+    Type_pool *type_pool
+  )
   {
-    auto ctx = Compilation_context{type_pool};
+    auto ctx = Compilation_context{type_pool, spellings};
     return ctx.compile(ast);
   }
 

@@ -39,8 +39,6 @@ struct Parse_fixture
 static bool parses(std::string const &source)
 {
   auto fixture = Parse_fixture{source};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   try
   {
     fixture.parser.parse_translation_unit();
@@ -348,8 +346,6 @@ TEST_CASE("Parser - rejects invalid code")
 TEST_CASE("parse_translation_unit - empty")
 {
   auto fixture = Parse_fixture{""};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const unit = fixture.parser.parse_translation_unit();
   CHECK(unit.let_statements.empty());
 }
@@ -359,7 +355,6 @@ TEST_CASE("parse_translation_unit - multiple let statements")
   auto fixture = Parse_fixture{"let a = fn(): Int32 => { return 1; };\n"
                                "let b = fn(): Int32 => { return 2; };"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const unit = fixture.parser.parse_translation_unit();
   REQUIRE(unit.let_statements.size() == 2);
   CHECK(spellings.lookup(unit.let_statements[0].name.spelling) == "a");
@@ -370,7 +365,6 @@ TEST_CASE("parse_let_statement - function declaration")
 {
   auto fixture = Parse_fixture{"let main = fn(): Int32 => { return 0; };"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_let_statement();
   CHECK(spellings.lookup(stmt.kw_let.spelling) == "let");
   CHECK(spellings.lookup(stmt.name.spelling) == "main");
@@ -390,7 +384,6 @@ TEST_CASE("parse_let_statement")
 {
   auto fixture = Parse_fixture{"let x = 42;"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_let_statement();
   CHECK(spellings.lookup(stmt.kw_let.spelling) == "let");
   CHECK(spellings.lookup(stmt.name.spelling) == "x");
@@ -406,7 +399,6 @@ TEST_CASE("parse_return_statement")
 {
   auto fixture = Parse_fixture{"return 99;"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_return_statement();
   CHECK(spellings.lookup(stmt.kw_return.spelling) == "return");
   auto const lit =
@@ -420,7 +412,6 @@ TEST_CASE("parse_expression_statement")
 {
   auto fixture = Parse_fixture{"foo;"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_expression_statement();
   auto const id =
     std::get_if<benson::ast::Identifier_expression>(&stmt.expression.value);
@@ -433,7 +424,6 @@ TEST_CASE("parse_block_expression")
 {
   auto fixture = Parse_fixture{"{ return 1; let x = 2; }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const block = fixture.parser.parse_block_expression();
   CHECK(spellings.lookup(block.lbrace.spelling) == "{");
   REQUIRE(block.statements.size() == 2);
@@ -452,7 +442,6 @@ TEST_CASE("parse_block_expression - empty")
 {
   auto fixture = Parse_fixture{"{ }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const block = fixture.parser.parse_block_expression();
   CHECK(spellings.lookup(block.lbrace.spelling) == "{");
   CHECK(block.statements.empty());
@@ -464,7 +453,6 @@ TEST_CASE("parse_block_expression - tail expression")
 {
   auto fixture = Parse_fixture{"{ 42 }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const block = fixture.parser.parse_block_expression();
   CHECK(block.statements.empty());
   REQUIRE(block.tail != nullptr);
@@ -478,7 +466,6 @@ TEST_CASE("parse_block_expression - statements then tail")
 {
   auto fixture = Parse_fixture{"{ let x = 1; x + 1 }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const block = fixture.parser.parse_block_expression();
   REQUIRE(block.statements.size() == 1);
   CHECK(
@@ -495,8 +482,6 @@ TEST_CASE("parse_block_expression - statements then tail")
 TEST_CASE("parse_block_expression - no tail with semicolon")
 {
   auto fixture = Parse_fixture{"{ x; }"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const block = fixture.parser.parse_block_expression();
   REQUIRE(block.statements.size() == 1);
   CHECK(block.tail == nullptr);
@@ -505,8 +490,6 @@ TEST_CASE("parse_block_expression - no tail with semicolon")
 TEST_CASE("parse_expression - block as primary expression")
 {
   auto fixture = Parse_fixture{"{ 1 + 2 }"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const block = std::get_if<benson::ast::Block_expression>(&expr->value);
   REQUIRE(block != nullptr);
@@ -519,8 +502,6 @@ TEST_CASE("parse_expression - block as primary expression")
 TEST_CASE("parse_expression - nested blocks")
 {
   auto fixture = Parse_fixture{"{{{{}}}}"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   // outer block: no statements, tail is a block
   auto const b0 = std::get_if<benson::ast::Block_expression>(&expr->value);
@@ -555,7 +536,6 @@ TEST_CASE("parse_block_expression - fn body parses tail syntactically")
 {
   auto fixture = Parse_fixture{"fn(): Int32 => { 42 }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.body != nullptr);
   auto const body = std::get_if<benson::ast::Block_expression>(&fn.body->value);
@@ -572,7 +552,6 @@ TEST_CASE("parse_fn_expression")
 {
   auto fixture = Parse_fixture{"fn(): Int32 => { return 0; }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   CHECK(spellings.lookup(fn.kw_fn.spelling) == "fn");
   CHECK(spellings.lookup(fn.lparen.spelling) == "(");
@@ -594,7 +573,6 @@ TEST_CASE("parse_fn_expression - mut parameter")
 {
   auto fixture = Parse_fixture{"fn(mut x: Int32): Void => { }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 1);
   REQUIRE(fn.parameters[0].kw_mut.has_value());
@@ -606,7 +584,6 @@ TEST_CASE("parse_fn_expression - mixed mut and non-mut parameters")
 {
   auto fixture = Parse_fixture{"fn(x: Int32, mut y: Int32): Void => { }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 2);
   CHECK_FALSE(fn.parameters[0].kw_mut.has_value());
@@ -618,8 +595,6 @@ TEST_CASE("parse_fn_expression - mixed mut and non-mut parameters")
 TEST_CASE("parse_fn_expression - requires return type")
 {
   auto fixture = Parse_fixture{"fn() => { }"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   CHECK_THROWS(fixture.parser.parse_fn_expression());
 }
 
@@ -627,7 +602,6 @@ TEST_CASE("parse_int_literal_expression")
 {
   auto fixture = Parse_fixture{"42"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_int_literal_expression();
   CHECK(spellings.lookup(expr.literal.spelling) == "42");
 }
@@ -636,7 +610,6 @@ TEST_CASE("parse_identifier_expression")
 {
   auto fixture = Parse_fixture{"foo"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_identifier_expression();
   CHECK(spellings.lookup(expr.identifier.spelling) == "foo");
 }
@@ -645,7 +618,6 @@ TEST_CASE("parse_paren_expression")
 {
   auto fixture = Parse_fixture{"(42)"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_paren_expression();
   CHECK(spellings.lookup(expr.lparen.spelling) == "(");
   auto const inner =
@@ -659,7 +631,6 @@ TEST_CASE("parse_paren_expression - nested")
 {
   auto fixture = Parse_fixture{"((x))"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_paren_expression();
   CHECK(spellings.lookup(expr.lparen.spelling) == "(");
   auto const inner =
@@ -676,8 +647,6 @@ TEST_CASE("parse_paren_expression - nested")
 TEST_CASE("parse_primary_expression - dispatches to int literal")
 {
   auto fixture = Parse_fixture{"123"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_primary_expression();
   CHECK(
     std::get_if<benson::ast::Int_literal_expression>(&expr->value) != nullptr
@@ -687,8 +656,6 @@ TEST_CASE("parse_primary_expression - dispatches to int literal")
 TEST_CASE("parse_primary_expression - dispatches to identifier")
 {
   auto fixture = Parse_fixture{"x"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_primary_expression();
   CHECK(
     std::get_if<benson::ast::Identifier_expression>(&expr->value) != nullptr
@@ -698,8 +665,6 @@ TEST_CASE("parse_primary_expression - dispatches to identifier")
 TEST_CASE("parse_primary_expression - dispatches to fn")
 {
   auto fixture = Parse_fixture{"fn(): Int32 => { }"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_primary_expression();
   CHECK(std::get_if<benson::ast::Fn_expression>(&expr->value) != nullptr);
 }
@@ -707,8 +672,6 @@ TEST_CASE("parse_primary_expression - dispatches to fn")
 TEST_CASE("parse_primary_expression - dispatches to paren")
 {
   auto fixture = Parse_fixture{"(42)"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_primary_expression();
   CHECK(std::get_if<benson::ast::Paren_expression>(&expr->value) != nullptr);
 }
@@ -717,7 +680,6 @@ TEST_CASE("parse_expression - simple binary expression")
 {
   auto fixture = Parse_fixture{"1 + 2"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const bin = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(bin != nullptr);
@@ -737,7 +699,6 @@ TEST_CASE("parse_expression - multiplicative before additive")
   // 1 + 2 * 3 should parse as 1 + (2 * 3)
   auto fixture = Parse_fixture{"1 + 2 * 3"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
@@ -761,7 +722,6 @@ TEST_CASE("parse_expression - left associativity")
   // 1 - 2 - 3 should parse as (1 - 2) - 3
   auto fixture = Parse_fixture{"1 - 2 - 3"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const outer = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(outer != nullptr);
@@ -782,7 +742,6 @@ TEST_CASE("parse_expression - all operators")
   // parses as (-(f()) + (+2)) - (((3 * 4) / 5) % 6)
   auto fixture = Parse_fixture{"-f() + +2 - 3 * 4 / 5 % 6"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   // outer: (-f() + +2) - (...)
   auto const sub = std::get_if<benson::ast::Binary_expression>(&expr->value);
@@ -832,7 +791,6 @@ TEST_CASE("parse_expression - call binds tighter than binary op")
   // f() + 1 should parse as (f()) + 1
   auto fixture = Parse_fixture{"f() + 1"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
@@ -845,8 +803,6 @@ TEST_CASE("parse_expression - call binds tighter than binary op")
 TEST_CASE("parse_statement - dispatches to let")
 {
   auto fixture = Parse_fixture{"let x = 1;"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_statement();
   CHECK(std::get_if<benson::ast::Let_statement>(&stmt.value) != nullptr);
 }
@@ -854,8 +810,6 @@ TEST_CASE("parse_statement - dispatches to let")
 TEST_CASE("parse_statement - dispatches to return")
 {
   auto fixture = Parse_fixture{"return 1;"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_statement();
   CHECK(std::get_if<benson::ast::Return_statement>(&stmt.value) != nullptr);
 }
@@ -863,8 +817,6 @@ TEST_CASE("parse_statement - dispatches to return")
 TEST_CASE("parse_statement - dispatches to expression statement")
 {
   auto fixture = Parse_fixture{"x;"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_statement();
   CHECK(std::get_if<benson::ast::Expression_statement>(&stmt.value) != nullptr);
 }
@@ -874,7 +826,6 @@ TEST_CASE("parse_expression - unary minus: call binds tighter")
   // -f() should parse as -(f()), not (-f)()
   auto fixture = Parse_fixture{"-f()"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
@@ -888,7 +839,6 @@ TEST_CASE("parse_fn_expression - array parameter")
 {
   auto fixture = Parse_fixture{"fn(buf: Int32[4]): Void => { }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const fn = fixture.parser.parse_fn_expression();
   REQUIRE(fn.parameters.size() == 1);
   CHECK(spellings.lookup(fn.parameters[0].name.spelling) == "buf");
@@ -910,7 +860,6 @@ TEST_CASE("parse_expression - index: simple")
 {
   auto fixture = Parse_fixture{"arr[0]"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const idx = std::get_if<benson::ast::Index_expression>(&expr->value);
   REQUIRE(idx != nullptr);
@@ -931,7 +880,6 @@ TEST_CASE("parse_expression - index: chained")
   // arr[0][1] should parse as (arr[0])[1]
   auto fixture = Parse_fixture{"arr[0][1]"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const outer = std::get_if<benson::ast::Index_expression>(&expr->value);
   REQUIRE(outer != nullptr);
@@ -956,7 +904,6 @@ TEST_CASE("parse_expression - index: expression index")
 {
   auto fixture = Parse_fixture{"arr[i + 1]"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const idx = std::get_if<benson::ast::Index_expression>(&expr->value);
   REQUIRE(idx != nullptr);
@@ -971,7 +918,6 @@ TEST_CASE("parse_expression - index: binds tighter than binary op")
   // arr[0] + 1 should parse as (arr[0]) + 1
   auto fixture = Parse_fixture{"arr[0] + 1"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
@@ -985,8 +931,6 @@ TEST_CASE("parse_expression - index: call then index")
 {
   // f()[0] should parse as (f())[0]
   auto fixture = Parse_fixture{"f()[0]"};
-  auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const idx = std::get_if<benson::ast::Index_expression>(&expr->value);
   REQUIRE(idx != nullptr);
@@ -1013,7 +957,6 @@ TEST_CASE("parse_expression - dereference")
 {
   auto fixture = Parse_fixture{"p^"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const postfix =
     std::get_if<benson::ast::Postfix_expression>(&expr->value);
@@ -1030,7 +973,6 @@ TEST_CASE("parse_expression - dereference: index then deref")
   // p[0]^ should parse as (p[0])^
   auto fixture = Parse_fixture{"p[0]^"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const postfix =
     std::get_if<benson::ast::Postfix_expression>(&expr->value);
@@ -1047,7 +989,6 @@ TEST_CASE("parse_expression - dereference: in binary expression")
   // a^ + b^ should parse as (a^) + (b^)
   auto fixture = Parse_fixture{"a^ + b^"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
@@ -1072,7 +1013,6 @@ TEST_CASE("parse_expression - address-of")
 {
   auto fixture = Parse_fixture{"&x"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
@@ -1088,7 +1028,6 @@ TEST_CASE("parse_expression - address-of: postfix binds tighter")
   // &a[0] should parse as &(a[0])
   auto fixture = Parse_fixture{"&a[0]"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
@@ -1104,7 +1043,6 @@ TEST_CASE("parse_expression - address-of: in binary expression")
   // &a + &b should parse as (&a) + (&b)
   auto fixture = Parse_fixture{"&a + &b"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const add = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(add != nullptr);
@@ -1128,7 +1066,6 @@ TEST_CASE("parse_expression - if: simple")
 {
   auto fixture = Parse_fixture{"if x { 1 }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const if_expr = std::get_if<benson::ast::If_expression>(&expr->value);
   REQUIRE(if_expr != nullptr);
@@ -1146,7 +1083,6 @@ TEST_CASE("parse_expression - if else")
 {
   auto fixture = Parse_fixture{"if x { 1 } else { 0 }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const if_expr = std::get_if<benson::ast::If_expression>(&expr->value);
   REQUIRE(if_expr != nullptr);
@@ -1160,7 +1096,6 @@ TEST_CASE("parse_expression - else if chain")
 {
   auto fixture = Parse_fixture{"if a { 1 } else if b { 2 } else { 3 }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const if_expr = std::get_if<benson::ast::If_expression>(&expr->value);
   REQUIRE(if_expr != nullptr);
@@ -1214,7 +1149,6 @@ TEST_CASE("parse_expression - comparison operators")
   {
     auto fixture = Parse_fixture{std::string{"1 "} + op + " 2"};
     auto const &spellings = fixture.spellings;
-    (void) spellings;
     auto const expr = fixture.parser.parse_expression();
     auto const bin = std::get_if<benson::ast::Binary_expression>(&expr->value);
     REQUIRE(bin != nullptr);
@@ -1235,7 +1169,6 @@ TEST_CASE("parse_expression - additive before comparison")
   // 1 + 2 < 3 + 4 should parse as (1 + 2) < (3 + 4)
   auto fixture = Parse_fixture{"1 + 2 < 3 + 4"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const lt = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(lt != nullptr);
@@ -1255,7 +1188,6 @@ TEST_CASE("parse_expression - comparison before equality")
   // 1 < 2 == 3 > 4 should parse as (1 < 2) == (3 > 4)
   auto fixture = Parse_fixture{"1 < 2 == 3 > 4"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const eq = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(eq != nullptr);
@@ -1283,7 +1215,6 @@ TEST_CASE("parse_expression - assign: simple")
 {
   auto fixture = Parse_fixture{"x = 1"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const bin = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(bin != nullptr);
@@ -1303,7 +1234,6 @@ TEST_CASE("parse_expression - assign: right-associative")
   // a = b = 1 should parse as a = (b = 1)
   auto fixture = Parse_fixture{"a = b = 1"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const outer = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(outer != nullptr);
@@ -1327,7 +1257,6 @@ TEST_CASE("parse_expression - assign: lower precedence than equality")
   // x = a == b should parse as x = (a == b)
   auto fixture = Parse_fixture{"x = a == b"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const assign = std::get_if<benson::ast::Binary_expression>(&expr->value);
   REQUIRE(assign != nullptr);
@@ -1350,7 +1279,6 @@ TEST_CASE("parse_statement - while: simple")
 {
   auto fixture = Parse_fixture{"while x { }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_statement();
   auto const while_stmt =
     std::get_if<benson::ast::While_statement>(&stmt.value);
@@ -1368,7 +1296,6 @@ TEST_CASE("parse_statement - while: with body")
 {
   auto fixture = Parse_fixture{"while n > 0 { f(n); }"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_statement();
   auto const while_stmt =
     std::get_if<benson::ast::While_statement>(&stmt.value);
@@ -1394,7 +1321,6 @@ TEST_CASE("parse_let_statement - mut")
 {
   auto fixture = Parse_fixture{"let mut x = 0;"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const stmt = fixture.parser.parse_statement();
   auto const let_stmt = std::get_if<benson::ast::Let_statement>(&stmt.value);
   REQUIRE(let_stmt != nullptr);
@@ -1420,7 +1346,6 @@ TEST_CASE("parse_expression - prefix bracket unsized array type")
 {
   auto fixture = Parse_fixture{"[]Int32"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const prefix =
     std::get_if<benson::ast::Prefix_bracket_expression>(&expr->value);
@@ -1438,7 +1363,6 @@ TEST_CASE("parse_expression - prefix bracket sized array type")
 {
   auto fixture = Parse_fixture{"[4]Int32"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const prefix =
     std::get_if<benson::ast::Prefix_bracket_expression>(&expr->value);
@@ -1460,7 +1384,6 @@ TEST_CASE("parse_expression - pointer to unsized array type")
 {
   auto fixture = Parse_fixture{"^[]Int32"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
@@ -1479,7 +1402,6 @@ TEST_CASE("parse_expression - ^mut prefix")
 {
   auto fixture = Parse_fixture{"^mut Int32"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);
@@ -1495,7 +1417,6 @@ TEST_CASE("parse_expression - ^mut []Int32 as mutable pointer to unsized array")
 {
   auto fixture = Parse_fixture{"^mut []Int32"};
   auto const &spellings = fixture.spellings;
-  (void) spellings;
   auto const expr = fixture.parser.parse_expression();
   auto const unary = std::get_if<benson::ast::Prefix_expression>(&expr->value);
   REQUIRE(unary != nullptr);

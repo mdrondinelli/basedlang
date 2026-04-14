@@ -35,9 +35,9 @@ Acceptance:
 - The table provides an API for building new spellings in shared storage so the
   lexer can construct token text in place rather than through a per-lexeme
   owned string buffer.
-- The table also interns completed spellings, deduplicates repeated spellings,
-  returns stable compact `Spelling_id` values, and resolves `Spelling_id` back
-  to stored spelling bytes.
+- The table deduplicates completed spellings through its builder/finalize path,
+  returns stable compact `Spelling` handles, and resolves `Spelling` back to
+  stored spelling bytes.
 - Use UTF-8 byte storage in this phase for memory efficiency.
 - The caller is responsible for keeping the spelling table alive for as long as
   downstream compiler data structures still reference it.
@@ -46,11 +46,11 @@ Acceptance:
 
 Acceptance:
 
-- equal spellings intern to the same `Spelling_id`
-- different spellings intern to different `Spelling_id` values
+- equal spellings finalize to the same `Spelling`
+- different spellings finalize to different `Spelling` values
 - new spellings can be constructed through the table's builder/finalize path
   without an intermediate per-lexeme owned string
-- stored spellings can be looked up through `Spelling_id`
+- stored spellings can be looked up through `Spelling`
 
 ### Phase 3: Lexeme and AST payload migration
 

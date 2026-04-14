@@ -1,9 +1,9 @@
-let is_even = fn(n: Int32): Bool =>
+fn is_even(n: Int32): Bool =>
 {
   return n - (n / 2) * 2 < 1;
 };
 
-let steps = fn(n: Int32): Int32 =>
+fn steps(n: Int32): Int32 =>
 {
   return if n < 2
   {
@@ -11,15 +11,15 @@ let steps = fn(n: Int32): Int32 =>
   }
   else if is_even(n)
   {
-    1 + recurse(n / 2)
+    1 + steps(n / 2)
   }
   else
   {
-    1 + recurse(3 * n + 1)
+    1 + steps(3 * n + 1)
   };
 };
 
-let max_steps = fn(limit: Int32): Int32 =>
+fn max_steps(limit: Int32): Int32 =>
 {
   return if limit < 2
   {
@@ -27,7 +27,7 @@ let max_steps = fn(limit: Int32): Int32 =>
   }
   else
   {
-    let prev = recurse(limit - 1);
+    let prev = max_steps(limit - 1);
     let curr = steps(limit);
     if curr > prev { curr } else { prev }
   };

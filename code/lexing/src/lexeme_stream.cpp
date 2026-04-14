@@ -40,14 +40,10 @@ namespace benson
     {
       build.append(static_cast<char>(c));
     };
-    auto const make_lexeme =
-      [&](Token token, Source_location start, Spelling spelling = {}) -> Lexeme
+    auto const make_lexeme = [&](Token token, Source_location start) -> Lexeme
     {
       auto end = start;
-      if (!spelling.has_value())
-      {
-        spelling = std::move(build).finalize();
-      }
+      auto const spelling = std::move(build).finalize();
       if (token != Token::eof)
       {
         end = Source_location{
@@ -239,8 +235,7 @@ namespace benson
             append(consume_non_newline());
             break;
           }
-          auto const spelling = std::move(build).finalize();
-          auto const text = _spellings->lookup(spelling);
+          auto const text = build.view();
           auto const token = [&]() -> Token
           {
             if (text == "else")
@@ -277,7 +272,7 @@ namespace benson
             }
             return Token::identifier;
           }();
-          return make_lexeme(token, token_location, spelling);
+          return make_lexeme(token, token_location);
         }
       case 2:
         {

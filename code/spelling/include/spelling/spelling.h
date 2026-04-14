@@ -72,6 +72,15 @@ namespace benson
         _table->_bytes.append(text);
       }
 
+      /// Returns view of bytes appended so far for this in-progress spelling.
+      /// The returned view remains valid only until the builder is mutated,
+      /// finalized, destroyed, or moved from.
+      [[nodiscard]] auto view() const noexcept -> std::string_view
+      {
+        assert(_table != nullptr);
+        return _table->build_view();
+      }
+
       [[nodiscard]] auto finalize() && -> Spelling
       {
         assert(_table != nullptr);

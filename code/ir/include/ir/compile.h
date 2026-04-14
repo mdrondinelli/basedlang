@@ -177,10 +177,7 @@ namespace benson::ir
 
     void compile_statement(ast::Expression_statement const &stmt);
 
-    Function *compile_function(
-      ast::Fn_expression const &expr,
-      std::optional<Spelling> self_name = std::nullopt
-    );
+    Function *compile_function(ast::Fn_expression const &expr);
 
     bool is_top_level() const;
 

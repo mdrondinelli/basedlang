@@ -680,9 +680,7 @@ namespace benson::ir
   Operand
   Compilation_context::compile_expression(ast::Fn_expression const &expr)
   {
-    auto const self_name =
-      expr.name ? std::optional{expr.name->spelling} : std::nullopt;
-    auto const func = compile_function(expr, self_name);
+    auto const func = compile_function(expr);
     auto const cv = Constant_value{Function_value{.function = func}};
     if (expr.name)
     {
@@ -1159,10 +1157,7 @@ namespace benson::ir
   }
 
   Function *
-  Compilation_context::compile_function(
-    ast::Fn_expression const &expr,
-    std::optional<Spelling> self_name
-  )
+  Compilation_context::compile_function(ast::Fn_expression const &expr)
   {
     auto parameter_types = std::vector<Type *>{};
     for (auto const &param : expr.parameters)
@@ -1194,10 +1189,10 @@ namespace benson::ir
     auto const entry = new_block();
     set_current_block(entry);
     _symbol_table.push_scope(true);
-    if (self_name)
+    if (expr.name)
     {
       _symbol_table.declare_value(
-        *self_name,
+        expr.name->spelling,
         Constant_value{Function_value{.function = func_ptr}}
       );
     }

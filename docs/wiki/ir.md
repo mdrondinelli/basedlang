@@ -1,41 +1,34 @@
 # `ir`
 
-`ir` is the semantic core of the project.
+`ir` is the HLIR data model and its interpreter.
+
+It does **not** consume AST. The AST→HLIR transformation lives in
+[`frontend`](./frontend.md); `ir` just defines the shape of HLIR and how
+to execute it.
 
 ## Interface
 
 The public surface is centered on:
 
-- `compile(...)`
-- `interpret(...)`
-- `Compilation_context`
-- `Symbol_table`
 - `Type` and `Type_pool`
 - `Constant_value`
-- `Function`, `Basic_block`, `Instruction`, and `Terminator`
+- `Register`, `Operand`, `Instruction`, `Terminator`
+- `Basic_block`, `Function`, `Translation_unit`
+- `interpret(...)` and `Fuel_exhausted_error`
 
-This module consumes AST and produces executable HLIR.
+All of these live in the `benson::ir` namespace.
 
 ## Core abstractions
 
-### `Symbol_table`
-
-Maps names to semantic bindings across global and nested scopes.
-
-### `Symbol`
-
-A resolved name that holds either:
-
-- an `Object_binding`
-- a `Constant_value`
-
 ### `Type` and `Type_pool`
 
-The canonical type system representation and the interning pool that makes pointer identity meaningful.
+The canonical type system representation and the interning pool that makes
+pointer identity meaningful.
 
 ### `Constant_value`
 
-The compile-time value domain, including 8-, 16-, 32-, and 64-bit signed integers, booleans, `void`, type values, and function values.
+The compile-time value domain, including 8-, 16-, 32-, and 64-bit signed
+integers, booleans, `void`, type values, and function values.
 
 ### HLIR objects
 
@@ -59,44 +52,7 @@ Key properties of these types:
 - `Basic_block` has parameters (registers), a list of instructions, and a `Terminator`.
 - `Function` owns its blocks and a monotonically increasing register counter.
 
-## Data model
-
-The key semantic data model is:
-
-1. AST nodes still carry source identity
-2. identifiers resolve to either runtime objects or compile-time values
-3. types are canonicalized through `Type_pool`
-4. valid programs lower into HLIR made of blocks, registers, instructions, and terminators
-
-That is the shortest useful way to think about the whole module.
-
-## Algorithms
-
-There are three main kinds of work here.
-
-### Semantic compilation
-
-`Compilation_context` walks the AST and handles:
-
-- builtin seeding
-- name resolution
-- type checking
-- constant evaluation
-- operator application
-- diagnostics
-- HLIR emission
-
-`compile_expression` returns an `Operand` — either a `Register` (runtime result) or a `Constant_value` (compile-time result). Constant folding happens naturally: if all inputs to an operation are `Constant_value`, the result is evaluated at compile time without emitting any instructions.
-
-Register types are tracked in a table indexed by register ID. This table is saved and restored per function so nested function compilations do not interfere with each other.
-
-Symbol bindings hold either a runtime `Object_binding` (type + register + mutability) or a compile-time `Constant_value`.
-
-### Type canonicalization
-
-`Type_pool` interns types so equal types share the same `Type *`.
-
-### Interpretation
+## Interpretation
 
 The interpreter executes HLIR by:
 
@@ -111,6 +67,6 @@ It uses fuel accounting to stop runaway compile-time execution.
 ## What to keep stable
 
 - type identity must come from `Type_pool`
-- diagnostics should point at user-facing syntax
 - executable HLIR should stay self-contained
 - the interpreter may assume HLIR is valid except for explicit safety mechanisms like fuel exhaustion
+- `ir` must not gain a dependency on `ast` or on the frontend

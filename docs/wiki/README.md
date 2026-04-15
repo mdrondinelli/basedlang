@@ -19,6 +19,7 @@ The pages below are organized to support fast navigation rather than linear read
 - [`ast`](./ast.md)
 - [`parsing`](./parsing.md)
 - [`ir`](./ir.md)
+- [`frontend`](./frontend.md)
 - [`benson`](./benson.md)
 - [Project structure](./project-structure.md)
 - [Conventions](./conventions.md)

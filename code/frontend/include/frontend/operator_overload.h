@@ -3,7 +3,7 @@
 
 #include <ir/hlir.h>
 
-namespace benson::ir
+namespace benson
 {
 
   class Compilation_context;
@@ -13,12 +13,12 @@ namespace benson::ir
   public:
     virtual ~Unary_operator_overload() = default;
 
-    virtual bool matches(Type *operand_type) const = 0;
+    virtual bool matches(ir::Type *operand_type) const = 0;
 
-    virtual Type *result_type(Type *operand_type) const = 0;
+    virtual ir::Type *result_type(ir::Type *operand_type) const = 0;
 
-    virtual Operand
-    compile(Compilation_context &ctx, Operand operand) const = 0;
+    virtual ir::Operand
+    compile(Compilation_context &ctx, ir::Operand operand) const = 0;
   };
 
   class Binary_operator_overload
@@ -26,16 +26,19 @@ namespace benson::ir
   public:
     virtual ~Binary_operator_overload() = default;
 
-    virtual Type *lhs_type() const = 0;
+    virtual ir::Type *lhs_type() const = 0;
 
-    virtual Type *rhs_type() const = 0;
+    virtual ir::Type *rhs_type() const = 0;
 
-    virtual Type *result_type() const = 0;
+    virtual ir::Type *result_type() const = 0;
 
-    virtual Operand
-    compile(Compilation_context &ctx, Operand lhs, Operand rhs) const = 0;
+    virtual ir::Operand compile(
+      Compilation_context &ctx,
+      ir::Operand lhs,
+      ir::Operand rhs
+    ) const = 0;
   };
 
-} // namespace benson::ir
+} // namespace benson
 
 #endif

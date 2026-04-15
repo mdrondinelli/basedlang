@@ -61,7 +61,7 @@ namespace benson
     auto types = ir::Type_pool{};
     try
     {
-      auto const tu = ir::compile(ast, &spellings, &types);
+      auto const tu = compile(ast, &spellings, &types);
       auto const function = spellings.lookup(function_name);
       if (!function)
       {
@@ -211,7 +211,7 @@ namespace benson
         result
       );
     }
-    catch (ir::Compilation_failure const &e)
+    catch (Compilation_failure const &e)
     {
       err << e.what();
       return 1;

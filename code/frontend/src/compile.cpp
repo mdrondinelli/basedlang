@@ -14,8 +14,10 @@
 
 #include "operator_functors.h"
 
-namespace benson::ir
+namespace benson
 {
+
+  using namespace ir;
 
   template <typename T>
   class Scoped_assign
@@ -1361,4 +1363,4 @@ namespace benson::ir
     }
   }
 
-} // namespace benson::ir
+} // namespace benson

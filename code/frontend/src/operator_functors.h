@@ -8,8 +8,10 @@
 #include "frontend/compile.h"
 #include "primitive_type_traits.h"
 
-namespace benson::ir
+namespace benson
 {
+
+  using namespace ir;
 
   template <
     typename OperandT,
@@ -450,6 +452,6 @@ namespace benson::ir
     }
   };
 
-} // namespace benson::ir
+} // namespace benson
 
 #endif

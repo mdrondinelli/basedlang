@@ -23,7 +23,7 @@
 #include "operator_overload.h"
 #include "symbol_table.h"
 
-namespace benson::ir
+namespace benson
 {
   struct Diagnostic_note
   {
@@ -85,11 +85,11 @@ namespace benson::ir
   class Compilation_context
   {
   public:
-    Compilation_context(Type_pool *type_pool, Spelling_table *spellings);
+    Compilation_context(ir::Type_pool *type_pool, Spelling_table *spellings);
 
-    Translation_unit compile(ast::Translation_unit const &ast);
+    ir::Translation_unit compile(ast::Translation_unit const &ast);
 
-    Type *type_of_constant(Constant_value const &value);
+    ir::Type *type_of_constant(ir::Constant_value const &value);
 
     [[noreturn]] void emit_error(std::string message, Source_span location);
 
@@ -104,68 +104,73 @@ namespace benson::ir
     Symbol *lookup_identifier(Lexeme const &identifier);
 
     Unary_operator_overload *
-    find_unary_overload(ast::Operator op, Type *operand_type);
+    find_unary_overload(ast::Operator op, ir::Type *operand_type);
 
-    Binary_operator_overload *
-    find_binary_overload(ast::Operator op, Type *lhs_type, Type *rhs_type);
+    Binary_operator_overload *find_binary_overload(
+      ast::Operator op,
+      ir::Type *lhs_type,
+      ir::Type *rhs_type
+    );
 
-    bool is_type_compatible(Type *parameter_type, Type *argument_type);
+    bool is_type_compatible(ir::Type *parameter_type, ir::Type *argument_type);
 
-    Type *compile_type_expression(ast::Expression const &expr);
+    ir::Type *compile_type_expression(ast::Expression const &expr);
 
-    Constant_value evaluate_constant_expression(ast::Expression const &expr);
+    ir::Constant_value
+    evaluate_constant_expression(ast::Expression const &expr);
 
-    Basic_block *new_block();
+    ir::Basic_block *new_block();
 
-    void set_current_block(Basic_block *block);
+    void set_current_block(ir::Basic_block *block);
 
-    void emit(Terminator terminator);
+    void emit(ir::Terminator terminator);
 
-    Register allocate_register(Type *type);
+    ir::Register allocate_register(ir::Type *type);
 
-    Type *type_of_register(Register r) const;
+    ir::Type *type_of_register(ir::Register r) const;
 
-    Type *type_of_operand(Operand const &operand);
+    ir::Type *type_of_operand(ir::Operand const &operand);
 
-    void emit(Instruction instruction);
+    void emit(ir::Instruction instruction);
 
-    Operand compile_expression(ast::Expression const &expr);
+    ir::Operand compile_expression(ast::Expression const &expr);
 
-    Operand compile_expression(ast::Int_literal_expression const &expr);
+    ir::Operand compile_expression(ast::Int_literal_expression const &expr);
 
-    Operand compile_expression(ast::Float_literal_expression const &expr);
+    ir::Operand compile_expression(ast::Float_literal_expression const &expr);
 
-    Operand compile_expression(ast::Identifier_expression const &expr);
+    ir::Operand compile_expression(ast::Identifier_expression const &expr);
 
-    Operand compile_expression(ast::Recurse_expression const &expr);
+    ir::Operand compile_expression(ast::Recurse_expression const &expr);
 
-    Operand compile_expression(ast::Fn_expression const &expr);
+    ir::Operand compile_expression(ast::Fn_expression const &expr);
 
-    Operand compile_expression(ast::Paren_expression const &expr);
+    ir::Operand compile_expression(ast::Paren_expression const &expr);
 
-    Operand compile_expression(ast::Prefix_expression const &expr);
+    ir::Operand compile_expression(ast::Prefix_expression const &expr);
 
-    Operand compile_expression(ast::Postfix_expression const &expr);
+    ir::Operand compile_expression(ast::Postfix_expression const &expr);
 
-    Operand compile_expression(ast::Binary_expression const &expr);
+    ir::Operand compile_expression(ast::Binary_expression const &expr);
 
-    Operand compile_expression(ast::Call_expression const &expr);
+    ir::Operand compile_expression(ast::Call_expression const &expr);
 
-    Operand compile_expression(ast::Index_expression const &expr);
+    ir::Operand compile_expression(ast::Index_expression const &expr);
 
-    Operand compile_expression(ast::Prefix_bracket_expression const &expr);
+    ir::Operand compile_expression(ast::Prefix_bracket_expression const &expr);
 
-    Operand compile_expression(ast::Block_expression const &expr);
+    ir::Operand compile_expression(ast::Block_expression const &expr);
 
-    Operand compile_expression(ast::If_expression const &expr);
+    ir::Operand compile_expression(ast::If_expression const &expr);
 
-    Operand compile_int_literal(
+    ir::Operand compile_int_literal(
       std::string_view text,
       bool negate,
       Lexeme const &token
     );
 
-    Operand compile_float_literal(std::string_view text, Lexeme const &token);
+    ir::Operand
+    compile_float_literal(std::string_view text, Lexeme const &token);
 
     void compile_statement(ast::Statement const &stmt);
 
@@ -177,18 +182,18 @@ namespace benson::ir
 
     void compile_statement(ast::Expression_statement const &stmt);
 
-    Function *compile_function(ast::Fn_expression const &expr);
+    ir::Function *compile_function(ast::Fn_expression const &expr);
 
     bool is_top_level() const;
 
   private:
-    Type_pool *_type_pool;
+    ir::Type_pool *_type_pool;
     Spelling_table *_spellings;
-    Translation_unit _translation_unit;
+    ir::Translation_unit _translation_unit;
     Symbol_table _symbol_table;
-    Function *_current_function{};
-    Basic_block *_current_block{};
-    std::vector<Type *> _register_types;
+    ir::Function *_current_function{};
+    ir::Basic_block *_current_block{};
+    std::vector<ir::Type *> _register_types;
     std::vector<Diagnostic> _diagnostics;
     std::unordered_map<
       ast::Operator,
@@ -202,15 +207,15 @@ namespace benson::ir
       _binary_overloads;
   };
 
-  Translation_unit compile(
+  ir::Translation_unit compile(
     ast::Translation_unit const &ast,
     Spelling_table *spellings,
-    Type_pool *type_pool
+    ir::Type_pool *type_pool
   );
 
   std::optional<std::uint64_t>
   validate_int_literal(std::string_view digits, std::uint64_t max_value);
 
-} // namespace benson::ir
+} // namespace benson
 
 #endif

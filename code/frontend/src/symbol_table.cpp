@@ -2,14 +2,14 @@
 
 #include "frontend/symbol_table.h"
 
-namespace benson::ir
+namespace benson
 {
 
   Symbol *Symbol_table::declare_object(
     Spelling name,
-    Type *type,
+    ir::Type *type,
     bool is_mutable,
-    Register reg
+    ir::Register reg
   )
   {
     auto const sym =
@@ -33,7 +33,7 @@ namespace benson::ir
   }
 
   Symbol *
-  Symbol_table::declare_value(Spelling name, Constant_value const &value)
+  Symbol_table::declare_value(Spelling name, ir::Constant_value const &value)
   {
     auto const sym =
       _symbols.emplace_back(std::make_unique<Symbol>(name, value)).get();
@@ -80,4 +80,4 @@ namespace benson::ir
     _scopes.pop_back();
   }
 
-} // namespace benson::ir
+} // namespace benson

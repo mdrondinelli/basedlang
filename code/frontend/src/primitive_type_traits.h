@@ -6,8 +6,10 @@
 
 #include <ir/type.h>
 
-namespace benson::ir
+namespace benson
 {
+
+  using namespace ir;
 
   template <typename T>
   struct Primitive_type_traits;
@@ -89,6 +91,6 @@ namespace benson::ir
     }
   };
 
-} // namespace benson::ir
+} // namespace benson
 
 #endif

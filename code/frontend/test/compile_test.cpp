@@ -15,7 +15,7 @@
 
 #include "parsing/parser.h"
 
-#include "ir/compile.h"
+#include "frontend/compile.h"
 #include "ir/interpret.h"
 #include "ir/type.h"
 #include "spelling/spelling.h"

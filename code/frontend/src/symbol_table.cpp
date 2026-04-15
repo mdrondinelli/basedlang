@@ -1,6 +1,6 @@
 #include <utility>
 
-#include "ir/symbol_table.h"
+#include "frontend/symbol_table.h"
 
 namespace benson::ir
 {

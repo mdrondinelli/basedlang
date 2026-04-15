@@ -1,11 +1,11 @@
-#ifndef BASEDHLIR_OPERATOR_FUNCTORS_H
-#define BASEDHLIR_OPERATOR_FUNCTORS_H
+#ifndef BASED_FRONTEND_OPERATOR_FUNCTORS_H
+#define BASED_FRONTEND_OPERATOR_FUNCTORS_H
 
 #include <cassert>
 #include <stdexcept>
 #include <variant>
 
-#include "ir/compile.h"
+#include "frontend/compile.h"
 #include "primitive_type_traits.h"
 
 namespace benson::ir

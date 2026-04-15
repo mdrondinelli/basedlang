@@ -1,15 +1,15 @@
-#ifndef BASEDHLIR_SYMBOL_TABLE_H
-#define BASEDHLIR_SYMBOL_TABLE_H
+#ifndef BASED_FRONTEND_SYMBOL_TABLE_H
+#define BASED_FRONTEND_SYMBOL_TABLE_H
 
 #include <memory>
 #include <unordered_map>
 #include <variant>
 #include <vector>
 
-#include "constant_value.h"
-#include "hlir.h"
-#include "spelling/spelling.h"
-#include "type.h"
+#include <ir/constant_value.h>
+#include <ir/hlir.h>
+#include <ir/type.h>
+#include <spelling/spelling.h>
 
 namespace benson::ir
 {

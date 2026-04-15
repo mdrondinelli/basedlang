@@ -1,8 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <string_view>
 
+#include "frontend/symbol_table.h"
 #include "ir/constant_value.h"
-#include "ir/symbol_table.h"
+#include "ir/type.h"
 #include "spelling/spelling.h"
 
 TEST_CASE("Symbol_table - declare and lookup in global scope")

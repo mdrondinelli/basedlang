@@ -1,5 +1,5 @@
-#ifndef BASEDHLIR_COMPILE_H
-#define BASEDHLIR_COMPILE_H
+#ifndef BASED_FRONTEND_COMPILE_H
+#define BASED_FRONTEND_COMPILE_H
 
 #include <cstdint>
 #include <limits>
@@ -14,14 +14,14 @@
 #include <ast/ast.h>
 #include <ast/operator.h>
 #include <ast/source_span.h>
+#include <ir/constant_value.h>
+#include <ir/hlir.h>
+#include <ir/type.h>
 #include <lexing/source_span.h>
 #include <spelling/spelling.h>
 
-#include "constant_value.h"
-#include "hlir.h"
 #include "operator_overload.h"
 #include "symbol_table.h"
-#include "type.h"
 
 namespace benson::ir
 {

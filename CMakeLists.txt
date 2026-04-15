@@ -38,19 +38,24 @@ target_include_directories(parsing PUBLIC code/parsing/include)
 target_link_libraries(parsing PUBLIC ast)
 
 add_library(ir
-  code/ir/src/compile.cpp
   code/ir/src/interpret.cpp
-  code/ir/src/symbol_table.cpp
   code/ir/src/type.cpp
 )
 target_include_directories(ir PUBLIC code/ir/include)
-target_link_libraries(ir PUBLIC ast spelling)
+target_link_libraries(ir PUBLIC spelling)
+
+add_library(frontend
+  code/frontend/src/compile.cpp
+  code/frontend/src/symbol_table.cpp
+)
+target_include_directories(frontend PUBLIC code/frontend/include)
+target_link_libraries(frontend PUBLIC ir ast spelling)
 
 add_library(bensoncli
   code/benson/run.cpp
 )
 target_include_directories(bensoncli PUBLIC code/benson)
-target_link_libraries(bensoncli PUBLIC ir parsing)
+target_link_libraries(bensoncli PUBLIC frontend parsing)
 
 add_executable(benson
   code/benson/main.cpp
@@ -77,12 +82,16 @@ target_link_libraries(parsing-tests PRIVATE parsing Catch2::Catch2WithMain)
 target_compile_definitions(parsing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(ir-tests
-  code/ir/test/symbol_table_test.cpp
   code/ir/test/type_test.cpp
-  code/ir/test/compile_test.cpp
 )
-target_link_libraries(ir-tests PRIVATE ir parsing Catch2::Catch2WithMain)
-target_compile_definitions(ir-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+target_link_libraries(ir-tests PRIVATE ir Catch2::Catch2WithMain)
+
+add_executable(frontend-tests
+  code/frontend/test/compile_test.cpp
+  code/frontend/test/symbol_table_test.cpp
+)
+target_link_libraries(frontend-tests PRIVATE frontend parsing Catch2::Catch2WithMain)
+target_compile_definitions(frontend-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(benson-tests
   code/benson/test/run_test.cpp

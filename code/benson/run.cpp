@@ -8,7 +8,7 @@
 #include <variant>
 #include <vector>
 
-#include <ir/compile.h>
+#include <frontend/compile.h>
 #include <ir/interpret.h>
 #include <ir/type.h>
 #include <lexing/istream_binary_stream.h>

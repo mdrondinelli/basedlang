@@ -1,6 +1,5 @@
 # TODO
 
-* Split up IR data model from compiler frontend.
 * Make lexer actually handle the 32-bit unicode codepoints the character stream
   already emits
 * Split up HLIR compiler tests

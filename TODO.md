@@ -11,5 +11,3 @@
   4. Replace/remove HLIR interpreter
 * Design/Implement alloca instruction for heap allocation (depends on bytecode interpreter)
 * Implement mutability for local `let` bindings (depends on alloca)
-* More ergonomic function declaration (e.g., `fn ident(x: Int32): Int32 => x`)
-  * In addition to current syntax. This could also support recursion by name.

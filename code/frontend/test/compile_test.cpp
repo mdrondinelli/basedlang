@@ -15,7 +15,7 @@
 
 #include "parsing/parser.h"
 
-#include "ir/compile.h"
+#include "frontend/compile.h"
 #include "ir/interpret.h"
 #include "ir/type.h"
 #include "spelling/spelling.h"
@@ -48,7 +48,7 @@ struct Compile_fixture
 {
   benson::Spelling_table spellings;
   benson::ir::Type_pool types;
-  benson::ir::Compilation_context compiler;
+  benson::Compilation_context compiler;
 
   explicit Compile_fixture()
       : spellings{}, compiler{&types, &spellings}
@@ -95,7 +95,7 @@ T evaluate_constant_as(Compile_fixture &fixture, std::string_view source)
 
 TEST_CASE("validate_int_literal")
 {
-  auto const value = benson::ir::validate_int_literal(
+  auto const value = benson::validate_int_literal(
     "42",
     std::numeric_limits<std::uint64_t>::max()
   );
@@ -106,7 +106,7 @@ TEST_CASE("validate_int_literal")
 TEST_CASE("validate_int_literal - uint64 overflow")
 {
   CHECK_FALSE(
-    benson::ir::validate_int_literal(
+    benson::validate_int_literal(
       "18446744073709551616",
       std::numeric_limits<std::uint64_t>::max()
     )
@@ -164,7 +164,7 @@ TEST_CASE("compile_int_literal - i8 above max throws")
   auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
     evaluate_constant(fixture, "128i8"),
-    benson::ir::Compilation_error
+    benson::Compilation_error
   );
 }
 
@@ -285,7 +285,7 @@ TEST_CASE("compile_type_expression - sized array rejects zero size")
   auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
     compile_type(fixture, "[0]Int32"),
-    benson::ir::Compilation_error
+    benson::Compilation_error
   );
 }
 
@@ -294,7 +294,7 @@ TEST_CASE("compile_type_expression - sized array rejects negative size")
   auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
     compile_type(fixture, "[-1]Int32"),
-    benson::ir::Compilation_error
+    benson::Compilation_error
   );
 }
 
@@ -303,7 +303,7 @@ TEST_CASE("compile_type_expression - sized array rejects non-integer size")
   auto fixture = Compile_fixture{};
   CHECK_THROWS_AS(
     compile_type(fixture, "[1 < 2]Int32"),
-    benson::ir::Compilation_error
+    benson::Compilation_error
   );
 }
 
@@ -323,7 +323,7 @@ compile_program(std::string source)
   auto parse_fixture = Parse_fixture{std::move(source), &spellings};
   auto const ast = parse_fixture.parser.parse_translation_unit();
   auto types = benson::ir::Type_pool{};
-  auto tu = benson::ir::compile(ast, &spellings, &types);
+  auto tu = benson::compile(ast, &spellings, &types);
   return {std::move(types), std::move(tu)};
 }
 
@@ -528,7 +528,7 @@ TEST_CASE("compile - return type mismatch")
 {
   CHECK_THROWS_AS(
     compile_program("let f = fn(): Int32 => { return true; };"),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -540,7 +540,7 @@ TEST_CASE("compile - branch type mismatch")
     compile_program(
       "let f = fn(b: Bool): Int32 => { return if b { 1 } else { b }; };"
     ),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -551,7 +551,7 @@ TEST_CASE("compile - else-if branch type mismatch")
       "let f = fn(b: Bool): Int32 => "
       "{ return if b { 1 } else if b { b } else { 2 }; };"
     ),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -562,7 +562,7 @@ TEST_CASE("compile - wrong argument count")
       "let f = fn(x: Int32): Int32 => { return x; };"
       "let g = fn(): Int32 => { return f(1, 2); };"
     ),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -573,7 +573,7 @@ TEST_CASE("compile - non-bool if condition")
       "let f = fn(n: Int32): Int32 =>"
       "{ return if n { 1 } else { 0 }; };"
     ),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -584,7 +584,7 @@ TEST_CASE("compile - wrong argument type")
       "let f = fn(x: Int32): Int32 => { return x; };"
       "let g = fn(): Int32 => { return f(true); };"
     ),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -592,7 +592,7 @@ TEST_CASE("compile - calling non-callable")
 {
   CHECK_THROWS_AS(
     compile_program("let f = fn(): Int32 => { return 3(); };"),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -600,7 +600,7 @@ TEST_CASE("compile - undefined identifier")
 {
   CHECK_THROWS_AS(
     compile_program("let f = fn(): Int32 => { return x; };"),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -608,7 +608,7 @@ TEST_CASE("compile - top-level mutable binding")
 {
   CHECK_THROWS_AS(
     compile_program("let mut x = 1;"),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -616,7 +616,7 @@ TEST_CASE("compile - positive integer literal above int32 max")
 {
   CHECK_THROWS_AS(
     compile_program("let f = fn(): Int32 => { return 2147483648; };"),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -624,7 +624,7 @@ TEST_CASE("compile - unary minus integer literal below int32 min")
 {
   CHECK_THROWS_AS(
     compile_program("let f = fn(): Int32 => { return -2147483649; };"),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -636,7 +636,7 @@ TEST_CASE("compile - top-level fuel exhaustion")
       "{ return if x < 1 { 0 } else { recurse(x - 1) + recurse(x - 1) }; };"
       "let y = f(30);"
     ),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 
@@ -840,7 +840,7 @@ TEST_CASE("compile - return type mismatch Float32 vs Float64")
 {
   CHECK_THROWS_AS(
     compile_program("let f = fn(): Float32 => { return 1.0; };"),
-    benson::ir::Compilation_failure
+    benson::Compilation_failure
   );
 }
 

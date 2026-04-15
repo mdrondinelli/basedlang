@@ -1,13 +1,15 @@
-#ifndef BASEDHLIR_PRIMITIVE_TYPE_TRAITS_H
-#define BASEDHLIR_PRIMITIVE_TYPE_TRAITS_H
+#ifndef BASED_FRONTEND_PRIMITIVE_TYPE_TRAITS_H
+#define BASED_FRONTEND_PRIMITIVE_TYPE_TRAITS_H
 
 #include <cstdint>
 #include <string_view>
 
-#include "ir/type.h"
+#include <ir/type.h>
 
-namespace benson::ir
+namespace benson
 {
+
+  using namespace ir;
 
   template <typename T>
   struct Primitive_type_traits;
@@ -89,6 +91,6 @@ namespace benson::ir
     }
   };
 
-} // namespace benson::ir
+} // namespace benson
 
 #endif

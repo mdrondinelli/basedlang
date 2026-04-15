@@ -1,13 +1,14 @@
 # Architecture and pipeline overview
 
-bensonlang currently has six main modules:
+bensonlang currently has seven main modules:
 
 1. `lexing`
 2. `spelling`
 3. `ast`
 4. `parsing`
 5. `ir`
-6. `benson`
+6. `frontend`
+7. `benson`
 
 The pipeline is simple:
 
@@ -15,8 +16,8 @@ The pipeline is simple:
 2. characters are lexed into `Lexeme` values
 3. preserved variable spellings can be interned into `Spelling_table` storage
 4. lexemes are parsed into an AST (defined by `ast`, produced by `parsing`)
-5. the AST is compiled into HLIR with name resolution, type evaluation, diagnostics, and constant evaluation
-6. the `benson` executable can currently interpret a chosen HLIR function
+5. the AST is compiled by `frontend` into HLIR (the `ir` data model) with name resolution, type evaluation, diagnostics, and constant evaluation
+6. the `benson` executable can currently interpret a chosen HLIR function using the `ir` interpreter
 
 ## Module boundaries
 
@@ -40,14 +41,26 @@ Owns syntax: consuming lexemes and constructing the `ast` data model. Owns prece
 
 ### `ir`
 
-Owns semantics:
+Owns the HLIR data model and its interpreter:
 
-- symbol resolution
-- type identity
-- compile-time values
-- diagnostics
-- lowering to HLIR
+- type identity (`Type`, `Type_pool`)
+- compile-time values (`Constant_value`)
+- executable HLIR (`Register`, `Operand`, `Instruction`, `Terminator`, `Basic_block`, `Function`, `Translation_unit`)
 - HLIR interpretation
+
+The `ir` library does not depend on `ast`. Any module that only needs to hold or execute HLIR can link it in isolation.
+
+### `frontend`
+
+Owns AST→IR lowering:
+
+- name resolution (`Symbol_table`)
+- type evaluation
+- operator overload resolution
+- diagnostics
+- emission of HLIR (via `Compilation_context`, `compile`)
+
+Depends on both `ast` and `ir`.
 
 ### `benson`
 

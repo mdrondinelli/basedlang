@@ -1,30 +1,30 @@
-#ifndef BASEDHLIR_SYMBOL_TABLE_H
-#define BASEDHLIR_SYMBOL_TABLE_H
+#ifndef BASED_FRONTEND_SYMBOL_TABLE_H
+#define BASED_FRONTEND_SYMBOL_TABLE_H
 
 #include <memory>
 #include <unordered_map>
 #include <variant>
 #include <vector>
 
-#include "constant_value.h"
-#include "hlir.h"
-#include "spelling/spelling.h"
-#include "type.h"
+#include <ir/constant_value.h>
+#include <ir/hlir.h>
+#include <ir/type.h>
+#include <spelling/spelling.h>
 
-namespace benson::ir
+namespace benson
 {
 
   struct Object_binding
   {
-    Type *type;
+    ir::Type *type;
     bool is_mutable;
-    Register reg;
+    ir::Register reg;
   };
 
   struct Symbol
   {
     Spelling name;
-    std::variant<Object_binding, Constant_value> data;
+    std::variant<Object_binding, ir::Constant_value> data;
   };
 
   class Symbol_table
@@ -32,12 +32,12 @@ namespace benson::ir
   public:
     Symbol *declare_object(
       Spelling name,
-      Type *type,
+      ir::Type *type,
       bool is_mutable,
-      Register reg = {}
+      ir::Register reg = {}
     );
 
-    Symbol *declare_value(Spelling name, Constant_value const &value);
+    Symbol *declare_value(Spelling name, ir::Constant_value const &value);
 
     Symbol *lookup(Spelling name) const;
 
@@ -57,6 +57,6 @@ namespace benson::ir
     std::vector<Scope> _scopes;
   };
 
-} // namespace benson::ir
+} // namespace benson
 
 #endif

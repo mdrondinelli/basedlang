@@ -2,90 +2,116 @@
 
 This page is for maintainers who need to review changes quickly without re-deriving the whole compiler.
 
-## Review order
+## What a reviewer is trying to establish
+
+A review should answer these questions:
+
+1. Does the changed code live in the correct layer?
+2. Does the implementation preserve that layer's invariants?
+3. Are cross-layer effects explicit and justified?
+4. Do tests exist at the abstraction level that actually changed?
+5. Does the wiki still match how a maintainer should reason about the system?
+
+## Review sequence
 
 Use this order for most PRs:
 
-1. Identify which module owns the behavior being changed.
-2. Open the matching module page and recall its invariants.
-3. Check whether tests exist at the same layer.
-4. Check whether the wiki should have changed.
+1. Identify the owning layer.
+2. Read the matching module page before judging implementation details.
+3. Check whether the change stayed inside that layer or crossed boundaries.
+4. Check whether tests match the changed abstraction.
+5. Check whether the wiki should have changed in the same PR.
 
-## Which page to open
+## Find the owning layer
 
-- Lexer changes: [`lexing`](./lexing.md)
-- AST changes: [`ast`](./ast.md)
-- Parser changes: [`parsing`](./parsing.md)
-- Semantic, lowering, or interpreter changes: [`ir`](./ir.md)
-- CLI wiring changes: [`benson`](./benson.md)
-- Cross-cutting changes: [Architecture and pipeline overview](./overview.md)
+Use this map first:
 
-## Module-specific review heuristics
+- tokenization and token lookahead: [`lexing`](./lexing.md)
+- AST node shapes and source spans over AST: [`ast`](./ast.md)
+- syntax consumption and AST construction: [`parsing`](./parsing.md)
+- semantic lowering, diagnostics, type evaluation, and symbol resolution: [`frontend`](./frontend.md)
+- HLIR data model and interpretation: [`ir`](./ir.md)
+- executable orchestration and CLI behavior: [`benson`](./benson.md)
+- cross-cutting or unclear ownership: [Architecture and pipeline overview](./overview.md)
 
-### `lexing`
+If ownership is unclear after this step, treat that as a review concern rather
+than reviewing the change as though the boundary does not matter.
 
-Look for:
+## Check the changed abstraction
 
-- token boundary correctness
-- keyword and operator recognition consistency
-- source-location correctness
-- lookahead/buffering correctness
+Open the module page that owns the change and review against that page's
+concepts and invariants.
 
-### `ast`
+Do not start from line-by-line implementation details. First establish what the
+module is supposed to own, then ask whether the code matches that model.
 
-Look for:
+When the PR changes behavior in one layer but the explanation depends on
+another, confirm that the dependency direction is still sensible.
 
-- unnecessary pointer indirections
-- implementation of `span_of` for any new AST node
+## Check cross-layer fallout
 
+Cross-layer changes are higher-risk than local ones.
 
-### `parsing`
-
-Look for:
-
-- parser correctness
-- precedence and associativity consistency
-- edge cases which could parse in an unexpected way
-
-### `ir`
+Ask for an explicit explanation when a PR changes multiple layers. A good PR
+should make it clear why that was necessary instead of forcing the reviewer to
+infer it.
 
 Look for:
 
-- identifier resolution correctness
-- type correctness
-- mutability correctness
-- constant-evaluation behavior
-- correct HLIR emission
-- diagnostic quality
-- interpreter consistency if executable semantics changed
+- the minimal set of affected layers
+- a clear ownership reason for each changed layer
+- tests at each affected abstraction where behavior changed
+- no new dependency that collapses an intended module boundary
 
-### `benson`
+## Check tests
 
-Look for:
+Tests should follow the changed abstraction, not just the easiest harness.
 
-- thin orchestration only
-- correct pipeline wiring
-- argument parsing consistent with current executable expectations
-- no compiler logic creeping into the executable
+Use this rule of thumb:
 
-## Key invariants to keep in your head
+- lexer behavior change: lexer tests
+- parser behavior change: parser tests
+- semantic or lowering change: frontend or IR-facing tests
+- executable wiring change: CLI-facing tests
 
-- the interpreter may assume HLIR is valid except for explicit safety mechanisms like fuel exhaustion
+Be skeptical of PRs that only add happy-path tests or only test a downstream
+layer when the real behavior change happened upstream.
 
-## What to ask for in a PR
+## Check docs and wiki
 
-- tests at the changed abstraction layer
-- module-page updates when the key abstraction or algorithm changed
-- a short explanation when multiple layers changed
-- clear justification for any new cross-layer dependency
+The wiki should change in the same PR when the change affects how a maintainer
+should understand, review, or extend the system.
 
-## Wiki expectation
+That includes:
 
-Every PR should update the wiki when it changes any of the following:
+- a new major abstraction
+- a changed responsibility boundary between modules
+- a changed invariant
+- a changed contributor workflow
+- a changed reviewer expectation
+- a language feature that changes implementation mental models
 
-- the architectural split between modules
-- review heuristics
-- contributor workflow
-- maintainer expectations around invariants
+This usually does not include:
 
-If a PR changes how a reviewer should reason about correctness, it is not fully documented until the wiki reflects that change.
+- mechanical refactors that do not change responsibilities
+- local renames that do not change concepts
+- test-only changes with no change in maintainer understanding
+
+Document concepts, not filenames, and keep the navigation obvious enough that a
+later reviewer can jump directly to the right page.
+
+## What should block approval
+
+Escalate or block when:
+
+- the owning layer is unclear
+- the implementation changes multiple layers without a clear reason
+- tests do not match the changed abstraction
+- a new cross-layer dependency is not justified
+- the wiki is stale relative to the reviewer mental model required by the PR
+- the change silently moves responsibility from one module to another
+
+## Supporting page
+
+Use [Antipatterns for reviewers](./antipatterns.md) as a supporting catalog of
+common review smells, not as the main review workflow.

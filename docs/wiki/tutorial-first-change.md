@@ -115,7 +115,7 @@ Run the relevant test binary directly:
 ./build/ir-tests
 ```
 
-Before committing, format the changed code. See [Formatting](./formatting.md).
+Before committing, format the changed code. See [Conventions](./conventions.md).
 
 ## Step 6: Update the wiki in the same PR
 
@@ -133,6 +133,7 @@ Update it when your change affects:
 Before opening the PR, confirm:
 
 - the change was done on a dedicated branch, not `main`
+- [Conventions](./conventions.md) were reviewed before drafting the PR
 - the changed module is the correct owner
 - tests moved with behavior
 - docs moved with reviewer mental model

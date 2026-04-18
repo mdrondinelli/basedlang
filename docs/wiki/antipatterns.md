@@ -23,6 +23,14 @@ When you add a new antipattern:
 
 **Better implementation:** Use `assert(condition)` to express internal invariants. It clearly communicates "this cannot be false here" and fires in debug builds when violated.
 
+## Using `auto const*` or `auto*` for local pointer declarations
+
+**Smell:** A local pointer declaration is written as `auto const* x = ...`, `auto* x = ...`, or similar.
+
+**Why it is a problem here:** This is a project convention issue, not a semantic bug by itself. In this codebase we want `auto` to absorb the pointer type so declarations read consistently and constness is easier to scan.
+
+**Better implementation:** Use `auto const x = ...` for const-pointer results and `auto x = ...` for mutable-pointer results. See [Conventions](./conventions.md).
+
 ## Tests that only cover the happy path
 
 **Smell:** A new feature lands with tests that only check the success case.
@@ -37,4 +45,4 @@ When you add a new antipattern:
 
 **Why it is dangerous:** The next reviewer derives a stale mental model from the wiki and misses the significance of the change.
 
-**Better implementation:** See [Wiki maintenance](./wiki-maintenance.md). If the change affects how a reviewer should reason about correctness, the PR is not fully documented until the wiki reflects it.
+**Better implementation:** See [PR review guide](./pr-review-guide.md). If the change affects how a reviewer should reason about correctness, the PR is not fully documented until the wiki reflects it.

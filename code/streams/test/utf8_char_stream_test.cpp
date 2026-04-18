@@ -71,6 +71,20 @@ TEST_CASE("Utf8_char_stream - valid sequences")
       }
     );
   }
+  SECTION("boundary scalar values")
+  {
+    with_stream(
+      "\xC2\x80\xE0\xA0\x80\xF0\x90\x80\x80\xF4\x8F\xBF\xBF",
+      [](auto &chars)
+      {
+        REQUIRE(chars.read_character() == 0x0080u);
+        REQUIRE(chars.read_character() == 0x0800u);
+        REQUIRE(chars.read_character() == 0x10000u);
+        REQUIRE(chars.read_character() == 0x10FFFFu);
+        REQUIRE(!chars.read_character());
+      }
+    );
+  }
   SECTION("mixed widths")
   {
     with_stream(
@@ -116,6 +130,10 @@ TEST_CASE("Utf8_char_stream - invalid sequences throw Decode_error")
   {
     throws("\xC3");
   }
+  SECTION("2-byte: overlong encoding")
+  {
+    throws("\xC0\x80");
+  }
   SECTION("3-byte: non-continuation second byte")
   {
     throws("\xE4\x41");
@@ -132,6 +150,14 @@ TEST_CASE("Utf8_char_stream - invalid sequences throw Decode_error")
   {
     throws("\xE4\xB8");
   }
+  SECTION("3-byte: overlong encoding")
+  {
+    throws("\xE0\x80\x80");
+  }
+  SECTION("3-byte: surrogate codepoint")
+  {
+    throws("\xED\xA0\x80");
+  }
   SECTION("4-byte: non-continuation fourth byte")
   {
     throws("\xF0\x9F\x98\x41");
@@ -139,5 +165,13 @@ TEST_CASE("Utf8_char_stream - invalid sequences throw Decode_error")
   SECTION("4-byte: truncated after third byte")
   {
     throws("\xF0\x9F\x98");
+  }
+  SECTION("4-byte: overlong encoding")
+  {
+    throws("\xF0\x80\x80\x80");
+  }
+  SECTION("4-byte: above Unicode range")
+  {
+    throws("\xF4\x90\x80\x80");
   }
 }

@@ -19,7 +19,9 @@ namespace benson
     /// Reads up to buffer.size() bytes into buffer and returns the number of
     /// bytes read. Implementations may return short reads, but when buffer is
     /// non-empty a short read must be strictly positive; a return of 0 then
-    /// means EOF. When buffer is empty, the call is a no-op and returns 0.
+    /// means EOF. When buffer is empty, the call is a no-op and returns 0. If
+    /// an implementation throws after writing bytes into buffer, those bytes
+    /// are lost and the stream position is undefined.
     virtual std::ptrdiff_t read_bytes(std::span<uint8_t> buffer) = 0;
 
     /// Returns the next byte, or std::nullopt at EOF.

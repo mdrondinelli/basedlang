@@ -272,7 +272,7 @@ namespace benson::ir
     {
       registers[*entry.parameters[i]] = arguments[i];
     }
-    auto const *block = &entry;
+    auto block = &entry;
     auto return_value = Constant_value{Void_value{}};
     for (;;)
     {

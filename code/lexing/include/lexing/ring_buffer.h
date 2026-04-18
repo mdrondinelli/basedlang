@@ -35,7 +35,7 @@ namespace benson
       {
         auto const new_capacity =
           _capacity == 0 ? std::size_t{4} : _capacity * 2;
-        auto * const new_buffer =
+        auto const new_buffer =
           static_cast<T *>(operator new(new_capacity * sizeof(T)));
         for (auto i = std::size_t{0}; i < _size; ++i)
         {

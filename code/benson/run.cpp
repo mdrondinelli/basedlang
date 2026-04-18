@@ -93,7 +93,7 @@ namespace benson
           constant_args.push_back(false);
           continue;
         }
-        auto const *target_type =
+        auto const target_type =
           (i < param_types.size()) ? param_types[i] : nullptr;
         if (target_type &&
             std::holds_alternative<ir::Float32_type>(target_type->data))

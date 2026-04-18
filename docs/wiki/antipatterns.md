@@ -37,4 +37,4 @@ When you add a new antipattern:
 
 **Why it is dangerous:** The next reviewer derives a stale mental model from the wiki and misses the significance of the change.
 
-**Better implementation:** See [Wiki maintenance](./wiki-maintenance.md). If the change affects how a reviewer should reason about correctness, the PR is not fully documented until the wiki reflects it.
+**Better implementation:** See [PR review guide](./pr-review-guide.md). If the change affects how a reviewer should reason about correctness, the PR is not fully documented until the wiki reflects it.

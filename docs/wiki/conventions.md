@@ -1,7 +1,6 @@
 # Conventions
 
 This page collects the conventions that apply across all C++ code in the project.
-Formatting is handled separately — see [Formatting](./formatting.md).
 
 ## Naming
 
@@ -107,3 +106,13 @@ within the same library:
 
 - No blank lines inside function bodies.
 - Blank lines between function and method declarations in headers.
+
+## Formatting
+
+Format code before committing.
+
+This repository uses `clang-format` with the repo's [`.clang-format`](../../.clang-format) file.
+
+Use `clang-format` version 21 or newer.
+
+Format the files you changed before creating the commit that will go up for review.

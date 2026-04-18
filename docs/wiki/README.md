@@ -1,34 +1,29 @@
 # bensonlang Wiki
 
 This wiki is the maintainer-facing map of the project.
-
-It is written for two use cases:
-
-1. Someone needs to make a change and wants the shortest path to the right abstraction.
-2. Someone needs to review a PR and wants to understand whether the change is correct at the architectural level.
-
-The pages below are organized to support fast navigation rather than linear reading.
+Use it to find the right abstraction, workflow, or review context quickly.
+It is organized for jumping, not for linear reading.
 
 ## Start here
 
-- [Tutorial: first change](./tutorial-first-change.md)
-- [Language reference](./language.md)
 - [Architecture and pipeline overview](./overview.md)
-- [`lexing`](./lexing.md)
-- [`spelling`](./spelling.md)
-- [`ast`](./ast.md)
-- [`parsing`](./parsing.md)
-- [`ir`](./ir.md)
-- [`frontend`](./frontend.md)
-- [`benson`](./benson.md)
 - [Project structure](./project-structure.md)
-- [Conventions](./conventions.md)
-- [Formatting](./formatting.md)
-- [PR review guide](./pr-review-guide.md)
-- [Antipatterns for reviewers](./antipatterns.md)
-- [Wiki maintenance](./wiki-maintenance.md)
+- [Tutorial: first change](./tutorial-first-change.md)
 
-## Fast paths
+## Common tasks
+
+### I need to make a change
+
+Read these first:
+
+- [Tutorial: first change](./tutorial-first-change.md)
+- [Conventions](./conventions.md)
+- [PR review guide](./pr-review-guide.md)
+- [Architecture and pipeline overview](./overview.md)
+- [Project structure](./project-structure.md)
+
+Review [Conventions](./conventions.md) before drafting or opening the PR, even
+for small changes. Then jump to the module page for the area you are editing.
 
 ### I need to review a PR
 
@@ -36,29 +31,41 @@ Read these first:
 
 - [PR review guide](./pr-review-guide.md)
 - [Architecture and pipeline overview](./overview.md)
-- [`ir`](./ir.md)
+- the module page that owns the changed behavior
 
-Then jump to the module page for the code being changed.
+Use the review guide as the main workflow page. Use module pages for the
+invariants and concepts that the PR is changing.
 
-### I need to draft a PR
+### I need to find the owning module
 
-Read these first:
+Start with [Project structure](./project-structure.md), then confirm the layer
+boundary in [Architecture and pipeline overview](./overview.md).
 
-- [Tutorial: first change](./tutorial-first-change.md)
+### I need coding and process conventions
+
+Read [Conventions](./conventions.md).
+
+## Reference
+
+### Architecture and language
+
 - [Architecture and pipeline overview](./overview.md)
 - [Project structure](./project-structure.md)
-- [Formatting](./formatting.md)
+- [Language reference](./language.md)
+
+### Modules
+
+- [`lexing`](./lexing.md)
+- [`spelling`](./spelling.md)
+- [`ast`](./ast.md)
+- [`parsing`](./parsing.md)
+- [`ir`](./ir.md)
+- [`frontend`](./frontend.md)
+- [`benson`](./benson.md)
+
+### Process
+
+- [Tutorial: first change](./tutorial-first-change.md)
+- [PR review guide](./pr-review-guide.md)
 - [Conventions](./conventions.md)
-
-Then jump to the module page for the area you are editing.
-
-### I need to understand how a concept flows end to end
-
-Use this sequence:
-
-1. [Architecture and pipeline overview](./overview.md)
-2. [`lexing`](./lexing.md), [`parsing`](./parsing.md), [`ir`](./ir.md), or [`benson`](./benson.md)
-
-## Proposals
-
-- [Compiler string design proposal](./string-design.md)
+- [Antipatterns for reviewers](./antipatterns.md)

@@ -7,7 +7,9 @@
 
 #include "streams/binary_stream.h"
 #include "streams/char_stream.h"
+#include "streams/char_stream_reader.h"
 #include "streams/istream_binary_stream.h"
+#include "streams/lookahead_char_stream_reader.h"
 #include "streams/utf8_char_stream.h"
 
 TEST_CASE("Istream_binary_stream - read_bytes")
@@ -18,6 +20,20 @@ TEST_CASE("Istream_binary_stream - read_bytes")
     auto binary = benson::Istream_binary_stream{&ss};
     auto buffer = std::array<uint8_t, 4>{};
     REQUIRE(binary.read_bytes(buffer) == 0);
+  }
+  SECTION("empty buffer is no-op")
+  {
+    auto ss = std::istringstream{"hello"};
+    auto binary = benson::Istream_binary_stream{&ss};
+    auto empty = std::span<uint8_t>{};
+    auto buffer = std::array<uint8_t, 5>{};
+    REQUIRE(binary.read_bytes(empty) == 0);
+    REQUIRE(binary.read_bytes(buffer) == 5);
+    CHECK(buffer[0] == 'h');
+    CHECK(buffer[1] == 'e');
+    CHECK(buffer[2] == 'l');
+    CHECK(buffer[3] == 'l');
+    CHECK(buffer[4] == 'o');
   }
   SECTION("fills full buffer when enough bytes exist")
   {
@@ -117,6 +133,21 @@ TEST_CASE("Utf8_char_stream - read_characters")
       {
         auto buffer = std::array<uint32_t, 4>{};
         REQUIRE(chars.read_characters(buffer) == 0);
+      }
+    );
+  }
+  SECTION("empty buffer is no-op")
+  {
+    with_stream(
+      "A\xC3\xA9",
+      [](auto &chars)
+      {
+        auto empty = std::span<uint32_t>{};
+        auto buffer = std::array<uint32_t, 2>{};
+        REQUIRE(chars.read_characters(empty) == 0);
+        REQUIRE(chars.read_characters(buffer) == 2);
+        CHECK(buffer[0] == 'A');
+        CHECK(buffer[1] == 0x00E9u);
       }
     );
   }
@@ -228,6 +259,96 @@ TEST_CASE("Char_stream - read_character compatibility helper")
   REQUIRE(chars.read_character() == 0x4E2Du);
   REQUIRE(chars.read_character() == 0x1F600u);
   REQUIRE(!chars.read_character());
+}
+
+TEST_CASE("Char_stream_reader - sequential buffered reads")
+{
+  auto ss = std::istringstream{std::string(1100, 'a') + std::string(1100, 'b')};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto reader = benson::Char_stream_reader{&chars};
+  auto codepoints = std::vector<uint32_t>{};
+
+  for (;;)
+  {
+    auto const c = reader.read();
+    if (!c)
+    {
+      break;
+    }
+    codepoints.push_back(*c);
+  }
+
+  REQUIRE(codepoints.size() == 2200);
+  REQUIRE(
+    std::all_of(
+      codepoints.begin(),
+      codepoints.begin() + 1100,
+      [](uint32_t c)
+      {
+        return c == 'a';
+      }
+    )
+  );
+  REQUIRE(
+    std::all_of(
+      codepoints.begin() + 1100,
+      codepoints.end(),
+      [](uint32_t c)
+      {
+        return c == 'b';
+      }
+    )
+  );
+  REQUIRE(!reader.read());
+}
+
+TEST_CASE("Lookahead_char_stream_reader - peek and read")
+{
+  auto ss = std::istringstream{"abcdef"};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto reader = benson::Lookahead_char_stream_reader{&chars, 3};
+
+  REQUIRE(reader.peek(0) == 'a');
+  REQUIRE(reader.peek(1) == 'b');
+  REQUIRE(reader.peek(2) == 'c');
+  REQUIRE(reader.peek(3) == 'd');
+  REQUIRE(reader.peek(3) == 'd');
+  REQUIRE(reader.read() == 'a');
+  REQUIRE(reader.peek(0) == 'b');
+  REQUIRE(reader.read() == 'b');
+  REQUIRE(reader.read() == 'c');
+  REQUIRE(reader.peek(2) == 'f');
+  REQUIRE(reader.read() == 'd');
+  REQUIRE(reader.read() == 'e');
+  REQUIRE(reader.read() == 'f');
+  REQUIRE(!reader.peek());
+  REQUIRE(!reader.read());
+}
+
+TEST_CASE("Lookahead_char_stream_reader - wraparound")
+{
+  auto ss = std::istringstream{"abcdefghi"};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto reader = benson::Lookahead_char_stream_reader{&chars, 3};
+
+  REQUIRE(reader.peek(3) == 'd');
+  REQUIRE(reader.read() == 'a');
+  REQUIRE(reader.read() == 'b');
+  REQUIRE(reader.peek(3) == 'f');
+  REQUIRE(reader.read() == 'c');
+  REQUIRE(reader.peek(3) == 'g');
+  REQUIRE(reader.read() == 'd');
+  REQUIRE(reader.read() == 'e');
+  REQUIRE(reader.peek(3) == 'i');
+  REQUIRE(reader.read() == 'f');
+  REQUIRE(reader.read() == 'g');
+  REQUIRE(reader.peek(1) == 'i');
+  REQUIRE(reader.read() == 'h');
+  REQUIRE(reader.read() == 'i');
+  REQUIRE(!reader.peek());
 }
 
 TEST_CASE("Utf8_char_stream - valid sequences")

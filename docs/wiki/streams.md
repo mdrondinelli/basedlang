@@ -12,8 +12,10 @@ The public surface is centered on:
 - `Char_stream`
 - `Utf8_char_stream`
 - `Char_stream_reader`
+- `Lookahead_char_stream_reader`
 
-`lexing` consumes this module through `Char_stream` and `Char_stream_reader`.
+`lexing` consumes this module through `Char_stream` and
+`Lookahead_char_stream_reader`.
 
 ## Core abstractions
 
@@ -43,7 +45,11 @@ UTF-8 decoder from bytes to Unicode codepoints.
 
 ### `Char_stream_reader`
 
-Character-level buffered lookahead.
+Character-level buffered sequential reader.
+
+### `Lookahead_char_stream_reader`
+
+Finite character lookahead over a `Char_stream`.
 
 ## What to keep stable
 

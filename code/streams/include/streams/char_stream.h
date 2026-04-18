@@ -17,8 +17,11 @@ namespace benson
     virtual ~Char_stream() = default;
 
     /// Reads up to buffer.size() codepoints into buffer and returns the number
-    /// of codepoints read. Returns 0 at EOF. Implementations may return short
-    /// reads.
+    /// of codepoints read. Implementations may return short reads, but when
+    /// buffer is non-empty a short read must be strictly positive; a return of
+    /// 0 then means EOF. When buffer is empty, the call is a no-op and returns
+    /// 0. If an implementation throws after writing codepoints into buffer,
+    /// those codepoints are lost and the stream position is undefined.
     virtual std::ptrdiff_t read_characters(std::span<uint32_t> buffer) = 0;
 
     /// Returns the Unicode codepoint of the next character, or std::nullopt at

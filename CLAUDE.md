@@ -2,7 +2,7 @@
 
 ## Introduction
 
-See [`AGENTS.md`](./agents.md) for general instructions.
+Defer to [`AGENTS.md`](./agents.md) for general instructions.
 
 ## Commits
 

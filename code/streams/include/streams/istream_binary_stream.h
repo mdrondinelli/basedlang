@@ -1,9 +1,10 @@
 #ifndef BASEDSTREAMS_ISTREAM_BINARY_STREAM_H
 #define BASEDSTREAMS_ISTREAM_BINARY_STREAM_H
 
+#include <cstddef>
 #include <cstdint>
 #include <istream>
-#include <optional>
+#include <span>
 
 #include "streams/binary_stream.h"
 
@@ -18,14 +19,17 @@ namespace benson
     {
     }
 
-    std::optional<uint8_t> read_byte() override
+    std::size_t read_bytes(std::span<uint8_t> buffer) override
     {
-      auto const c = _stream->get();
-      if (c == std::istream::traits_type::eof())
+      if (buffer.empty())
       {
-        return std::nullopt;
+        return 0;
       }
-      return static_cast<uint8_t>(c);
+      _stream->read(
+        reinterpret_cast<char *>(buffer.data()),
+        static_cast<std::streamsize>(buffer.size())
+      );
+      return static_cast<std::size_t>(_stream->gcount());
     }
 
   private:

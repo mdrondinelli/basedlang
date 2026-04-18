@@ -25,7 +25,7 @@ namespace benson
       Source_location location;
     };
 
-    Lexeme_stream(Char_stream *stream, Spelling_table *spellings) noexcept;
+    Lexeme_stream(Char_stream *stream, Spelling_table *spellings);
 
     Lexeme lex();
 

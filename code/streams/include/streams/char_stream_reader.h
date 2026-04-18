@@ -1,9 +1,11 @@
 #ifndef BASEDSTREAMS_CHAR_STREAM_READER_H
 #define BASEDSTREAMS_CHAR_STREAM_READER_H
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -17,8 +19,9 @@ namespace benson
   class Char_stream_reader
   {
   public:
-    explicit Char_stream_reader(Char_stream *stream) noexcept
-        : _stream{stream}
+    explicit Char_stream_reader(Char_stream *stream)
+        : _stream{stream},
+          _scratch{std::make_unique<std::array<uint32_t, 1024>>()}
     {
     }
 
@@ -51,16 +54,18 @@ namespace benson
     {
       while (_buffer.size() < count)
       {
-        auto const c = _stream->read_character();
-        if (!c)
+        auto const filled = _stream->read_characters(*_scratch);
+        if (filled == 0)
         {
           return;
         }
-        _buffer.push_back(*c);
+        _buffer
+          .insert(_buffer.end(), _scratch->begin(), _scratch->begin() + filled);
       }
     }
 
     Char_stream *_stream;
+    std::unique_ptr<std::array<uint32_t, 1024>> _scratch;
     std::vector<uint32_t> _buffer;
   };
 

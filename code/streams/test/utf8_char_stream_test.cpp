@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "streams/binary_stream.h"
+#include "streams/char_stream.h"
 #include "streams/istream_binary_stream.h"
 #include "streams/utf8_char_stream.h"
 
@@ -97,6 +98,136 @@ TEST_CASE("Binary_stream - read_byte compatibility helper")
   REQUIRE(binary.read_byte() == 'z');
   REQUIRE(binary.read_byte() == '!');
   REQUIRE(!binary.read_byte());
+}
+
+TEST_CASE("Utf8_char_stream - read_characters")
+{
+  auto const with_stream = [](std::string const &bytes, auto &&fn)
+  {
+    auto ss = std::istringstream{bytes};
+    auto binary = benson::Istream_binary_stream{&ss};
+    auto chars = benson::Utf8_char_stream{&binary};
+    fn(chars);
+  };
+  SECTION("empty stream returns 0")
+  {
+    with_stream(
+      "",
+      [](auto &chars)
+      {
+        auto buffer = std::array<uint32_t, 4>{};
+        REQUIRE(chars.read_characters(buffer) == 0);
+      }
+    );
+  }
+  SECTION("fills full buffer when enough codepoints exist")
+  {
+    with_stream(
+      "A\xC3\xA9\xE4\xB8\xAD\xF0\x9F\x98\x80Z",
+      [](auto &chars)
+      {
+        auto buffer = std::array<uint32_t, 5>{};
+        REQUIRE(chars.read_characters(buffer) == 5);
+        CHECK(buffer[0] == 'A');
+        CHECK(buffer[1] == 0x00E9u);
+        CHECK(buffer[2] == 0x4E2Du);
+        CHECK(buffer[3] == 0x1F600u);
+        CHECK(buffer[4] == 'Z');
+      }
+    );
+  }
+  SECTION("short final read returns remaining codepoints")
+  {
+    with_stream(
+      "Hi!",
+      [](auto &chars)
+      {
+        auto buffer = std::array<uint32_t, 8>{};
+        REQUIRE(chars.read_characters(buffer) == 3);
+        CHECK(buffer[0] == 'H');
+        CHECK(buffer[1] == 'i');
+        CHECK(buffer[2] == '!');
+        REQUIRE(chars.read_characters(buffer) == 0);
+      }
+    );
+  }
+  SECTION("repeated reads reconstruct source")
+  {
+    with_stream(
+      "A\xC3\xA9\xE4\xB8\xAD\xF0\x9F\x98\x80Z",
+      [](auto &chars)
+      {
+        auto buffer = std::array<uint32_t, 2>{};
+        auto codepoints = std::vector<uint32_t>{};
+        for (;;)
+        {
+          auto const count = chars.read_characters(buffer);
+          if (count == 0)
+          {
+            break;
+          }
+          codepoints
+            .insert(codepoints.end(), buffer.begin(), buffer.begin() + count);
+        }
+        REQUIRE(
+          codepoints ==
+          std::vector<uint32_t>{'A', 0x00E9u, 0x4E2Du, 0x1F600u, 'Z'}
+        );
+      }
+    );
+  }
+  SECTION("invalid sequence mid-buffer throws Decode_error")
+  {
+    with_stream(
+      "A\xFF",
+      [](auto &chars)
+      {
+        auto buffer = std::array<uint32_t, 4>{};
+        REQUIRE_THROWS_AS(
+          chars.read_characters(buffer),
+          benson::Utf8_char_stream::Decode_error
+        );
+      }
+    );
+  }
+}
+
+TEST_CASE("Char_stream - read_character compatibility helper")
+{
+  class Chunked_char_stream: public benson::Char_stream
+  {
+  public:
+    std::ptrdiff_t read_characters(std::span<uint32_t> buffer) override
+    {
+      if (_offset == static_cast<std::ptrdiff_t>(_codepoints.size()) ||
+          buffer.empty())
+      {
+        return 0;
+      }
+      auto const count =
+        std::min(static_cast<std::ptrdiff_t>(buffer.size()), std::ptrdiff_t{2});
+      auto const available =
+        static_cast<std::ptrdiff_t>(_codepoints.size()) - _offset;
+      auto const actual = std::min(count, available);
+      for (auto i = std::ptrdiff_t{0}; i < actual; ++i)
+      {
+        buffer[i] = _codepoints[_offset + i];
+      }
+      _offset += actual;
+      return actual;
+    }
+
+  private:
+    std::array<uint32_t, 4> _codepoints{'w', 0x00E9u, 0x4E2Du, 0x1F600u};
+    std::ptrdiff_t _offset{};
+  };
+
+  auto chars = Chunked_char_stream{};
+  REQUIRE(chars.read_character() == 'w');
+  REQUIRE(chars.read_character() == 0x00E9u);
+  REQUIRE(chars.read_character() == 0x4E2Du);
+  REQUIRE(chars.read_character() == 0x1F600u);
+  REQUIRE(!chars.read_character());
 }
 
 TEST_CASE("Utf8_char_stream - valid sequences")

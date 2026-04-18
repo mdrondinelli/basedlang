@@ -5,10 +5,7 @@
 namespace benson
 {
 
-  Lexeme_stream::Lexeme_stream(
-    Char_stream *stream,
-    Spelling_table *spellings
-  ) noexcept
+  Lexeme_stream::Lexeme_stream(Char_stream *stream, Spelling_table *spellings)
       : _reader{stream},
         _spellings{spellings},
         _location{.line = 1, .column = 1}

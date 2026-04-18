@@ -67,6 +67,7 @@ Small source programs used as runnable examples and as useful behavioral anchors
 
 Tests live next to the libraries they validate. This is important because most changes should have a clear ownership boundary:
 
+- raw stream and UTF-8 behavior belongs with `streams` tests
 - lexical behavior belongs with lexer tests
 - syntax behavior belongs with parser tests
 - semantic and lowering behavior belongs with HLIR tests

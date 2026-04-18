@@ -23,10 +23,15 @@ namespace benson
       std::ptrdiff_t max_lookahead
     )
         : _reader{stream},
-          _buffer(static_cast<std::size_t>(max_lookahead + 1)),
+          _buffer([&]()
+          {
+            assert(max_lookahead >= 0);
+            return std::vector<uint32_t>(
+              static_cast<std::size_t>(max_lookahead + 1)
+            );
+          }()),
           _max_lookahead{max_lookahead}
     {
-      assert(max_lookahead >= 0);
     }
 
     std::optional<uint32_t> peek(std::ptrdiff_t offset = 0)

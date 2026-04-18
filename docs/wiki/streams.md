@@ -19,6 +19,7 @@ The public surface is centered on:
 ### `Binary_stream`
 
 Abstract source of raw bytes.
+Its core operation is caller-owned bulk reads into a provided buffer.
 
 ### `Istream_binary_stream`
 

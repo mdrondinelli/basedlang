@@ -53,10 +53,10 @@ static bool parses(std::string const &source)
 static benson::ast::Fn_expression const &
 top_level_fn(benson::ast::Statement const &statement)
 {
-  auto const *expr_stmt =
+  auto const expr_stmt =
     std::get_if<benson::ast::Expression_statement>(&statement.value);
   REQUIRE(expr_stmt != nullptr);
-  auto const *fn =
+  auto const fn =
     std::get_if<benson::ast::Fn_expression>(&expr_stmt->expression.value);
   REQUIRE(fn != nullptr);
   return *fn;

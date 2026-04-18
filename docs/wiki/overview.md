@@ -1,14 +1,15 @@
 # Architecture and pipeline overview
 
-bensonlang currently has seven main modules:
+bensonlang currently has eight main modules:
 
-1. `lexing`
-2. `spelling`
-3. `ast`
-4. `parsing`
-5. `ir`
-6. `frontend`
-7. `benson`
+1. `streams`
+2. `lexing`
+3. `spelling`
+4. `ast`
+5. `parsing`
+6. `ir`
+7. `frontend`
+8. `benson`
 
 The pipeline is simple:
 
@@ -23,7 +24,11 @@ The pipeline is simple:
 
 ### `lexing`
 
-Owns tokenization, source locations, and character/token lookahead.
+Owns tokenization, source locations, and token lookahead.
+
+### `streams`
+
+Owns raw byte/character input, UTF-8 decoding, and character lookahead.
 
 ### `spelling`
 

@@ -4,12 +4,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "lexing/istream_binary_stream.h"
 #include "lexing/lexeme.h"
 #include "lexing/lexeme_stream.h"
 #include "lexing/token.h"
-#include "lexing/utf8_char_stream.h"
 #include "spelling/spelling.h"
+#include "streams/istream_binary_stream.h"
+#include "streams/utf8_char_stream.h"
 
 namespace
 {
@@ -56,16 +56,14 @@ TEST_CASE("Lexeme_stream lexes first.benson")
     check_span(lexeme, line, column, line, end_column);
   };
   using enum benson::Token;
-  expect("let", kw_let, 1, 1, 3);
-  expect("main", identifier, 1, 5, 8);
-  expect("=", eq, 1, 10, 10);
-  expect("fn", kw_fn, 1, 12, 13);
-  expect("(", lparen, 1, 14, 14);
-  expect(")", rparen, 1, 15, 15);
-  expect(":", colon, 1, 16, 16);
-  expect("Int32", identifier, 1, 18, 22);
-  expect("=>", fat_arrow, 1, 24, 25);
-  expect("{", lbrace, 1, 27, 27);
+  expect("fn", kw_fn, 1, 1, 2);
+  expect("main", identifier, 1, 4, 7);
+  expect("(", lparen, 1, 8, 8);
+  expect(")", rparen, 1, 9, 9);
+  expect(":", colon, 1, 10, 10);
+  expect("Int32", identifier, 1, 12, 16);
+  expect("=>", fat_arrow, 1, 18, 19);
+  expect("{", lbrace, 1, 21, 21);
   expect("return", kw_return, 2, 3, 8);
   expect("0", int_literal, 2, 10, 10);
   expect(";", semicolon, 2, 11, 11);

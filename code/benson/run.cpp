@@ -11,12 +11,12 @@
 #include <frontend/compile.h>
 #include <ir/interpret.h>
 #include <ir/type.h>
-#include <lexing/istream_binary_stream.h>
 #include <lexing/lexeme_stream.h>
 #include <lexing/lexeme_stream_reader.h>
-#include <lexing/utf8_char_stream.h>
 #include <parsing/parser.h>
 #include <spelling/spelling.h>
+#include <streams/istream_binary_stream.h>
+#include <streams/utf8_char_stream.h>
 
 namespace benson
 {

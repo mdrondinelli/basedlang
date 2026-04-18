@@ -8,10 +8,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "lexing/istream_binary_stream.h"
 #include "lexing/lexeme_stream.h"
 #include "lexing/lexeme_stream_reader.h"
-#include "lexing/utf8_char_stream.h"
 
 #include "parsing/parser.h"
 
@@ -19,6 +17,8 @@
 #include "ir/interpret.h"
 #include "ir/type.h"
 #include "spelling/spelling.h"
+#include "streams/istream_binary_stream.h"
+#include "streams/utf8_char_stream.h"
 
 struct Parse_fixture
 {
@@ -68,7 +68,8 @@ evaluate_constant(Compile_fixture &fixture, std::string_view source)
   return fixture.compiler.evaluate_constant_expression(*expr);
 }
 
-benson::ir::Type *compile_type(Compile_fixture &fixture, std::string_view source)
+benson::ir::Type *
+compile_type(Compile_fixture &fixture, std::string_view source)
 {
   auto parse_fixture = Parse_fixture{std::string{source}, &fixture.spellings};
   auto const expr = parse_fixture.parser.parse_expression();
@@ -81,16 +82,14 @@ T evaluate_constant_as(Compile_fixture &fixture, std::string_view source)
   return std::get<T>(evaluate_constant(fixture, source));
 }
 
-#define CHECK_CONSTANT(source, expected)        \
-  do                                            \
-  {                                             \
-    auto fixture = Compile_fixture{};           \
-    CHECK(                                      \
-      evaluate_constant_as<decltype(expected)>( \
-        (fixture),                              \
-        (source)                                \
-      ) == (expected)                           \
-    );                                          \
+#define CHECK_CONSTANT(source, expected)                               \
+  do                                                                   \
+  {                                                                    \
+    auto fixture = Compile_fixture{};                                  \
+    CHECK(                                                             \
+      evaluate_constant_as<decltype(expected)>((fixture), (source)) == \
+      (expected)                                                       \
+    );                                                                 \
   } while (false)
 
 TEST_CASE("validate_int_literal")
@@ -283,10 +282,7 @@ TEST_CASE("compile_type_expression - sized array with constant expression size")
 TEST_CASE("compile_type_expression - sized array rejects zero size")
 {
   auto fixture = Compile_fixture{};
-  CHECK_THROWS_AS(
-    compile_type(fixture, "[0]Int32"),
-    benson::Compilation_error
-  );
+  CHECK_THROWS_AS(compile_type(fixture, "[0]Int32"), benson::Compilation_error);
 }
 
 TEST_CASE("compile_type_expression - sized array rejects negative size")
@@ -865,8 +861,7 @@ TEST_CASE("compile - bool operators")
 
 TEST_CASE("compile - named fn expression returning literal")
 {
-  auto const [types, tu] =
-    compile_program("fn f(): Int32 => { return 42; };");
+  auto const [types, tu] = compile_program("fn f(): Int32 => { return 42; };");
   REQUIRE(tu.functions.size() == 1);
   auto const result = benson::ir::interpret(*tu.functions[0], {});
   CHECK(std::get<std::int32_t>(result) == 42);
@@ -874,8 +869,7 @@ TEST_CASE("compile - named fn expression returning literal")
 
 TEST_CASE("compile - named fn expression with parameter")
 {
-  auto const [types, tu] =
-    compile_program("fn id(x: Int32): Int32 => x;");
+  auto const [types, tu] = compile_program("fn id(x: Int32): Int32 => x;");
   REQUIRE(tu.functions.size() == 1);
   auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{7}};
   auto const result = benson::ir::interpret(*tu.functions[0], args);

@@ -1,5 +1,5 @@
-#ifndef BASEDLEX_BINARY_STREAM_H
-#define BASEDLEX_BINARY_STREAM_H
+#ifndef BASEDSTREAMS_BINARY_STREAM_H
+#define BASEDSTREAMS_BINARY_STREAM_H
 
 #include <cstdint>
 #include <optional>
@@ -20,4 +20,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDLEX_BINARY_STREAM_H
+#endif // BASEDSTREAMS_BINARY_STREAM_H

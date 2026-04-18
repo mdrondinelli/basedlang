@@ -15,3 +15,9 @@ When the user asks you to make a plan for a task (e.g. from [`TODO.md`](TODO.md)
 `clang-format-21 -i <path/to/source>`
 `cmake --build build`
 `./build/<executable-target>`
+
+## PR comments
+
+When posting GitHub PR comments with `gh`, write the comment body to a temporary
+file first and pass it with `--body-file` instead of embedding the text directly
+in the shell command.

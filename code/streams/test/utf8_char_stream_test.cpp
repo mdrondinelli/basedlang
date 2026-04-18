@@ -130,9 +130,13 @@ TEST_CASE("Utf8_char_stream - invalid sequences throw Decode_error")
   {
     throws("\xC3");
   }
-  SECTION("2-byte: overlong encoding")
+  SECTION("2-byte: overlong encoding (C0)")
   {
     throws("\xC0\x80");
+  }
+  SECTION("2-byte: overlong encoding (C1)")
+  {
+    throws("\xC1\x80");
   }
   SECTION("3-byte: non-continuation second byte")
   {

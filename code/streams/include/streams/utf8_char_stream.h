@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <optional>
 #include <stdexcept>
-#include <utility>
 
 #include "streams/binary_stream.h"
 #include "streams/char_stream.h"
@@ -42,33 +41,89 @@ namespace benson
       {
         return *b0;
       }
-      auto const [initial_codepoint, remaining] =
-        [&]() -> std::pair<uint32_t, int>
-      {
-        if ((*b0 & 0b1110'0000) == 0b1100'0000)
-        {
-          return {*b0 & 0b0001'1111, 1};
-        }
-        if ((*b0 & 0b1111'0000) == 0b1110'0000)
-        {
-          return {*b0 & 0b0000'1111, 2};
-        }
-        if ((*b0 & 0b1111'1000) == 0b1111'0000)
-        {
-          return {*b0 & 0b0000'0111, 3};
-        }
-        throw Decode_error{};
-      }();
-      auto codepoint = initial_codepoint;
-      for (auto i = 0; i < remaining; ++i)
+      auto const read_continuation = [&](uint8_t min, uint8_t max) -> uint8_t
       {
         auto const cont = _stream->read_byte();
-        if (!cont || (*cont & 0b1100'0000) != 0b1000'0000)
+        if (!cont || *cont < min || *cont > max)
         {
           throw Decode_error{};
         }
-        codepoint = (codepoint << 6) | (*cont & 0b0011'1111);
-      }
+        return *cont;
+      };
+      auto const read_tail = [&]() -> uint8_t
+      {
+        return read_continuation(0x80, 0xBF);
+      };
+      auto const decode_continuation = [](uint32_t codepoint, uint8_t byte)
+      {
+        return (codepoint << 6) | (byte & 0b0011'1111);
+      };
+      auto const codepoint = [&]() -> uint32_t
+      {
+        if (*b0 >= 0xC2 && *b0 <= 0xDF)
+        {
+          auto const b1 = read_tail();
+          return decode_continuation(*b0 & 0b0001'1111, b1);
+        }
+        if (*b0 == 0xE0)
+        {
+          auto const b1 = read_continuation(0xA0, 0xBF);
+          auto const b2 = read_tail();
+          return decode_continuation(
+            decode_continuation(*b0 & 0b0000'1111, b1),
+            b2
+          );
+        }
+        if ((*b0 >= 0xE1 && *b0 <= 0xEC) || (*b0 >= 0xEE && *b0 <= 0xEF))
+        {
+          auto const b1 = read_tail();
+          auto const b2 = read_tail();
+          return decode_continuation(
+            decode_continuation(*b0 & 0b0000'1111, b1),
+            b2
+          );
+        }
+        if (*b0 == 0xED)
+        {
+          auto const b1 = read_continuation(0x80, 0x9F);
+          auto const b2 = read_tail();
+          return decode_continuation(
+            decode_continuation(*b0 & 0b0000'1111, b1),
+            b2
+          );
+        }
+        if (*b0 == 0xF0)
+        {
+          auto const b1 = read_continuation(0x90, 0xBF);
+          auto const b2 = read_tail();
+          auto const b3 = read_tail();
+          return decode_continuation(
+            decode_continuation(decode_continuation(*b0 & 0b0000'0111, b1), b2),
+            b3
+          );
+        }
+        if (*b0 >= 0xF1 && *b0 <= 0xF3)
+        {
+          auto const b1 = read_tail();
+          auto const b2 = read_tail();
+          auto const b3 = read_tail();
+          return decode_continuation(
+            decode_continuation(decode_continuation(*b0 & 0b0000'0111, b1), b2),
+            b3
+          );
+        }
+        if (*b0 == 0xF4)
+        {
+          auto const b1 = read_continuation(0x80, 0x8F);
+          auto const b2 = read_tail();
+          auto const b3 = read_tail();
+          return decode_continuation(
+            decode_continuation(decode_continuation(*b0 & 0b0000'0111, b1), b2),
+            b3
+          );
+        }
+        throw Decode_error{};
+      }();
       return codepoint;
     }
 

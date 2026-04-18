@@ -71,6 +71,34 @@ parameters, and prefer `std::int32_t` over `int` for sizes and counts:
 auto compile(std::span<Token const> tokens, std::int32_t limit) -> Result;
 ```
 
+For indexes, offsets, sizes, and other values that are expected to be
+non-negative at API boundaries, prefer signed integer types over unsigned ones.
+Unsigned types do not prevent bugs here: passing `-1` still silently wraps to a
+large positive value. Signed types keep the domain honest and allow explicit
+debug-time checks such as `assert(offset >= 0)`.
+
+## Assertions and invalid states
+
+Use `assert` for internal invariants and invalid program states that should be
+impossible if callers and surrounding code are correct.
+
+Do not add production-build checks just to defend against impossible internal
+states. In this codebase, that is what `assert` is for.
+
+Use `std::unreachable()` only for paths that are structurally impossible, not
+as a substitute for expressing invariants.
+
+## Error handling
+
+Use runtime errors for real runtime failures that can arise from valid external
+input or environment conditions, not for violated internal assumptions.
+
+Use `throw std::runtime_error(...)` for unimplemented features. Do not report
+them as user-facing diagnostics that imply the user's program is wrong.
+
+Reserve user-facing diagnostics such as `emit_error(...)` for genuine user-input
+errors, such as type mismatches, undefined identifiers, or invalid syntax.
+
 ## Immediately-invoked lambda expressions (IILEs)
 
 Only use an IILE when it allows the result variable to be `const` — i.e., when

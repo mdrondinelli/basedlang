@@ -40,7 +40,8 @@ than reviewing the change as though the boundary does not matter.
 ## Check the changed abstraction
 
 Open the module page that owns the change and review against that page's
-concepts and invariants.
+concepts and invariants. When the change depends on project-wide coding or
+error-handling policy, also check [Conventions](./conventions.md).
 
 Do not start from line-by-line implementation details. First establish what the
 module is supposed to own, then ask whether the code matches that model.

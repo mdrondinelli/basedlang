@@ -19,6 +19,20 @@ TEST_CASE("Istream_binary_stream - read_bytes")
     auto buffer = std::array<uint8_t, 4>{};
     REQUIRE(binary.read_bytes(buffer) == 0);
   }
+  SECTION("empty buffer is no-op")
+  {
+    auto ss = std::istringstream{"hello"};
+    auto binary = benson::Istream_binary_stream{&ss};
+    auto empty = std::span<uint8_t>{};
+    auto buffer = std::array<uint8_t, 5>{};
+    REQUIRE(binary.read_bytes(empty) == 0);
+    REQUIRE(binary.read_bytes(buffer) == 5);
+    CHECK(buffer[0] == 'h');
+    CHECK(buffer[1] == 'e');
+    CHECK(buffer[2] == 'l');
+    CHECK(buffer[3] == 'l');
+    CHECK(buffer[4] == 'o');
+  }
   SECTION("fills full buffer when enough bytes exist")
   {
     auto ss = std::istringstream{"hello"};
@@ -117,6 +131,21 @@ TEST_CASE("Utf8_char_stream - read_characters")
       {
         auto buffer = std::array<uint32_t, 4>{};
         REQUIRE(chars.read_characters(buffer) == 0);
+      }
+    );
+  }
+  SECTION("empty buffer is no-op")
+  {
+    with_stream(
+      "A\xC3\xA9",
+      [](auto &chars)
+      {
+        auto empty = std::span<uint32_t>{};
+        auto buffer = std::array<uint32_t, 2>{};
+        REQUIRE(chars.read_characters(empty) == 0);
+        REQUIRE(chars.read_characters(buffer) == 2);
+        CHECK(buffer[0] == 'A');
+        CHECK(buffer[1] == 0x00E9u);
       }
     );
   }

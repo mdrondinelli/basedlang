@@ -1,11 +1,12 @@
 #ifndef BASEDSTREAMS_LOOKAHEAD_CHAR_STREAM_READER_H
 #define BASEDSTREAMS_LOOKAHEAD_CHAR_STREAM_READER_H
 
+#include <bit>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
-#include <vector>
 
 #include "streams/char_stream.h"
 #include "streams/char_stream_reader.h"
@@ -26,10 +27,12 @@ namespace benson
           _buffer([&]()
           {
             assert(max_lookahead >= 0);
-            return std::vector<uint32_t>(
-              static_cast<std::size_t>(max_lookahead + 1)
+            return std::make_unique<uint32_t[]>(
+              std::bit_ceil(static_cast<std::size_t>(max_lookahead + 1))
             );
           }()),
+          _capacity{
+            std::bit_ceil(static_cast<std::size_t>(max_lookahead + 1))},
           _max_lookahead{max_lookahead}
     {
     }
@@ -46,11 +49,11 @@ namespace benson
         {
           return std::nullopt;
         }
-        _buffer[(_head + _size) % _buffer.size()] = *next;
+        _buffer[(_head + _size) & (_capacity - 1)] = *next;
         ++_size;
       }
       return _buffer
-        [(_head + static_cast<std::size_t>(offset)) % _buffer.size()];
+        [(_head + static_cast<std::size_t>(offset)) & (_capacity - 1)];
     }
 
     std::optional<uint32_t> read()
@@ -60,14 +63,15 @@ namespace benson
         return _reader.read();
       }
       auto const result = _buffer[_head];
-      _head = (_head + 1) % _buffer.size();
+      _head = (_head + 1) & (_capacity - 1);
       --_size;
       return result;
     }
 
   private:
     Char_stream_reader _reader;
-    std::vector<uint32_t> _buffer;
+    std::unique_ptr<uint32_t[]> _buffer;
+    std::size_t _capacity;
     std::size_t _head{};
     std::size_t _size{};
     std::ptrdiff_t _max_lookahead;

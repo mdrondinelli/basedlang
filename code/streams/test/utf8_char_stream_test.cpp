@@ -351,6 +351,27 @@ TEST_CASE("Lookahead_char_stream_reader - wraparound")
   REQUIRE(!reader.peek());
 }
 
+TEST_CASE("Lookahead_char_stream_reader - non-power-of-two lookahead")
+{
+  auto ss = std::istringstream{"abcdefg"};
+  auto binary = benson::Istream_binary_stream{&ss};
+  auto chars = benson::Utf8_char_stream{&binary};
+  auto reader = benson::Lookahead_char_stream_reader{&chars, 2};
+
+  REQUIRE(reader.peek(2) == 'c');
+  REQUIRE(reader.read() == 'a');
+  REQUIRE(reader.read() == 'b');
+  REQUIRE(reader.peek(2) == 'e');
+  REQUIRE(reader.read() == 'c');
+  REQUIRE(reader.read() == 'd');
+  REQUIRE(reader.peek(2) == 'g');
+  REQUIRE(reader.read() == 'e');
+  REQUIRE(reader.read() == 'f');
+  REQUIRE(reader.read() == 'g');
+  REQUIRE(!reader.peek());
+  REQUIRE(!reader.read());
+}
+
 TEST_CASE("Utf8_char_stream - valid sequences")
 {
   auto const with_stream = [](std::string const &bytes, auto &&fn)

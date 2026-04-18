@@ -6,7 +6,7 @@ namespace benson
 {
 
   Lexeme_stream::Lexeme_stream(Char_stream *stream, Spelling_table *spellings)
-      : _reader{stream},
+      : _reader{stream, 3},
         _spellings{spellings},
         _location{.line = 1, .column = 1}
   {

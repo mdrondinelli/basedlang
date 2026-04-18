@@ -13,7 +13,7 @@ When you add a new antipattern:
 
 **Why it is dangerous:** `emit_error` produces a user-facing diagnostic. When the compiler emits it for an unimplemented path, the user sees a misleading type or syntax error instead of an honest "not yet supported" crash. It also hides the gap from future implementers.
 
-**Better implementation:** Use `throw std::runtime_error(...)` for unimplemented features. Reserve `emit_error` for genuine user-input errors (type mismatches, undefined identifiers, etc.). Use `std::unreachable()` only for paths that are structurally impossible.
+**Better implementation:** Follow the error-handling rules in [Conventions](./conventions.md#error-handling). This is the policy source of truth.
 
 ## Using `std::unreachable()` to express invariants
 
@@ -21,7 +21,7 @@ When you add a new antipattern:
 
 **Why it is dangerous:** `std::unreachable()` is an optimizer hint. It does not communicate the invariant to readers, and it produces undefined behavior rather than a diagnostic.
 
-**Better implementation:** Use `assert(condition)` to express internal invariants. It clearly communicates "this cannot be false here" and fires in debug builds when violated.
+**Better implementation:** Follow [Conventions](./conventions.md#assertions-and-invalid-states). This is the policy source of truth.
 
 ## Using `auto const*` or `auto*` for local pointer declarations
 

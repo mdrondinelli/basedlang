@@ -4,9 +4,17 @@ This page describes the repository in stable conceptual terms. It intentionally 
 
 ## Main code areas
 
+### `code/streams`
+
+The raw input-stream library. Owns byte input, UTF-8 decoding, and
+character-level buffering/lookahead.
+
+See [`streams`](./streams.md).
+
 ### `code/lexing`
 
-The lexer library. Owns character input, buffering/lookahead, tokenization, and source-location tracking at the token level.
+The lexer library. Owns tokenization and source-location tracking at the token
+level.
 
 See [`lexing`](./lexing.md).
 
@@ -59,6 +67,7 @@ Small source programs used as runnable examples and as useful behavioral anchors
 
 Tests live next to the libraries they validate. This is important because most changes should have a clear ownership boundary:
 
+- raw stream and UTF-8 behavior belongs with `streams` tests
 - lexical behavior belongs with lexer tests
 - syntax behavior belongs with parser tests
 - semantic and lowering behavior belongs with HLIR tests
@@ -82,6 +91,7 @@ living between lexing and later front-end consumers.
 
 The repo may be reorganized internally over time. The stable structure to preserve in docs and reviews is:
 
+- raw input streams
 - lexer
 - spelling storage
 - AST data model

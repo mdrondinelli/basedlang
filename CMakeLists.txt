@@ -12,16 +12,16 @@ add_subdirectory(extern/Catch2-3.13.0)
 add_library(spelling INTERFACE)
 target_include_directories(spelling INTERFACE code/spelling/include)
 
+add_library(streams INTERFACE)
+target_include_directories(streams INTERFACE code/streams/include)
+
 add_library(lexing
-  code/lexing/src/char_stream_reader.cpp
-  code/lexing/src/istream_binary_stream.cpp
   code/lexing/src/lexeme_stream.cpp
   code/lexing/src/lexeme_stream_reader.cpp
   code/lexing/src/source_span.cpp
-  code/lexing/src/utf8_char_stream.cpp
 )
 target_include_directories(lexing PUBLIC code/lexing/include)
-target_link_libraries(lexing PUBLIC spelling)
+target_link_libraries(lexing PUBLIC spelling streams)
 
 add_library(ast
   code/ast/src/ast.cpp
@@ -65,10 +65,14 @@ target_link_libraries(benson PRIVATE bensoncli)
 add_executable(lexing-tests
   code/lexing/test/lexeme_stream_test.cpp
   code/lexing/test/ring_buffer_test.cpp
-  code/lexing/test/utf8_char_stream_test.cpp
 )
 target_link_libraries(lexing-tests PRIVATE lexing Catch2::Catch2WithMain)
 target_compile_definitions(lexing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
+
+add_executable(streams-tests
+  code/streams/test/utf8_char_stream_test.cpp
+)
+target_link_libraries(streams-tests PRIVATE streams Catch2::Catch2WithMain)
 
 add_executable(spelling-tests
   code/spelling/test/spelling_test.cpp

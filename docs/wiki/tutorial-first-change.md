@@ -110,6 +110,7 @@ cmake --build build
 Run the relevant test binary directly:
 
 ```sh
+./build/streams-tests
 ./build/lexing-tests
 ./build/parsing-tests
 ./build/ir-tests

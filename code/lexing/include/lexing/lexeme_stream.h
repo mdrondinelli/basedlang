@@ -3,9 +3,10 @@
 
 #include <stdexcept>
 
-#include "char_stream_reader.h"
 #include "lexeme.h"
 #include "spelling/spelling.h"
+#include "streams/char_stream.h"
+#include "streams/char_stream_reader.h"
 
 namespace benson
 {

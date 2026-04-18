@@ -1,5 +1,5 @@
-#ifndef BASEDLEX_CHAR_STREAM_H
-#define BASEDLEX_CHAR_STREAM_H
+#ifndef BASEDSTREAMS_CHAR_STREAM_H
+#define BASEDSTREAMS_CHAR_STREAM_H
 
 #include <cstdint>
 #include <optional>
@@ -21,4 +21,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDLEX_CHAR_STREAM_H
+#endif // BASEDSTREAMS_CHAR_STREAM_H

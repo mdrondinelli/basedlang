@@ -6,8 +6,6 @@
 
 The public surface is centered on:
 
-- `Char_stream`
-- `Char_stream_reader`
 - `Lexeme_stream`
 - `Lexeme_stream_reader`
 - `Token`
@@ -24,14 +22,6 @@ The closed set of token kinds in the language.
 ### `Lexeme`
 
 A token plus its preserved text payload, if any, and source span.
-
-### `Char_stream`
-
-Abstract source of Unicode codepoints.
-
-### `Char_stream_reader`
-
-Character-level buffered lookahead.
 
 ### `Lexeme_stream`
 
@@ -77,3 +67,4 @@ and literals while keeping fixed-spelling tokens allocation-free.
 
 - source locations must stay precise
 - lexing stays incremental rather than tokenizing the whole file up front
+- raw byte/character input remains in `streams`

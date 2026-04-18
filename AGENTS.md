@@ -21,3 +21,5 @@ When the user asks you to make a plan for a task (e.g. from [`TODO.md`](TODO.md)
 When posting GitHub PR comments with `gh`, write the comment body to a temporary
 file first and pass it with `--body-file` instead of embedding the text directly
 in the shell command.
+
+Use your tools to author temporary PR comment files rather than shell commands.

@@ -66,16 +66,19 @@ TEST_CASE("Binary_stream - read_byte compatibility helper")
   class Chunked_binary_stream: public benson::Binary_stream
   {
   public:
-    std::size_t read_bytes(std::span<uint8_t> buffer) override
+    std::ptrdiff_t read_bytes(std::span<uint8_t> buffer) override
     {
-      if (_offset == _bytes.size() || buffer.empty())
+      if (_offset == static_cast<std::ptrdiff_t>(_bytes.size()) ||
+          buffer.empty())
       {
         return 0;
       }
-      auto const count = std::min(buffer.size(), std::size_t{2});
-      auto const available = _bytes.size() - _offset;
+      auto const count =
+        std::min(static_cast<std::ptrdiff_t>(buffer.size()), std::ptrdiff_t{2});
+      auto const available =
+        static_cast<std::ptrdiff_t>(_bytes.size()) - _offset;
       auto const actual = std::min(count, available);
-      for (auto i = std::size_t{0}; i < actual; ++i)
+      for (auto i = std::ptrdiff_t{0}; i < actual; ++i)
       {
         buffer[i] = _bytes[_offset + i];
       }
@@ -85,7 +88,7 @@ TEST_CASE("Binary_stream - read_byte compatibility helper")
 
   private:
     std::array<uint8_t, 4> _bytes{'x', 'y', 'z', '!'};
-    std::size_t _offset{};
+    std::ptrdiff_t _offset{};
   };
 
   auto binary = Chunked_binary_stream{};

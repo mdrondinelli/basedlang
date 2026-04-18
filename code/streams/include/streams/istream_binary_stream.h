@@ -19,7 +19,7 @@ namespace benson
     {
     }
 
-    std::size_t read_bytes(std::span<uint8_t> buffer) override
+    std::ptrdiff_t read_bytes(std::span<uint8_t> buffer) override
     {
       if (buffer.empty())
       {
@@ -29,7 +29,7 @@ namespace benson
         reinterpret_cast<char *>(buffer.data()),
         static_cast<std::streamsize>(buffer.size())
       );
-      return static_cast<std::size_t>(_stream->gcount());
+      return static_cast<std::ptrdiff_t>(_stream->gcount());
     }
 
   private:

@@ -39,6 +39,14 @@ When you add a new antipattern:
 
 **Better implementation:** Add at least one test that verifies the expected diagnostic or failure behavior for invalid inputs at the same abstraction layer.
 
+## Unsigned integer types at API boundaries
+
+**Smell:** A public-facing function returns or accepts `std::size_t` for a count, size, offset, or index.
+
+**Why it is dangerous here:** See [Conventions — Parameters](./conventions.md#parameters). Unsigned types silently wrap `-1` into a large positive value and hide off-by-one bugs. We want a signed type at the API boundary so that domain mistakes become debuggable via `assert(x >= 0)`.
+
+**Better implementation:** Return/accept a signed integer type for counts, sizes, offsets, and indexes at public API surfaces. Use `std::ptrdiff_t` when the value pairs with a `std::span` or pointer arithmetic (the signed mate of `size_t`); use `std::int32_t` for general bounds and limits. `std::span` parameters stay as-is — only the integer count types change.
+
 ## PRs that change reviewer mental models without updating the wiki
 
 **Smell:** A PR changes a key abstraction, algorithm, invariant, or layer boundary, but no wiki page was updated.

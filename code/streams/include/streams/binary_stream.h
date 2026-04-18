@@ -18,7 +18,7 @@ namespace benson
 
     /// Reads up to buffer.size() bytes into buffer and returns the number of
     /// bytes read. Returns 0 at EOF. Implementations may return short reads.
-    virtual std::size_t read_bytes(std::span<uint8_t> buffer) = 0;
+    virtual std::ptrdiff_t read_bytes(std::span<uint8_t> buffer) = 0;
 
     /// Returns the next byte, or std::nullopt at EOF.
     std::optional<uint8_t> read_byte()

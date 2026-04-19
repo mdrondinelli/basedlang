@@ -6,6 +6,7 @@
 namespace benson::bytecode
 {
   using Constant = std::uint8_t;
+  using Wide_constant = std::uint16_t;
 }
 
 #endif // BENSON_BYTECODE_CONSTANT_INDEX_H

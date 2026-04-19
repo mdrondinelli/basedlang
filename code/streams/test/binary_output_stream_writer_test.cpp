@@ -13,7 +13,7 @@ TEST_CASE("Binary_output_stream_writer")
   class Recording_binary_output_stream: public benson::Binary_output_stream
   {
   public:
-    explicit Recording_binary_output_stream(std::ptrdiff_t max_write_size = 2)
+    explicit Recording_binary_output_stream(std::ptrdiff_t max_write_size)
         : _max_write_size{max_write_size}
     {
     }
@@ -68,7 +68,7 @@ TEST_CASE("Binary_output_stream_writer")
     CHECK(binary.bytes() == expected);
   }
 
-  SECTION("short writes flush all buffered bytes")
+  SECTION("flush retries on stream short-writes")
   {
     auto binary = Recording_binary_output_stream{3};
     auto writer = benson::Binary_output_stream_writer{&binary};

@@ -8,6 +8,7 @@ namespace benson
 
   namespace
   {
+
     template <typename T>
     void run_neg(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {

@@ -2,7 +2,6 @@
 #define BASEDSTREAMS_BINARY_INPUT_STREAM_H
 
 #include <cstddef>
-#include <optional>
 #include <span>
 
 namespace benson
@@ -23,16 +22,6 @@ namespace benson
     /// are lost and the stream position is undefined.
     virtual std::ptrdiff_t read_bytes(std::span<std::byte> buffer) = 0;
 
-    /// Returns the next byte, or std::nullopt at EOF.
-    std::optional<std::byte> read_byte()
-    {
-      auto buffer = std::byte{};
-      if (read_bytes(std::span{&buffer, std::size_t{1}}) == 0)
-      {
-        return std::nullopt;
-      }
-      return buffer;
-    }
   };
 
 } // namespace benson

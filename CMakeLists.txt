@@ -70,7 +70,7 @@ target_link_libraries(lexing-tests PRIVATE lexing Catch2::Catch2WithMain)
 target_compile_definitions(lexing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(streams-tests
-  code/streams/test/utf8_char_stream_test.cpp
+  code/streams/test/utf8_char_input_stream_test.cpp
 )
 target_link_libraries(streams-tests PRIVATE streams Catch2::Catch2WithMain)
 

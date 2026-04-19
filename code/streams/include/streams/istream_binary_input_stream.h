@@ -1,20 +1,20 @@
-#ifndef BASEDSTREAMS_ISTREAM_BINARY_STREAM_H
-#define BASEDSTREAMS_ISTREAM_BINARY_STREAM_H
+#ifndef BASEDSTREAMS_ISTREAM_BINARY_INPUT_STREAM_H
+#define BASEDSTREAMS_ISTREAM_BINARY_INPUT_STREAM_H
 
 #include <cstddef>
 #include <cstdint>
 #include <istream>
 #include <span>
 
-#include "streams/binary_stream.h"
+#include "streams/binary_input_stream.h"
 
 namespace benson
 {
 
-  class Istream_binary_stream: public Binary_stream
+  class Istream_binary_input_stream: public Binary_input_stream
   {
   public:
-    explicit Istream_binary_stream(std::istream *stream) noexcept
+    explicit Istream_binary_input_stream(std::istream *stream) noexcept
         : _stream{stream}
     {
     }
@@ -38,4 +38,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_ISTREAM_BINARY_STREAM_H
+#endif // BASEDSTREAMS_ISTREAM_BINARY_INPUT_STREAM_H

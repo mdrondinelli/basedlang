@@ -8,8 +8,8 @@
 #include "lexing/lexeme_stream.h"
 #include "lexing/token.h"
 #include "spelling/spelling.h"
-#include "streams/istream_binary_stream.h"
-#include "streams/utf8_char_stream.h"
+#include "streams/istream_binary_input_stream.h"
+#include "streams/utf8_char_input_stream.h"
 
 namespace
 {
@@ -38,8 +38,8 @@ TEST_CASE("Lexeme_stream lexes first.benson")
 {
   auto file = std::ifstream{EXAMPLES_PATH "/first.benson"};
   REQUIRE(file.is_open());
-  auto binary = benson::Istream_binary_stream{&file};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&file};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const expect = [&](
@@ -75,8 +75,8 @@ TEST_CASE("Lexeme_stream lexes first.benson")
 TEST_CASE("Lexeme_stream lexes arithmetic operators")
 {
   auto ss = std::istringstream{"+ - * / %"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   using enum benson::Token;
@@ -96,8 +96,8 @@ TEST_CASE("Lexeme_stream lexes arithmetic operators")
 TEST_CASE("Lexeme_stream - minus before arrow still lexes as arrow")
 {
   auto ss = std::istringstream{"->"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -109,8 +109,8 @@ TEST_CASE("Lexeme_stream - minus before arrow still lexes as arrow")
 TEST_CASE("Lexeme_stream - minus adjacent to digits lexes as separate tokens")
 {
   auto ss = std::istringstream{"1-2"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   using enum benson::Token;
@@ -131,8 +131,8 @@ TEST_CASE("Lexeme_stream - minus adjacent to digits lexes as separate tokens")
 TEST_CASE("Lexeme_stream lexes i8 integer literal")
 {
   auto ss = std::istringstream{"42i8"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -144,8 +144,8 @@ TEST_CASE("Lexeme_stream lexes i8 integer literal")
 TEST_CASE("Lexeme_stream lexes i16 integer literal")
 {
   auto ss = std::istringstream{"100i16"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -157,8 +157,8 @@ TEST_CASE("Lexeme_stream lexes i16 integer literal")
 TEST_CASE("Lexeme_stream lexes i32 integer literal")
 {
   auto ss = std::istringstream{"100i32"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -170,8 +170,8 @@ TEST_CASE("Lexeme_stream lexes i32 integer literal")
 TEST_CASE("Lexeme_stream lexes i64 integer literal")
 {
   auto ss = std::istringstream{"100i64"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -183,8 +183,8 @@ TEST_CASE("Lexeme_stream lexes i64 integer literal")
 TEST_CASE("Lexeme_stream throws on bare i suffix")
 {
   auto ss = std::istringstream{"42i "};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   CHECK_THROWS_AS(stream.lex(), benson::Lexeme_stream::Lex_error);
@@ -193,8 +193,8 @@ TEST_CASE("Lexeme_stream throws on bare i suffix")
 TEST_CASE("Lexeme_stream lexes unknown integer suffix as token")
 {
   auto ss = std::istringstream{"42i7"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -206,8 +206,8 @@ TEST_CASE("Lexeme_stream lexes unknown integer suffix as token")
 TEST_CASE("Lexeme_stream lexes colon")
 {
   auto ss = std::istringstream{":"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -219,8 +219,8 @@ TEST_CASE("Lexeme_stream lexes colon")
 TEST_CASE("Lexeme_stream lexes comma")
 {
   auto ss = std::istringstream{","};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -232,8 +232,8 @@ TEST_CASE("Lexeme_stream lexes comma")
 TEST_CASE("Lexeme_stream lexes brackets")
 {
   auto ss = std::istringstream{"[]"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const open = stream.lex();
@@ -249,8 +249,8 @@ TEST_CASE("Lexeme_stream lexes brackets")
 TEST_CASE("Lexeme_stream - &mut lexes as ampersand_mut")
 {
   auto ss = std::istringstream{"&mut"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -263,8 +263,8 @@ TEST_CASE("Lexeme_stream - &mut lexes as ampersand_mut")
 TEST_CASE("Lexeme_stream - &mut with space after lexes as ampersand_mut")
 {
   auto ss = std::istringstream{"&mut x"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp_mut = stream.lex();
@@ -278,8 +278,8 @@ TEST_CASE("Lexeme_stream - &mut with space after lexes as ampersand_mut")
 TEST_CASE("Lexeme_stream - &mutable lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"&mutable"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
@@ -293,8 +293,8 @@ TEST_CASE("Lexeme_stream - &mutable lexes as ampersand + identifier")
 TEST_CASE("Lexeme_stream - &mut_ lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"&mut_"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
@@ -308,8 +308,8 @@ TEST_CASE("Lexeme_stream - &mut_ lexes as ampersand + identifier")
 TEST_CASE("Lexeme_stream - &mut2 lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"&mut2"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
@@ -323,8 +323,8 @@ TEST_CASE("Lexeme_stream - &mut2 lexes as ampersand + identifier")
 TEST_CASE("Lexeme_stream - & alone lexes as ampersand")
 {
   auto ss = std::istringstream{"&"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -336,8 +336,8 @@ TEST_CASE("Lexeme_stream - & alone lexes as ampersand")
 TEST_CASE("Lexeme_stream - & x lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"& x"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
@@ -351,8 +351,8 @@ TEST_CASE("Lexeme_stream - & x lexes as ampersand + identifier")
 TEST_CASE("Lexeme_stream - &mut column tracking")
 {
   auto ss = std::istringstream{"x &mut y"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const x = stream.lex();
@@ -372,8 +372,8 @@ TEST_CASE("Lexeme_stream - &mut column tracking")
 TEST_CASE("Lexeme_stream - &mu lexes as ampersand + identifier")
 {
   auto ss = std::istringstream{"&mu"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const amp = stream.lex();
@@ -387,8 +387,8 @@ TEST_CASE("Lexeme_stream - &mu lexes as ampersand + identifier")
 TEST_CASE("Lexeme_stream - ^mut lexes as caret_mut")
 {
   auto ss = std::istringstream{"^mut"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -401,8 +401,8 @@ TEST_CASE("Lexeme_stream - ^mut lexes as caret_mut")
 TEST_CASE("Lexeme_stream - ^mut with space after lexes as caret_mut")
 {
   auto ss = std::istringstream{"^mut x"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const caret_mut = stream.lex();
@@ -416,8 +416,8 @@ TEST_CASE("Lexeme_stream - ^mut with space after lexes as caret_mut")
 TEST_CASE("Lexeme_stream - ^mutable lexes as caret + identifier")
 {
   auto ss = std::istringstream{"^mutable"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const caret = stream.lex();
@@ -431,8 +431,8 @@ TEST_CASE("Lexeme_stream - ^mutable lexes as caret + identifier")
 TEST_CASE("Lexeme_stream - ^mut_ lexes as caret + identifier")
 {
   auto ss = std::istringstream{"^mut_"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const caret = stream.lex();
@@ -446,8 +446,8 @@ TEST_CASE("Lexeme_stream - ^mut_ lexes as caret + identifier")
 TEST_CASE("Lexeme_stream - ^ alone lexes as caret")
 {
   auto ss = std::istringstream{"^"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -459,8 +459,8 @@ TEST_CASE("Lexeme_stream - ^ alone lexes as caret")
 TEST_CASE("Lexeme_stream - ^mut column tracking")
 {
   auto ss = std::istringstream{"x ^mut y"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const x = stream.lex();
@@ -480,8 +480,8 @@ TEST_CASE("Lexeme_stream - ^mut column tracking")
 TEST_CASE("Lexeme_stream lexes unsuffixed float literal")
 {
   auto ss = std::istringstream{"3.14"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -493,8 +493,8 @@ TEST_CASE("Lexeme_stream lexes unsuffixed float literal")
 TEST_CASE("Lexeme_stream lexes f-suffixed float literal")
 {
   auto ss = std::istringstream{"1.5f"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -506,8 +506,8 @@ TEST_CASE("Lexeme_stream lexes f-suffixed float literal")
 TEST_CASE("Lexeme_stream lexes d-suffixed float literal")
 {
   auto ss = std::istringstream{"1.5d"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -519,8 +519,8 @@ TEST_CASE("Lexeme_stream lexes d-suffixed float literal")
 TEST_CASE("Lexeme_stream lexes integer with f suffix as float literal")
 {
   auto ss = std::istringstream{"1f"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -532,8 +532,8 @@ TEST_CASE("Lexeme_stream lexes integer with f suffix as float literal")
 TEST_CASE("Lexeme_stream lexes integer with d suffix as float literal")
 {
   auto ss = std::istringstream{"1d"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -546,8 +546,8 @@ TEST_CASE("Lexeme_stream - integer with space before dot stays int")
 {
   // "1 ." — the 1 is an int_literal; the dot is not consumed by the int lex
   auto ss = std::istringstream{"1 ."};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const first = stream.lex();
@@ -559,8 +559,8 @@ TEST_CASE("Lexeme_stream - integer with space before dot stays int")
 TEST_CASE("Lexeme_stream - integer with trailing dot lexes as float literal")
 {
   auto ss = std::istringstream{"1."};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -574,8 +574,8 @@ TEST_CASE(
 )
 {
   auto ss = std::istringstream{"3.14f "};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
   auto const lexeme = stream.lex();
@@ -587,8 +587,8 @@ TEST_CASE(
 TEST_CASE("Lexeme_stream assigns spelling to every token")
 {
   auto ss = std::istringstream{"let x = 42;"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
 
@@ -607,8 +607,8 @@ TEST_CASE("Lexeme_stream assigns spelling to every token")
 TEST_CASE("Lexeme_stream deduplicates repeated spellings")
 {
   auto ss = std::istringstream{"x x + +"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
   auto spellings = benson::Spelling_table{};
   auto stream = benson::Lexeme_stream{&chars, &spellings};
 

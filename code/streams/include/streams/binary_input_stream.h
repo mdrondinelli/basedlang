@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_BINARY_STREAM_H
-#define BASEDSTREAMS_BINARY_STREAM_H
+#ifndef BASEDSTREAMS_BINARY_INPUT_STREAM_H
+#define BASEDSTREAMS_BINARY_INPUT_STREAM_H
 
 #include <cstddef>
 #include <cstdint>
@@ -10,11 +10,11 @@ namespace benson
 {
 
   /// Abstract source of raw bytes. Implement this to feed binary data into a
-  /// Utf8_char_stream.
-  class Binary_stream
+  /// Utf8_char_input_stream.
+  class Binary_input_stream
   {
   public:
-    virtual ~Binary_stream() = default;
+    virtual ~Binary_input_stream() = default;
 
     /// Reads up to buffer.size() bytes into buffer and returns the number of
     /// bytes read. Implementations may return short reads, but when buffer is
@@ -38,4 +38,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_BINARY_STREAM_H
+#endif // BASEDSTREAMS_BINARY_INPUT_STREAM_H

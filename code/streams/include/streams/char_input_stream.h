@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_CHAR_STREAM_H
-#define BASEDSTREAMS_CHAR_STREAM_H
+#ifndef BASEDSTREAMS_CHAR_INPUT_STREAM_H
+#define BASEDSTREAMS_CHAR_INPUT_STREAM_H
 
 #include <cstddef>
 #include <cstdint>
@@ -11,10 +11,10 @@ namespace benson
 
   /// Abstract source of Unicode characters. Implement this to feed text into
   /// the lexer.
-  class Char_stream
+  class Char_input_stream
   {
   public:
-    virtual ~Char_stream() = default;
+    virtual ~Char_input_stream() = default;
 
     /// Reads up to buffer.size() codepoints into buffer and returns the number
     /// of codepoints read. Implementations may return short reads, but when
@@ -39,4 +39,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_CHAR_STREAM_H
+#endif // BASEDSTREAMS_CHAR_INPUT_STREAM_H

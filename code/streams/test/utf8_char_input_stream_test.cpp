@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <sstream>
 #include <string>
@@ -5,26 +6,26 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "streams/binary_stream.h"
-#include "streams/char_stream.h"
-#include "streams/char_stream_reader.h"
-#include "streams/istream_binary_stream.h"
-#include "streams/lookahead_char_stream_reader.h"
-#include "streams/utf8_char_stream.h"
+#include "streams/binary_input_stream.h"
+#include "streams/char_input_stream.h"
+#include "streams/char_input_stream_reader.h"
+#include "streams/istream_binary_input_stream.h"
+#include "streams/lookahead_char_input_stream_reader.h"
+#include "streams/utf8_char_input_stream.h"
 
-TEST_CASE("Istream_binary_stream - read_bytes")
+TEST_CASE("Istream_binary_input_stream - read_bytes")
 {
   SECTION("empty stream returns 0")
   {
     auto ss = std::istringstream{""};
-    auto binary = benson::Istream_binary_stream{&ss};
+    auto binary = benson::Istream_binary_input_stream{&ss};
     auto buffer = std::array<uint8_t, 4>{};
     REQUIRE(binary.read_bytes(buffer) == 0);
   }
   SECTION("empty buffer is no-op")
   {
     auto ss = std::istringstream{"hello"};
-    auto binary = benson::Istream_binary_stream{&ss};
+    auto binary = benson::Istream_binary_input_stream{&ss};
     auto empty = std::span<uint8_t>{};
     auto buffer = std::array<uint8_t, 5>{};
     REQUIRE(binary.read_bytes(empty) == 0);
@@ -38,7 +39,7 @@ TEST_CASE("Istream_binary_stream - read_bytes")
   SECTION("fills full buffer when enough bytes exist")
   {
     auto ss = std::istringstream{"hello"};
-    auto binary = benson::Istream_binary_stream{&ss};
+    auto binary = benson::Istream_binary_input_stream{&ss};
     auto buffer = std::array<uint8_t, 4>{};
     REQUIRE(binary.read_bytes(buffer) == 4);
     CHECK(buffer[0] == 'h');
@@ -49,7 +50,7 @@ TEST_CASE("Istream_binary_stream - read_bytes")
   SECTION("short final read returns remaining bytes")
   {
     auto ss = std::istringstream{"hello"};
-    auto binary = benson::Istream_binary_stream{&ss};
+    auto binary = benson::Istream_binary_input_stream{&ss};
     auto buffer = std::array<uint8_t, 8>{};
     REQUIRE(binary.read_bytes(buffer) == 5);
     CHECK(buffer[0] == 'h');
@@ -62,7 +63,7 @@ TEST_CASE("Istream_binary_stream - read_bytes")
   SECTION("repeated reads reconstruct source")
   {
     auto ss = std::istringstream{"abcdefg"};
-    auto binary = benson::Istream_binary_stream{&ss};
+    auto binary = benson::Istream_binary_input_stream{&ss};
     auto buffer = std::array<uint8_t, 3>{};
     auto bytes = std::vector<uint8_t>{};
     for (;;)
@@ -78,9 +79,9 @@ TEST_CASE("Istream_binary_stream - read_bytes")
   }
 }
 
-TEST_CASE("Binary_stream - read_byte compatibility helper")
+TEST_CASE("Binary_input_stream - read_byte compatibility helper")
 {
-  class Chunked_binary_stream: public benson::Binary_stream
+  class Chunked_binary_input_stream: public benson::Binary_input_stream
   {
   public:
     std::ptrdiff_t read_bytes(std::span<uint8_t> buffer) override
@@ -108,7 +109,7 @@ TEST_CASE("Binary_stream - read_byte compatibility helper")
     std::ptrdiff_t _offset{};
   };
 
-  auto binary = Chunked_binary_stream{};
+  auto binary = Chunked_binary_input_stream{};
   REQUIRE(binary.read_byte() == 'x');
   REQUIRE(binary.read_byte() == 'y');
   REQUIRE(binary.read_byte() == 'z');
@@ -116,13 +117,13 @@ TEST_CASE("Binary_stream - read_byte compatibility helper")
   REQUIRE(!binary.read_byte());
 }
 
-TEST_CASE("Utf8_char_stream - read_characters")
+TEST_CASE("Utf8_char_input_stream - read_characters")
 {
   auto const with_stream = [](std::string const &bytes, auto &&fn)
   {
     auto ss = std::istringstream{bytes};
-    auto binary = benson::Istream_binary_stream{&ss};
-    auto chars = benson::Utf8_char_stream{&binary};
+    auto binary = benson::Istream_binary_input_stream{&ss};
+    auto chars = benson::Utf8_char_input_stream{&binary};
     fn(chars);
   };
   SECTION("empty stream returns 0")
@@ -216,16 +217,16 @@ TEST_CASE("Utf8_char_stream - read_characters")
         auto buffer = std::array<uint32_t, 4>{};
         REQUIRE_THROWS_AS(
           chars.read_characters(buffer),
-          benson::Utf8_char_stream::Decode_error
+          benson::Utf8_char_input_stream::Decode_error
         );
       }
     );
   }
 }
 
-TEST_CASE("Char_stream - read_character compatibility helper")
+TEST_CASE("Char_input_stream - read_character compatibility helper")
 {
-  class Chunked_char_stream: public benson::Char_stream
+  class Chunked_char_input_stream: public benson::Char_input_stream
   {
   public:
     std::ptrdiff_t read_characters(std::span<uint32_t> buffer) override
@@ -253,7 +254,7 @@ TEST_CASE("Char_stream - read_character compatibility helper")
     std::ptrdiff_t _offset{};
   };
 
-  auto chars = Chunked_char_stream{};
+  auto chars = Chunked_char_input_stream{};
   REQUIRE(chars.read_character() == 'w');
   REQUIRE(chars.read_character() == 0x00E9u);
   REQUIRE(chars.read_character() == 0x4E2Du);
@@ -261,12 +262,12 @@ TEST_CASE("Char_stream - read_character compatibility helper")
   REQUIRE(!chars.read_character());
 }
 
-TEST_CASE("Char_stream_reader - sequential buffered reads")
+TEST_CASE("Char_input_stream_reader - sequential buffered reads")
 {
   auto ss = std::istringstream{std::string(1100, 'a') + std::string(1100, 'b')};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
-  auto reader = benson::Char_stream_reader{&chars};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
+  auto reader = benson::Char_input_stream_reader{&chars};
   auto codepoints = std::vector<uint32_t>{};
 
   for (;;)
@@ -303,12 +304,12 @@ TEST_CASE("Char_stream_reader - sequential buffered reads")
   REQUIRE(!reader.read());
 }
 
-TEST_CASE("Lookahead_char_stream_reader - peek and read")
+TEST_CASE("Lookahead_char_input_stream_reader - peek and read")
 {
   auto ss = std::istringstream{"abcdef"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
-  auto reader = benson::Lookahead_char_stream_reader{&chars, 3};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
+  auto reader = benson::Lookahead_char_input_stream_reader{&chars, 3};
 
   REQUIRE(reader.peek(0) == 'a');
   REQUIRE(reader.peek(1) == 'b');
@@ -327,12 +328,12 @@ TEST_CASE("Lookahead_char_stream_reader - peek and read")
   REQUIRE(!reader.read());
 }
 
-TEST_CASE("Lookahead_char_stream_reader - wraparound")
+TEST_CASE("Lookahead_char_input_stream_reader - wraparound")
 {
   auto ss = std::istringstream{"abcdefghi"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
-  auto reader = benson::Lookahead_char_stream_reader{&chars, 3};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
+  auto reader = benson::Lookahead_char_input_stream_reader{&chars, 3};
 
   REQUIRE(reader.peek(3) == 'd');
   REQUIRE(reader.read() == 'a');
@@ -351,12 +352,12 @@ TEST_CASE("Lookahead_char_stream_reader - wraparound")
   REQUIRE(!reader.peek());
 }
 
-TEST_CASE("Lookahead_char_stream_reader - non-power-of-two lookahead")
+TEST_CASE("Lookahead_char_input_stream_reader - non-power-of-two lookahead")
 {
   auto ss = std::istringstream{"abcdefg"};
-  auto binary = benson::Istream_binary_stream{&ss};
-  auto chars = benson::Utf8_char_stream{&binary};
-  auto reader = benson::Lookahead_char_stream_reader{&chars, 2};
+  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto chars = benson::Utf8_char_input_stream{&binary};
+  auto reader = benson::Lookahead_char_input_stream_reader{&chars, 2};
 
   REQUIRE(reader.peek(2) == 'c');
   REQUIRE(reader.read() == 'a');
@@ -372,13 +373,13 @@ TEST_CASE("Lookahead_char_stream_reader - non-power-of-two lookahead")
   REQUIRE(!reader.read());
 }
 
-TEST_CASE("Utf8_char_stream - valid sequences")
+TEST_CASE("Utf8_char_input_stream - valid sequences")
 {
   auto const with_stream = [](std::string const &bytes, auto &&fn)
   {
     auto ss = std::istringstream{bytes};
-    auto binary = benson::Istream_binary_stream{&ss};
-    auto chars = benson::Utf8_char_stream{&binary};
+    auto binary = benson::Istream_binary_input_stream{&ss};
+    auto chars = benson::Utf8_char_input_stream{&binary};
     fn(chars);
   };
   SECTION("empty stream returns nullopt")
@@ -468,16 +469,16 @@ TEST_CASE("Utf8_char_stream - valid sequences")
   }
 }
 
-TEST_CASE("Utf8_char_stream - invalid sequences throw Decode_error")
+TEST_CASE("Utf8_char_input_stream - invalid sequences throw Decode_error")
 {
   auto const throws = [](std::string const &bytes)
   {
     auto ss = std::istringstream{bytes};
-    auto binary = benson::Istream_binary_stream{&ss};
-    auto chars = benson::Utf8_char_stream{&binary};
+    auto binary = benson::Istream_binary_input_stream{&ss};
+    auto chars = benson::Utf8_char_input_stream{&binary};
     REQUIRE_THROWS_AS(
       chars.read_character(),
-      benson::Utf8_char_stream::Decode_error
+      benson::Utf8_char_input_stream::Decode_error
     );
   };
   SECTION("continuation byte at start")

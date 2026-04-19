@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_LOOKAHEAD_CHAR_STREAM_READER_H
-#define BASEDSTREAMS_LOOKAHEAD_CHAR_STREAM_READER_H
+#ifndef BASEDSTREAMS_LOOKAHEAD_CHAR_INPUT_STREAM_READER_H
+#define BASEDSTREAMS_LOOKAHEAD_CHAR_INPUT_STREAM_READER_H
 
 #include <bit>
 #include <cassert>
@@ -8,19 +8,19 @@
 #include <memory>
 #include <optional>
 
-#include "streams/char_stream.h"
-#include "streams/char_stream_reader.h"
+#include "streams/char_input_stream.h"
+#include "streams/char_input_stream_reader.h"
 
 namespace benson
 {
 
-  /// Wraps a Char_stream with finite lookahead, exposing peek/read operations
-  /// backed by a ring buffer.
-  class Lookahead_char_stream_reader
+  /// Wraps a Char_input_stream with finite lookahead, exposing peek/read
+  /// operations backed by a ring buffer.
+  class Lookahead_char_input_stream_reader
   {
   public:
-    Lookahead_char_stream_reader(
-      Char_stream *stream,
+    Lookahead_char_input_stream_reader(
+      Char_input_stream *stream,
       std::ptrdiff_t max_lookahead
     )
         : _reader{stream},
@@ -69,7 +69,7 @@ namespace benson
     }
 
   private:
-    Char_stream_reader _reader;
+    Char_input_stream_reader _reader;
     std::unique_ptr<uint32_t[]> _buffer;
     std::size_t _capacity;
     std::size_t _head{};
@@ -79,4 +79,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_LOOKAHEAD_CHAR_STREAM_READER_H
+#endif // BASEDSTREAMS_LOOKAHEAD_CHAR_INPUT_STREAM_READER_H

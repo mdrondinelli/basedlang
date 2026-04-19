@@ -3,7 +3,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -20,12 +19,12 @@ namespace benson
   public:
     explicit Binary_input_stream_reader(Binary_input_stream *stream)
         : _stream{stream},
-          _buffer{std::make_unique<std::array<uint8_t, 4096>>()}
+          _buffer{std::make_unique<std::array<std::byte, 4096>>()}
     {
     }
 
     /// Returns the next byte, or std::nullopt at EOF.
-    std::optional<uint8_t> read()
+    std::optional<std::byte> read()
     {
       if (_pos == _end)
       {
@@ -41,7 +40,7 @@ namespace benson
 
   private:
     Binary_input_stream *_stream;
-    std::unique_ptr<std::array<uint8_t, 4096>> _buffer;
+    std::unique_ptr<std::array<std::byte, 4096>> _buffer;
     std::ptrdiff_t _pos{};
     std::ptrdiff_t _end{};
   };

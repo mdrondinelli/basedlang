@@ -51,7 +51,16 @@ namespace benson
   private:
     std::optional<uint32_t> decode_codepoint()
     {
-      auto const b0 = _reader.read();
+      auto const read_u8 = [&]() -> std::optional<uint8_t>
+      {
+        auto const b = _reader.read();
+        if (!b)
+        {
+          return std::nullopt;
+        }
+        return std::to_integer<uint8_t>(*b);
+      };
+      auto const b0 = read_u8();
       if (!b0)
       {
         return std::nullopt;
@@ -62,7 +71,7 @@ namespace benson
       }
       auto const read_continuation = [&](uint8_t min, uint8_t max) -> uint8_t
       {
-        auto const cont = _reader.read();
+        auto const cont = read_u8();
         if (!cont || *cont < min || *cont > max)
         {
           throw Decode_error{};

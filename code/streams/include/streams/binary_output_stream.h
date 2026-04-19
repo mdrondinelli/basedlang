@@ -2,7 +2,6 @@
 #define BASEDSTREAMS_BINARY_OUTPUT_STREAM_H
 
 #include <cstddef>
-#include <cstdint>
 #include <span>
 
 namespace benson
@@ -20,7 +19,7 @@ namespace benson
     /// requires buffer to be empty. When buffer is empty, call is a no-op and
     /// returns 0. If an implementation throws after consuming bytes from
     /// buffer, stream state is undefined.
-    virtual std::ptrdiff_t write_bytes(std::span<uint8_t const> buffer) = 0;
+    virtual std::ptrdiff_t write_bytes(std::span<std::byte const> buffer) = 0;
   };
 
 } // namespace benson

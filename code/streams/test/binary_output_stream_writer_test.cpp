@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -18,7 +17,7 @@ TEST_CASE("Binary_output_stream_writer")
     {
     }
 
-    std::ptrdiff_t write_bytes(std::span<uint8_t const> buffer) override
+    std::ptrdiff_t write_bytes(std::span<std::byte const> buffer) override
     {
       if (buffer.empty())
       {
@@ -31,7 +30,7 @@ TEST_CASE("Binary_output_stream_writer")
       return count;
     }
 
-    [[nodiscard]] auto bytes() const -> std::vector<uint8_t> const &
+    [[nodiscard]] auto bytes() const -> std::vector<std::byte> const &
     {
       return _bytes;
     }
@@ -43,7 +42,7 @@ TEST_CASE("Binary_output_stream_writer")
     }
 
   private:
-    std::vector<uint8_t> _bytes{};
+    std::vector<std::byte> _bytes{};
     std::vector<std::ptrdiff_t> _write_sizes{};
     std::ptrdiff_t _max_write_size;
   };
@@ -59,11 +58,11 @@ TEST_CASE("Binary_output_stream_writer")
     }
     writer.flush();
 
-    auto expected = std::vector<uint8_t>{};
+    auto expected = std::vector<std::byte>{};
     expected.reserve(5000);
     for (auto i = 0; i < 5000; ++i)
     {
-      expected.push_back(static_cast<uint8_t>(i % 251));
+      expected.push_back(static_cast<std::byte>(i % 251));
     }
     CHECK(binary.bytes() == expected);
   }
@@ -83,7 +82,15 @@ TEST_CASE("Binary_output_stream_writer")
     writer.flush();
 
     CHECK(
-      binary.bytes() == std::vector<uint8_t>{'a', 'b', 'c', 'd', 'e', 'f', 'g'}
+      binary.bytes() == std::vector<std::byte>{
+                          std::byte{'a'},
+                          std::byte{'b'},
+                          std::byte{'c'},
+                          std::byte{'d'},
+                          std::byte{'e'},
+                          std::byte{'f'},
+                          std::byte{'g'},
+                        }
     );
     CHECK(binary.write_sizes() == std::vector<std::ptrdiff_t>{3, 3, 1});
   }
@@ -97,7 +104,9 @@ TEST_CASE("Binary_output_stream_writer")
     writer.write(std::byte{'b'});
     writer.flush();
 
-    CHECK(binary.bytes() == std::vector<uint8_t>{'a', 'b'});
+    CHECK(
+      binary.bytes() == std::vector<std::byte>{std::byte{'a'}, std::byte{'b'}}
+    );
   }
 
   SECTION("destruction without flush does not write pending bytes")

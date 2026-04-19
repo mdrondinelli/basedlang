@@ -3,7 +3,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 
 #include "streams/binary_output_stream.h"
@@ -19,7 +18,7 @@ namespace benson
   public:
     explicit Binary_output_stream_writer(Binary_output_stream *stream)
         : _stream{stream},
-          _buffer{std::make_unique<std::array<uint8_t, 4096>>()}
+          _buffer{std::make_unique<std::array<std::byte, 4096>>()}
     {
     }
 
@@ -29,7 +28,7 @@ namespace benson
       {
         flush();
       }
-      (*_buffer)[_size++] = std::to_integer<uint8_t>(byte);
+      (*_buffer)[_size++] = byte;
     }
 
     void flush()
@@ -48,7 +47,7 @@ namespace benson
 
   private:
     Binary_output_stream *_stream;
-    std::unique_ptr<std::array<uint8_t, 4096>> _buffer;
+    std::unique_ptr<std::array<std::byte, 4096>> _buffer;
     std::ptrdiff_t _size{};
   };
 

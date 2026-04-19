@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -11,7 +12,7 @@ TEST_CASE("Binary_output_stream - write_bytes")
   class Recording_binary_output_stream: public benson::Binary_output_stream
   {
   public:
-    std::ptrdiff_t write_bytes(std::span<uint8_t const> buffer) override
+    std::ptrdiff_t write_bytes(std::span<std::byte const> buffer) override
     {
       if (buffer.empty())
       {
@@ -23,20 +24,20 @@ TEST_CASE("Binary_output_stream - write_bytes")
       return count;
     }
 
-    [[nodiscard]] auto bytes() const -> std::vector<uint8_t> const &
+    [[nodiscard]] auto bytes() const -> std::vector<std::byte> const &
     {
       return _bytes;
     }
 
   private:
-    std::vector<uint8_t> _bytes{};
+    std::vector<std::byte> _bytes{};
     std::ptrdiff_t _max_write_size{2};
   };
 
   SECTION("empty buffer is no-op")
   {
     auto binary = Recording_binary_output_stream{};
-    auto empty = std::span<uint8_t const>{};
+    auto empty = std::span<std::byte const>{};
     REQUIRE(binary.write_bytes(empty) == 0);
     CHECK(binary.bytes().empty());
   }
@@ -44,20 +45,36 @@ TEST_CASE("Binary_output_stream - write_bytes")
   SECTION("non-empty buffer may short-write with positive count")
   {
     auto binary = Recording_binary_output_stream{};
-    auto const buffer = std::array<uint8_t, 4>{'a', 'b', 'c', 'd'};
+    auto const buffer = std::array{
+      std::byte{'a'},
+      std::byte{'b'},
+      std::byte{'c'},
+      std::byte{'d'}
+    };
     REQUIRE(binary.write_bytes(buffer) == 2);
-    CHECK(binary.bytes() == std::vector<uint8_t>{'a', 'b'});
+    CHECK(
+      binary.bytes() == std::vector<std::byte>{std::byte{'a'}, std::byte{'b'}}
+    );
   }
 
   SECTION("repeated writes preserve byte order")
   {
     auto binary = Recording_binary_output_stream{};
-    auto const first = std::array<uint8_t, 3>{'a', 'b', 'c'};
-    auto const second = std::array<uint8_t, 2>{'d', 'e'};
-    auto const first_span = std::span<uint8_t const>{first};
+    auto const first =
+      std::array{std::byte{'a'}, std::byte{'b'}, std::byte{'c'}};
+    auto const second = std::array{std::byte{'d'}, std::byte{'e'}};
+    auto const first_span = std::span<std::byte const>{first};
     REQUIRE(binary.write_bytes(first) == 2);
     REQUIRE(binary.write_bytes(first_span.subspan(2)) == 1);
     REQUIRE(binary.write_bytes(second) == 2);
-    CHECK(binary.bytes() == std::vector<uint8_t>{'a', 'b', 'c', 'd', 'e'});
+    CHECK(
+      binary.bytes() == std::vector<std::byte>{
+                          std::byte{'a'},
+                          std::byte{'b'},
+                          std::byte{'c'},
+                          std::byte{'d'},
+                          std::byte{'e'},
+                        }
+    );
   }
 }

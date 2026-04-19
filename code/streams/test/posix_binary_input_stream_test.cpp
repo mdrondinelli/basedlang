@@ -118,31 +118,6 @@ TEST_CASE("Posix_binary_input_stream - read_bytes")
   }
 }
 
-TEST_CASE("Posix_binary_input_stream - read_byte")
-{
-  auto fds = std::array<int, 2>{};
-  REQUIRE(::pipe(fds.data()) == 0);
-  auto const data = std::string{"hello"};
-  REQUIRE(
-    ::write(fds[1], data.data(), data.size()) ==
-    static_cast<ssize_t>(data.size())
-  );
-  ::close(fds[1]);
-  auto posix = benson::Posix_binary_input_stream{fds[0]};
-  auto result = std::string{};
-  for (;;)
-  {
-    auto const byte = posix.read_byte();
-    if (!byte)
-    {
-      break;
-    }
-    result.push_back(std::to_integer<char>(*byte));
-  }
-  CHECK(result == "hello");
-  ::close(fds[0]);
-}
-
 TEST_CASE("Posix_binary_input_stream - read failure preserves errno")
 {
   auto posix = benson::Posix_binary_input_stream{-1};

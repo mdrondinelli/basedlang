@@ -51,6 +51,18 @@ add_library(frontend
 target_include_directories(frontend PUBLIC code/frontend/include)
 target_link_libraries(frontend PUBLIC ir ast spelling)
 
+add_library(bytecode
+  code/bytecode/src/bytecode_writer.cpp
+)
+target_include_directories(bytecode PUBLIC code/bytecode/include)
+target_link_libraries(bytecode PUBLIC streams)
+
+add_library(vm
+  code/vm/src/vm.cpp
+)
+target_include_directories(vm PUBLIC code/vm/include)
+target_link_libraries(vm PUBLIC bytecode)
+
 add_library(bensoncli
   code/benson/run.cpp
 )
@@ -95,6 +107,16 @@ add_executable(ir-tests
   code/ir/test/type_test.cpp
 )
 target_link_libraries(ir-tests PRIVATE ir Catch2::Catch2WithMain)
+
+add_executable(bytecode-tests
+  code/bytecode/test/bytecode_writer_test.cpp
+)
+target_link_libraries(bytecode-tests PRIVATE bytecode Catch2::Catch2WithMain)
+
+add_executable(vm-tests
+  code/vm/test/vm_test.cpp
+)
+target_link_libraries(vm-tests PRIVATE vm Catch2::Catch2WithMain)
 
 add_executable(frontend-tests
   code/frontend/test/compile_test.cpp

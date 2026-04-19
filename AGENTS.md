@@ -23,3 +23,13 @@ file first and pass it with `--body-file` instead of embedding the text directly
 in the shell command.
 
 Use your tools to author temporary PR comment files rather than shell commands.
+
+When checking PR comments, prefer `gh api` over `gh pr view --comments`.
+Current repo: `mdrondinelli/basedlang`.
+Use these endpoints as needed:
+* `repos/<owner>/<repo>/issues/<pr>/comments` for top-level PR conversation comments
+* `repos/<owner>/<repo>/pulls/<pr>/reviews` for review summaries
+* `repos/<owner>/<repo>/pulls/<pr>/comments` for inline review comments
+
+This is more reliable here because `gh pr view --comments` can fail on deprecated
+GraphQL fields.

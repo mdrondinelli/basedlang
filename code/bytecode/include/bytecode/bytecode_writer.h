@@ -22,6 +22,34 @@ namespace benson::bytecode
     void emit_neg_i64(Register dst, Register src);
     void emit_neg_f32(Register dst, Register src);
     void emit_neg_f64(Register dst, Register src);
+    void emit_add_i8(Register dst, Register lhs, Register rhs);
+    void emit_add_i16(Register dst, Register lhs, Register rhs);
+    void emit_add_i32(Register dst, Register lhs, Register rhs);
+    void emit_add_i64(Register dst, Register lhs, Register rhs);
+    void emit_add_f32(Register dst, Register lhs, Register rhs);
+    void emit_add_f64(Register dst, Register lhs, Register rhs);
+    void emit_sub_i8(Register dst, Register lhs, Register rhs);
+    void emit_sub_i16(Register dst, Register lhs, Register rhs);
+    void emit_sub_i32(Register dst, Register lhs, Register rhs);
+    void emit_sub_i64(Register dst, Register lhs, Register rhs);
+    void emit_sub_f32(Register dst, Register lhs, Register rhs);
+    void emit_sub_f64(Register dst, Register lhs, Register rhs);
+    void emit_mul_i8(Register dst, Register lhs, Register rhs);
+    void emit_mul_i16(Register dst, Register lhs, Register rhs);
+    void emit_mul_i32(Register dst, Register lhs, Register rhs);
+    void emit_mul_i64(Register dst, Register lhs, Register rhs);
+    void emit_mul_f32(Register dst, Register lhs, Register rhs);
+    void emit_mul_f64(Register dst, Register lhs, Register rhs);
+    void emit_div_i8(Register dst, Register lhs, Register rhs);
+    void emit_div_i16(Register dst, Register lhs, Register rhs);
+    void emit_div_i32(Register dst, Register lhs, Register rhs);
+    void emit_div_i64(Register dst, Register lhs, Register rhs);
+    void emit_div_f32(Register dst, Register lhs, Register rhs);
+    void emit_div_f64(Register dst, Register lhs, Register rhs);
+    void emit_mod_i8(Register dst, Register lhs, Register rhs);
+    void emit_mod_i16(Register dst, Register lhs, Register rhs);
+    void emit_mod_i32(Register dst, Register lhs, Register rhs);
+    void emit_mod_i64(Register dst, Register lhs, Register rhs);
 
     void flush();
 
@@ -31,6 +59,12 @@ namespace benson::bytecode
       Opcode opcode,
       Register dst,
       Register src
+    );
+    void emit_binary_register_instruction(
+      Opcode opcode,
+      Register dst,
+      Register lhs,
+      Register rhs
     );
 
     Binary_output_stream_writer _writer;

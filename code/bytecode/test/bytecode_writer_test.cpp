@@ -64,3 +64,29 @@ TEST_CASE("Bytecode_writer emits unary negate instruction operands")
                       }
   );
 }
+
+TEST_CASE("Bytecode_writer emits binary arithmetic instruction operands")
+{
+  using benson::bytecode::Opcode;
+  using benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_add_i32(Register::gpr_1, Register::gpr_2, Register::gpr_3);
+  writer.emit_mod_i64(Register::gpr_4, Register::gpr_5, Register::gpr_6);
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(Opcode::add_i32),
+                        static_cast<std::byte>(Register::gpr_1),
+                        static_cast<std::byte>(Register::gpr_2),
+                        static_cast<std::byte>(Register::gpr_3),
+                        static_cast<std::byte>(Opcode::mod_i64),
+                        static_cast<std::byte>(Register::gpr_4),
+                        static_cast<std::byte>(Register::gpr_5),
+                        static_cast<std::byte>(Register::gpr_6),
+                      }
+  );
+}

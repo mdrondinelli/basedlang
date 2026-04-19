@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_UTF8_CHAR_STREAM_H
-#define BASEDSTREAMS_UTF8_CHAR_STREAM_H
+#ifndef BASEDSTREAMS_UTF8_CHAR_INPUT_STREAM_H
+#define BASEDSTREAMS_UTF8_CHAR_INPUT_STREAM_H
 
 #include <cstddef>
 #include <cstdint>
@@ -7,16 +7,16 @@
 #include <span>
 #include <stdexcept>
 
-#include "streams/binary_stream_reader.h"
-#include "streams/char_stream.h"
+#include "streams/binary_input_stream_reader.h"
+#include "streams/char_input_stream.h"
 
 namespace benson
 {
 
-  /// Decodes UTF-8 bytes from a Binary_stream into Unicode codepoints.
-  /// Buffers the underlying bytes through a Binary_stream_reader.
+  /// Decodes UTF-8 bytes from a Binary_input_stream into Unicode codepoints.
+  /// Buffers the underlying bytes through a Binary_input_stream_reader.
   /// Throws Decode_error on invalid byte sequences.
-  class Utf8_char_stream: public Char_stream
+  class Utf8_char_input_stream: public Char_input_stream
   {
   public:
     class Decode_error: public std::runtime_error
@@ -28,7 +28,7 @@ namespace benson
       }
     };
 
-    explicit Utf8_char_stream(Binary_stream *stream)
+    explicit Utf8_char_input_stream(Binary_input_stream *stream)
         : _reader{stream}
     {
     }
@@ -142,9 +142,9 @@ namespace benson
       throw Decode_error{};
     }
 
-    Binary_stream_reader _reader;
+    Binary_input_stream_reader _reader;
   };
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_UTF8_CHAR_STREAM_H
+#endif // BASEDSTREAMS_UTF8_CHAR_INPUT_STREAM_H

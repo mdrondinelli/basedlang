@@ -17,14 +17,14 @@
 #include "ir/interpret.h"
 #include "ir/type.h"
 #include "spelling/spelling.h"
-#include "streams/istream_binary_stream.h"
-#include "streams/utf8_char_stream.h"
+#include "streams/istream_binary_input_stream.h"
+#include "streams/utf8_char_input_stream.h"
 
 struct Parse_fixture
 {
   std::istringstream stream;
-  benson::Istream_binary_stream binary_stream;
-  benson::Utf8_char_stream char_stream;
+  benson::Istream_binary_input_stream binary_stream;
+  benson::Utf8_char_input_stream char_stream;
   benson::Lexeme_stream lexeme_stream;
   benson::Lexeme_stream_reader reader;
   benson::Parser parser;

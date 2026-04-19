@@ -11,14 +11,14 @@
 
 #include "parsing/parser.h"
 #include "spelling/spelling.h"
-#include "streams/istream_binary_stream.h"
-#include "streams/utf8_char_stream.h"
+#include "streams/istream_binary_input_stream.h"
+#include "streams/utf8_char_input_stream.h"
 
 struct Parse_fixture
 {
   std::istringstream stream;
-  benson::Istream_binary_stream binary_stream;
-  benson::Utf8_char_stream char_stream;
+  benson::Istream_binary_input_stream binary_stream;
+  benson::Utf8_char_input_stream char_stream;
   benson::Spelling_table spellings;
   benson::Lexeme_stream lexeme_stream;
   benson::Lexeme_stream_reader reader;
@@ -65,8 +65,8 @@ top_level_fn(benson::ast::Statement const &statement)
 TEST_CASE("Parser - first.benson produces a declaration")
 {
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/first.benson"};
-  auto binary_stream = benson::Istream_binary_stream{&file};
-  auto char_stream = benson::Utf8_char_stream{&binary_stream};
+  auto binary_stream = benson::Istream_binary_input_stream{&file};
+  auto char_stream = benson::Utf8_char_input_stream{&binary_stream};
   auto spellings = benson::Spelling_table{};
   auto lexeme_stream = benson::Lexeme_stream{&char_stream, &spellings};
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
@@ -106,8 +106,8 @@ TEST_CASE("Parser - first.benson produces a declaration")
 TEST_CASE("Parser - parameters.benson parses successfully")
 {
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/parameters.benson"};
-  auto binary_stream = benson::Istream_binary_stream{&file};
-  auto char_stream = benson::Utf8_char_stream{&binary_stream};
+  auto binary_stream = benson::Istream_binary_input_stream{&file};
+  auto char_stream = benson::Utf8_char_input_stream{&binary_stream};
   auto spellings = benson::Spelling_table{};
   auto lexeme_stream = benson::Lexeme_stream{&char_stream, &spellings};
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
@@ -226,8 +226,8 @@ TEST_CASE("Parser - call_expression.benson parses successfully")
 {
   auto file =
     std::ifstream{std::string{EXAMPLES_PATH} + "/call_expression.benson"};
-  auto binary_stream = benson::Istream_binary_stream{&file};
-  auto char_stream = benson::Utf8_char_stream{&binary_stream};
+  auto binary_stream = benson::Istream_binary_input_stream{&file};
+  auto char_stream = benson::Utf8_char_input_stream{&binary_stream};
   auto spellings = benson::Spelling_table{};
   auto lexeme_stream = benson::Lexeme_stream{&char_stream, &spellings};
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};
@@ -1336,8 +1336,8 @@ TEST_CASE("parse_let_statement - mut")
 TEST_CASE("Parser - quicksort.benson parses successfully")
 {
   auto file = std::ifstream{std::string{EXAMPLES_PATH} + "/quicksort.benson"};
-  auto binary_stream = benson::Istream_binary_stream{&file};
-  auto char_stream = benson::Utf8_char_stream{&binary_stream};
+  auto binary_stream = benson::Istream_binary_input_stream{&file};
+  auto char_stream = benson::Utf8_char_input_stream{&binary_stream};
   auto spellings = benson::Spelling_table{};
   auto lexeme_stream = benson::Lexeme_stream{&char_stream, &spellings};
   auto reader = benson::Lexeme_stream_reader{&lexeme_stream};

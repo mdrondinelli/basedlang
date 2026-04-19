@@ -1,5 +1,6 @@
 #include <array>
 #include <string>
+#include <system_error>
 
 #if defined(__unix__) || defined(__APPLE__)
   #include <unistd.h>
@@ -139,5 +140,22 @@ TEST_CASE("Posix_binary_input_stream - read_byte")
   }
   CHECK(result == "hello");
   ::close(fds[0]);
+}
+
+TEST_CASE("Posix_binary_input_stream - read failure preserves errno")
+{
+  auto posix = benson::Posix_binary_input_stream{-1};
+  auto buffer = std::array<uint8_t, 1>{};
+
+  try
+  {
+    static_cast<void>(posix.read_bytes(buffer));
+    FAIL("expected std::system_error");
+  }
+  catch (std::system_error const &e)
+  {
+    CHECK(e.code().category() == std::system_category());
+    CHECK(e.code().value() == EBADF);
+  }
 }
 #endif

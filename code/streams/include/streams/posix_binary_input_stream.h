@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
-#include <stdexcept>
+#include <system_error>
 
 #if defined(__unix__) || defined(__APPLE__)
   #include <unistd.h>
@@ -40,7 +40,12 @@ namespace benson
         }
         if (errno != EINTR)
         {
-          throw std::runtime_error{"Posix_binary_input_stream: read failed"};
+          auto const error = errno;
+          throw std::system_error{
+            error,
+            std::system_category(),
+            "Posix_binary_input_stream: read failed"
+          };
         }
       }
     }

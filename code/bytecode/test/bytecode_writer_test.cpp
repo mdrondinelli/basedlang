@@ -28,18 +28,16 @@ namespace
 
 } // namespace
 
-TEST_CASE("Bytecode_writer emits nop and exit opcodes")
+TEST_CASE("Bytecode_writer emits exit opcode")
 {
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_nop();
   writer.emit_exit();
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
-                        static_cast<std::byte>(benson::bytecode::Opcode::nop),
                         static_cast<std::byte>(benson::bytecode::Opcode::exit),
                       }
   );

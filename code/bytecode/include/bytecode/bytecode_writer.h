@@ -15,7 +15,6 @@ namespace benson::bytecode
   public:
     explicit Bytecode_writer(Binary_output_stream *stream);
 
-    void emit_nop();
     void emit_exit();
     void emit_neg_i8(Register dst, Register src);
     void emit_neg_i16(Register dst, Register src);

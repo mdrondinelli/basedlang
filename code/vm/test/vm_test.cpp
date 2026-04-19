@@ -92,15 +92,12 @@ TEST_CASE("Virtual_machine keeps exact floating-point register bit pattern")
   );
 }
 
-TEST_CASE(
-  "Virtual_machine runs nop and negation program emitted by Bytecode_writer"
-)
+TEST_CASE("Virtual_machine runs negation program emitted by Bytecode_writer")
 {
   using benson::bytecode::Register;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
-  writer.emit_nop();
   writer.emit_neg_i32(Register::gpr_1, Register::gpr_2);
   writer.emit_exit();
   writer.flush();
@@ -113,7 +110,7 @@ TEST_CASE(
 
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == -123);
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_2) == 123);
-  CHECK(vm.instruction_pointer == stream.bytes().data() + 5);
+  CHECK(vm.instruction_pointer == stream.bytes().data() + 4);
 }
 
 TEST_CASE(

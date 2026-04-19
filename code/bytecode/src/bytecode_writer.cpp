@@ -8,11 +8,6 @@ namespace benson::bytecode
   {
   }
 
-  void Bytecode_writer::emit_nop()
-  {
-    emit_opcode(Opcode::nop);
-  }
-
   void Bytecode_writer::emit_exit()
   {
     emit_opcode(Opcode::exit);

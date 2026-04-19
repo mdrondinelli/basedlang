@@ -61,8 +61,6 @@ namespace benson
       auto const opcode = static_cast<bytecode::Opcode>(*instruction_pointer++);
       switch (opcode)
       {
-      case bytecode::Opcode::nop:
-        break;
       case bytecode::Opcode::exit:
         return;
       case bytecode::Opcode::neg_i8:

@@ -8,7 +8,6 @@ namespace benson::bytecode
 
   enum class Opcode : std::uint8_t
   {
-    nop,
     exit,
     neg_i8,
     neg_i16,

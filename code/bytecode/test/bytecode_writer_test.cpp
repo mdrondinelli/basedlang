@@ -132,9 +132,9 @@ TEST_CASE(
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_wide_add_i16_k(Register::gpr_1, Register::gpr_2, 0x0304);
-  writer.emit_wide_div_f64_k(Register::gpr_4, Register::gpr_5, 0x0607);
-  writer.emit_wide_mod_i32_k(Register::gpr_7, Register::gpr_8, 0x090A);
+  writer.emit_add_i16_k(Register::gpr_1, Register::gpr_2, 0x0304);
+  writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, 0x0607);
+  writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, 0x090A);
   writer.flush();
 
   CHECK(

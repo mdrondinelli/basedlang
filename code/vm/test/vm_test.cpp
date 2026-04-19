@@ -2,6 +2,7 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 
 #include <catch2/catch_template_test_macros.hpp>
@@ -30,6 +31,29 @@ namespace
   private:
     std::vector<std::byte> _bytes{};
   };
+
+} // namespace
+
+namespace
+{
+
+  template <typename T>
+  void store_constant(
+    std::vector<std::byte> &constant_memory,
+    std::vector<std::ptrdiff_t> &constant_table,
+    benson::bytecode::Wide_constant index,
+    T value
+  )
+  {
+    if (constant_table.size() <= index)
+    {
+      constant_table.resize(index + 1);
+    }
+    constant_table[index] = static_cast<std::ptrdiff_t>(constant_memory.size());
+    auto const start = constant_memory.size();
+    constant_memory.resize(start + sizeof(T));
+    std::memcpy(constant_memory.data() + start, &value, sizeof(T));
+  }
 
 } // namespace
 
@@ -179,4 +203,112 @@ TEST_CASE(
   CHECK(vm.get_register_value<double>(Register::gpr_6) == 44.0);
   CHECK(vm.get_register_value<double>(Register::gpr_8) == 22.0);
   CHECK(vm.instruction_pointer == stream.bytes().data() + 17);
+}
+
+TEST_CASE(
+  "Virtual_machine runs narrow constant arithmetic program emitted by "
+  "Bytecode_writer"
+)
+{
+  using benson::bytecode::Register;
+
+  auto constant_memory = std::vector<std::byte>{};
+  auto constant_table = std::vector<std::ptrdiff_t>{};
+  store_constant<std::int32_t>(constant_memory, constant_table, 3, 5);
+  store_constant<std::int32_t>(constant_memory, constant_table, 7, 3);
+  store_constant<std::int32_t>(constant_memory, constant_table, 9, 4);
+  store_constant<std::int32_t>(constant_memory, constant_table, 11, 6);
+  store_constant<std::int32_t>(constant_memory, constant_table, 13, 7);
+  store_constant<double>(constant_memory, constant_table, 15, 2.5);
+  store_constant<double>(constant_memory, constant_table, 17, 1.5);
+  store_constant<double>(constant_memory, constant_table, 19, 4.0);
+  store_constant<double>(constant_memory, constant_table, 21, 2.0);
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_add_i32_k(Register::gpr_1, Register::gpr_2, 3);
+  writer.emit_sub_i32_k(Register::gpr_4, Register::gpr_1, 7);
+  writer.emit_mul_i32_k(Register::gpr_6, Register::gpr_4, 9);
+  writer.emit_div_i32_k(Register::gpr_8, Register::gpr_6, 11);
+  writer.emit_mod_i32_k(Register::gpr_10, Register::gpr_8, 13);
+  writer.emit_add_f64_k(Register::gpr_12, Register::gpr_14, 15);
+  writer.emit_sub_f64_k(Register::gpr_16, Register::gpr_12, 17);
+  writer.emit_mul_f64_k(Register::gpr_18, Register::gpr_16, 19);
+  writer.emit_div_f64_k(Register::gpr_20, Register::gpr_18, 21);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.constant_memory = constant_memory.data();
+  vm.constant_table = constant_table.data();
+  vm.set_register_value<std::int32_t>(Register::gpr_2, 10);
+  vm.set_register_value<double>(Register::gpr_14, 10.0);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 15);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_4) == 12);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_6) == 48);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_8) == 8);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_10) == 1);
+  CHECK(vm.get_register_value<double>(Register::gpr_12) == 12.5);
+  CHECK(vm.get_register_value<double>(Register::gpr_16) == 11.0);
+  CHECK(vm.get_register_value<double>(Register::gpr_18) == 44.0);
+  CHECK(vm.get_register_value<double>(Register::gpr_20) == 22.0);
+  CHECK(vm.instruction_pointer == stream.bytes().data() + 37);
+}
+
+TEST_CASE(
+  "Virtual_machine runs wide constant arithmetic program emitted by "
+  "Bytecode_writer"
+)
+{
+  using benson::bytecode::Register;
+
+  auto constant_memory = std::vector<std::byte>{};
+  auto constant_table = std::vector<std::ptrdiff_t>{};
+  store_constant<std::int32_t>(constant_memory, constant_table, 0x0304, 5);
+  store_constant<std::int32_t>(constant_memory, constant_table, 0x0305, 3);
+  store_constant<std::int32_t>(constant_memory, constant_table, 0x0306, 4);
+  store_constant<std::int32_t>(constant_memory, constant_table, 0x0307, 6);
+  store_constant<std::int32_t>(constant_memory, constant_table, 0x0308, 7);
+  store_constant<double>(constant_memory, constant_table, 0x0309, 2.5);
+  store_constant<double>(constant_memory, constant_table, 0x030A, 1.5);
+  store_constant<double>(constant_memory, constant_table, 0x030B, 4.0);
+  store_constant<double>(constant_memory, constant_table, 0x030C, 2.0);
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_add_i32_k(Register::gpr_1, Register::gpr_2, 0x0304);
+  writer.emit_sub_i32_k(Register::gpr_4, Register::gpr_1, 0x0305);
+  writer.emit_mul_i32_k(Register::gpr_6, Register::gpr_4, 0x0306);
+  writer.emit_div_i32_k(Register::gpr_8, Register::gpr_6, 0x0307);
+  writer.emit_mod_i32_k(Register::gpr_10, Register::gpr_8, 0x0308);
+  writer.emit_add_f64_k(Register::gpr_12, Register::gpr_14, 0x0309);
+  writer.emit_sub_f64_k(Register::gpr_16, Register::gpr_12, 0x030A);
+  writer.emit_mul_f64_k(Register::gpr_18, Register::gpr_16, 0x030B);
+  writer.emit_div_f64_k(Register::gpr_20, Register::gpr_18, 0x030C);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.constant_memory = constant_memory.data();
+  vm.constant_table = constant_table.data();
+  vm.set_register_value<std::int32_t>(Register::gpr_2, 10);
+  vm.set_register_value<double>(Register::gpr_14, 10.0);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 15);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_4) == 12);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_6) == 48);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_8) == 8);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_10) == 1);
+  CHECK(vm.get_register_value<double>(Register::gpr_12) == 12.5);
+  CHECK(vm.get_register_value<double>(Register::gpr_16) == 11.0);
+  CHECK(vm.get_register_value<double>(Register::gpr_18) == 44.0);
+  CHECK(vm.get_register_value<double>(Register::gpr_20) == 22.0);
+  CHECK(vm.instruction_pointer == stream.bytes().data() + 55);
 }

@@ -6,8 +6,11 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 
+#include "bytecode/constant.h"
+#include "bytecode/opcode.h"
 #include "bytecode/register.h"
 
 namespace benson
@@ -17,6 +20,26 @@ namespace benson
   {
   public:
     Virtual_machine();
+
+    template <typename T>
+    [[nodiscard]] auto get_constant_value(bytecode::Wide_constant k) const -> T
+    {
+      auto const offset = constant_table[static_cast<std::size_t>(k)];
+      auto value = std::uint64_t{};
+      std::memcpy(&value, constant_memory + offset, sizeof(T));
+      if constexpr (std::same_as<T, float>)
+      {
+        return std::bit_cast<float>(static_cast<std::uint32_t>(value));
+      }
+      else if constexpr (std::same_as<T, double>)
+      {
+        return std::bit_cast<double>(value);
+      }
+      else
+      {
+        return static_cast<T>(value);
+      }
+    }
 
     template <typename T>
     [[nodiscard]] auto get_register_value(bytecode::Register reg) const -> T
@@ -59,8 +82,15 @@ namespace benson
     void run();
 
     std::byte const *instruction_pointer;
+    std::byte const *constant_memory;
+    std::ptrdiff_t const *constant_table;
     std::array<std::uint64_t, 256> registers;
     std::unique_ptr<std::array<std::byte, 4096>> stack;
+
+  private:
+    void dispatch(bytecode::Opcode opcode);
+
+    void wide_dispatch(bytecode::Opcode opcode);
   };
 
 } // namespace benson

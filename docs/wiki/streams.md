@@ -7,6 +7,7 @@
 The public surface is centered on:
 
 - `Binary_input_stream`
+- `Binary_output_stream`
 - `Istream_binary_input_stream`
 - `Posix_binary_input_stream` (POSIX-only)
 - `Binary_input_stream_reader`
@@ -24,6 +25,11 @@ The public surface is centered on:
 
 Abstract source of raw bytes.
 Its core operation is caller-owned bulk reads into a provided buffer.
+
+### `Binary_output_stream`
+
+Abstract sink for raw bytes.
+Its core operation is caller-owned bulk writes from a provided buffer.
 
 ### `Istream_binary_input_stream`
 

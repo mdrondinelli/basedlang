@@ -53,9 +53,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::add_i8, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_add_i8_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::add_i8_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_add_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::add_i16, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_add_i16_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::add_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_add_i32(Register dst, Register lhs, Register rhs)
@@ -63,9 +73,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::add_i32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_add_i32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::add_i32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_add_i64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::add_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_add_i64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::add_i64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_add_f32(Register dst, Register lhs, Register rhs)
@@ -73,9 +93,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::add_f32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_add_f32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::add_f32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_add_f64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::add_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_add_f64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::add_f64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_sub_i8(Register dst, Register lhs, Register rhs)
@@ -83,9 +113,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::sub_i8, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_sub_i8_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::sub_i8_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_sub_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::sub_i16, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_sub_i16_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::sub_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_sub_i32(Register dst, Register lhs, Register rhs)
@@ -93,9 +133,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::sub_i32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_sub_i32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::sub_i32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_sub_i64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::sub_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_sub_i64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::sub_i64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_sub_f32(Register dst, Register lhs, Register rhs)
@@ -103,9 +153,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::sub_f32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_sub_f32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::sub_f32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_sub_f64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::sub_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_sub_f64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::sub_f64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_mul_i8(Register dst, Register lhs, Register rhs)
@@ -113,9 +173,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::mul_i8, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_mul_i8_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mul_i8_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_mul_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::mul_i16, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_mul_i16_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mul_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_mul_i32(Register dst, Register lhs, Register rhs)
@@ -123,9 +193,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::mul_i32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_mul_i32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mul_i32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_mul_i64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::mul_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_mul_i64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mul_i64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_mul_f32(Register dst, Register lhs, Register rhs)
@@ -133,9 +213,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::mul_f32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_mul_f32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mul_f32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_mul_f64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::mul_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_mul_f64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mul_f64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_div_i8(Register dst, Register lhs, Register rhs)
@@ -143,9 +233,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::div_i8, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_div_i8_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::div_i8_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_div_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::div_i16, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_div_i16_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::div_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_div_i32(Register dst, Register lhs, Register rhs)
@@ -153,9 +253,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::div_i32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_div_i32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::div_i32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_div_i64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::div_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_div_i64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::div_i64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_div_f32(Register dst, Register lhs, Register rhs)
@@ -163,9 +273,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::div_f32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_div_f32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::div_f32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_div_f64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::div_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_div_f64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::div_f64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_mod_i8(Register dst, Register lhs, Register rhs)
@@ -173,9 +293,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::mod_i8, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_mod_i8_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mod_i8_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_mod_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::mod_i16, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_mod_i16_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mod_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_mod_i32(Register dst, Register lhs, Register rhs)
@@ -183,9 +313,19 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::mod_i32, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_mod_i32_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mod_i32_k, dst, lhs, rhs);
+  }
+
   void Bytecode_writer::emit_mod_i64(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::mod_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_mod_i64_k(Register dst, Register lhs, Constant rhs)
+  {
+    emit_binary_constant_instruction(Opcode::mod_i64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::flush()
@@ -214,6 +354,19 @@ namespace benson::bytecode
     Register dst,
     Register lhs,
     Register rhs
+  )
+  {
+    emit_opcode(opcode);
+    _writer.write(static_cast<std::byte>(dst));
+    _writer.write(static_cast<std::byte>(lhs));
+    _writer.write(static_cast<std::byte>(rhs));
+  }
+
+  void Bytecode_writer::emit_binary_constant_instruction(
+    Opcode opcode,
+    Register dst,
+    Register lhs,
+    Constant rhs
   )
   {
     emit_opcode(opcode);

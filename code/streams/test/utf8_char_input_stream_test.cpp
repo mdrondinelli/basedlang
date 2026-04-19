@@ -4,7 +4,9 @@
 #include <string>
 #include <vector>
 
-#include <unistd.h>
+#if defined(__unix__) || defined(__APPLE__)
+  #include <unistd.h>
+#endif
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -13,7 +15,9 @@
 #include "streams/char_input_stream_reader.h"
 #include "streams/istream_binary_input_stream.h"
 #include "streams/lookahead_char_input_stream_reader.h"
-#include "streams/posix_binary_input_stream.h"
+#if defined(__unix__) || defined(__APPLE__)
+  #include "streams/posix_binary_input_stream.h"
+#endif
 #include "streams/utf8_char_input_stream.h"
 
 TEST_CASE("Istream_binary_input_stream - read_bytes")
@@ -550,6 +554,7 @@ TEST_CASE("Utf8_char_input_stream - invalid sequences throw Decode_error")
   }
 }
 
+#if defined(__unix__) || defined(__APPLE__)
 TEST_CASE("Posix_binary_input_stream - read_bytes")
 {
   auto const make_pipe = []()
@@ -663,3 +668,4 @@ TEST_CASE("Posix_binary_input_stream - read_byte")
   CHECK(result == "hello");
   ::close(fds[0]);
 }
+#endif

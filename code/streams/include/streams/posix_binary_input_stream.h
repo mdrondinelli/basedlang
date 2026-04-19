@@ -7,13 +7,16 @@
 #include <span>
 #include <stdexcept>
 
-#include <unistd.h>
+#if defined(__unix__) || defined(__APPLE__)
+  #include <unistd.h>
+#endif
 
 #include "streams/binary_input_stream.h"
 
 namespace benson
 {
 
+#if defined(__unix__) || defined(__APPLE__)
   class Posix_binary_input_stream: public Binary_input_stream
   {
   public:
@@ -45,6 +48,7 @@ namespace benson
   private:
     int _fd;
   };
+#endif
 
 } // namespace benson
 

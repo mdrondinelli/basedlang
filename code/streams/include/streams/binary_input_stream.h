@@ -2,7 +2,6 @@
 #define BASEDSTREAMS_BINARY_INPUT_STREAM_H
 
 #include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <span>
 
@@ -22,12 +21,12 @@ namespace benson
     /// means EOF. When buffer is empty, the call is a no-op and returns 0. If
     /// an implementation throws after writing bytes into buffer, those bytes
     /// are lost and the stream position is undefined.
-    virtual std::ptrdiff_t read_bytes(std::span<uint8_t> buffer) = 0;
+    virtual std::ptrdiff_t read_bytes(std::span<std::byte> buffer) = 0;
 
     /// Returns the next byte, or std::nullopt at EOF.
-    std::optional<uint8_t> read_byte()
+    std::optional<std::byte> read_byte()
     {
-      auto buffer = uint8_t{};
+      auto buffer = std::byte{};
       if (read_bytes(std::span{&buffer, std::size_t{1}}) == 0)
       {
         return std::nullopt;

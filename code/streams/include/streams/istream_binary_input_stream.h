@@ -2,7 +2,6 @@
 #define BASEDSTREAMS_ISTREAM_BINARY_INPUT_STREAM_H
 
 #include <cstddef>
-#include <cstdint>
 #include <istream>
 #include <span>
 
@@ -19,7 +18,7 @@ namespace benson
     {
     }
 
-    std::ptrdiff_t read_bytes(std::span<uint8_t> buffer) override
+    std::ptrdiff_t read_bytes(std::span<std::byte> buffer) override
     {
       if (buffer.empty())
       {

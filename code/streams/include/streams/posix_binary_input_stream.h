@@ -3,7 +3,6 @@
 
 #include <cerrno>
 #include <cstddef>
-#include <cstdint>
 #include <span>
 #include <system_error>
 
@@ -25,7 +24,7 @@ namespace benson
     {
     }
 
-    std::ptrdiff_t read_bytes(std::span<uint8_t> buffer) override
+    std::ptrdiff_t read_bytes(std::span<std::byte> buffer) override
     {
       if (buffer.empty())
       {

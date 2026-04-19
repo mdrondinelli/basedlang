@@ -8,6 +8,7 @@ The public surface is centered on:
 
 - `Binary_input_stream`
 - `Istream_binary_input_stream`
+- `Posix_binary_input_stream` (POSIX-only)
 - `Binary_input_stream_reader`
 - `Char_input_stream`
 - `Utf8_char_input_stream`
@@ -27,6 +28,12 @@ Its core operation is caller-owned bulk reads into a provided buffer.
 ### `Istream_binary_input_stream`
 
 Adapter from `std::istream` to `Binary_input_stream`.
+
+### `Posix_binary_input_stream`
+
+POSIX-only adapter from a file descriptor to `Binary_input_stream`.
+Like `Istream_binary_input_stream`, it is an environment boundary adapter rather
+than a new byte-stream abstraction. It is non-owning and does not close the fd.
 
 ### `Binary_input_stream_reader`
 

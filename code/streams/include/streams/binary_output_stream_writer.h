@@ -33,16 +33,12 @@ namespace benson
 
     void flush()
     {
-      auto pos = std::ptrdiff_t{};
-      while (pos < _size)
+      if (_size > 0)
       {
-        auto const remaining = _size - pos;
-        auto const wrote = _stream->write_bytes(
-          std::span{_buffer->data() + pos, static_cast<std::size_t>(remaining)}
-        );
-        pos += wrote;
+        _stream->write_bytes(
+          std::span{_buffer->data(), static_cast<std::size_t>(_size)});
+        _size = 0;
       }
-      _size = 0;
     }
 
   private:

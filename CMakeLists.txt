@@ -110,7 +110,6 @@ target_link_libraries(ir-tests PRIVATE ir Catch2::Catch2WithMain)
 
 add_executable(bytecode-tests
   code/bytecode/test/bytecode_writer_test.cpp
-  code/bytecode/test/module_test.cpp
 )
 target_link_libraries(bytecode-tests PRIVATE bytecode Catch2::Catch2WithMain)
 

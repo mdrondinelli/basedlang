@@ -9,6 +9,18 @@ namespace benson
   namespace
   {
 
+    template <typename ConstantType>
+    void run_lookup_k(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const dst = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto k = ConstantType{};
+      std::memcpy(&k, instruction_pointer, sizeof(k));
+      instruction_pointer += sizeof(k);
+      vm.set_register_value(dst, vm.lookup_constant(k));
+    }
+
     template <typename T>
     void run_neg(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
@@ -117,6 +129,9 @@ namespace benson
     {
     case bytecode::Opcode::wide:
       wide_dispatch(static_cast<bytecode::Opcode>(*instruction_pointer++));
+      break;
+    case bytecode::Opcode::lookup_k:
+      run_lookup_k<bytecode::Constant>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::neg_i8:
       run_neg<std::int8_t>(instruction_pointer, *this);
@@ -705,6 +720,9 @@ namespace benson
   {
     switch (opcode)
     {
+    case bytecode::Opcode::lookup_k:
+      run_lookup_k<bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
     case bytecode::Opcode::add_i8_k:
       run_wide_constant_binary<std::int8_t>(
         instruction_pointer,

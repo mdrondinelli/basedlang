@@ -12,6 +12,7 @@
 #include "bytecode/constant.h"
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
+#include "pointer.h"
 
 namespace benson
 {
@@ -21,9 +22,19 @@ namespace benson
   public:
     Virtual_machine();
 
-    template <typename T>
-    [[nodiscard]] auto get_constant_value(bytecode::Wide_constant k) const -> T
+    Pointer lookup_constant(bytecode::Wide_constant k) const
     {
+      // TODO: check that k is in range
+      return Pointer{
+        Address_space::constant,
+        static_cast<uint64_t>(constant_table[static_cast<std::size_t>(k)])
+      };
+    }
+
+    template <typename T>
+    [[nodiscard]] T get_constant_value(bytecode::Wide_constant k) const
+    {
+      // TODO: check that k is in range
       auto const offset = constant_table[static_cast<std::size_t>(k)];
       auto value = std::uint64_t{};
       std::memcpy(&value, constant_memory + offset, sizeof(T));
@@ -42,7 +53,7 @@ namespace benson
     }
 
     template <typename T>
-    [[nodiscard]] auto get_register_value(bytecode::Register reg) const -> T
+    [[nodiscard]] T get_register_value(bytecode::Register reg) const
     {
       auto const value = registers[static_cast<std::size_t>(reg)];
       if constexpr (std::same_as<T, float>)

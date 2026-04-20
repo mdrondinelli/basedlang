@@ -10,6 +10,7 @@ namespace benson::bytecode
   {
     exit,
     wide,
+    lookup_k,
     neg_i8,
     neg_i16,
     neg_i32,

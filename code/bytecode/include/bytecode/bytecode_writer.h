@@ -16,6 +16,7 @@ namespace benson::bytecode
     explicit Bytecode_writer(Binary_output_stream *stream);
 
     void emit_exit();
+    void emit_lookup_k(Register dst, Wide_constant k);
     void emit_neg_i8(Register dst, Register src);
     void emit_neg_i16(Register dst, Register src);
     void emit_neg_i32(Register dst, Register src);
@@ -97,7 +98,7 @@ namespace benson::bytecode
       Register rhs
     );
 
-    void emit_adaptive_binary_constant_instruction(
+    void emit_binary_constant_instruction(
       Opcode opcode,
       Register dst,
       Register lhs,

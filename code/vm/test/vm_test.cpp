@@ -116,6 +116,45 @@ TEST_CASE("Virtual_machine keeps exact floating-point register bit pattern")
   );
 }
 
+TEST_CASE(
+  "Virtual_machine runs lookup constant program emitted by Bytecode_writer"
+)
+{
+  using benson::Address_space;
+  using benson::Pointer;
+  using benson::bytecode::Register;
+
+  auto constant_memory = std::vector<std::byte>{};
+  auto constant_table = std::vector<std::ptrdiff_t>{};
+  store_constant<std::int32_t>(constant_memory, constant_table, 3, 5);
+  store_constant<double>(constant_memory, constant_table, 0x0304, 2.5);
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_lookup_k(Register::gpr_1, 3);
+  writer.emit_lookup_k(Register::gpr_2, 0x0304);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.constant_memory = constant_memory.data();
+  vm.constant_table = constant_table.data();
+
+  vm.run();
+
+  auto const p1 =
+    Pointer{vm.get_register_value<std::uint64_t>(Register::gpr_1)}.decode();
+  auto const p2 =
+    Pointer{vm.get_register_value<std::uint64_t>(Register::gpr_2)}.decode();
+
+  CHECK(p1.space == Address_space::constant);
+  CHECK(p1.offset == static_cast<std::uint64_t>(constant_table[3]));
+  CHECK(p2.space == Address_space::constant);
+  CHECK(p2.offset == static_cast<std::uint64_t>(constant_table[0x0304]));
+  CHECK(vm.instruction_pointer == stream.bytes().data() + 9);
+}
+
 TEST_CASE("Virtual_machine runs negation program emitted by Bytecode_writer")
 {
   using benson::bytecode::Register;

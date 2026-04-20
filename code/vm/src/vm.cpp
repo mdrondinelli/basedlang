@@ -110,6 +110,13 @@ namespace benson
   {
   }
 
+  void Virtual_machine::load(bytecode::Module const &module)
+  {
+    instruction_pointer = module.code.data();
+    constant_memory = module.constant_data.data();
+    constant_table = module.constant_table.data();
+  }
+
   void Virtual_machine::run()
   {
     for (;;)

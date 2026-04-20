@@ -10,6 +10,7 @@
 #include <memory>
 
 #include "bytecode/constant.h"
+#include "bytecode/module.h"
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
 #include "pointer.h"
@@ -89,6 +90,8 @@ namespace benson
           static_cast<std::uint64_t>(value);
       }
     }
+
+    void load(bytecode::Module const &module);
 
     void run();
 

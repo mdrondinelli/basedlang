@@ -155,6 +155,49 @@ TEST_CASE(
   CHECK(vm.instruction_pointer == stream.bytes().data() + 9);
 }
 
+TEST_CASE("Virtual_machine runs load program emitted by Bytecode_writer")
+{
+  using benson::bytecode::Register;
+
+  auto constant_memory = std::vector<std::byte>{};
+  auto constant_table = std::vector<std::ptrdiff_t>{};
+  store_constant<std::int32_t>(constant_memory, constant_table, 3, 0x11223344);
+  store_constant<std::int64_t>(
+    constant_memory,
+    constant_table,
+    0x0304,
+    0x0102030405060708LL
+  );
+  store_constant<std::int64_t>(constant_memory, constant_table, 5, 0);
+  store_constant<std::int64_t>(constant_memory, constant_table, 0x0305, 0);
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_lookup_k(Register::gpr_1, 3);
+  writer.emit_load_32_i(Register::gpr_2, Register::gpr_1, 0);
+  writer.emit_lookup_k(Register::gpr_3, 0x0304);
+  writer.emit_load_64_k(Register::gpr_4, Register::gpr_3, 5);
+  writer.emit_load_64_k(Register::gpr_5, Register::gpr_3, 0x0305);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.constant_memory = constant_memory.data();
+  vm.constant_table = constant_table.data();
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_2) == 0x11223344);
+  CHECK(
+    vm.get_register_value<std::int64_t>(Register::gpr_4) == 0x0102030405060708LL
+  );
+  CHECK(
+    vm.get_register_value<std::int64_t>(Register::gpr_5) == 0x0102030405060708LL
+  );
+  CHECK(vm.instruction_pointer == stream.bytes().data() + 22);
+}
+
 TEST_CASE("Virtual_machine runs negation program emitted by Bytecode_writer")
 {
   using benson::bytecode::Register;
@@ -209,6 +252,37 @@ TEST_CASE(
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_8) == 8);
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_10) == 1);
   CHECK(vm.instruction_pointer == stream.bytes().data() + 21);
+}
+
+TEST_CASE(
+  "Virtual_machine runs integer immediate arithmetic program emitted by "
+  "Bytecode_writer"
+)
+{
+  using benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_add_i32_i(Register::gpr_1, Register::gpr_2, 5);
+  writer.emit_sub_i32_i(Register::gpr_3, Register::gpr_1, -3);
+  writer.emit_mul_i32_i(Register::gpr_4, Register::gpr_3, 0x0102);
+  writer.emit_div_i32_i(Register::gpr_5, Register::gpr_4, 6);
+  writer.emit_mod_i32_i(Register::gpr_6, Register::gpr_5, 7);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.set_register_value<std::int32_t>(Register::gpr_2, 10);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 15);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_3) == 18);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_4) == 4590);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_5) == 765);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_6) == 2);
+  CHECK(vm.instruction_pointer == stream.bytes().data() + 25);
 }
 
 TEST_CASE(

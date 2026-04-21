@@ -117,7 +117,7 @@ namespace benson
       ip += sizeof(offset);
       auto [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
-      auto const space_pointer = [&](){
+      auto const space_pointer = [&]() -> std::byte const * {
         switch (address_space)
         {
         case Address_space::constant:
@@ -127,7 +127,7 @@ namespace benson
         default:
           throw std::runtime_error{"unsupported address space for load"};
         }
-      };
+      }();
       auto value = std::uint64_t{};
       // TODO: bounds check
       std::memcpy(&value, space_pointer + base_address + offset, N);
@@ -1180,7 +1180,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::sub_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
+      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int32_t lhs, std::int32_t rhs)
@@ -1190,7 +1190,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::sub_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
+      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int32_t lhs, std::int32_t rhs)
@@ -1200,7 +1200,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::sub_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
+      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int64_t lhs, std::int64_t rhs)
@@ -1210,7 +1210,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::sub_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
+      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int64_t lhs, std::int64_t rhs)
@@ -1220,7 +1220,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::sub_f32_k:
-      run_constant_binary<float, bytecode::Constant>(
+      run_constant_binary<float, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](float lhs, float rhs)
@@ -1230,7 +1230,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::sub_f64_k:
-      run_constant_binary<double, bytecode::Constant>(
+      run_constant_binary<double, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](double lhs, double rhs)
@@ -1240,7 +1240,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_i8_k:
-      run_constant_binary<std::int8_t, bytecode::Constant>(
+      run_constant_binary<std::int8_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int8_t lhs, std::int8_t rhs)
@@ -1250,7 +1250,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_i8_i:
-      run_immediate_binary<std::int8_t, bytecode::Immediate>(
+      run_immediate_binary<std::int8_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int8_t lhs, std::int8_t rhs)
@@ -1260,7 +1260,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_i16_k:
-      run_constant_binary<std::int16_t, bytecode::Constant>(
+      run_constant_binary<std::int16_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int16_t lhs, std::int16_t rhs)
@@ -1270,7 +1270,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_i16_i:
-      run_immediate_binary<std::int16_t, bytecode::Immediate>(
+      run_immediate_binary<std::int16_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int16_t lhs, std::int16_t rhs)
@@ -1280,7 +1280,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
+      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int32_t lhs, std::int32_t rhs)
@@ -1290,7 +1290,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
+      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int32_t lhs, std::int32_t rhs)
@@ -1300,7 +1300,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
+      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int64_t lhs, std::int64_t rhs)
@@ -1310,7 +1310,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
+      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int64_t lhs, std::int64_t rhs)
@@ -1320,7 +1320,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_f32_k:
-      run_constant_binary<float, bytecode::Constant>(
+      run_constant_binary<float, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](float lhs, float rhs)
@@ -1330,7 +1330,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mul_f64_k:
-      run_constant_binary<double, bytecode::Constant>(
+      run_constant_binary<double, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](double lhs, double rhs)
@@ -1340,7 +1340,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_i8_k:
-      run_constant_binary<std::int8_t, bytecode::Constant>(
+      run_constant_binary<std::int8_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int8_t lhs, std::int8_t rhs)
@@ -1350,7 +1350,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_i8_i:
-      run_immediate_binary<std::int8_t, bytecode::Immediate>(
+      run_immediate_binary<std::int8_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int8_t lhs, std::int8_t rhs)
@@ -1360,7 +1360,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_i16_k:
-      run_constant_binary<std::int16_t, bytecode::Constant>(
+      run_constant_binary<std::int16_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int16_t lhs, std::int16_t rhs)
@@ -1370,7 +1370,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_i16_i:
-      run_immediate_binary<std::int16_t, bytecode::Immediate>(
+      run_immediate_binary<std::int16_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int16_t lhs, std::int16_t rhs)
@@ -1380,7 +1380,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
+      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int32_t lhs, std::int32_t rhs)
@@ -1390,7 +1390,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
+      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int32_t lhs, std::int32_t rhs)
@@ -1400,7 +1400,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
+      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int64_t lhs, std::int64_t rhs)
@@ -1410,7 +1410,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
+      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int64_t lhs, std::int64_t rhs)
@@ -1420,7 +1420,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_f32_k:
-      run_constant_binary<float, bytecode::Constant>(
+      run_constant_binary<float, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](float lhs, float rhs)
@@ -1430,7 +1430,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::div_f64_k:
-      run_constant_binary<double, bytecode::Constant>(
+      run_constant_binary<double, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](double lhs, double rhs)
@@ -1440,7 +1440,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mod_i8_k:
-      run_constant_binary<std::int8_t, bytecode::Constant>(
+      run_constant_binary<std::int8_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int8_t lhs, std::int8_t rhs)
@@ -1450,7 +1450,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mod_i8_i:
-      run_immediate_binary<std::int8_t, bytecode::Immediate>(
+      run_immediate_binary<std::int8_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int8_t lhs, std::int8_t rhs)
@@ -1460,7 +1460,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mod_i16_k:
-      run_constant_binary<std::int16_t, bytecode::Constant>(
+      run_constant_binary<std::int16_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int16_t lhs, std::int16_t rhs)
@@ -1470,7 +1470,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mod_i16_i:
-      run_immediate_binary<std::int16_t, bytecode::Immediate>(
+      run_immediate_binary<std::int16_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int16_t lhs, std::int16_t rhs)
@@ -1480,7 +1480,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mod_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
+      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int32_t lhs, std::int32_t rhs)
@@ -1490,7 +1490,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mod_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
+      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int32_t lhs, std::int32_t rhs)
@@ -1500,7 +1500,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mod_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
+      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
         instruction_pointer,
         *this,
         [](std::int64_t lhs, std::int64_t rhs)
@@ -1510,7 +1510,7 @@ namespace benson
       );
       break;
     case bytecode::Opcode::mod_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
+      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
         instruction_pointer,
         *this,
         [](std::int64_t lhs, std::int64_t rhs)

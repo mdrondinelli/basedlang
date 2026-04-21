@@ -238,10 +238,10 @@ TEST_CASE(
 
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 15);
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_3) == 18);
-  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_4) == 4590);
-  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_5) == 765);
-  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_6) == 2);
-  CHECK(vm.instruction_pointer == stream.bytes().data() + 25);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_4) == 4644);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_5) == 774);
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_6) == 4);
+  CHECK(vm.instruction_pointer == stream.bytes().data() + 23);
 }
 
 TEST_CASE(

@@ -162,14 +162,14 @@ TEST_CASE(
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_add_i8_k(Register::gpr_1, Register::gpr_2, 3);
+  writer.emit_sub_i32_k(Register::gpr_1, Register::gpr_2, 3);
   writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, 6);
   writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, 9);
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
-                        static_cast<std::byte>(Opcode::add_i8_k),
+                        static_cast<std::byte>(Opcode::sub_i32_k),
                         static_cast<std::byte>(Register::gpr_1),
                         static_cast<std::byte>(Register::gpr_2),
                         std::byte{3},
@@ -195,7 +195,7 @@ TEST_CASE(
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_add_i16_k(Register::gpr_1, Register::gpr_2, 0x0304);
+  writer.emit_sub_i32_k(Register::gpr_1, Register::gpr_2, 0x0304);
   writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, 0x0607);
   writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, 0x090A);
   writer.flush();
@@ -203,7 +203,7 @@ TEST_CASE(
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::wide),
-                        static_cast<std::byte>(Opcode::add_i16_k),
+                        static_cast<std::byte>(Opcode::sub_i32_k),
                         static_cast<std::byte>(Register::gpr_1),
                         static_cast<std::byte>(Register::gpr_2),
                         std::byte{0x04},

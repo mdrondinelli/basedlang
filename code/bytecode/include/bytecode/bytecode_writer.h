@@ -33,10 +33,8 @@ namespace benson::bytecode
     void emit_neg_f32(Register dst, Register src);
     void emit_neg_f64(Register dst, Register src);
     void emit_add_i8(Register dst, Register lhs, Register rhs);
-    void emit_add_i8_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_add_i8_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_add_i16(Register dst, Register lhs, Register rhs);
-    void emit_add_i16_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_add_i16_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_add_i32(Register dst, Register lhs, Register rhs);
     void emit_add_i32_k(Register dst, Register lhs, Wide_constant rhs);
@@ -49,10 +47,8 @@ namespace benson::bytecode
     void emit_add_f64(Register dst, Register lhs, Register rhs);
     void emit_add_f64_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_sub_i8(Register dst, Register lhs, Register rhs);
-    void emit_sub_i8_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_sub_i8_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_sub_i16(Register dst, Register lhs, Register rhs);
-    void emit_sub_i16_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_sub_i16_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_sub_i32(Register dst, Register lhs, Register rhs);
     void emit_sub_i32_k(Register dst, Register lhs, Wide_constant rhs);
@@ -65,10 +61,8 @@ namespace benson::bytecode
     void emit_sub_f64(Register dst, Register lhs, Register rhs);
     void emit_sub_f64_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_mul_i8(Register dst, Register lhs, Register rhs);
-    void emit_mul_i8_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_mul_i8_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_mul_i16(Register dst, Register lhs, Register rhs);
-    void emit_mul_i16_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_mul_i16_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_mul_i32(Register dst, Register lhs, Register rhs);
     void emit_mul_i32_k(Register dst, Register lhs, Wide_constant rhs);
@@ -81,10 +75,8 @@ namespace benson::bytecode
     void emit_mul_f64(Register dst, Register lhs, Register rhs);
     void emit_mul_f64_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_div_i8(Register dst, Register lhs, Register rhs);
-    void emit_div_i8_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_div_i8_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_div_i16(Register dst, Register lhs, Register rhs);
-    void emit_div_i16_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_div_i16_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_div_i32(Register dst, Register lhs, Register rhs);
     void emit_div_i32_k(Register dst, Register lhs, Wide_constant rhs);
@@ -97,10 +89,8 @@ namespace benson::bytecode
     void emit_div_f64(Register dst, Register lhs, Register rhs);
     void emit_div_f64_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_mod_i8(Register dst, Register lhs, Register rhs);
-    void emit_mod_i8_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_mod_i8_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_mod_i16(Register dst, Register lhs, Register rhs);
-    void emit_mod_i16_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_mod_i16_i(Register dst, Register lhs, Wide_immediate rhs);
     void emit_mod_i32(Register dst, Register lhs, Register rhs);
     void emit_mod_i32_k(Register dst, Register lhs, Wide_constant rhs);

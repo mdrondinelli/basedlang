@@ -99,6 +99,78 @@ namespace benson
       );
     }
 
+    template <std::size_t N, typename OffsetType>
+    void run_load(std::byte const *&ip, Virtual_machine &vm)
+    {
+      auto const dst = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*ip++)
+      );
+      auto const base = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*ip++)
+      );
+      auto offset = OffsetType{};
+      std::memcpy(&offset, ip, sizeof(offset));
+      ip += sizeof(offset);
+
+      auto const decoded =
+        Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
+      std::byte const *src = nullptr;
+      switch (decoded.space)
+      {
+      case Address_space::stack:
+        {
+          auto const addr = decoded.offset + offset;
+          if (addr + N > vm.stack->size())
+          {
+            throw std::runtime_error{"load out of bounds"};
+          }
+          src = vm.stack->data() + addr;
+        }
+        break;
+      case Address_space::constant:
+        src = vm.constant_memory + decoded.offset + offset;
+        break;
+      default:
+        throw std::runtime_error{"unsupported address space for load"};
+      }
+      auto value = std::uint64_t{};
+      std::memcpy(&value, src, N);
+      vm.registers[static_cast<std::size_t>(dst)] = value;
+    }
+
+    template <std::size_t N, typename OffsetType>
+    void run_store(std::byte const *&ip, Virtual_machine &vm)
+    {
+      auto const src = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*ip++)
+      );
+      auto const base = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*ip++)
+      );
+      auto offset = OffsetType{};
+      std::memcpy(&offset, ip, sizeof(offset));
+      ip += sizeof(offset);
+
+      auto const decoded =
+        Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
+      if (decoded.space == Address_space::constant)
+      {
+        throw std::runtime_error{"store to constant memory"};
+      }
+      if (decoded.space != Address_space::stack)
+      {
+        throw std::runtime_error{"unsupported address space for store"};
+      }
+      auto const addr = decoded.offset + offset;
+      if (addr + N > vm.stack->size())
+      {
+        throw std::runtime_error{"store out of bounds"};
+      }
+      auto *dst = vm.stack->data() + addr;
+      auto const value = vm.registers[static_cast<std::size_t>(src)];
+      std::memcpy(dst, &value, N);
+    }
+
   } // namespace
 
   Virtual_machine::Virtual_machine()
@@ -718,6 +790,30 @@ namespace benson
         }
       );
       break;
+    case bytecode::Opcode::load_8:
+      run_load<1, bytecode::Constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_16:
+      run_load<2, bytecode::Constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_32:
+      run_load<4, bytecode::Constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_64:
+      run_load<8, bytecode::Constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_8:
+      run_store<1, bytecode::Constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_16:
+      run_store<2, bytecode::Constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_32:
+      run_store<4, bytecode::Constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_64:
+      run_store<8, bytecode::Constant>(instruction_pointer, *this);
+      break;
     default:
       throw std::runtime_error{"unimplemented bytecode opcode"};
     }
@@ -1009,6 +1105,30 @@ namespace benson
           return lhs % rhs;
         }
       );
+      break;
+    case bytecode::Opcode::load_8:
+      run_load<1, bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_16:
+      run_load<2, bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_32:
+      run_load<4, bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_64:
+      run_load<8, bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_8:
+      run_store<1, bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_16:
+      run_store<2, bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_32:
+      run_store<4, bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_64:
+      run_store<8, bytecode::Wide_constant>(instruction_pointer, *this);
       break;
     default:
       throw std::runtime_error{"unimplemented wide bytecode opcode"};

@@ -465,6 +465,46 @@ namespace benson::bytecode
     emit_binary_constant_instruction(Opcode::mod_i64_k, dst, lhs, rhs);
   }
 
+  void Bytecode_writer::emit_load_8(Register dst, Register base, Wide_constant offset)
+  {
+    emit_load_store_instruction(Opcode::load_8, dst, base, offset);
+  }
+
+  void Bytecode_writer::emit_load_16(Register dst, Register base, Wide_constant offset)
+  {
+    emit_load_store_instruction(Opcode::load_16, dst, base, offset);
+  }
+
+  void Bytecode_writer::emit_load_32(Register dst, Register base, Wide_constant offset)
+  {
+    emit_load_store_instruction(Opcode::load_32, dst, base, offset);
+  }
+
+  void Bytecode_writer::emit_load_64(Register dst, Register base, Wide_constant offset)
+  {
+    emit_load_store_instruction(Opcode::load_64, dst, base, offset);
+  }
+
+  void Bytecode_writer::emit_store_8(Register src, Register base, Wide_constant offset)
+  {
+    emit_load_store_instruction(Opcode::store_8, src, base, offset);
+  }
+
+  void Bytecode_writer::emit_store_16(Register src, Register base, Wide_constant offset)
+  {
+    emit_load_store_instruction(Opcode::store_16, src, base, offset);
+  }
+
+  void Bytecode_writer::emit_store_32(Register src, Register base, Wide_constant offset)
+  {
+    emit_load_store_instruction(Opcode::store_32, src, base, offset);
+  }
+
+  void Bytecode_writer::emit_store_64(Register src, Register base, Wide_constant offset)
+  {
+    emit_load_store_instruction(Opcode::store_64, src, base, offset);
+  }
+
   void Bytecode_writer::flush()
   {
     _writer.flush();
@@ -521,6 +561,31 @@ namespace benson::bytecode
       _writer.write(static_cast<std::byte>(dst));
       _writer.write(static_cast<std::byte>(lhs));
       _writer.write(static_cast<std::byte>(static_cast<Constant>(rhs)));
+    }
+  }
+
+  void Bytecode_writer::emit_load_store_instruction(
+    Opcode opcode,
+    Register r1,
+    Register r2,
+    Wide_constant offset
+  )
+  {
+    if (is_wide(offset))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(opcode);
+      _writer.write(static_cast<std::byte>(r1));
+      _writer.write(static_cast<std::byte>(r2));
+      _writer.write(static_cast<std::byte>(offset));
+      _writer.write(static_cast<std::byte>(offset >> 8));
+    }
+    else
+    {
+      emit_opcode(opcode);
+      _writer.write(static_cast<std::byte>(r1));
+      _writer.write(static_cast<std::byte>(r2));
+      _writer.write(static_cast<std::byte>(static_cast<Constant>(offset)));
     }
   }
 

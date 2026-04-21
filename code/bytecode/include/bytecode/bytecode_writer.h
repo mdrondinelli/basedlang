@@ -79,6 +79,14 @@ namespace benson::bytecode
     void emit_mod_i32_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_mod_i64(Register dst, Register lhs, Register rhs);
     void emit_mod_i64_k(Register dst, Register lhs, Wide_constant rhs);
+    void emit_load_8(Register dst, Register base, Wide_constant offset);
+    void emit_load_16(Register dst, Register base, Wide_constant offset);
+    void emit_load_32(Register dst, Register base, Wide_constant offset);
+    void emit_load_64(Register dst, Register base, Wide_constant offset);
+    void emit_store_8(Register src, Register base, Wide_constant offset);
+    void emit_store_16(Register src, Register base, Wide_constant offset);
+    void emit_store_32(Register src, Register base, Wide_constant offset);
+    void emit_store_64(Register src, Register base, Wide_constant offset);
 
     void flush();
 
@@ -103,6 +111,13 @@ namespace benson::bytecode
       Register dst,
       Register lhs,
       Wide_constant rhs
+    );
+
+    void emit_load_store_instruction(
+      Opcode opcode,
+      Register r1,
+      Register r2,
+      Wide_constant offset
     );
 
     Binary_output_stream_writer _writer;

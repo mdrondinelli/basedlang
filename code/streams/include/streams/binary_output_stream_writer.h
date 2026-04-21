@@ -36,7 +36,8 @@ namespace benson
       if (_size > 0)
       {
         _stream->write_bytes(
-          std::span{_buffer->data(), static_cast<std::size_t>(_size)});
+          std::span{_buffer->data(), static_cast<std::size_t>(_size)}
+        );
         _size = 0;
       }
     }

@@ -13,13 +13,10 @@ namespace benson
   public:
     virtual ~Binary_output_stream() = default;
 
-    /// Writes up to buffer.size() bytes from buffer and returns number of bytes
-    /// written. Implementations may return short writes, but when buffer is
-    /// non-empty a short write must be strictly positive; a return of 0 then
-    /// requires buffer to be empty. When buffer is empty, call is a no-op and
-    /// returns 0. If an implementation throws after consuming bytes from
+    /// Writes all bytes in buffer to the stream. When buffer is empty, call is
+    /// a no-op. If an implementation throws after consuming some bytes from
     /// buffer, stream state is undefined.
-    virtual std::ptrdiff_t write_bytes(std::span<std::byte const> buffer) = 0;
+    virtual void write_bytes(std::span<std::byte const> buffer) = 0;
   };
 
 } // namespace benson

@@ -129,15 +129,6 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::add_i8, dst, lhs, rhs);
   }
 
-  void Bytecode_writer::emit_add_i8_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::add_i8_k, dst, lhs, rhs);
-  }
-
   void Bytecode_writer::emit_add_i8_i(
     Register dst,
     Register lhs,
@@ -150,15 +141,6 @@ namespace benson::bytecode
   void Bytecode_writer::emit_add_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::add_i16, dst, lhs, rhs);
-  }
-
-  void Bytecode_writer::emit_add_i16_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::add_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_add_i16_i(
@@ -249,15 +231,6 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::sub_i8, dst, lhs, rhs);
   }
 
-  void Bytecode_writer::emit_sub_i8_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::sub_i8_k, dst, lhs, rhs);
-  }
-
   void Bytecode_writer::emit_sub_i8_i(
     Register dst,
     Register lhs,
@@ -270,15 +243,6 @@ namespace benson::bytecode
   void Bytecode_writer::emit_sub_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::sub_i16, dst, lhs, rhs);
-  }
-
-  void Bytecode_writer::emit_sub_i16_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::sub_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_sub_i16_i(
@@ -369,15 +333,6 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::mul_i8, dst, lhs, rhs);
   }
 
-  void Bytecode_writer::emit_mul_i8_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::mul_i8_k, dst, lhs, rhs);
-  }
-
   void Bytecode_writer::emit_mul_i8_i(
     Register dst,
     Register lhs,
@@ -390,15 +345,6 @@ namespace benson::bytecode
   void Bytecode_writer::emit_mul_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::mul_i16, dst, lhs, rhs);
-  }
-
-  void Bytecode_writer::emit_mul_i16_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::mul_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_mul_i16_i(
@@ -489,15 +435,6 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::div_i8, dst, lhs, rhs);
   }
 
-  void Bytecode_writer::emit_div_i8_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::div_i8_k, dst, lhs, rhs);
-  }
-
   void Bytecode_writer::emit_div_i8_i(
     Register dst,
     Register lhs,
@@ -510,15 +447,6 @@ namespace benson::bytecode
   void Bytecode_writer::emit_div_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::div_i16, dst, lhs, rhs);
-  }
-
-  void Bytecode_writer::emit_div_i16_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::div_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_div_i16_i(
@@ -609,15 +537,6 @@ namespace benson::bytecode
     emit_binary_register_instruction(Opcode::mod_i8, dst, lhs, rhs);
   }
 
-  void Bytecode_writer::emit_mod_i8_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::mod_i8_k, dst, lhs, rhs);
-  }
-
   void Bytecode_writer::emit_mod_i8_i(
     Register dst,
     Register lhs,
@@ -630,15 +549,6 @@ namespace benson::bytecode
   void Bytecode_writer::emit_mod_i16(Register dst, Register lhs, Register rhs)
   {
     emit_binary_register_instruction(Opcode::mod_i16, dst, lhs, rhs);
-  }
-
-  void Bytecode_writer::emit_mod_i16_k(
-    Register dst,
-    Register lhs,
-    Wide_constant rhs
-  )
-  {
-    emit_binary_constant_instruction(Opcode::mod_i16_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::emit_mod_i16_i(

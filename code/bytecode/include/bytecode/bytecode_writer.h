@@ -18,6 +18,14 @@ namespace benson::bytecode
 
     void emit_exit();
     void emit_lookup_k(Register dst, Wide_constant k);
+    void emit_load_8(Register dst, Register base, Wide_immediate offset);
+    void emit_load_16(Register dst, Register base, Wide_immediate offset);
+    void emit_load_32(Register dst, Register base, Wide_immediate offset);
+    void emit_load_64(Register dst, Register base, Wide_immediate offset);
+    void emit_store_8(Register src, Register base, Wide_immediate offset);
+    void emit_store_16(Register src, Register base, Wide_immediate offset);
+    void emit_store_32(Register src, Register base, Wide_immediate offset);
+    void emit_store_64(Register src, Register base, Wide_immediate offset);
     void emit_neg_i8(Register dst, Register src);
     void emit_neg_i16(Register dst, Register src);
     void emit_neg_i32(Register dst, Register src);

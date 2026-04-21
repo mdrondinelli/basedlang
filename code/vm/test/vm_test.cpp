@@ -5,6 +5,8 @@
 #include <cstring>
 #include <vector>
 
+#include "vm/pointer.h"
+
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
 
@@ -153,49 +155,6 @@ TEST_CASE(
   CHECK(p2.space == Address_space::constant);
   CHECK(p2.offset == static_cast<std::uint64_t>(constant_table[0x0304]));
   CHECK(vm.instruction_pointer == stream.bytes().data() + 9);
-}
-
-TEST_CASE("Virtual_machine runs load program emitted by Bytecode_writer")
-{
-  using benson::bytecode::Register;
-
-  auto constant_memory = std::vector<std::byte>{};
-  auto constant_table = std::vector<std::ptrdiff_t>{};
-  store_constant<std::int32_t>(constant_memory, constant_table, 3, 0x11223344);
-  store_constant<std::int64_t>(
-    constant_memory,
-    constant_table,
-    0x0304,
-    0x0102030405060708LL
-  );
-  store_constant<std::int64_t>(constant_memory, constant_table, 5, 0);
-  store_constant<std::int64_t>(constant_memory, constant_table, 0x0305, 0);
-
-  auto stream = Recording_binary_output_stream{};
-  auto writer = benson::bytecode::Bytecode_writer{&stream};
-  writer.emit_lookup_k(Register::gpr_1, 3);
-  writer.emit_load_32_i(Register::gpr_2, Register::gpr_1, 0);
-  writer.emit_lookup_k(Register::gpr_3, 0x0304);
-  writer.emit_load_64_k(Register::gpr_4, Register::gpr_3, 5);
-  writer.emit_load_64_k(Register::gpr_5, Register::gpr_3, 0x0305);
-  writer.emit_exit();
-  writer.flush();
-
-  auto vm = benson::Virtual_machine{};
-  vm.instruction_pointer = stream.bytes().data();
-  vm.constant_memory = constant_memory.data();
-  vm.constant_table = constant_table.data();
-
-  vm.run();
-
-  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_2) == 0x11223344);
-  CHECK(
-    vm.get_register_value<std::int64_t>(Register::gpr_4) == 0x0102030405060708LL
-  );
-  CHECK(
-    vm.get_register_value<std::int64_t>(Register::gpr_5) == 0x0102030405060708LL
-  );
-  CHECK(vm.instruction_pointer == stream.bytes().data() + 22);
 }
 
 TEST_CASE("Virtual_machine runs negation program emitted by Bytecode_writer")
@@ -424,4 +383,166 @@ TEST_CASE(
   CHECK(vm.get_register_value<double>(Register::gpr_18) == 44.0);
   CHECK(vm.get_register_value<double>(Register::gpr_20) == 22.0);
   CHECK(vm.instruction_pointer == stream.bytes().data() + 55);
+}
+
+TEST_CASE("Virtual_machine store_8 writes one byte to stack")
+{
+  using benson::Address_space;
+  using benson::Pointer;
+  using benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_store_8(Register::gpr_1, Register::gpr_2, 0);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.set_register_value<std::uint64_t>(
+    Register::gpr_1,
+    static_cast<std::uint64_t>(std::int8_t{-42})
+  );
+  vm.set_register_value<std::uint64_t>(
+    Register::gpr_2,
+    static_cast<std::uint64_t>(Pointer{Address_space::stack, 0})
+  );
+
+  vm.run();
+
+  CHECK((*vm.stack)[0] == static_cast<std::byte>(static_cast<std::uint8_t>(-42)));
+}
+
+TEST_CASE("Virtual_machine load_8 reads one byte from stack")
+{
+  using benson::Address_space;
+  using benson::Pointer;
+  using benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_load_8(Register::gpr_1, Register::gpr_2, 0);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  (*vm.stack)[0] = static_cast<std::byte>(std::uint8_t{0xAB});
+  vm.set_register_value<std::uint64_t>(
+    Register::gpr_2,
+    static_cast<std::uint64_t>(Pointer{Address_space::stack, 0})
+  );
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::uint8_t>(Register::gpr_1) == 0xAB);
+}
+
+TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
+{
+  using benson::Address_space;
+  using benson::Pointer;
+  using benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_store_64(Register::gpr_1, Register::gpr_3, 0);
+  writer.emit_load_64(Register::gpr_2, Register::gpr_3, 0);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.set_register_value<std::int64_t>(Register::gpr_1, std::int64_t{-1234567890123LL});
+  vm.set_register_value<std::uint64_t>(
+    Register::gpr_3,
+    static_cast<std::uint64_t>(Pointer{Address_space::stack, 0})
+  );
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int64_t>(Register::gpr_2) == std::int64_t{-1234567890123LL});
+}
+
+TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
+{
+  using benson::Address_space;
+  using benson::Pointer;
+  using benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  // store 0xDEAD at offset 8, then load it back
+  writer.emit_store_32(Register::gpr_1, Register::gpr_3, 8);
+  writer.emit_load_32(Register::gpr_2, Register::gpr_3, 8);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.set_register_value<std::int32_t>(Register::gpr_1, std::int32_t{0xDEAD});
+  vm.set_register_value<std::uint64_t>(
+    Register::gpr_3,
+    static_cast<std::uint64_t>(Pointer{Address_space::stack, 0})
+  );
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_2) == std::int32_t{0xDEAD});
+}
+
+TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
+{
+  using benson::Address_space;
+  using benson::Pointer;
+  using benson::bytecode::Register;
+
+  auto constant_memory = std::vector<std::byte>{};
+  auto constant_table = std::vector<std::ptrdiff_t>{};
+  store_constant<std::int32_t>(constant_memory, constant_table, 0, 0x1234ABCD);
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_lookup_k(Register::gpr_2, 0);
+  writer.emit_load_32(Register::gpr_1, Register::gpr_2, 0);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.constant_memory = constant_memory.data();
+  vm.constant_table = constant_table.data();
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == std::int32_t{0x1234ABCD});
+}
+
+TEST_CASE(
+  "Virtual_machine load_16 and store_16 use wide offset when offset > 255"
+)
+{
+  using benson::Address_space;
+  using benson::Pointer;
+  using benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  // offset 0x0101 = 257, which exceeds Constant max of 255 → wide encoding
+  writer.emit_store_16(Register::gpr_1, Register::gpr_3, 0x0101);
+  writer.emit_load_16(Register::gpr_2, Register::gpr_3, 0x0101);
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.set_register_value<std::int16_t>(Register::gpr_1, std::int16_t{0x7FFF});
+  vm.set_register_value<std::uint64_t>(
+    Register::gpr_3,
+    static_cast<std::uint64_t>(Pointer{Address_space::stack, 0})
+  );
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int16_t>(Register::gpr_2) == std::int16_t{0x7FFF});
 }

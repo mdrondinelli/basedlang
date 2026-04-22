@@ -2,7 +2,6 @@
 #define BENSON_BYTECODE_MODULE_H
 
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 
 namespace benson::bytecode

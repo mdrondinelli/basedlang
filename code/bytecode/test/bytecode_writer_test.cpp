@@ -125,14 +125,14 @@ TEST_CASE(
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_add_i8_i(Register::gpr_1, Register::gpr_2, -3);
+  writer.emit_add_i32_i(Register::gpr_1, Register::gpr_2, -3);
   writer.emit_mul_i32_i(Register::gpr_4, Register::gpr_5, 0x0102);
   writer.emit_mod_i64_i(Register::gpr_7, Register::gpr_8, -0x0203);
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
-                        static_cast<std::byte>(Opcode::add_i8_i),
+                        static_cast<std::byte>(Opcode::add_i32_i),
                         static_cast<std::byte>(Register::gpr_1),
                         static_cast<std::byte>(Register::gpr_2),
                         std::byte{0xFD},

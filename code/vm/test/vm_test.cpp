@@ -20,10 +20,9 @@ namespace
   class Recording_binary_output_stream: public benson::Binary_output_stream
   {
   public:
-    std::ptrdiff_t write_bytes(std::span<std::byte const> buffer) override
+    void write_bytes(std::span<std::byte const> buffer) override
     {
       _bytes.insert(_bytes.end(), buffer.begin(), buffer.end());
-      return static_cast<std::ptrdiff_t>(buffer.size());
     }
 
     [[nodiscard]] auto bytes() const -> std::vector<std::byte> const &
@@ -411,7 +410,9 @@ TEST_CASE("Virtual_machine store_8 writes one byte to stack")
 
   vm.run();
 
-  CHECK((*vm.stack)[0] == static_cast<std::byte>(static_cast<std::uint8_t>(-42)));
+  CHECK(
+    (*vm.stack)[0] == static_cast<std::byte>(static_cast<std::uint8_t>(-42))
+  );
 }
 
 TEST_CASE("Virtual_machine load_8 reads one byte from stack")
@@ -454,7 +455,10 @@ TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
 
   auto vm = benson::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
-  vm.set_register_value<std::int64_t>(Register::gpr_1, std::int64_t{-1234567890123LL});
+  vm.set_register_value<std::int64_t>(
+    Register::gpr_1,
+    std::int64_t{-1234567890123LL}
+  );
   vm.set_register_value<std::uint64_t>(
     Register::gpr_3,
     static_cast<std::uint64_t>(Pointer{Address_space::stack, 0})
@@ -462,7 +466,10 @@ TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
 
   vm.run();
 
-  CHECK(vm.get_register_value<std::int64_t>(Register::gpr_2) == std::int64_t{-1234567890123LL});
+  CHECK(
+    vm.get_register_value<std::int64_t>(Register::gpr_2) ==
+    std::int64_t{-1234567890123LL}
+  );
 }
 
 TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
@@ -489,7 +496,9 @@ TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
 
   vm.run();
 
-  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_2) == std::int32_t{0xDEAD});
+  CHECK(
+    vm.get_register_value<std::int32_t>(Register::gpr_2) == std::int32_t{0xDEAD}
+  );
 }
 
 TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
@@ -516,7 +525,10 @@ TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
 
   vm.run();
 
-  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == std::int32_t{0x1234ABCD});
+  CHECK(
+    vm.get_register_value<std::int32_t>(Register::gpr_1) ==
+    std::int32_t{0x1234ABCD}
+  );
 }
 
 TEST_CASE("Virtual_machine runs Module_builder program with forward jmp_i")
@@ -569,5 +581,7 @@ TEST_CASE(
 
   vm.run();
 
-  CHECK(vm.get_register_value<std::int16_t>(Register::gpr_2) == std::int16_t{0x7FFF});
+  CHECK(
+    vm.get_register_value<std::int16_t>(Register::gpr_2) == std::int16_t{0x7FFF}
+  );
 }

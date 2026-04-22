@@ -11,10 +11,9 @@ namespace
   class Recording_binary_output_stream: public benson::Binary_output_stream
   {
   public:
-    std::ptrdiff_t write_bytes(std::span<std::byte const> buffer) override
+    void write_bytes(std::span<std::byte const> buffer) override
     {
       _bytes.insert(_bytes.end(), buffer.begin(), buffer.end());
-      return static_cast<std::ptrdiff_t>(buffer.size());
     }
 
     [[nodiscard]] auto bytes() const -> std::vector<std::byte> const &

@@ -10,18 +10,13 @@ namespace benson::bytecode
 
     bool is_wide(Wide_constant k)
     {
-      return k >
-             static_cast<Wide_constant>(std::numeric_limits<Constant>::max());
+      return k.value > std::numeric_limits<Constant::Underlying_type>::max();
     }
 
     bool is_wide(Wide_immediate i)
     {
-      return i < static_cast<Wide_immediate>(
-                   std::numeric_limits<Immediate>::min()
-                 ) ||
-             i > static_cast<Wide_immediate>(
-                   std::numeric_limits<Immediate>::max()
-                 );
+      return i.value < std::numeric_limits<Immediate::Underlying_type>::min() ||
+             i.value > std::numeric_limits<Immediate::Underlying_type>::max();
     }
 
   } // namespace
@@ -48,14 +43,14 @@ namespace benson::bytecode
       emit_opcode(Opcode::wide);
       emit_opcode(Opcode::lookup_k);
       write_byte(static_cast<std::byte>(dst));
-      write_byte(static_cast<std::byte>(k));
-      write_byte(static_cast<std::byte>(k >> 8));
+      write_byte(static_cast<std::byte>(k.value));
+      write_byte(static_cast<std::byte>(k.value >> 8));
     }
     else
     {
       emit_opcode(Opcode::lookup_k);
       write_byte(static_cast<std::byte>(dst));
-      write_byte(static_cast<std::byte>(k));
+      write_byte(static_cast<std::byte>(k.value));
     }
   }
 
@@ -545,15 +540,15 @@ namespace benson::bytecode
       emit_opcode(opcode);
       write_byte(static_cast<std::byte>(dst));
       write_byte(static_cast<std::byte>(lhs));
-      write_byte(static_cast<std::byte>(rhs));
-      write_byte(static_cast<std::byte>(rhs >> 8));
+      write_byte(static_cast<std::byte>(rhs.value));
+      write_byte(static_cast<std::byte>(rhs.value >> 8));
     }
     else
     {
       emit_opcode(opcode);
       write_byte(static_cast<std::byte>(dst));
       write_byte(static_cast<std::byte>(lhs));
-      write_byte(static_cast<std::byte>(static_cast<Constant>(rhs)));
+      write_byte(static_cast<std::byte>(static_cast<Constant::Underlying_type>(rhs.value)));
     }
   }
 
@@ -570,15 +565,15 @@ namespace benson::bytecode
       emit_opcode(opcode);
       write_byte(static_cast<std::byte>(dst));
       write_byte(static_cast<std::byte>(lhs));
-      write_byte(static_cast<std::byte>(rhs));
-      write_byte(static_cast<std::byte>(rhs >> 8));
+      write_byte(static_cast<std::byte>(rhs.value));
+      write_byte(static_cast<std::byte>(rhs.value >> 8));
     }
     else
     {
       emit_opcode(opcode);
       write_byte(static_cast<std::byte>(dst));
       write_byte(static_cast<std::byte>(lhs));
-      write_byte(static_cast<std::byte>(static_cast<Immediate>(rhs)));
+      write_byte(static_cast<std::byte>(static_cast<Immediate::Underlying_type>(rhs.value)));
     }
   }
 
@@ -591,13 +586,13 @@ namespace benson::bytecode
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      write_byte(static_cast<std::byte>(value));
-      write_byte(static_cast<std::byte>(value >> 8));
+      write_byte(static_cast<std::byte>(value.value));
+      write_byte(static_cast<std::byte>(value.value >> 8));
     }
     else
     {
       emit_opcode(opcode);
-      write_byte(static_cast<std::byte>(static_cast<Immediate>(value)));
+      write_byte(static_cast<std::byte>(static_cast<Immediate::Underlying_type>(value.value)));
     }
   }
 

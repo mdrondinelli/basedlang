@@ -22,7 +22,14 @@ namespace benson
       auto k = ConstantType{};
       std::memcpy(&k, instruction_pointer, sizeof(k));
       instruction_pointer += sizeof(k);
-      vm.set_register_value(dst, vm.lookup_constant(k));
+      vm.set_register_value(
+        dst,
+        vm.lookup_constant(
+          bytecode::Wide_constant{
+            static_cast<bytecode::Wide_constant::Underlying_type>(k.value)
+          }
+        )
+      );
     }
 
     template <typename T>
@@ -77,7 +84,14 @@ namespace benson
       instruction_pointer += sizeof(rhs);
       vm.set_register_value<T>(
         dst,
-        fn(vm.get_register_value<T>(lhs), vm.get_constant_value<T>(rhs))
+        fn(
+          vm.get_register_value<T>(lhs),
+          vm.get_constant_value<T>(
+            bytecode::Wide_constant{
+              static_cast<bytecode::Wide_constant::Underlying_type>(rhs.value)
+            }
+          )
+        )
       );
     }
 
@@ -99,7 +113,7 @@ namespace benson
       instruction_pointer += sizeof(rhs);
       vm.set_register_value<T>(
         dst,
-        fn(vm.get_register_value<T>(lhs), static_cast<T>(rhs))
+        fn(vm.get_register_value<T>(lhs), static_cast<T>(rhs.value))
       );
     }
 
@@ -129,7 +143,7 @@ namespace benson
       }();
       auto value = std::uint64_t{};
       // TODO: bounds check
-      std::memcpy(&value, space_pointer + base_address + offset, N);
+      std::memcpy(&value, space_pointer + base_address + offset.value, N);
       vm.registers[static_cast<std::size_t>(dst)] = value;
     }
 
@@ -155,7 +169,7 @@ namespace benson
       }
       // TODO: bounds check
       std::memcpy(
-        vm.stack->data() + base_address + offset,
+        vm.stack->data() + base_address + offset.value,
         &vm.registers[static_cast<std::size_t>(src)],
         N
       );
@@ -167,7 +181,7 @@ namespace benson
       auto offset = OffsetType{};
       std::memcpy(&offset, instruction_pointer, sizeof(offset));
       instruction_pointer += sizeof(offset);
-      instruction_pointer += offset;
+      instruction_pointer += offset.value;
     }
 
   } // namespace

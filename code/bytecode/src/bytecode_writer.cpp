@@ -548,7 +548,7 @@ namespace benson::bytecode
       emit_opcode(opcode);
       write_byte(static_cast<std::byte>(dst));
       write_byte(static_cast<std::byte>(lhs));
-      write_byte(static_cast<std::byte>(static_cast<Constant::Underlying_type>(rhs.value)));
+      write_byte(static_cast<std::byte>(rhs.value));
     }
   }
 
@@ -573,7 +573,7 @@ namespace benson::bytecode
       emit_opcode(opcode);
       write_byte(static_cast<std::byte>(dst));
       write_byte(static_cast<std::byte>(lhs));
-      write_byte(static_cast<std::byte>(static_cast<Immediate::Underlying_type>(rhs.value)));
+      write_byte(static_cast<std::byte>(rhs.value));
     }
   }
 
@@ -592,7 +592,7 @@ namespace benson::bytecode
     else
     {
       emit_opcode(opcode);
-      write_byte(static_cast<std::byte>(static_cast<Immediate::Underlying_type>(value.value)));
+      write_byte(static_cast<std::byte>(value.value));
     }
   }
 

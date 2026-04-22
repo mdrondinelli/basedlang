@@ -43,12 +43,12 @@ namespace benson::bytecode
   }
 
   Module_builder_storage::Module_builder_storage()
-      : _module{}, _stream{&_module.code}
+      : _module{}, _output_stream{&_module.code}
   {
   }
 
   Module_builder::Module_builder()
-      : Module_builder_storage{}, Bytecode_writer{&_stream}
+      : Module_builder_storage{}, Bytecode_writer{&_output_stream}
   {
   }
 

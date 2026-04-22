@@ -6,7 +6,6 @@
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
 #include "streams/binary_output_stream.h"
-#include "streams/binary_output_stream_writer.h"
 
 namespace benson::bytecode
 {
@@ -81,6 +80,8 @@ namespace benson::bytecode
     void flush();
 
   private:
+    void write_byte(std::byte byte);
+
     void emit_opcode(Opcode opcode);
 
     void emit_unary_register_instruction(
@@ -112,7 +113,7 @@ namespace benson::bytecode
 
     void emit_immediate_instruction(Opcode opcode, Wide_immediate value);
 
-    Binary_output_stream_writer _writer;
+    Binary_output_stream *_stream;
   };
 
 } // namespace benson::bytecode

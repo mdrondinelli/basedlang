@@ -34,7 +34,7 @@ namespace benson::bytecode
     };
 
     Module _module;
-    Code_output_stream _stream;
+    Code_output_stream _output_stream;
   };
 
   class Module_builder: private Module_builder_storage, private Bytecode_writer

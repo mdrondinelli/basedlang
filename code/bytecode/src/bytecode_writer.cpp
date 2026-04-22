@@ -27,7 +27,7 @@ namespace benson::bytecode
   } // namespace
 
   Bytecode_writer::Bytecode_writer(Binary_output_stream *stream)
-      : _writer{stream}
+      : _stream{stream}
   {
   }
 
@@ -47,15 +47,15 @@ namespace benson::bytecode
     {
       emit_opcode(Opcode::wide);
       emit_opcode(Opcode::lookup_k);
-      _writer.write(static_cast<std::byte>(dst));
-      _writer.write(static_cast<std::byte>(k));
-      _writer.write(static_cast<std::byte>(k >> 8));
+      write_byte(static_cast<std::byte>(dst));
+      write_byte(static_cast<std::byte>(k));
+      write_byte(static_cast<std::byte>(k >> 8));
     }
     else
     {
       emit_opcode(Opcode::lookup_k);
-      _writer.write(static_cast<std::byte>(dst));
-      _writer.write(static_cast<std::byte>(k));
+      write_byte(static_cast<std::byte>(dst));
+      write_byte(static_cast<std::byte>(k));
     }
   }
 
@@ -495,12 +495,17 @@ namespace benson::bytecode
 
   void Bytecode_writer::flush()
   {
-    _writer.flush();
+    _stream->flush();
+  }
+
+  void Bytecode_writer::write_byte(std::byte byte)
+  {
+    _stream->write_bytes(std::span{&byte, std::size_t{1}});
   }
 
   void Bytecode_writer::emit_opcode(Opcode opcode)
   {
-    _writer.write(static_cast<std::byte>(opcode));
+    write_byte(static_cast<std::byte>(opcode));
   }
 
   void Bytecode_writer::emit_unary_register_instruction(
@@ -510,8 +515,8 @@ namespace benson::bytecode
   )
   {
     emit_opcode(opcode);
-    _writer.write(static_cast<std::byte>(dst));
-    _writer.write(static_cast<std::byte>(src));
+    write_byte(static_cast<std::byte>(dst));
+    write_byte(static_cast<std::byte>(src));
   }
 
   void Bytecode_writer::emit_binary_register_instruction(
@@ -522,9 +527,9 @@ namespace benson::bytecode
   )
   {
     emit_opcode(opcode);
-    _writer.write(static_cast<std::byte>(dst));
-    _writer.write(static_cast<std::byte>(lhs));
-    _writer.write(static_cast<std::byte>(rhs));
+    write_byte(static_cast<std::byte>(dst));
+    write_byte(static_cast<std::byte>(lhs));
+    write_byte(static_cast<std::byte>(rhs));
   }
 
   void Bytecode_writer::emit_binary_constant_instruction(
@@ -538,17 +543,17 @@ namespace benson::bytecode
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      _writer.write(static_cast<std::byte>(dst));
-      _writer.write(static_cast<std::byte>(lhs));
-      _writer.write(static_cast<std::byte>(rhs));
-      _writer.write(static_cast<std::byte>(rhs >> 8));
+      write_byte(static_cast<std::byte>(dst));
+      write_byte(static_cast<std::byte>(lhs));
+      write_byte(static_cast<std::byte>(rhs));
+      write_byte(static_cast<std::byte>(rhs >> 8));
     }
     else
     {
       emit_opcode(opcode);
-      _writer.write(static_cast<std::byte>(dst));
-      _writer.write(static_cast<std::byte>(lhs));
-      _writer.write(static_cast<std::byte>(static_cast<Constant>(rhs)));
+      write_byte(static_cast<std::byte>(dst));
+      write_byte(static_cast<std::byte>(lhs));
+      write_byte(static_cast<std::byte>(static_cast<Constant>(rhs)));
     }
   }
 
@@ -563,17 +568,17 @@ namespace benson::bytecode
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      _writer.write(static_cast<std::byte>(dst));
-      _writer.write(static_cast<std::byte>(lhs));
-      _writer.write(static_cast<std::byte>(rhs));
-      _writer.write(static_cast<std::byte>(rhs >> 8));
+      write_byte(static_cast<std::byte>(dst));
+      write_byte(static_cast<std::byte>(lhs));
+      write_byte(static_cast<std::byte>(rhs));
+      write_byte(static_cast<std::byte>(rhs >> 8));
     }
     else
     {
       emit_opcode(opcode);
-      _writer.write(static_cast<std::byte>(dst));
-      _writer.write(static_cast<std::byte>(lhs));
-      _writer.write(static_cast<std::byte>(static_cast<Immediate>(rhs)));
+      write_byte(static_cast<std::byte>(dst));
+      write_byte(static_cast<std::byte>(lhs));
+      write_byte(static_cast<std::byte>(static_cast<Immediate>(rhs)));
     }
   }
 
@@ -586,13 +591,13 @@ namespace benson::bytecode
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      _writer.write(static_cast<std::byte>(value));
-      _writer.write(static_cast<std::byte>(value >> 8));
+      write_byte(static_cast<std::byte>(value));
+      write_byte(static_cast<std::byte>(value >> 8));
     }
     else
     {
       emit_opcode(opcode);
-      _writer.write(static_cast<std::byte>(static_cast<Immediate>(value)));
+      write_byte(static_cast<std::byte>(static_cast<Immediate>(value)));
     }
   }
 

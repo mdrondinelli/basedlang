@@ -17,6 +17,12 @@ namespace benson
     /// a no-op. If an implementation throws after consuming some bytes from
     /// buffer, stream state is undefined.
     virtual void write_bytes(std::span<std::byte const> buffer) = 0;
+
+    /// Flushes any buffered writes to the underlying sink. The default
+    /// implementation is a no-op for unbuffered sinks.
+    virtual void flush()
+    {
+    }
   };
 
 } // namespace benson

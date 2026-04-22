@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstddef>
 #include <vector>
 
@@ -12,22 +11,10 @@ TEST_CASE("Binary_output_stream_writer")
   class Recording_binary_output_stream: public benson::Binary_output_stream
   {
   public:
-    explicit Recording_binary_output_stream(std::ptrdiff_t max_write_size)
-        : _max_write_size{max_write_size}
+    void write_bytes(std::span<std::byte const> buffer) override
     {
-    }
-
-    std::ptrdiff_t write_bytes(std::span<std::byte const> buffer) override
-    {
-      if (buffer.empty())
-      {
-        return 0;
-      }
-      auto const count =
-        std::min(static_cast<std::ptrdiff_t>(buffer.size()), _max_write_size);
-      _bytes.insert(_bytes.end(), buffer.begin(), buffer.begin() + count);
-      _write_sizes.push_back(count);
-      return count;
+      _bytes.insert(_bytes.end(), buffer.begin(), buffer.end());
+      _write_sizes.push_back(static_cast<std::ptrdiff_t>(buffer.size()));
     }
 
     [[nodiscard]] auto bytes() const -> std::vector<std::byte> const &
@@ -44,12 +31,11 @@ TEST_CASE("Binary_output_stream_writer")
   private:
     std::vector<std::byte> _bytes{};
     std::vector<std::ptrdiff_t> _write_sizes{};
-    std::ptrdiff_t _max_write_size;
   };
 
   SECTION("sequential byte writes preserve order across buffer boundaries")
   {
-    auto binary = Recording_binary_output_stream{512};
+    auto binary = Recording_binary_output_stream{};
     auto writer = benson::Binary_output_stream_writer{&binary};
 
     for (auto i = 0; i < 5000; ++i)
@@ -67,9 +53,9 @@ TEST_CASE("Binary_output_stream_writer")
     CHECK(binary.bytes() == expected);
   }
 
-  SECTION("flush retries on stream short-writes")
+  SECTION("flush calls write_bytes exactly once")
   {
-    auto binary = Recording_binary_output_stream{3};
+    auto binary = Recording_binary_output_stream{};
     auto writer = benson::Binary_output_stream_writer{&binary};
 
     writer.write(std::byte{'a'});
@@ -92,12 +78,12 @@ TEST_CASE("Binary_output_stream_writer")
                           std::byte{'g'},
                         }
     );
-    CHECK(binary.write_sizes() == std::vector<std::ptrdiff_t>{3, 3, 1});
+    CHECK(binary.write_sizes() == std::vector<std::ptrdiff_t>{7});
   }
 
   SECTION("flush drains pending bytes")
   {
-    auto binary = Recording_binary_output_stream{4096};
+    auto binary = Recording_binary_output_stream{};
     auto writer = benson::Binary_output_stream_writer{&binary};
 
     writer.write(std::byte{'a'});
@@ -111,7 +97,7 @@ TEST_CASE("Binary_output_stream_writer")
 
   SECTION("destruction without flush does not write pending bytes")
   {
-    auto binary = Recording_binary_output_stream{4096};
+    auto binary = Recording_binary_output_stream{};
 
     {
       auto writer = benson::Binary_output_stream_writer{&binary};
@@ -123,7 +109,7 @@ TEST_CASE("Binary_output_stream_writer")
 
   SECTION("empty flush is no-op")
   {
-    auto binary = Recording_binary_output_stream{4096};
+    auto binary = Recording_binary_output_stream{};
     auto writer = benson::Binary_output_stream_writer{&binary};
     writer.flush();
 

@@ -132,7 +132,7 @@ namespace benson::bytecode
   void Bytecode_writer::emit_add_i8_i(
     Register dst,
     Register lhs,
-    Wide_immediate rhs
+    Immediate rhs
   )
   {
     emit_binary_immediate_instruction(Opcode::add_i8_i, dst, lhs, rhs);
@@ -234,7 +234,7 @@ namespace benson::bytecode
   void Bytecode_writer::emit_sub_i8_i(
     Register dst,
     Register lhs,
-    Wide_immediate rhs
+    Immediate rhs
   )
   {
     emit_binary_immediate_instruction(Opcode::sub_i8_i, dst, lhs, rhs);
@@ -336,7 +336,7 @@ namespace benson::bytecode
   void Bytecode_writer::emit_mul_i8_i(
     Register dst,
     Register lhs,
-    Wide_immediate rhs
+    Immediate rhs
   )
   {
     emit_binary_immediate_instruction(Opcode::mul_i8_i, dst, lhs, rhs);
@@ -438,7 +438,7 @@ namespace benson::bytecode
   void Bytecode_writer::emit_div_i8_i(
     Register dst,
     Register lhs,
-    Wide_immediate rhs
+    Immediate rhs
   )
   {
     emit_binary_immediate_instruction(Opcode::div_i8_i, dst, lhs, rhs);
@@ -540,7 +540,7 @@ namespace benson::bytecode
   void Bytecode_writer::emit_mod_i8_i(
     Register dst,
     Register lhs,
-    Wide_immediate rhs
+    Immediate rhs
   )
   {
     emit_binary_immediate_instruction(Opcode::mod_i8_i, dst, lhs, rhs);

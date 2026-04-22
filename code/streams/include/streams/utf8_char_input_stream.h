@@ -1,20 +1,20 @@
 #ifndef BASEDSTREAMS_UTF8_CHAR_INPUT_STREAM_H
 #define BASEDSTREAMS_UTF8_CHAR_INPUT_STREAM_H
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
 #include <stdexcept>
 
-#include "streams/binary_input_stream_reader.h"
+#include "streams/binary_input_stream.h"
 #include "streams/char_input_stream.h"
 
 namespace benson
 {
 
   /// Decodes UTF-8 bytes from a Binary_input_stream into Unicode codepoints.
-  /// Buffers the underlying bytes through a Binary_input_stream_reader.
   /// Throws Decode_error on invalid byte sequences.
   class Utf8_char_input_stream: public Char_input_stream
   {
@@ -29,7 +29,7 @@ namespace benson
     };
 
     explicit Utf8_char_input_stream(Binary_input_stream *stream)
-        : _reader{stream}
+        : _stream{stream}
     {
     }
 
@@ -53,7 +53,7 @@ namespace benson
     {
       auto const read_u8 = [&]() -> std::optional<uint8_t>
       {
-        auto const b = _reader.read();
+        auto const b = read_byte();
         if (!b)
         {
           return std::nullopt;
@@ -151,7 +151,17 @@ namespace benson
       throw Decode_error{};
     }
 
-    Binary_input_stream_reader _reader;
+    std::optional<std::byte> read_byte()
+    {
+      if (_stream->read_bytes(_byte) == 0)
+      {
+        return std::nullopt;
+      }
+      return _byte[0];
+    }
+
+    Binary_input_stream *_stream;
+    std::array<std::byte, 1> _byte{};
   };
 
 } // namespace benson

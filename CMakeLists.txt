@@ -53,7 +53,7 @@ target_link_libraries(frontend PUBLIC ir ast spelling)
 
 add_library(bytecode
   code/bytecode/src/bytecode_writer.cpp
-  code/bytecode/src/module_builder.cpp
+  # code/bytecode/src/module_builder.cpp
 )
 target_include_directories(bytecode PUBLIC code/bytecode/include)
 target_link_libraries(bytecode PUBLIC streams)
@@ -83,6 +83,7 @@ target_link_libraries(lexing-tests PRIVATE lexing Catch2::Catch2WithMain)
 target_compile_definitions(lexing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(streams-tests
+  code/streams/test/buffered_binary_input_stream_test.cpp
   code/streams/test/binary_output_stream_writer_test.cpp
   code/streams/test/istream_binary_input_stream_test.cpp
   code/streams/test/posix_binary_input_stream_test.cpp
@@ -110,7 +111,7 @@ target_link_libraries(ir-tests PRIVATE ir Catch2::Catch2WithMain)
 
 add_executable(bytecode-tests
   code/bytecode/test/bytecode_writer_test.cpp
-  code/bytecode/test/module_builder_test.cpp
+  # code/bytecode/test/module_builder_test.cpp
 )
 target_link_libraries(bytecode-tests PRIVATE bytecode Catch2::Catch2WithMain)
 

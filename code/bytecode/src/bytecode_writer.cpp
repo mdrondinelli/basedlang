@@ -36,6 +36,11 @@ namespace benson::bytecode
     emit_opcode(Opcode::exit);
   }
 
+  void Bytecode_writer::emit_jmp_i(Wide_immediate offset)
+  {
+    emit_immediate_instruction(Opcode::jmp_i, offset);
+  }
+
   void Bytecode_writer::emit_lookup_k(Register dst, Wide_constant k)
   {
     if (is_wide(k))
@@ -569,6 +574,25 @@ namespace benson::bytecode
       _writer.write(static_cast<std::byte>(dst));
       _writer.write(static_cast<std::byte>(lhs));
       _writer.write(static_cast<std::byte>(static_cast<Immediate>(rhs)));
+    }
+  }
+
+  void Bytecode_writer::emit_immediate_instruction(
+    Opcode opcode,
+    Wide_immediate value
+  )
+  {
+    if (is_wide(value))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(opcode);
+      _writer.write(static_cast<std::byte>(value));
+      _writer.write(static_cast<std::byte>(value >> 8));
+    }
+    else
+    {
+      emit_opcode(opcode);
+      _writer.write(static_cast<std::byte>(static_cast<Immediate>(value)));
     }
   }
 

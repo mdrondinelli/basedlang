@@ -11,6 +11,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "bytecode/bytecode_writer.h"
+#include "bytecode/module_builder.h"
 #include "vm/vm.h"
 
 namespace
@@ -516,6 +517,30 @@ TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
   vm.run();
 
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == std::int32_t{0x1234ABCD});
+}
+
+TEST_CASE("Virtual_machine runs Module_builder program with forward jmp_i")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  auto const done = builder.make_label();
+  builder.emit_jmp_i(done);
+  builder.emit_add_i32_i(Register::gpr_1, Register::gpr_1, 1);
+  builder.place_label(done);
+  builder.emit_add_i32_i(Register::gpr_1, Register::gpr_1, 2);
+  builder.emit_exit();
+
+  auto const module = builder.build();
+
+  auto vm = benson::Virtual_machine{};
+  vm.load(module);
+  vm.set_register_value<std::int32_t>(Register::gpr_1, 40);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 42);
 }
 
 TEST_CASE(

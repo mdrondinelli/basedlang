@@ -161,6 +161,15 @@ namespace benson
       );
     }
 
+    template <typename OffsetType>
+    void run_jmp(std::byte const *&instruction_pointer)
+    {
+      auto offset = OffsetType{};
+      std::memcpy(&offset, instruction_pointer, sizeof(offset));
+      instruction_pointer += sizeof(offset);
+      instruction_pointer += offset;
+    }
+
   } // namespace
 
   Virtual_machine::Virtual_machine()
@@ -198,6 +207,9 @@ namespace benson
     {
     case bytecode::Opcode::wide:
       wide_dispatch(static_cast<bytecode::Opcode>(*instruction_pointer++));
+      break;
+    case bytecode::Opcode::jmp_i:
+      run_jmp<bytecode::Immediate>(instruction_pointer);
       break;
     case bytecode::Opcode::lookup_k:
       run_lookup_k<bytecode::Constant>(instruction_pointer, *this);
@@ -707,6 +719,9 @@ namespace benson
   {
     switch (opcode)
     {
+    case bytecode::Opcode::jmp_i:
+      run_jmp<bytecode::Wide_immediate>(instruction_pointer);
+      break;
     case bytecode::Opcode::lookup_k:
       run_lookup_k<bytecode::Wide_constant>(instruction_pointer, *this);
       break;

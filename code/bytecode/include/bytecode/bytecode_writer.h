@@ -17,6 +17,7 @@ namespace benson::bytecode
     explicit Bytecode_writer(Binary_output_stream *stream);
 
     void emit_exit();
+    void emit_jmp_i(Wide_immediate offset);
     void emit_lookup_k(Register dst, Wide_constant k);
     void emit_load_8(Register dst, Register base, Wide_immediate offset);
     void emit_load_16(Register dst, Register base, Wide_immediate offset);
@@ -108,6 +109,8 @@ namespace benson::bytecode
       Register lhs,
       Wide_immediate rhs
     );
+
+    void emit_immediate_instruction(Opcode opcode, Wide_immediate value);
 
     Binary_output_stream_writer _writer;
   };

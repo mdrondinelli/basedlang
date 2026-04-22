@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_LOOKAHEAD_CHAR_INPUT_STREAM_READER_H
-#define BASEDSTREAMS_LOOKAHEAD_CHAR_INPUT_STREAM_READER_H
+#ifndef BASEDSTREAMS_CHAR_INPUT_STREAM_PEEKER_H
+#define BASEDSTREAMS_CHAR_INPUT_STREAM_PEEKER_H
 
 #include <bit>
 #include <cassert>
@@ -9,30 +9,30 @@
 #include <optional>
 
 #include "streams/char_input_stream.h"
-#include "streams/char_input_stream_reader.h"
 
 namespace benson
 {
 
   /// Wraps a Char_input_stream with finite lookahead, exposing peek/read
   /// operations backed by a ring buffer.
-  class Lookahead_char_input_stream_reader
+  class Char_input_stream_peeker
   {
   public:
-    Lookahead_char_input_stream_reader(
+    Char_input_stream_peeker(
       Char_input_stream *stream,
       std::ptrdiff_t max_lookahead
     )
-        : _reader{stream},
-          _buffer([&]()
-          {
-            assert(max_lookahead >= 0);
-            return std::make_unique<uint32_t[]>(
-              std::bit_ceil(static_cast<std::size_t>(max_lookahead + 1))
-            );
-          }()),
-          _capacity{
-            std::bit_ceil(static_cast<std::size_t>(max_lookahead + 1))},
+        : _stream{stream},
+          _buffer(
+            [&]()
+            {
+              assert(max_lookahead >= 0);
+              return std::make_unique<uint32_t[]>(
+                std::bit_ceil(static_cast<std::size_t>(max_lookahead + 1))
+              );
+            }()
+          ),
+          _capacity{std::bit_ceil(static_cast<std::size_t>(max_lookahead + 1))},
           _max_lookahead{max_lookahead}
     {
     }
@@ -44,7 +44,7 @@ namespace benson
       auto const needed = static_cast<std::size_t>(offset + 1);
       while (_size < needed)
       {
-        auto const next = _reader.read();
+        auto const next = _stream->read_character();
         if (!next)
         {
           return std::nullopt;
@@ -60,7 +60,7 @@ namespace benson
     {
       if (_size == 0)
       {
-        return _reader.read();
+        return _stream->read_character();
       }
       auto const result = _buffer[_head];
       _head = (_head + 1) & (_capacity - 1);
@@ -69,7 +69,7 @@ namespace benson
     }
 
   private:
-    Char_input_stream_reader _reader;
+    Char_input_stream *_stream;
     std::unique_ptr<uint32_t[]> _buffer;
     std::size_t _capacity;
     std::size_t _head{};
@@ -79,4 +79,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_LOOKAHEAD_CHAR_INPUT_STREAM_READER_H
+#endif // BASEDSTREAMS_CHAR_INPUT_STREAM_PEEKER_H

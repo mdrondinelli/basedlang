@@ -5,8 +5,19 @@
 
 namespace benson::bytecode
 {
-  using Immediate = std::int8_t;
-  using Wide_immediate = std::int16_t;
+
+  struct Immediate
+  {
+    using Underlying_type = std::int8_t;
+    Underlying_type value;
+  };
+
+  struct Wide_immediate
+  {
+    using Underlying_type = std::int16_t;
+    Underlying_type value;
+  };
+
 }
 
 #endif // BENSON_BYTECODE_IMMEDIATE_H

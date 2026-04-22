@@ -47,11 +47,12 @@ namespace
     T value
   )
   {
-    if (constant_table.size() <= index)
+    if (constant_table.size() <= index.value)
     {
-      constant_table.resize(index + 1);
+      constant_table.resize(index.value + 1);
     }
-    constant_table[index] = static_cast<std::ptrdiff_t>(constant_memory.size());
+    constant_table[index.value] =
+      static_cast<std::ptrdiff_t>(constant_memory.size());
     auto const start = constant_memory.size();
     constant_memory.resize(start + sizeof(T));
     std::memcpy(constant_memory.data() + start, &value, sizeof(T));
@@ -213,13 +214,14 @@ TEST_CASE(
 {
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto builder = Module_builder{};
-  builder.emit_add_i32_i(Register::gpr_1, Register::gpr_2, 5);
-  builder.emit_sub_i32_i(Register::gpr_3, Register::gpr_1, -3);
-  builder.emit_mul_i32_i(Register::gpr_4, Register::gpr_3, 0x0102);
-  builder.emit_div_i32_i(Register::gpr_5, Register::gpr_4, 6);
-  builder.emit_mod_i32_i(Register::gpr_6, Register::gpr_5, 7);
+  builder.emit_add_i32_i(Register::gpr_1, Register::gpr_2, Wide_immediate{5});
+  builder.emit_sub_i32_i(Register::gpr_3, Register::gpr_1, Wide_immediate{-3});
+  builder.emit_mul_i32_i(Register::gpr_4, Register::gpr_3, Wide_immediate{0x0102});
+  builder.emit_div_i32_i(Register::gpr_5, Register::gpr_4, Wide_immediate{6});
+  builder.emit_mod_i32_i(Register::gpr_6, Register::gpr_5, Wide_immediate{7});
   builder.emit_exit();
   auto const module = builder.build();
 
@@ -316,30 +318,31 @@ TEST_CASE(
 )
 {
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_constant;
 
   auto constant_memory = std::vector<std::byte>{};
   auto constant_table = std::vector<std::ptrdiff_t>{};
-  store_constant<std::int32_t>(constant_memory, constant_table, 0x0304, 5);
-  store_constant<std::int32_t>(constant_memory, constant_table, 0x0305, 3);
-  store_constant<std::int32_t>(constant_memory, constant_table, 0x0306, 4);
-  store_constant<std::int32_t>(constant_memory, constant_table, 0x0307, 6);
-  store_constant<std::int32_t>(constant_memory, constant_table, 0x0308, 7);
-  store_constant<double>(constant_memory, constant_table, 0x0309, 2.5);
-  store_constant<double>(constant_memory, constant_table, 0x030A, 1.5);
-  store_constant<double>(constant_memory, constant_table, 0x030B, 4.0);
-  store_constant<double>(constant_memory, constant_table, 0x030C, 2.0);
+  store_constant<std::int32_t>(constant_memory, constant_table, Wide_constant{0x0304}, 5);
+  store_constant<std::int32_t>(constant_memory, constant_table, Wide_constant{0x0305}, 3);
+  store_constant<std::int32_t>(constant_memory, constant_table, Wide_constant{0x0306}, 4);
+  store_constant<std::int32_t>(constant_memory, constant_table, Wide_constant{0x0307}, 6);
+  store_constant<std::int32_t>(constant_memory, constant_table, Wide_constant{0x0308}, 7);
+  store_constant<double>(constant_memory, constant_table, Wide_constant{0x0309}, 2.5);
+  store_constant<double>(constant_memory, constant_table, Wide_constant{0x030A}, 1.5);
+  store_constant<double>(constant_memory, constant_table, Wide_constant{0x030B}, 4.0);
+  store_constant<double>(constant_memory, constant_table, Wide_constant{0x030C}, 2.0);
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
-  writer.emit_add_i32_k(Register::gpr_1, Register::gpr_2, 0x0304);
-  writer.emit_sub_i32_k(Register::gpr_4, Register::gpr_1, 0x0305);
-  writer.emit_mul_i32_k(Register::gpr_6, Register::gpr_4, 0x0306);
-  writer.emit_div_i32_k(Register::gpr_8, Register::gpr_6, 0x0307);
-  writer.emit_mod_i32_k(Register::gpr_10, Register::gpr_8, 0x0308);
-  writer.emit_add_f64_k(Register::gpr_12, Register::gpr_14, 0x0309);
-  writer.emit_sub_f64_k(Register::gpr_16, Register::gpr_12, 0x030A);
-  writer.emit_mul_f64_k(Register::gpr_18, Register::gpr_16, 0x030B);
-  writer.emit_div_f64_k(Register::gpr_20, Register::gpr_18, 0x030C);
+  writer.emit_add_i32_k(Register::gpr_1, Register::gpr_2, Wide_constant{0x0304});
+  writer.emit_sub_i32_k(Register::gpr_4, Register::gpr_1, Wide_constant{0x0305});
+  writer.emit_mul_i32_k(Register::gpr_6, Register::gpr_4, Wide_constant{0x0306});
+  writer.emit_div_i32_k(Register::gpr_8, Register::gpr_6, Wide_constant{0x0307});
+  writer.emit_mod_i32_k(Register::gpr_10, Register::gpr_8, Wide_constant{0x0308});
+  writer.emit_add_f64_k(Register::gpr_12, Register::gpr_14, Wide_constant{0x0309});
+  writer.emit_sub_f64_k(Register::gpr_16, Register::gpr_12, Wide_constant{0x030A});
+  writer.emit_mul_f64_k(Register::gpr_18, Register::gpr_16, Wide_constant{0x030B});
+  writer.emit_div_f64_k(Register::gpr_20, Register::gpr_18, Wide_constant{0x030C});
   writer.emit_exit();
   writer.flush();
 
@@ -370,9 +373,10 @@ TEST_CASE("Virtual_machine store_8 writes one byte to stack")
   using benson::Pointer;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto builder = Module_builder{};
-  builder.emit_store_8(Register::gpr_1, Register::gpr_2, 0);
+  builder.emit_store_8(Register::gpr_1, Register::gpr_2, Wide_immediate{0});
   builder.emit_exit();
   auto const module = builder.build();
 
@@ -400,9 +404,10 @@ TEST_CASE("Virtual_machine load_8 reads one byte from stack")
   using benson::Pointer;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto builder = Module_builder{};
-  builder.emit_load_8(Register::gpr_1, Register::gpr_2, 0);
+  builder.emit_load_8(Register::gpr_1, Register::gpr_2, Wide_immediate{0});
   builder.emit_exit();
   auto const module = builder.build();
 
@@ -425,10 +430,11 @@ TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
   using benson::Pointer;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto builder = Module_builder{};
-  builder.emit_store_64(Register::gpr_1, Register::gpr_3, 0);
-  builder.emit_load_64(Register::gpr_2, Register::gpr_3, 0);
+  builder.emit_store_64(Register::gpr_1, Register::gpr_3, Wide_immediate{0});
+  builder.emit_load_64(Register::gpr_2, Register::gpr_3, Wide_immediate{0});
   builder.emit_exit();
   auto const module = builder.build();
 
@@ -457,10 +463,11 @@ TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
   using benson::Pointer;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto builder = Module_builder{};
-  builder.emit_store_32(Register::gpr_1, Register::gpr_3, 8);
-  builder.emit_load_32(Register::gpr_2, Register::gpr_3, 8);
+  builder.emit_store_32(Register::gpr_1, Register::gpr_3, Wide_immediate{8});
+  builder.emit_load_32(Register::gpr_2, Register::gpr_3, Wide_immediate{8});
   builder.emit_exit();
   auto const module = builder.build();
 
@@ -483,10 +490,11 @@ TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
 {
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto builder = Module_builder{};
   builder.emit_lookup_k(Register::gpr_2, std::int32_t{0x1234ABCD});
-  builder.emit_load_32(Register::gpr_1, Register::gpr_2, 0);
+  builder.emit_load_32(Register::gpr_1, Register::gpr_2, Wide_immediate{0});
   builder.emit_exit();
   auto const module = builder.build();
 
@@ -505,13 +513,14 @@ TEST_CASE("Virtual_machine runs Module_builder program with forward jmp_i")
 {
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto builder = Module_builder{};
   auto const done = builder.make_label();
   builder.emit_jmp_i(done);
-  builder.emit_add_i32_i(Register::gpr_1, Register::gpr_1, 1);
+  builder.emit_add_i32_i(Register::gpr_1, Register::gpr_1, Wide_immediate{1});
   builder.place_label(done);
-  builder.emit_add_i32_i(Register::gpr_1, Register::gpr_1, 2);
+  builder.emit_add_i32_i(Register::gpr_1, Register::gpr_1, Wide_immediate{2});
   builder.emit_exit();
 
   auto const module = builder.build();
@@ -557,12 +566,13 @@ TEST_CASE(
   using benson::Address_space;
   using benson::Pointer;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
-  // offset 0x0101 = 257, which exceeds Constant max of 255 → wide encoding
-  writer.emit_store_16(Register::gpr_1, Register::gpr_3, 0x0101);
-  writer.emit_load_16(Register::gpr_2, Register::gpr_3, 0x0101);
+  // offset 0x0101 = 257, which exceeds Immediate max of 127 → wide encoding
+  writer.emit_store_16(Register::gpr_1, Register::gpr_3, Wide_immediate{0x0101});
+  writer.emit_load_16(Register::gpr_2, Register::gpr_3, Wide_immediate{0x0101});
   writer.emit_exit();
   writer.flush();
 

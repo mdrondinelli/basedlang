@@ -28,7 +28,7 @@ namespace benson
       // TODO: check that k is in range
       return Pointer{
         Address_space::constant,
-        static_cast<uint64_t>(constant_table[static_cast<std::size_t>(k)])
+        static_cast<uint64_t>(constant_table[k.value])
       };
     }
 
@@ -36,7 +36,7 @@ namespace benson
     [[nodiscard]] T get_constant_value(bytecode::Wide_constant k) const
     {
       // TODO: check that k is in range
-      auto const offset = constant_table[static_cast<std::size_t>(k)];
+      auto const offset = constant_table[k.value];
       auto value = std::uint64_t{};
       std::memcpy(&value, constant_memory + offset, sizeof(T));
       if constexpr (std::same_as<T, float>)

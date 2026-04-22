@@ -16,14 +16,18 @@ namespace benson::bytecode
 
     auto fits_immediate(std::ptrdiff_t offset) -> bool
     {
-      return offset >= std::numeric_limits<Immediate>::min() &&
-             offset <= std::numeric_limits<Immediate>::max();
+      return offset >=
+               std::numeric_limits<Immediate::Underlying_type>::min() &&
+             offset <=
+               std::numeric_limits<Immediate::Underlying_type>::max();
     }
 
     auto fits_wide_immediate(std::ptrdiff_t offset) -> bool
     {
-      return offset >= std::numeric_limits<Wide_immediate>::min() &&
-             offset <= std::numeric_limits<Wide_immediate>::max();
+      return offset >=
+               std::numeric_limits<Wide_immediate::Underlying_type>::min() &&
+             offset <=
+               std::numeric_limits<Wide_immediate::Underlying_type>::max();
     }
 
   } // namespace
@@ -76,7 +80,9 @@ namespace benson::bytecode
       auto const narrow_offset = target_offset - (instruction_offset + 2);
       if (fits_immediate(narrow_offset))
       {
-        Bytecode_writer::emit_jmp_i(static_cast<Wide_immediate>(narrow_offset));
+        Bytecode_writer::emit_jmp_i(
+          Wide_immediate{static_cast<Wide_immediate::Underlying_type>(narrow_offset)}
+        );
       }
       else
       {
@@ -85,14 +91,16 @@ namespace benson::bytecode
         {
           throw std::runtime_error{"jmp_i target out of range"};
         }
-        Bytecode_writer::emit_jmp_i(static_cast<Wide_immediate>(wide_offset));
+        Bytecode_writer::emit_jmp_i(
+          Wide_immediate{static_cast<Wide_immediate::Underlying_type>(wide_offset)}
+        );
       }
     }
     else
     {
       constexpr auto wide_jump_dummy_offset = 0x0100;
       Bytecode_writer::emit_jmp_i(
-        static_cast<Wide_immediate>(wide_jump_dummy_offset)
+        Wide_immediate{static_cast<Wide_immediate::Underlying_type>(wide_jump_dummy_offset)}
       );
       _pending_jumps.push_back(
         Pending_jump{
@@ -120,10 +128,13 @@ namespace benson::bytecode
       {
         throw std::runtime_error{"jmp_i target out of range"};
       }
-      auto const immediate = static_cast<Wide_immediate>(offset);
-      _module.code[jump.immediate_offset] = static_cast<std::byte>(immediate);
+      auto const immediate = Wide_immediate{
+        static_cast<Wide_immediate::Underlying_type>(offset)
+      };
+      _module.code[jump.immediate_offset] =
+        static_cast<std::byte>(immediate.value);
       _module.code[jump.immediate_offset + 1] =
-        static_cast<std::byte>(immediate >> 8);
+        static_cast<std::byte>(immediate.value >> 8);
     }
     auto built = Module{};
     std::swap(built, _module);
@@ -150,18 +161,21 @@ namespace benson::bytecode
             static_cast<std::ptrdiff_t>(_module.constant_data.size()) &&
           std::equal(bytes.begin(), bytes.end(), existing.begin()))
       {
-        return static_cast<Wide_constant>(i);
+        return Wide_constant{static_cast<Wide_constant::Underlying_type>(i)};
       }
     }
 
     if (_module.constant_table.size() ==
-        static_cast<std::size_t>(std::numeric_limits<Wide_constant>::max()) + 1)
+        static_cast<std::size_t>(
+          std::numeric_limits<Wide_constant::Underlying_type>::max()
+        ) + 1)
     {
       throw std::runtime_error{"constant table out of range"};
     }
 
-    auto const index =
-      static_cast<Wide_constant>(_module.constant_table.size());
+    auto const index = Wide_constant{
+      static_cast<Wide_constant::Underlying_type>(_module.constant_table.size())
+    };
     _module.constant_table.push_back(
       static_cast<std::ptrdiff_t>(_module.constant_data.size())
     );

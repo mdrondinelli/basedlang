@@ -102,7 +102,7 @@ Common text-input pipelines now look like:
 The provider chooses whether byte buffering is needed. Consumers continue to
 depend on abstract `Binary_input_stream` or `Char_input_stream` surfaces.
 
-## What To Keep Stable
+## What to keep stable
 
 - UTF-8 decoding stays incremental rather than preloading the whole input
 - invalid UTF-8 continues to report `Utf8_char_input_stream::Decode_error`

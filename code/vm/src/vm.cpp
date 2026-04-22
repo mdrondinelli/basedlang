@@ -939,16 +939,6 @@ namespace benson
     case bytecode::Opcode::store_64:
       run_store<8, bytecode::Wide_immediate>(instruction_pointer, *this);
       break;
-    case bytecode::Opcode::add_i8_i:
-      run_immediate_binary<std::int8_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int8_t lhs, std::int8_t rhs)
-        {
-          return static_cast<std::int8_t>(lhs + rhs);
-        }
-      );
-      break;
     case bytecode::Opcode::add_i16_i:
       run_immediate_binary<std::int16_t, bytecode::Wide_immediate>(
         instruction_pointer,
@@ -1016,16 +1006,6 @@ namespace benson
         [](double lhs, double rhs)
         {
           return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i8_i:
-      run_immediate_binary<std::int8_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int8_t lhs, std::int8_t rhs)
-        {
-          return static_cast<std::int8_t>(lhs - rhs);
         }
       );
       break;
@@ -1099,16 +1079,6 @@ namespace benson
         }
       );
       break;
-    case bytecode::Opcode::mul_i8_i:
-      run_immediate_binary<std::int8_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int8_t lhs, std::int8_t rhs)
-        {
-          return static_cast<std::int8_t>(lhs * rhs);
-        }
-      );
-      break;
     case bytecode::Opcode::mul_i16_i:
       run_immediate_binary<std::int16_t, bytecode::Wide_immediate>(
         instruction_pointer,
@@ -1179,16 +1149,6 @@ namespace benson
         }
       );
       break;
-    case bytecode::Opcode::div_i8_i:
-      run_immediate_binary<std::int8_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int8_t lhs, std::int8_t rhs)
-        {
-          return static_cast<std::int8_t>(lhs / rhs);
-        }
-      );
-      break;
     case bytecode::Opcode::div_i16_i:
       run_immediate_binary<std::int16_t, bytecode::Wide_immediate>(
         instruction_pointer,
@@ -1256,16 +1216,6 @@ namespace benson
         [](double lhs, double rhs)
         {
           return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i8_i:
-      run_immediate_binary<std::int8_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int8_t lhs, std::int8_t rhs)
-        {
-          return static_cast<std::int8_t>(lhs % rhs);
         }
       );
       break;

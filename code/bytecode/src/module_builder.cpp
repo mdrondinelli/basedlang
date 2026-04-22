@@ -136,4 +136,38 @@ namespace benson::bytecode
     return static_cast<std::ptrdiff_t>(_module.code.size());
   }
 
+  auto Module_builder::constant(std::span<std::byte const> bytes)
+    -> Wide_constant
+  {
+    for (auto i = std::size_t{}; i < _module.constant_table.size(); ++i)
+    {
+      auto const offset = _module.constant_table[i];
+      auto const existing = std::span{
+        _module.constant_data.data() + offset,
+        bytes.size(),
+      };
+      if (offset + static_cast<std::ptrdiff_t>(bytes.size()) <=
+            static_cast<std::ptrdiff_t>(_module.constant_data.size()) &&
+          std::equal(bytes.begin(), bytes.end(), existing.begin()))
+      {
+        return static_cast<Wide_constant>(i);
+      }
+    }
+
+    if (_module.constant_table.size() ==
+        static_cast<std::size_t>(std::numeric_limits<Wide_constant>::max()) + 1)
+    {
+      throw std::runtime_error{"constant table out of range"};
+    }
+
+    auto const index =
+      static_cast<Wide_constant>(_module.constant_table.size());
+    _module.constant_table.push_back(
+      static_cast<std::ptrdiff_t>(_module.constant_data.size())
+    );
+    _module.constant_data
+      .insert(_module.constant_data.end(), bytes.begin(), bytes.end());
+    return index;
+  }
+
 } // namespace benson::bytecode

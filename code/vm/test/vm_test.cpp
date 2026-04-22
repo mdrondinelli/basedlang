@@ -555,6 +555,31 @@ TEST_CASE("Virtual_machine runs Module_builder program with forward jmp_i")
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 42);
 }
 
+TEST_CASE("Virtual_machine runs Module_builder program with inline constants")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  builder.emit_add_i32_k(Register::gpr_1, Register::gpr_1, 5);
+  builder.emit_mul_f32_k(Register::gpr_2, Register::gpr_2, 0.5F);
+  builder.emit_add_f32_k(Register::gpr_2, Register::gpr_2, 0.5F);
+  builder.emit_exit();
+
+  auto const module = builder.build();
+
+  auto vm = benson::Virtual_machine{};
+  vm.load(module);
+  vm.set_register_value<std::int32_t>(Register::gpr_1, 37);
+  vm.set_register_value<float>(Register::gpr_2, 3.0F);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 42);
+  CHECK(vm.get_register_value<float>(Register::gpr_2) == 2.0F);
+  CHECK(module.constant_table.size() == 2);
+}
+
 TEST_CASE(
   "Virtual_machine load_16 and store_16 use wide offset when offset > 255"
 )

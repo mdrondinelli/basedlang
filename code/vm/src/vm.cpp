@@ -22,7 +22,7 @@ namespace benson
       auto k = ConstantType{};
       std::memcpy(&k, instruction_pointer, sizeof(k));
       instruction_pointer += sizeof(k);
-      vm.set_register_value(dst, vm.lookup_constant(bytecode::Wide_constant{k.value}));
+      vm.set_register_value(dst, vm.lookup_constant(k));
     }
 
     template <typename T>
@@ -77,10 +77,7 @@ namespace benson
       instruction_pointer += sizeof(rhs);
       vm.set_register_value<T>(
         dst,
-        fn(
-          vm.get_register_value<T>(lhs),
-          vm.get_constant_value<T>(bytecode::Wide_constant{rhs.value})
-        )
+        fn(vm.get_register_value<T>(lhs), vm.get_constant_value<T>(rhs))
       );
     }
 

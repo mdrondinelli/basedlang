@@ -99,7 +99,7 @@ namespace benson
       instruction_pointer += sizeof(rhs);
       vm.set_register_value<T>(
         dst,
-        fn(vm.get_register_value<T>(lhs), static_cast<T>(rhs))
+        fn(vm.get_register_value<T>(lhs), static_cast<T>(rhs.value))
       );
     }
 
@@ -129,7 +129,7 @@ namespace benson
       }();
       auto value = std::uint64_t{};
       // TODO: bounds check
-      std::memcpy(&value, space_pointer + base_address + offset, N);
+      std::memcpy(&value, space_pointer + base_address + offset.value, N);
       vm.registers[static_cast<std::size_t>(dst)] = value;
     }
 
@@ -155,7 +155,7 @@ namespace benson
       }
       // TODO: bounds check
       std::memcpy(
-        vm.stack->data() + base_address + offset,
+        vm.stack->data() + base_address + offset.value,
         &vm.registers[static_cast<std::size_t>(src)],
         N
       );
@@ -167,7 +167,7 @@ namespace benson
       auto offset = OffsetType{};
       std::memcpy(&offset, instruction_pointer, sizeof(offset));
       instruction_pointer += sizeof(offset);
-      instruction_pointer += offset;
+      instruction_pointer += offset.value;
     }
 
   } // namespace

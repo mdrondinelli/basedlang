@@ -35,3 +35,44 @@ TEST_CASE("Module_builder patches label-based jmp_i instructions")
   CHECK(module.constant_data.empty());
   CHECK(module.constant_table.empty());
 }
+
+TEST_CASE("Module_builder interns and deduplicates inline constants")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Opcode;
+  using benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+
+  builder.emit_add_f32_k(Register::gpr_1, Register::gpr_2, 0.3F);
+  builder.emit_mul_f32_k(Register::gpr_3, Register::gpr_4, 0.3F);
+  builder.emit_add_i32_k(Register::gpr_5, Register::gpr_6, 7);
+  builder.emit_sub_i32_k(Register::gpr_7, Register::gpr_8, 7);
+  builder.emit_exit();
+
+  auto const module = builder.build();
+
+  CHECK(
+    module.code == std::vector<std::byte>{
+                     static_cast<std::byte>(Opcode::add_f32_k),
+                     static_cast<std::byte>(Register::gpr_1),
+                     static_cast<std::byte>(Register::gpr_2),
+                     std::byte{0x00},
+                     static_cast<std::byte>(Opcode::mul_f32_k),
+                     static_cast<std::byte>(Register::gpr_3),
+                     static_cast<std::byte>(Register::gpr_4),
+                     std::byte{0x00},
+                     static_cast<std::byte>(Opcode::add_i32_k),
+                     static_cast<std::byte>(Register::gpr_5),
+                     static_cast<std::byte>(Register::gpr_6),
+                     std::byte{0x01},
+                     static_cast<std::byte>(Opcode::sub_i32_k),
+                     static_cast<std::byte>(Register::gpr_7),
+                     static_cast<std::byte>(Register::gpr_8),
+                     std::byte{0x01},
+                     static_cast<std::byte>(Opcode::exit),
+                   }
+  );
+  CHECK(module.constant_table == std::vector<std::ptrdiff_t>{0, 4});
+  CHECK(module.constant_data.size() == 8);
+}

@@ -66,12 +66,13 @@ TEST_CASE("Bytecode_writer emits lookup constant instruction operands")
 {
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_constant;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_lookup_k(Register::gpr_1, 3);
-  writer.emit_lookup_k(Register::gpr_2, 0x0405);
+  writer.emit_lookup_k(Register::gpr_1, Wide_constant{3});
+  writer.emit_lookup_k(Register::gpr_2, Wide_constant{0x0405});
   writer.flush();
 
   CHECK(
@@ -120,13 +121,14 @@ TEST_CASE(
 {
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_add_i32_i(Register::gpr_1, Register::gpr_2, -3);
-  writer.emit_mul_i32_i(Register::gpr_4, Register::gpr_5, 0x0102);
-  writer.emit_mod_i64_i(Register::gpr_7, Register::gpr_8, -0x0203);
+  writer.emit_add_i32_i(Register::gpr_1, Register::gpr_2, Wide_immediate{-3});
+  writer.emit_mul_i32_i(Register::gpr_4, Register::gpr_5, Wide_immediate{0x0102});
+  writer.emit_mod_i64_i(Register::gpr_7, Register::gpr_8, Wide_immediate{-0x0203});
   writer.flush();
 
   CHECK(
@@ -157,13 +159,14 @@ TEST_CASE(
 {
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_constant;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_sub_i32_k(Register::gpr_1, Register::gpr_2, 3);
-  writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, 6);
-  writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, 9);
+  writer.emit_sub_i32_k(Register::gpr_1, Register::gpr_2, Wide_constant{3});
+  writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, Wide_constant{6});
+  writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, Wide_constant{9});
   writer.flush();
 
   CHECK(
@@ -190,13 +193,14 @@ TEST_CASE(
 {
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
+  using benson::bytecode::Wide_constant;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_sub_i32_k(Register::gpr_1, Register::gpr_2, 0x0304);
-  writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, 0x0607);
-  writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, 0x090A);
+  writer.emit_sub_i32_k(Register::gpr_1, Register::gpr_2, Wide_constant{0x0304});
+  writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, Wide_constant{0x0607});
+  writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, Wide_constant{0x090A});
   writer.flush();
 
   CHECK(

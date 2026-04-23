@@ -12,7 +12,7 @@ namespace benson::bytecode
   struct Immediate
   {
     using Underlying_type = std::int8_t;
-    Underlying_type value = 0;
+    Underlying_type value;
 
     constexpr Immediate() = default;
 
@@ -29,7 +29,7 @@ namespace benson::bytecode
   struct Wide_immediate
   {
     using Underlying_type = std::int16_t;
-    Underlying_type value = 0;
+    Underlying_type value;
 
     constexpr Wide_immediate() = default;
 

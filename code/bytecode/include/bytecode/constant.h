@@ -12,7 +12,7 @@ namespace benson::bytecode
   struct Constant
   {
     using Underlying_type = std::uint8_t;
-    Underlying_type value = 0;
+    Underlying_type value;
 
     constexpr Constant() = default;
 
@@ -29,7 +29,7 @@ namespace benson::bytecode
   struct Wide_constant
   {
     using Underlying_type = std::uint16_t;
-    Underlying_type value = 0;
+    Underlying_type value;
 
     constexpr Wide_constant() = default;
 

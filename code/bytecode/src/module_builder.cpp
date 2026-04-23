@@ -80,9 +80,7 @@ namespace benson::bytecode
       auto const narrow_offset = target_offset - (instruction_offset + 2);
       if (fits_immediate(narrow_offset))
       {
-        Bytecode_writer::emit_jmp_i(
-          Wide_immediate{static_cast<Wide_immediate::Underlying_type>(narrow_offset)}
-        );
+        Bytecode_writer::emit_jmp_i(Wide_immediate{narrow_offset});
       }
       else
       {
@@ -91,17 +89,13 @@ namespace benson::bytecode
         {
           throw std::runtime_error{"jmp_i target out of range"};
         }
-        Bytecode_writer::emit_jmp_i(
-          Wide_immediate{static_cast<Wide_immediate::Underlying_type>(wide_offset)}
-        );
+        Bytecode_writer::emit_jmp_i(Wide_immediate{wide_offset});
       }
     }
     else
     {
       constexpr auto wide_jump_dummy_offset = 0x0100;
-      Bytecode_writer::emit_jmp_i(
-        Wide_immediate{static_cast<Wide_immediate::Underlying_type>(wide_jump_dummy_offset)}
-      );
+      Bytecode_writer::emit_jmp_i(Wide_immediate{wide_jump_dummy_offset});
       _pending_jumps.push_back(
         Pending_jump{
           .target = target,
@@ -128,9 +122,7 @@ namespace benson::bytecode
       {
         throw std::runtime_error{"jmp_i target out of range"};
       }
-      auto const immediate = Wide_immediate{
-        static_cast<Wide_immediate::Underlying_type>(offset)
-      };
+      auto const immediate = Wide_immediate{offset};
       _module.code[jump.immediate_offset] =
         static_cast<std::byte>(immediate.value);
       _module.code[jump.immediate_offset + 1] =
@@ -161,7 +153,7 @@ namespace benson::bytecode
             static_cast<std::ptrdiff_t>(_module.constant_data.size()) &&
           std::equal(bytes.begin(), bytes.end(), existing.begin()))
       {
-        return Wide_constant{static_cast<Wide_constant::Underlying_type>(i)};
+        return Wide_constant{i};
       }
     }
 
@@ -173,9 +165,7 @@ namespace benson::bytecode
       throw std::runtime_error{"constant table out of range"};
     }
 
-    auto const index = Wide_constant{
-      static_cast<Wide_constant::Underlying_type>(_module.constant_table.size())
-    };
+    auto const index = Wide_constant{_module.constant_table.size()};
     _module.constant_table.push_back(
       static_cast<std::ptrdiff_t>(_module.constant_data.size())
     );

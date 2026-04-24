@@ -10,14 +10,15 @@ TEST_CASE("Module_builder patches label-based jmp_i instructions")
   using benson::bytecode::Opcode;
 
   auto builder = Module_builder{};
+  auto &writer = builder.writer();
   auto const start = builder.make_label();
   auto const end = builder.make_label();
 
   builder.place_label(start);
-  builder.emit_jmp_i(end);
-  builder.emit_jmp_i(start);
+  writer.emit_jmp(builder.label_target(end));
+  writer.emit_jmp(builder.label_target(start));
   builder.place_label(end);
-  builder.emit_exit();
+  writer.emit_exit();
 
   auto const module = builder.build();
 
@@ -39,38 +40,39 @@ TEST_CASE("Module_builder patches label-based jmp_i instructions")
 TEST_CASE("Module_builder interns and deduplicates inline constants")
 {
   using benson::bytecode::Module_builder;
-  using benson::bytecode::Opcode;
-  using benson::bytecode::Register;
+  using enum benson::bytecode::Opcode;
+  using enum benson::bytecode::Register;
 
   auto builder = Module_builder{};
+  auto &writer = builder.writer();
 
-  builder.emit_add_f32_k(Register::gpr_1, Register::gpr_2, 0.3F);
-  builder.emit_mul_f32_k(Register::gpr_3, Register::gpr_4, 0.3F);
-  builder.emit_add_i32_k(Register::gpr_5, Register::gpr_6, 7);
-  builder.emit_sub_i32_k(Register::gpr_7, Register::gpr_8, 7);
-  builder.emit_exit();
+  writer.emit_add_f32_k(gpr_1, gpr_2, builder.constant(0.3F));
+  writer.emit_mul_f32_k(gpr_3, gpr_4, builder.constant(0.3F));
+  writer.emit_add_i32_k(gpr_5, gpr_6, builder.constant(7));
+  writer.emit_sub_i32_k(gpr_7, gpr_8, builder.constant(7));
+  writer.emit_exit();
 
   auto const module = builder.build();
 
   CHECK(
     module.code == std::vector<std::byte>{
-                     static_cast<std::byte>(Opcode::add_f32_k),
-                     static_cast<std::byte>(Register::gpr_1),
-                     static_cast<std::byte>(Register::gpr_2),
+                     static_cast<std::byte>(add_f32_k),
+                     static_cast<std::byte>(gpr_1),
+                     static_cast<std::byte>(gpr_2),
                      std::byte{0x00},
-                     static_cast<std::byte>(Opcode::mul_f32_k),
-                     static_cast<std::byte>(Register::gpr_3),
-                     static_cast<std::byte>(Register::gpr_4),
+                     static_cast<std::byte>(mul_f32_k),
+                     static_cast<std::byte>(gpr_3),
+                     static_cast<std::byte>(gpr_4),
                      std::byte{0x00},
-                     static_cast<std::byte>(Opcode::add_i32_k),
-                     static_cast<std::byte>(Register::gpr_5),
-                     static_cast<std::byte>(Register::gpr_6),
+                     static_cast<std::byte>(add_i32_k),
+                     static_cast<std::byte>(gpr_5),
+                     static_cast<std::byte>(gpr_6),
                      std::byte{0x01},
-                     static_cast<std::byte>(Opcode::sub_i32_k),
-                     static_cast<std::byte>(Register::gpr_7),
-                     static_cast<std::byte>(Register::gpr_8),
+                     static_cast<std::byte>(sub_i32_k),
+                     static_cast<std::byte>(gpr_7),
+                     static_cast<std::byte>(gpr_8),
                      std::byte{0x01},
-                     static_cast<std::byte>(Opcode::exit),
+                     static_cast<std::byte>(exit),
                    }
   );
   CHECK(module.constant_table == std::vector<std::ptrdiff_t>{0, 4});

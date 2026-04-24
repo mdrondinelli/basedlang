@@ -1,5 +1,6 @@
 #include "bytecode/bytecode_writer.h"
 
+#include <stdexcept>
 #include <limits>
 
 namespace benson::bytecode
@@ -22,7 +23,7 @@ namespace benson::bytecode
   } // namespace
 
   Bytecode_writer::Bytecode_writer(Binary_output_stream *stream)
-      : _stream{stream}
+      : _stream{stream}, _position{}
   {
   }
 
@@ -31,9 +32,36 @@ namespace benson::bytecode
     emit_opcode(Opcode::exit);
   }
 
-  void Bytecode_writer::emit_jmp_i(Wide_immediate offset)
+  void Bytecode_writer::emit_jmp(std::ptrdiff_t target)
   {
-    emit_immediate_instruction(Opcode::jmp_i, offset);
+    auto const narrow_offset = target - (_position + 2);
+    if (std::in_range<Immediate::Underlying_type>(narrow_offset))
+    {
+      emit_immediate_instruction(Opcode::jmp_i, Immediate{narrow_offset});
+      return;
+    }
+    auto const wide_offset = target - (_position + 4);
+    if (std::in_range<Wide_immediate::Underlying_type>(wide_offset))
+    {
+      emit_immediate_instruction(Opcode::jmp_i, Wide_immediate{wide_offset});
+      return;
+    }
+    throw std::runtime_error{"jmp target out of range"};
+  }
+
+  void Bytecode_writer::emit_jmp(Jump_target_provider const &target_provider)
+  {
+    if (auto const target = target_provider.target(_position + 2))
+    {
+      emit_jmp(*target);
+    }
+    else
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::jmp_i);
+      write_byte({});
+      write_byte({});
+    }
   }
 
   void Bytecode_writer::emit_lookup_k(Register dst, Wide_constant k)
@@ -124,6 +152,21 @@ namespace benson::bytecode
   )
   {
     emit_binary_immediate_instruction(Opcode::store_64, src, base, offset);
+  }
+
+  void Bytecode_writer::emit_sx_8(Register dst, Register src)
+  {
+    emit_unary_register_instruction(Opcode::sx_8, dst, src);
+  }
+
+  void Bytecode_writer::emit_sx_16(Register dst, Register src)
+  {
+    emit_unary_register_instruction(Opcode::sx_16, dst, src);
+  }
+
+  void Bytecode_writer::emit_sx_32(Register dst, Register src)
+  {
+    emit_unary_register_instruction(Opcode::sx_32, dst, src);
   }
 
   void Bytecode_writer::emit_neg_i32(Register dst, Register src)
@@ -496,6 +539,7 @@ namespace benson::bytecode
   void Bytecode_writer::write_byte(std::byte byte)
   {
     _stream->write_bytes(std::span{&byte, std::size_t{1}});
+    ++_position;
   }
 
   void Bytecode_writer::emit_opcode(Opcode opcode)

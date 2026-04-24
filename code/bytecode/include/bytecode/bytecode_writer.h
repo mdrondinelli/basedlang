@@ -1,6 +1,8 @@
 #ifndef BENSON_BYTECODE_BYTECODE_WRITER_H
 #define BENSON_BYTECODE_BYTECODE_WRITER_H
 
+#include <optional>
+
 #include "bytecode/constant.h"
 #include "bytecode/immediate.h"
 #include "bytecode/opcode.h"
@@ -9,14 +11,22 @@
 
 namespace benson::bytecode
 {
-
   class Bytecode_writer
   {
   public:
+    class Jump_target_provider
+    {
+    public:
+      virtual ~Jump_target_provider() = default;
+
+      virtual std::optional<std::ptrdiff_t> target(std::ptrdiff_t patchable_immediate_position) const = 0;
+    };
+
     explicit Bytecode_writer(Binary_output_stream *stream);
 
     void emit_exit();
-    void emit_jmp_i(Wide_immediate offset);
+    void emit_jmp(std::ptrdiff_t target);
+    void emit_jmp(Jump_target_provider const &target_provider);
     void emit_lookup_k(Register dst, Wide_constant k);
     void emit_load_8(Register dst, Register base, Wide_immediate offset);
     void emit_load_16(Register dst, Register base, Wide_immediate offset);
@@ -26,6 +36,9 @@ namespace benson::bytecode
     void emit_store_16(Register src, Register base, Wide_immediate offset);
     void emit_store_32(Register src, Register base, Wide_immediate offset);
     void emit_store_64(Register src, Register base, Wide_immediate offset);
+    void emit_sx_8(Register dst, Register src);
+    void emit_sx_16(Register dst, Register src);
+    void emit_sx_32(Register dst, Register src);
     void emit_neg_i32(Register dst, Register src);
     void emit_neg_i64(Register dst, Register src);
     void emit_neg_f32(Register dst, Register src);
@@ -77,6 +90,11 @@ namespace benson::bytecode
     void emit_mod_i64_k(Register dst, Register lhs, Wide_constant rhs);
     void emit_mod_i64_i(Register dst, Register lhs, Wide_immediate rhs);
 
+    std::ptrdiff_t position() const noexcept
+    {
+      return _position;
+    }
+
     void flush();
 
   private:
@@ -114,6 +132,7 @@ namespace benson::bytecode
     void emit_immediate_instruction(Opcode opcode, Wide_immediate value);
 
     Binary_output_stream *_stream;
+    std::ptrdiff_t _position;
   };
 
 } // namespace benson::bytecode

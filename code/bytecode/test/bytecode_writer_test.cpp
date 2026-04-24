@@ -42,6 +42,26 @@ TEST_CASE("Bytecode_writer emits exit opcode")
   );
 }
 
+TEST_CASE("Bytecode_writer emits unary sign extend instruction operands")
+{
+  using enum benson::bytecode::Opcode;
+  using enum benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_sx_32(gpr_254, gpr_255);
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(sx_32),
+                        static_cast<std::byte>(gpr_254),
+                        static_cast<std::byte>(gpr_255),
+                      }
+  );
+}
+
 TEST_CASE("Bytecode_writer emits unary negate instruction operands")
 {
   using benson::bytecode::Opcode;
@@ -127,8 +147,10 @@ TEST_CASE(
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
   writer.emit_add_i32_i(Register::gpr_1, Register::gpr_2, Wide_immediate{-3});
-  writer.emit_mul_i32_i(Register::gpr_4, Register::gpr_5, Wide_immediate{0x0102});
-  writer.emit_mod_i64_i(Register::gpr_7, Register::gpr_8, Wide_immediate{-0x0203});
+  writer
+    .emit_mul_i32_i(Register::gpr_4, Register::gpr_5, Wide_immediate{0x0102});
+  writer
+    .emit_mod_i64_i(Register::gpr_7, Register::gpr_8, Wide_immediate{-0x0203});
   writer.flush();
 
   CHECK(
@@ -198,9 +220,12 @@ TEST_CASE(
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_sub_i32_k(Register::gpr_1, Register::gpr_2, Wide_constant{0x0304});
-  writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, Wide_constant{0x0607});
-  writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, Wide_constant{0x090A});
+  writer
+    .emit_sub_i32_k(Register::gpr_1, Register::gpr_2, Wide_constant{0x0304});
+  writer
+    .emit_div_f64_k(Register::gpr_4, Register::gpr_5, Wide_constant{0x0607});
+  writer
+    .emit_mod_i32_k(Register::gpr_7, Register::gpr_8, Wide_constant{0x090A});
   writer.flush();
 
   CHECK(

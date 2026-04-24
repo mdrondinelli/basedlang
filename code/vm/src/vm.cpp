@@ -25,8 +25,11 @@ namespace benson
       vm.set_register_value(dst, vm.lookup_constant(k));
     }
 
-    template <typename T>
-    void run_neg(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    template <typename CppType, typename Fn>
+    void run_register_unary(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
     {
       auto const dst_reg = static_cast<bytecode::Register>(
         static_cast<std::uint8_t>(*instruction_pointer++)
@@ -34,8 +37,29 @@ namespace benson
       auto const src_reg = static_cast<bytecode::Register>(
         static_cast<std::uint8_t>(*instruction_pointer++)
       );
-      vm.set_register_value<T>(dst_reg, -vm.get_register_value<T>(src_reg));
+      vm.set_register_value(
+        dst_reg,
+        Fn{}(vm.get_register_value<CppType>(src_reg))
+      );
     }
+
+    struct Neg_fn
+    {
+      template <typename T>
+      [[nodiscard]] T operator()(T value) const
+      {
+        return -value;
+      }
+    };
+
+    struct Sx_fn
+    {
+      template <typename T>
+      [[nodiscard]] std::int64_t operator()(T value) const
+      {
+        return static_cast<std::int64_t>(value);
+      }
+    };
 
     template <typename T, typename Fn>
     void run_register_binary(
@@ -238,17 +262,26 @@ namespace benson
     case bytecode::Opcode::store_64:
       run_store<8, bytecode::Immediate>(instruction_pointer, *this);
       break;
+    case bytecode::Opcode::sx_8:
+      run_register_unary<std::int8_t, Sx_fn>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::sx_16:
+      run_register_unary<std::int16_t, Sx_fn>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::sx_32:
+      run_register_unary<std::int32_t, Sx_fn>(instruction_pointer, *this);
+      break;
     case bytecode::Opcode::neg_i32:
-      run_neg<std::int32_t>(instruction_pointer, *this);
+      run_register_unary<std::int32_t, Neg_fn>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::neg_i64:
-      run_neg<std::int64_t>(instruction_pointer, *this);
+      run_register_unary<std::int64_t, Neg_fn>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::neg_f32:
-      run_neg<float>(instruction_pointer, *this);
+      run_register_unary<float, Neg_fn>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::neg_f64:
-      run_neg<double>(instruction_pointer, *this);
+      run_register_unary<double, Neg_fn>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::add_i32:
       run_register_binary<std::int32_t>(

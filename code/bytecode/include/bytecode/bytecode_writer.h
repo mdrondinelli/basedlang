@@ -42,6 +42,31 @@ namespace benson::bytecode
       }
     }
 
+    void emit_jnz(Register src, std::ptrdiff_t target);
+
+    template <typename JumpTargetProvider>
+    void emit_jnz(Register src, JumpTargetProvider &&provider)
+    {
+      auto const patch_position = position() + 3;
+      auto const target = provider.target(patch_position);
+      static_assert(std::is_same_v<
+                    std::remove_cv_t<decltype(target)>,
+                    std::optional<std::ptrdiff_t>
+      >);
+      if (target)
+      {
+        emit_jnz(src, *target);
+      }
+      else
+      {
+        emit_opcode(Opcode::wide);
+        emit_opcode(Opcode::jnz_i);
+        write_byte(static_cast<std::byte>(src));
+        write_byte({});
+        write_byte({});
+      }
+    }
+
     void emit_lookup_k(Register dst, Wide_constant k);
 
     void emit_load_8(Register dst, Register base, Wide_immediate offset);
@@ -324,8 +349,6 @@ namespace benson::bytecode
       Register lhs,
       Wide_immediate rhs
     );
-
-    void emit_immediate_instruction(Opcode opcode, Wide_immediate value);
 
     Binary_output_stream *_stream;
     std::ptrdiff_t _position;

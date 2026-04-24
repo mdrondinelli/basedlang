@@ -37,13 +37,40 @@ namespace benson::bytecode
     auto const narrow_offset = target - (_position + 2);
     if (std::in_range<Immediate::Underlying_type>(narrow_offset))
     {
-      emit_immediate_instruction(Opcode::jmp_i, Immediate{narrow_offset});
+      emit_opcode(Opcode::jmp_i);
+      write_byte(static_cast<std::byte>(narrow_offset));
       return;
     }
     auto const wide_offset = target - (_position + 4);
     if (std::in_range<Wide_immediate::Underlying_type>(wide_offset))
     {
-      emit_immediate_instruction(Opcode::jmp_i, Wide_immediate{wide_offset});
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::jmp_i);
+      write_byte(static_cast<std::byte>(wide_offset));
+      write_byte(static_cast<std::byte>(wide_offset >> 8));
+      return;
+    }
+    throw std::runtime_error{"jmp target out of range"};
+  }
+
+  void Bytecode_writer::emit_jnz(Register src, std::ptrdiff_t target)
+  {
+    auto const narrow_offset = target - (_position + 3);
+    if (std::in_range<Immediate::Underlying_type>(narrow_offset))
+    {
+      emit_opcode(Opcode::jnz_i);
+      write_byte(static_cast<std::byte>(src));
+      write_byte(static_cast<std::byte>(narrow_offset));
+      return;
+    }
+    auto const wide_offset = target - (_position + 5);
+    if (std::in_range<Wide_immediate::Underlying_type>(wide_offset))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::jnz_i);
+      write_byte(static_cast<std::byte>(src));
+      write_byte(static_cast<std::byte>(wide_offset));
+      write_byte(static_cast<std::byte>(wide_offset >> 8));
       return;
     }
     throw std::runtime_error{"jmp target out of range"};
@@ -1143,25 +1170,6 @@ namespace benson::bytecode
       write_byte(static_cast<std::byte>(dst));
       write_byte(static_cast<std::byte>(lhs));
       write_byte(static_cast<std::byte>(rhs.value));
-    }
-  }
-
-  void Bytecode_writer::emit_immediate_instruction(
-    Opcode opcode,
-    Wide_immediate value
-  )
-  {
-    if (is_wide(value))
-    {
-      emit_opcode(Opcode::wide);
-      emit_opcode(opcode);
-      write_byte(static_cast<std::byte>(value.value));
-      write_byte(static_cast<std::byte>(value.value >> 8));
-    }
-    else
-    {
-      emit_opcode(opcode);
-      write_byte(static_cast<std::byte>(value.value));
     }
   }
 

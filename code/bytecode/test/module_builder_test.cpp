@@ -37,6 +37,42 @@ TEST_CASE("Module_builder patches label-based jmp_i instructions")
   CHECK(module.constant_table.empty());
 }
 
+TEST_CASE("Module_builder patches label-based jnz_i instructions")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Opcode;
+  using benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const start = builder.make_label();
+  auto const end = builder.make_label();
+
+  builder.place_label(start);
+  writer.emit_jnz(Register::gpr_1, builder.label_target(end));
+  writer.emit_jnz(Register::gpr_2, builder.label_target(start));
+  builder.place_label(end);
+  writer.emit_exit();
+
+  auto const module = builder.build();
+
+  CHECK(
+    module.code == std::vector<std::byte>{
+                     static_cast<std::byte>(Opcode::wide),
+                     static_cast<std::byte>(Opcode::jnz_i),
+                     static_cast<std::byte>(Register::gpr_1),
+                     std::byte{0x03},
+                     std::byte{0x00},
+                     static_cast<std::byte>(Opcode::jnz_i),
+                     static_cast<std::byte>(Register::gpr_2),
+                     std::byte{0xF8},
+                     static_cast<std::byte>(Opcode::exit),
+                   }
+  );
+  CHECK(module.constant_data.empty());
+  CHECK(module.constant_table.empty());
+}
+
 TEST_CASE("Module_builder interns and deduplicates inline constants")
 {
   using benson::bytecode::Module_builder;

@@ -1,3 +1,4 @@
+#include <array>
 #include <bit>
 #include <concepts>
 #include <cstddef>
@@ -593,6 +594,319 @@ TEST_CASE("Virtual_machine runs Module_builder program with forward jmp_i")
   vm.run();
 
   CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 42);
+}
+
+TEST_CASE("Virtual_machine does not take narrow jnz_i when condition is zero")
+{
+  using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_jnz(Register::gpr_2, std::ptrdiff_t{7});
+  writer.emit_add_i32_i(Register::gpr_1, Register::gpr_1, Wide_immediate{1});
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.set_register_value<std::int32_t>(Register::gpr_1, 40);
+  vm.set_register_value<std::int32_t>(Register::gpr_2, 0);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 41);
+}
+
+TEST_CASE("Virtual_machine takes narrow jnz_i when condition is non-zero")
+{
+  using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_jnz(Register::gpr_2, std::ptrdiff_t{7});
+  writer.emit_add_i32_i(Register::gpr_1, Register::gpr_1, Wide_immediate{1});
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.set_register_value<std::int32_t>(Register::gpr_1, 40);
+  vm.set_register_value<std::int32_t>(Register::gpr_2, 1);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 40);
+}
+
+TEST_CASE("Virtual_machine takes wide jnz_i when target exceeds narrow range")
+{
+  using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_jnz(Register::gpr_2, std::ptrdiff_t{165});
+  for (auto i = 0; i < 40; ++i)
+  {
+    writer.emit_add_i32_i(Register::gpr_1, Register::gpr_1, Wide_immediate{1});
+  }
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.set_register_value<std::int32_t>(Register::gpr_1, 40);
+  vm.set_register_value<std::int32_t>(Register::gpr_2, 1);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(Register::gpr_1) == 40);
+}
+
+TEST_CASE("Virtual_machine runs countdown sum program with jnz_i loop")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Wide_immediate;
+  using enum benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const loop = builder.make_label();
+
+  builder.place_label(loop);
+  writer.emit_add_i32(gpr_2, gpr_2, gpr_1);
+  writer.emit_sub_i32_i(gpr_1, gpr_1, Wide_immediate{1});
+  writer.emit_cmp_gt_i32_i(gpr_3, gpr_1, Wide_immediate{0});
+  writer.emit_jnz(gpr_3, builder.label_target(loop));
+  writer.emit_exit();
+
+  auto const module = builder.build();
+
+  auto vm = benson::Virtual_machine{};
+  vm.load(module);
+  vm.set_register_value<std::int32_t>(gpr_1, 5);
+  vm.set_register_value<std::int32_t>(gpr_2, 0);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(gpr_1) == 0);
+  CHECK(vm.get_register_value<std::int32_t>(gpr_2) == 15);
+  CHECK(!vm.get_register_value<bool>(gpr_3));
+}
+
+TEST_CASE("Virtual_machine runs factorial program with jnz_i loop")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Wide_immediate;
+  using enum benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const loop = builder.make_label();
+
+  writer.emit_lookup_k(gpr_4, builder.constant(std::int32_t{5}));
+  writer.emit_lookup_k(gpr_5, builder.constant(std::int32_t{1}));
+  writer.emit_load_32(gpr_1, gpr_4, Wide_immediate{0});
+  writer.emit_load_32(gpr_2, gpr_5, Wide_immediate{0});
+  builder.place_label(loop);
+  writer.emit_mul_i32(gpr_2, gpr_2, gpr_1);
+  writer.emit_sub_i32_i(gpr_1, gpr_1, Wide_immediate{1});
+  writer.emit_cmp_gt_i32_i(gpr_3, gpr_1, Wide_immediate{1});
+  writer.emit_jnz(gpr_3, builder.label_target(loop));
+  writer.emit_exit();
+
+  auto const module = builder.build();
+
+  auto vm = benson::Virtual_machine{};
+  vm.load(module);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int32_t>(gpr_1) == 1);
+  CHECK(vm.get_register_value<std::int32_t>(gpr_2) == 120);
+  CHECK(!vm.get_register_value<bool>(gpr_3));
+  CHECK(module.constant_table.size() == 2);
+}
+
+TEST_CASE("Virtual_machine runs Newton square root program with jnz_i loop")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Wide_immediate;
+  using enum benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const loop = builder.make_label();
+
+  writer.emit_lookup_k(gpr_10, builder.constant(9.0F));
+  writer.emit_lookup_k(gpr_11, builder.constant(1.0F));
+  writer.emit_load_32(gpr_1, gpr_10, Wide_immediate{0});
+  writer.emit_load_32(gpr_2, gpr_11, Wide_immediate{0});
+  writer.emit_add_i32_k(gpr_3, gpr_3, builder.constant(5));
+  builder.place_label(loop);
+  writer.emit_div_f32(gpr_4, gpr_1, gpr_2);
+  writer.emit_add_f32(gpr_5, gpr_2, gpr_4);
+  writer.emit_mul_f32_k(gpr_2, gpr_5, builder.constant(0.5F));
+  writer.emit_sub_i32_i(gpr_3, gpr_3, Wide_immediate{1});
+  writer.emit_cmp_gt_i32_i(gpr_6, gpr_3, Wide_immediate{0});
+  writer.emit_jnz(gpr_6, builder.label_target(loop));
+  writer.emit_exit();
+
+  auto const module = builder.build();
+
+  auto vm = benson::Virtual_machine{};
+  vm.load(module);
+
+  vm.run();
+
+  auto const estimate = vm.get_register_value<float>(gpr_2);
+  CHECK(estimate > 2.999F);
+  CHECK(estimate < 3.001F);
+  CHECK(vm.get_register_value<std::int32_t>(gpr_3) == 0);
+  CHECK(!vm.get_register_value<bool>(gpr_6));
+  CHECK(module.constant_table.size() == 4);
+}
+
+TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
+{
+  using benson::Address_space;
+  using benson::Pointer;
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Wide_constant;
+  using benson::bytecode::Wide_immediate;
+  using enum benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const expression_k = builder.constant(std::int32_t{0});
+  auto const loop = builder.make_label();
+  auto const operand = builder.make_label();
+  auto const add = builder.make_label();
+  auto const mul = builder.make_label();
+  auto const sub = builder.make_label();
+  auto const advance = builder.make_label();
+  auto const done = builder.make_label();
+
+  // get the pointer to the start of constant data
+  writer.emit_lookup_k(gpr_10, expression_k);
+  // load the length of the RPN expression
+  writer.emit_load_32(gpr_1, gpr_10, Wide_immediate{0});
+  // calculate the pointer to the start of the RPN expression
+  writer.emit_add_i64_i(gpr_11, gpr_10, Wide_immediate{4});
+
+  builder.place_label(loop);
+
+  // compare the "length" of the RPN expression with zero
+  writer.emit_cmp_eq_i32_i(gpr_2, gpr_1, Wide_immediate{0});
+  // if the length is zero, we're done
+  writer.emit_jnz(gpr_2, builder.label_target(done));
+
+  // load the operand/operator tag
+  writer.emit_load_32(gpr_3, gpr_11, Wide_immediate{0});
+  // load the operand/operator value
+  writer.emit_load_32(gpr_4, gpr_11, Wide_immediate{4});
+
+  // if tag == 0, it's an operand
+  writer.emit_cmp_eq_i32_i(gpr_2, gpr_3, Wide_immediate{0});
+  writer.emit_jnz(gpr_2, builder.label_target(operand));
+
+  // else if value == 1, it's an addition
+  writer.emit_cmp_eq_i32_i(gpr_2, gpr_4, Wide_immediate{1});
+  writer.emit_jnz(gpr_2, builder.label_target(add));
+
+  // else if value == 2, it's a subtraction
+  writer.emit_cmp_eq_i32_i(gpr_2, gpr_4, Wide_immediate{2});
+  writer.emit_jnz(gpr_2, builder.label_target(sub));
+  
+  // else if value == 3, it's a division
+  writer.emit_cmp_eq_i32_i(gpr_2, gpr_4, Wide_immediate{3});
+  writer.emit_jnz(gpr_2, builder.label_target(mul));
+
+  // else it's a "done" instruction
+  writer.emit_jmp(builder.label_target(done));
+
+  // push the operand value onto the stack
+  builder.place_label(operand);
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_store_64(gpr_4, sp, Wide_immediate{0});
+  writer.emit_jmp(builder.label_target(advance));
+
+  builder.place_label(add);
+  writer.emit_load_64(gpr_5, sp, Wide_immediate{0});
+  writer.emit_load_64(gpr_4, sp, Wide_immediate{8});
+  writer.emit_add_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_add_i32(gpr_6, gpr_4, gpr_5);
+  writer.emit_store_64(gpr_6, sp, Wide_immediate{0});
+  writer.emit_jmp(builder.label_target(advance));
+
+  builder.place_label(sub);
+  writer.emit_load_64(gpr_5, sp, Wide_immediate{0});
+  writer.emit_load_64(gpr_4, sp, Wide_immediate{8});
+  writer.emit_add_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_sub_i32(gpr_6, gpr_4, gpr_5);
+  writer.emit_store_64(gpr_6, sp, Wide_immediate{0});
+  writer.emit_jmp(builder.label_target(advance));
+
+  builder.place_label(mul);
+  writer.emit_load_64(gpr_5, sp, Wide_immediate{0});
+  writer.emit_load_64(gpr_4, sp, Wide_immediate{8});
+  writer.emit_add_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_mul_i32(gpr_6, gpr_4, gpr_5);
+  writer.emit_store_64(gpr_6, sp, Wide_immediate{0});
+  writer.emit_jmp(builder.label_target(advance));
+
+  // advance the RPN expression pointer and decrement the length
+  builder.place_label(advance);
+  writer.emit_add_i64_i(gpr_11, gpr_11, Wide_immediate{8});
+  writer.emit_sub_i32_i(gpr_1, gpr_1, Wide_immediate{1});
+  writer.emit_jmp(builder.label_target(loop));
+
+  // pop top of stack to gpr_9 and exit
+  builder.place_label(done);
+  writer.emit_load_64(gpr_9, sp, Wide_immediate{0});
+  writer.emit_add_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_exit();
+
+  auto module = builder.build();
+  auto const expression = std::array<std::int32_t, 15>{
+    7,
+    0,
+    3,
+    0,
+    4,
+    1,
+    1,
+    0,
+    2,
+    1,
+    3,
+    0,
+    7,
+    1,
+    2,
+  };
+  module.constant_data.clear();
+  module.constant_table.clear();
+  store_constant(
+    module.constant_data,
+    module.constant_table,
+    expression_k,
+    expression
+  );
+
+  auto vm = benson::Virtual_machine{};
+  vm.load(module);
+
+  vm.run();
+
+  auto const stack_pointer = vm.get_register_value<Pointer>(sp).decode();
+  CHECK(vm.get_register_value<std::int32_t>(gpr_9) == 7);
+  CHECK(vm.get_register_value<std::int32_t>(gpr_1) == 0);
+  CHECK(stack_pointer.space == Address_space::stack);
+  CHECK(stack_pointer.offset == vm.stack->size());
+  CHECK(module.constant_table.size() == 1);
 }
 
 TEST_CASE("Virtual_machine runs Module_builder program with inline constants")

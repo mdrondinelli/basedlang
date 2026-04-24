@@ -309,12 +309,35 @@ namespace benson
     }
 
     template <typename OffsetType>
-    void run_jmp(std::byte const *&instruction_pointer)
+    void run_jmp_i(std::byte const *&instruction_pointer)
     {
+      static_assert(
+        std::is_same_v<OffsetType, bytecode::Wide_immediate> ||
+        std::is_same_v<OffsetType, bytecode::Immediate>
+      );
       auto offset = OffsetType{};
       std::memcpy(&offset, instruction_pointer, sizeof(offset));
       instruction_pointer += sizeof(offset);
       instruction_pointer += offset.value;
+    }
+
+    template <typename OffsetType>
+    void run_jnz_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      static_assert(
+        std::is_same_v<OffsetType, bytecode::Wide_immediate> ||
+        std::is_same_v<OffsetType, bytecode::Immediate>
+      );
+      auto const src = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto offset = OffsetType{};
+      std::memcpy(&offset, instruction_pointer, sizeof(offset));
+      instruction_pointer += sizeof(offset);
+      if (vm.get_register_value<std::int32_t>(src) != 0)
+      {
+        instruction_pointer += offset.value;
+      }
     }
 
   } // namespace
@@ -337,6 +360,10 @@ namespace benson
 
   void Virtual_machine::run()
   {
+    set_register_value(
+      bytecode::Register::sp,
+      Pointer{Address_space::stack, stack->size()}
+    );
     for (;;)
     {
       auto const opcode = static_cast<bytecode::Opcode>(*instruction_pointer++);
@@ -356,7 +383,10 @@ namespace benson
       wide_dispatch(static_cast<bytecode::Opcode>(*instruction_pointer++));
       break;
     case bytecode::Opcode::jmp_i:
-      run_jmp<bytecode::Immediate>(instruction_pointer);
+      run_jmp_i<bytecode::Immediate>(instruction_pointer);
+      break;
+    case bytecode::Opcode::jnz_i:
+      run_jnz_i<bytecode::Immediate>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::lookup_k:
       run_lookup_k<bytecode::Constant>(instruction_pointer, *this);
@@ -549,7 +579,10 @@ namespace benson
     switch (opcode)
     {
     case bytecode::Opcode::jmp_i:
-      run_jmp<bytecode::Wide_immediate>(instruction_pointer);
+      run_jmp_i<bytecode::Wide_immediate>(instruction_pointer);
+      break;
+    case bytecode::Opcode::jnz_i:
+      run_jnz_i<bytecode::Wide_immediate>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::lookup_k:
       run_lookup_k<bytecode::Wide_constant>(instruction_pointer, *this);

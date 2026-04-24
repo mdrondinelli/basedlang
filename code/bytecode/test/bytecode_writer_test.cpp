@@ -135,6 +135,32 @@ TEST_CASE("Bytecode_writer emits binary arithmetic instruction operands")
   );
 }
 
+TEST_CASE("Bytecode_writer emits jnz_i instruction operands")
+{
+  using benson::bytecode::Opcode;
+  using benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_jnz(Register::gpr_3, std::ptrdiff_t{5});
+  writer.emit_jnz(Register::gpr_4, std::ptrdiff_t{0x0108});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(Opcode::jnz_i),
+                        static_cast<std::byte>(Register::gpr_3),
+                        std::byte{0x02},
+                        static_cast<std::byte>(Opcode::wide),
+                        static_cast<std::byte>(Opcode::jnz_i),
+                        static_cast<std::byte>(Register::gpr_4),
+                        std::byte{0x00},
+                        std::byte{0x01},
+                      }
+  );
+}
+
 TEST_CASE(
   "Bytecode_writer emits binary arithmetic immediate instruction operands"
 )

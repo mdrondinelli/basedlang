@@ -65,6 +65,10 @@ namespace benson
       {
         return std::bit_cast<double>(value);
       }
+      else if constexpr (std::same_as<T, bool>)
+      {
+        return value != 0;
+      }
       else
       {
         return static_cast<T>(value);
@@ -83,6 +87,10 @@ namespace benson
       {
         registers[static_cast<std::size_t>(reg)] =
           std::bit_cast<std::uint64_t>(value);
+      }
+      else if constexpr (std::same_as<T, bool>)
+      {
+        registers[static_cast<std::size_t>(reg)] = value ? 1 : 0;
       }
       else
       {

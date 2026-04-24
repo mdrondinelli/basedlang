@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <vector>
 
 #include "vm/pointer.h"
@@ -756,73 +757,172 @@ TEST_CASE("Virtual_machine runs countdown sum program with jnz_i loop")
   CHECK(!vm.get_register_value<bool>(gpr_3));
 }
 
-TEST_CASE("Virtual_machine runs stack calling program with call_i and ret")
+TEST_CASE(
+  "Virtual_machine runs recursive quicksort program with call_i and ret"
+)
 {
   using benson::Address_space;
   using benson::Pointer;
   using benson::bytecode::Module_builder;
+  using benson::bytecode::Wide_constant;
   using benson::bytecode::Wide_immediate;
   using enum benson::bytecode::Register;
 
+  auto const input = std::array<std::int32_t, 5>{4, 1, 3, 5, 2};
+  auto const expected = std::array<std::int32_t, 5>{1, 2, 3, 4, 5};
+
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const double_subroutine = builder.make_label();
-  auto const add_subroutine = builder.make_label();
+  auto const quicksort = builder.make_label();
+  auto const partition_loop = builder.make_label();
+  auto const skip_swap = builder.make_label();
+  auto const after_partition = builder.make_label();
+  auto const do_left = builder.make_label();
+  auto const after_left = builder.make_label();
+  auto const do_right = builder.make_label();
+  auto const return_base = builder.make_label();
 
-  writer.emit_lookup_k(gpr_10, builder.constant(std::int32_t{6}));
-  writer.emit_lookup_k(gpr_11, builder.constant(std::int32_t{7}));
-  writer.emit_load_32(gpr_1, gpr_10, Wide_immediate{0});
-  writer.emit_load_32(gpr_2, gpr_11, Wide_immediate{0});
-  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
-  writer.emit_store_64(gpr_1, sp, Wide_immediate{0});
+  writer.emit_lookup_k(gpr_21, Wide_constant{1});
+  writer.emit_lookup_k(gpr_22, builder.constant(std::int32_t{5}));
+  writer.emit_load_32(gpr_4, gpr_22, Wide_immediate{0});
+  writer.emit_sub_i32(gpr_3, gpr_4, gpr_4);
+  writer.emit_sub_i32_i(gpr_4, gpr_4, Wide_immediate{1});
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{20});
+  writer.emit_add_i64_i(gpr_2, sp, Wide_immediate{0});
+
+  writer.emit_load_32(gpr_10, gpr_21, Wide_immediate{0});
+  writer.emit_store_32(gpr_10, gpr_2, Wide_immediate{0});
+  writer.emit_load_32(gpr_10, gpr_21, Wide_immediate{4});
+  writer.emit_store_32(gpr_10, gpr_2, Wide_immediate{4});
+  writer.emit_load_32(gpr_10, gpr_21, Wide_immediate{8});
+  writer.emit_store_32(gpr_10, gpr_2, Wide_immediate{8});
+  writer.emit_load_32(gpr_10, gpr_21, Wide_immediate{12});
+  writer.emit_store_32(gpr_10, gpr_2, Wide_immediate{12});
+  writer.emit_load_32(gpr_10, gpr_21, Wide_immediate{16});
+  writer.emit_store_32(gpr_10, gpr_2, Wide_immediate{16});
+
   writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
   writer.emit_store_64(gpr_2, sp, Wide_immediate{0});
-  writer.emit_call(builder.label_target(add_subroutine));
-  writer.emit_add_i64_i(sp, sp, Wide_immediate{16});
   writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
   writer.emit_store_64(gpr_3, sp, Wide_immediate{0});
-  writer.emit_call(builder.label_target(double_subroutine));
-  writer.emit_store_64(gpr_7, sp, Wide_immediate{0});
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_store_64(gpr_4, sp, Wide_immediate{0});
+  writer.emit_call(builder.label_target(quicksort));
+  writer.emit_add_i64_i(sp, sp, Wide_immediate{24});
   writer.emit_exit();
 
-  builder.place_label(add_subroutine);
-  writer.emit_load_64(gpr_5, sp, Wide_immediate{8});
-  writer.emit_load_64(gpr_4, sp, Wide_immediate{16});
-  writer.emit_add_i32(gpr_3, gpr_4, gpr_5);
-  writer.emit_ret();
+  builder.place_label(quicksort);
+  writer.emit_load_64(gpr_4, sp, Wide_immediate{8});
+  writer.emit_load_64(gpr_3, sp, Wide_immediate{16});
+  writer.emit_load_64(gpr_2, sp, Wide_immediate{24});
+  writer.emit_cmp_ge_i32(gpr_20, gpr_3, gpr_4);
+  writer.emit_jnz(gpr_20, builder.label_target(return_base));
 
-  builder.place_label(double_subroutine);
-  writer.emit_load_64(gpr_6, sp, Wide_immediate{8});
-  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
-  writer.emit_store_64(gpr_6, sp, Wide_immediate{0});
-  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
-  writer.emit_store_64(gpr_6, sp, Wide_immediate{0});
-  writer.emit_call(builder.label_target(add_subroutine));
-  writer.emit_add_i64_i(sp, sp, Wide_immediate{16});
+  writer.emit_mul_i32_i(gpr_8, gpr_4, Wide_immediate{4});
+  writer.emit_add_i64(gpr_9, gpr_2, gpr_8);
+  writer.emit_load_32(gpr_5, gpr_9, Wide_immediate{0});
+  writer.emit_sub_i32_i(gpr_6, gpr_3, Wide_immediate{1});
   writer.emit_add_i32_i(gpr_7, gpr_3, Wide_immediate{0});
+
+  builder.place_label(partition_loop);
+  writer.emit_cmp_ge_i32(gpr_20, gpr_7, gpr_4);
+  writer.emit_jnz(gpr_20, builder.label_target(after_partition));
+
+  writer.emit_mul_i32_i(gpr_8, gpr_7, Wide_immediate{4});
+  writer.emit_add_i64(gpr_11, gpr_2, gpr_8);
+  writer.emit_load_32(gpr_10, gpr_11, Wide_immediate{0});
+  writer.emit_cmp_gt_i32(gpr_20, gpr_10, gpr_5);
+  writer.emit_jnz(gpr_20, builder.label_target(skip_swap));
+
+  writer.emit_add_i32_i(gpr_6, gpr_6, Wide_immediate{1});
+  writer.emit_mul_i32_i(gpr_8, gpr_6, Wide_immediate{4});
+  writer.emit_add_i64(gpr_13, gpr_2, gpr_8);
+  writer.emit_load_32(gpr_12, gpr_13, Wide_immediate{0});
+  writer.emit_store_32(gpr_10, gpr_13, Wide_immediate{0});
+  writer.emit_store_32(gpr_12, gpr_11, Wide_immediate{0});
+
+  builder.place_label(skip_swap);
+  writer.emit_add_i32_i(gpr_7, gpr_7, Wide_immediate{1});
+  writer.emit_jmp(builder.label_target(partition_loop));
+
+  builder.place_label(after_partition);
+  writer.emit_add_i32_i(gpr_14, gpr_6, Wide_immediate{1});
+  writer.emit_mul_i32_i(gpr_8, gpr_14, Wide_immediate{4});
+  writer.emit_add_i64(gpr_13, gpr_2, gpr_8);
+  writer.emit_load_32(gpr_12, gpr_13, Wide_immediate{0});
+  writer.emit_mul_i32_i(gpr_8, gpr_4, Wide_immediate{4});
+  writer.emit_add_i64(gpr_11, gpr_2, gpr_8);
+  writer.emit_load_32(gpr_15, gpr_11, Wide_immediate{0});
+  writer.emit_store_32(gpr_15, gpr_13, Wide_immediate{0});
+  writer.emit_store_32(gpr_12, gpr_11, Wide_immediate{0});
+  writer.emit_store_64(gpr_14, sp, Wide_immediate{16});
+
+  writer.emit_sub_i32_i(gpr_8, gpr_14, Wide_immediate{1});
+  writer.emit_cmp_lt_i32(gpr_20, gpr_3, gpr_8);
+  writer.emit_jnz(gpr_20, builder.label_target(do_left));
+  writer.emit_jmp(builder.label_target(after_left));
+
+  builder.place_label(do_left);
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_store_64(gpr_2, sp, Wide_immediate{0});
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_store_64(gpr_3, sp, Wide_immediate{0});
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_store_64(gpr_8, sp, Wide_immediate{0});
+  writer.emit_call(builder.label_target(quicksort));
+  writer.emit_add_i64_i(sp, sp, Wide_immediate{24});
+
+  builder.place_label(after_left);
+  writer.emit_load_64(gpr_14, sp, Wide_immediate{16});
+  writer.emit_add_i32_i(gpr_8, gpr_14, Wide_immediate{1});
+  writer.emit_load_64(gpr_4, sp, Wide_immediate{8});
+  writer.emit_cmp_lt_i32(gpr_20, gpr_8, gpr_4);
+  writer.emit_jnz(gpr_20, builder.label_target(do_right));
+  writer.emit_jmp(builder.label_target(return_base));
+
+  builder.place_label(do_right);
+  writer.emit_load_64(gpr_2, sp, Wide_immediate{24});
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_store_64(gpr_2, sp, Wide_immediate{0});
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_store_64(gpr_8, sp, Wide_immediate{0});
+  writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
+  writer.emit_store_64(gpr_4, sp, Wide_immediate{0});
+  writer.emit_call(builder.label_target(quicksort));
+  writer.emit_add_i64_i(sp, sp, Wide_immediate{24});
+
+  builder.place_label(return_base);
+  writer.emit_load_64(gpr_1, sp, Wide_immediate{24});
   writer.emit_ret();
 
-  auto const module = builder.build();
+  auto module = builder.build();
+  store_constant(
+    module.constant_data,
+    module.constant_table,
+    Wide_constant{1},
+    input
+  );
 
   auto vm = benson::Virtual_machine{};
   vm.load(module);
 
   vm.run();
 
-  auto const result_pointer = vm.get_register_value<Pointer>(sp).decode();
-  auto result = std::int64_t{};
+  auto const array_pointer = vm.get_register_value<Pointer>(gpr_1).decode();
+  auto const stack_pointer = vm.get_register_value<Pointer>(sp).decode();
+  auto result = std::array<std::int32_t, 5>{};
   std::memcpy(
-    &result,
-    vm.stack->data() + result_pointer.offset,
+    result.data(),
+    vm.stack->data() + array_pointer.offset,
     sizeof(result)
   );
 
-  CHECK(result == 26);
-  CHECK(vm.get_register_value<std::int32_t>(gpr_6) == 13);
-  CHECK(vm.get_register_value<std::int32_t>(gpr_3) == 26);
-  CHECK(vm.get_register_value<std::int32_t>(gpr_7) == 26);
-  CHECK(result_pointer.space == Address_space::stack);
-  CHECK(result_pointer.offset == vm.stack->size() - 8);
+  CHECK(result == expected);
+  CHECK(array_pointer.space == Address_space::stack);
+  CHECK(array_pointer.offset == vm.stack->size() - sizeof(result));
+  CHECK(stack_pointer.space == Address_space::stack);
+  CHECK(stack_pointer.offset == array_pointer.offset);
+  CHECK(module.constant_table.size() == 2);
 }
 
 TEST_CASE("Virtual_machine runs factorial program with jnz_i loop")

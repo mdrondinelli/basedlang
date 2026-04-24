@@ -25,7 +25,10 @@ namespace benson::bytecode
     {
       auto const patch_position = position() + 2;
       auto const target = provider.target(patch_position);
-      static_assert(std::is_same_v<std::remove_cv_t<decltype(target)>, std::optional<std::ptrdiff_t>>);
+      static_assert(std::is_same_v<
+                    std::remove_cv_t<decltype(target)>,
+                    std::optional<std::ptrdiff_t>
+      >);
       if (target)
       {
         emit_jmp(*target);
@@ -136,7 +139,7 @@ namespace benson::bytecode
     void emit_div_i32_k(Register dst, Register lhs, Wide_constant rhs);
 
     void emit_div_i32_i(Register dst, Register lhs, Wide_immediate rhs);
-    
+
     void emit_div_i64(Register dst, Register lhs, Register rhs);
 
     void emit_div_i64_k(Register dst, Register lhs, Wide_constant rhs);
@@ -162,6 +165,126 @@ namespace benson::bytecode
     void emit_mod_i64_k(Register dst, Register lhs, Wide_constant rhs);
 
     void emit_mod_i64_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_eq_i32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_eq_i32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_eq_i32_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_eq_i64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_eq_i64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_eq_i64_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_eq_f32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_eq_f32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_eq_f64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_eq_f64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_ne_i32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_ne_i32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_ne_i32_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_ne_i64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_ne_i64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_ne_i64_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_ne_f32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_ne_f32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_ne_f64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_ne_f64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_lt_i32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_lt_i32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_lt_i32_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_lt_i64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_lt_i64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_lt_i64_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_lt_f32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_lt_f32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_lt_f64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_lt_f64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_le_i32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_le_i32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_le_i32_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_le_i64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_le_i64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_le_i64_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_le_f32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_le_f32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_le_f64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_le_f64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_gt_i32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_gt_i32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_gt_i32_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_gt_i64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_gt_i64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_gt_i64_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_gt_f32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_gt_f32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_gt_f64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_gt_f64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_ge_i32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_ge_i32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_ge_i32_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_ge_i64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_ge_i64_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_ge_i64_i(Register dst, Register lhs, Wide_immediate rhs);
+
+    void emit_cmp_ge_f32(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_ge_f32_k(Register dst, Register lhs, Wide_constant rhs);
+
+    void emit_cmp_ge_f64(Register dst, Register lhs, Register rhs);
+
+    void emit_cmp_ge_f64_k(Register dst, Register lhs, Wide_constant rhs);
 
     std::ptrdiff_t position() const noexcept
     {

@@ -74,12 +74,12 @@ namespace benson
     template <typename T>
     void set_register_value(bytecode::Register reg, T value)
     {
-      if constexpr (std::same_as<T, float>)
+      if constexpr (std::same_as<std::decay_t<T>, float>)
       {
         registers[static_cast<std::size_t>(reg)] =
           std::bit_cast<std::uint32_t>(value);
       }
-      else if constexpr (std::same_as<T, double>)
+      else if constexpr (std::same_as<std::decay_t<T>, double>)
       {
         registers[static_cast<std::size_t>(reg)] =
           std::bit_cast<std::uint64_t>(value);

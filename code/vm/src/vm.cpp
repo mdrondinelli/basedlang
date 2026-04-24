@@ -1,3 +1,4 @@
+#include <cstring>
 #include <memory>
 #include <stdexcept>
 
@@ -16,6 +17,10 @@ namespace benson
       Virtual_machine &vm
     )
     {
+      static_assert(
+        std::is_same_v<ConstantType, bytecode::Wide_constant> ||
+        std::is_same_v<ConstantType, bytecode::Constant>
+      );
       auto const dst = static_cast<bytecode::Register>(
         static_cast<std::uint8_t>(*instruction_pointer++)
       );
@@ -31,26 +36,94 @@ namespace benson
       Virtual_machine &vm
     )
     {
-      auto const dst_reg = static_cast<bytecode::Register>(
+      auto const dst = static_cast<bytecode::Register>(
         static_cast<std::uint8_t>(*instruction_pointer++)
       );
-      auto const src_reg = static_cast<bytecode::Register>(
+      auto const src = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      vm.set_register_value(dst, Fn{}(vm.get_register_value<CppType>(src)));
+    }
+
+    template <typename OperandType, typename Fn>
+    void run_register_binary(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
+    {
+      auto const dst = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto const lhs = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto const rhs = static_cast<bytecode::Register>(
         static_cast<std::uint8_t>(*instruction_pointer++)
       );
       vm.set_register_value(
-        dst_reg,
-        Fn{}(vm.get_register_value<CppType>(src_reg))
+        dst,
+        Fn{}(
+          vm.get_register_value<OperandType>(lhs),
+          vm.get_register_value<OperandType>(rhs)
+        )
       );
     }
 
-    struct Neg_fn
+    template <typename OperandType, typename ConstantType, typename Fn>
+    void run_constant_binary(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
     {
-      template <typename T>
-      [[nodiscard]] T operator()(T value) const
-      {
-        return -value;
-      }
-    };
+      static_assert(
+        std::is_same_v<ConstantType, bytecode::Wide_constant> ||
+        std::is_same_v<ConstantType, bytecode::Constant>
+      );
+      auto const dst = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto const lhs = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto rhs = ConstantType{};
+      std::memcpy(&rhs, instruction_pointer, sizeof(rhs));
+      instruction_pointer += sizeof(rhs);
+      vm.set_register_value(
+        dst,
+        Fn{}(
+          vm.get_register_value<OperandType>(lhs),
+          vm.get_constant_value<OperandType>(rhs)
+        )
+      );
+    }
+
+    template <typename OperandType, typename ImmediateType, typename Fn>
+    void run_immediate_binary(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
+    {
+      static_assert(
+        std::is_same_v<ImmediateType, bytecode::Wide_immediate> ||
+        std::is_same_v<ImmediateType, bytecode::Immediate>
+      );
+      auto const dst = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto const lhs = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto rhs = ImmediateType{};
+      std::memcpy(&rhs, instruction_pointer, sizeof(rhs));
+      instruction_pointer += sizeof(rhs);
+      vm.set_register_value(
+        dst,
+        Fn{}(
+          vm.get_register_value<OperandType>(lhs),
+          static_cast<OperandType>(rhs.value)
+        )
+      );
+    }
 
     struct Sx_fn
     {
@@ -61,82 +134,127 @@ namespace benson
       }
     };
 
-    template <typename T, typename Fn>
-    void run_register_binary(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Fn fn
-    )
+    struct Neg_fn
     {
-      auto const dst_reg = static_cast<bytecode::Register>(
-        static_cast<std::uint8_t>(*instruction_pointer++)
-      );
-      auto const lhs_reg = static_cast<bytecode::Register>(
-        static_cast<std::uint8_t>(*instruction_pointer++)
-      );
-      auto const rhs_reg = static_cast<bytecode::Register>(
-        static_cast<std::uint8_t>(*instruction_pointer++)
-      );
-      vm.set_register_value<T>(
-        dst_reg,
-        fn(vm.get_register_value<T>(lhs_reg), vm.get_register_value<T>(rhs_reg))
-      );
-    }
+      template <typename T>
+      [[nodiscard]] T operator()(T value) const
+      {
+        return -value;
+      }
+    };
 
-    template <typename T, typename ConstantType, typename Fn>
-    void run_constant_binary(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Fn fn
-    )
+    struct Add_fn
     {
-      auto const dst = static_cast<bytecode::Register>(
-        static_cast<std::uint8_t>(*instruction_pointer++)
-      );
-      auto const lhs = static_cast<bytecode::Register>(
-        static_cast<std::uint8_t>(*instruction_pointer++)
-      );
-      auto rhs = ConstantType{};
-      std::memcpy(&rhs, instruction_pointer, sizeof(rhs));
-      instruction_pointer += sizeof(rhs);
-      vm.set_register_value<T>(
-        dst,
-        fn(vm.get_register_value<T>(lhs), vm.get_constant_value<T>(rhs))
-      );
-    }
+      template <typename T>
+      [[nodiscard]] T operator()(T lhs, T rhs) const
+      {
+        return lhs + rhs;
+      }
+    };
 
-    template <typename T, typename ImmediateType, typename Fn>
-    void run_immediate_binary(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Fn fn
-    )
+    struct Sub_fn
     {
-      auto const dst = static_cast<bytecode::Register>(
-        static_cast<std::uint8_t>(*instruction_pointer++)
-      );
-      auto const lhs = static_cast<bytecode::Register>(
-        static_cast<std::uint8_t>(*instruction_pointer++)
-      );
-      auto rhs = ImmediateType{};
-      std::memcpy(&rhs, instruction_pointer, sizeof(rhs));
-      instruction_pointer += sizeof(rhs);
-      vm.set_register_value<T>(
-        dst,
-        fn(vm.get_register_value<T>(lhs), static_cast<T>(rhs.value))
-      );
-    }
+      template <typename T>
+      [[nodiscard]] T operator()(T lhs, T rhs) const
+      {
+        return lhs - rhs;
+      }
+    };
+
+    struct Mul_fn
+    {
+      template <typename T>
+      [[nodiscard]] T operator()(T lhs, T rhs) const
+      {
+        return lhs * rhs;
+      }
+    };
+
+    struct Div_fn
+    {
+      template <typename T>
+      [[nodiscard]] T operator()(T lhs, T rhs) const
+      {
+        return lhs / rhs;
+      }
+    };
+
+    struct Mod_fn
+    {
+      template <typename T>
+      [[nodiscard]] T operator()(T lhs, T rhs) const
+      {
+        return lhs % rhs;
+      }
+    };
+
+    struct Cmp_eq_fn
+    {
+      template <typename T>
+      [[nodiscard]] bool operator()(T lhs, T rhs) const
+      {
+        return lhs == rhs;
+      }
+    };
+
+    struct Cmp_ne_fn
+    {
+      template <typename T>
+      [[nodiscard]] bool operator()(T lhs, T rhs) const
+      {
+        return lhs != rhs;
+      }
+    };
+
+    struct Cmp_lt_fn
+    {
+      template <typename T>
+      [[nodiscard]] bool operator()(T lhs, T rhs) const
+      {
+        return lhs < rhs;
+      }
+    };
+
+    struct Cmp_le_fn
+    {
+      template <typename T>
+      [[nodiscard]] bool operator()(T lhs, T rhs) const
+      {
+        return lhs <= rhs;
+      }
+    };
+
+    struct Cmp_gt_fn
+    {
+      template <typename T>
+      [[nodiscard]] bool operator()(T lhs, T rhs) const
+      {
+        return lhs > rhs;
+      }
+    };
+
+    struct Cmp_ge_fn
+    {
+      template <typename T>
+      [[nodiscard]] bool operator()(T lhs, T rhs) const
+      {
+        return lhs >= rhs;
+      }
+    };
 
     template <std::size_t N, typename OffsetType>
-    void run_load(std::byte const *&ip, Virtual_machine &vm)
+    void run_load(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst =
-        static_cast<bytecode::Register>(static_cast<std::uint8_t>(*ip++));
-      auto const base =
-        static_cast<bytecode::Register>(static_cast<std::uint8_t>(*ip++));
+      auto const dst = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto const base = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
       auto offset = OffsetType{};
-      std::memcpy(&offset, ip, sizeof(offset));
-      ip += sizeof(offset);
+      std::memcpy(&offset, instruction_pointer, sizeof(offset));
+      instruction_pointer += sizeof(offset);
+
       auto [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
       auto const space_pointer = [&]() -> std::byte const *
@@ -151,6 +269,7 @@ namespace benson
           throw std::runtime_error{"unsupported address space for load"};
         }
       }();
+
       auto value = std::uint64_t{};
       // TODO: bounds check
       std::memcpy(&value, space_pointer + base_address + offset.value, N);
@@ -158,15 +277,18 @@ namespace benson
     }
 
     template <std::size_t N, typename OffsetType>
-    void run_store(std::byte const *&ip, Virtual_machine &vm)
+    void run_store(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const src =
-        static_cast<bytecode::Register>(static_cast<std::uint8_t>(*ip++));
-      auto const base =
-        static_cast<bytecode::Register>(static_cast<std::uint8_t>(*ip++));
+      auto const src = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto const base = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
       auto offset = OffsetType{};
-      std::memcpy(&offset, ip, sizeof(offset));
-      ip += sizeof(offset);
+      std::memcpy(&offset, instruction_pointer, sizeof(offset));
+      instruction_pointer += sizeof(offset);
+
       auto const [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
       if (address_space == Address_space::constant)
@@ -177,6 +299,7 @@ namespace benson
       {
         throw std::runtime_error{"unsupported address space for store"};
       }
+
       // TODO: bounds check
       std::memcpy(
         vm.stack->data() + base_address + offset.value,
@@ -262,489 +385,162 @@ namespace benson
     case bytecode::Opcode::store_64:
       run_store<8, bytecode::Immediate>(instruction_pointer, *this);
       break;
-    case bytecode::Opcode::sx_8:
-      run_register_unary<std::int8_t, Sx_fn>(instruction_pointer, *this);
-      break;
-    case bytecode::Opcode::sx_16:
-      run_register_unary<std::int16_t, Sx_fn>(instruction_pointer, *this);
-      break;
-    case bytecode::Opcode::sx_32:
-      run_register_unary<std::int32_t, Sx_fn>(instruction_pointer, *this);
-      break;
-    case bytecode::Opcode::neg_i32:
-      run_register_unary<std::int32_t, Neg_fn>(instruction_pointer, *this);
-      break;
-    case bytecode::Opcode::neg_i64:
-      run_register_unary<std::int64_t, Neg_fn>(instruction_pointer, *this);
-      break;
-    case bytecode::Opcode::neg_f32:
-      run_register_unary<float, Neg_fn>(instruction_pointer, *this);
-      break;
-    case bytecode::Opcode::neg_f64:
-      run_register_unary<double, Neg_fn>(instruction_pointer, *this);
-      break;
-    case bytecode::Opcode::add_i32:
-      run_register_binary<std::int32_t>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_i64:
-      run_register_binary<std::int64_t>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_f32:
-      run_register_binary<float>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_f32_k:
-      run_constant_binary<float, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_f64:
-      run_register_binary<double>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_f64_k:
-      run_constant_binary<double, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i32:
-      run_register_binary<std::int32_t>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i64:
-      run_register_binary<std::int64_t>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_f32:
-      run_register_binary<float>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_f32_k:
-      run_constant_binary<float, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_f64:
-      run_register_binary<double>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_f64_k:
-      run_constant_binary<double, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i32:
-      run_register_binary<std::int32_t>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i64:
-      run_register_binary<std::int64_t>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_f32:
-      run_register_binary<float>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_f32_k:
-      run_constant_binary<float, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_f64:
-      run_register_binary<double>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_f64_k:
-      run_constant_binary<double, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i32:
-      run_register_binary<std::int32_t>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i64:
-      run_register_binary<std::int64_t>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_f32:
-      run_register_binary<float>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_f32_k:
-      run_constant_binary<float, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_f64:
-      run_register_binary<double>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_f64_k:
-      run_constant_binary<double, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i32:
-      run_register_binary<std::int32_t>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i64:
-      run_register_binary<std::int64_t>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
+
+#define UNARY_CASE(opcode, type, fn)                          \
+  case bytecode::Opcode::opcode:                              \
+    run_register_unary<type, fn>(instruction_pointer, *this); \
+    break;
+#define REGISTER_BINARY_CASE(opcode, type, fn)                 \
+  case bytecode::Opcode::opcode:                               \
+    run_register_binary<type, fn>(instruction_pointer, *this); \
+    break;
+#define CONSTANT_BINARY_CASE(opcode, type, fn)         \
+  case bytecode::Opcode::opcode:                       \
+    run_constant_binary<type, bytecode::Constant, fn>( \
+      instruction_pointer,                             \
+      *this                                            \
+    );                                                 \
+    break;
+#define IMMEDIATE_BINARY_CASE(opcode, type, fn)          \
+  case bytecode::Opcode::opcode:                         \
+    run_immediate_binary<type, bytecode::Immediate, fn>( \
+      instruction_pointer,                               \
+      *this                                              \
+    );                                                   \
+    break;
+
+      // sx
+      UNARY_CASE(sx_8, std::int8_t, Sx_fn)
+      UNARY_CASE(sx_16, std::int16_t, Sx_fn)
+      UNARY_CASE(sx_32, std::int32_t, Sx_fn)
+      // neg
+      UNARY_CASE(neg_i32, std::int32_t, Neg_fn)
+      UNARY_CASE(neg_i64, std::int64_t, Neg_fn)
+      UNARY_CASE(neg_f32, float, Neg_fn)
+      UNARY_CASE(neg_f64, double, Neg_fn)
+      // add
+      REGISTER_BINARY_CASE(add_i32, std::int32_t, Add_fn)
+      CONSTANT_BINARY_CASE(add_i32_k, std::int32_t, Add_fn)
+      IMMEDIATE_BINARY_CASE(add_i32_i, std::int32_t, Add_fn)
+      REGISTER_BINARY_CASE(add_i64, std::int64_t, Add_fn)
+      CONSTANT_BINARY_CASE(add_i64_k, std::int64_t, Add_fn)
+      IMMEDIATE_BINARY_CASE(add_i64_i, std::int64_t, Add_fn)
+      REGISTER_BINARY_CASE(add_f32, float, Add_fn)
+      CONSTANT_BINARY_CASE(add_f32_k, float, Add_fn)
+      REGISTER_BINARY_CASE(add_f64, double, Add_fn)
+      CONSTANT_BINARY_CASE(add_f64_k, double, Add_fn)
+      // sub
+      REGISTER_BINARY_CASE(sub_i32, std::int32_t, Sub_fn)
+      CONSTANT_BINARY_CASE(sub_i32_k, std::int32_t, Sub_fn)
+      IMMEDIATE_BINARY_CASE(sub_i32_i, std::int32_t, Sub_fn)
+      REGISTER_BINARY_CASE(sub_i64, std::int64_t, Sub_fn)
+      CONSTANT_BINARY_CASE(sub_i64_k, std::int64_t, Sub_fn)
+      IMMEDIATE_BINARY_CASE(sub_i64_i, std::int64_t, Sub_fn)
+      REGISTER_BINARY_CASE(sub_f32, float, Sub_fn)
+      CONSTANT_BINARY_CASE(sub_f32_k, float, Sub_fn)
+      REGISTER_BINARY_CASE(sub_f64, double, Sub_fn)
+      CONSTANT_BINARY_CASE(sub_f64_k, double, Sub_fn)
+      // mul
+      REGISTER_BINARY_CASE(mul_i32, std::int32_t, Mul_fn)
+      CONSTANT_BINARY_CASE(mul_i32_k, std::int32_t, Mul_fn)
+      IMMEDIATE_BINARY_CASE(mul_i32_i, std::int32_t, Mul_fn)
+      REGISTER_BINARY_CASE(mul_i64, std::int64_t, Mul_fn)
+      CONSTANT_BINARY_CASE(mul_i64_k, std::int64_t, Mul_fn)
+      IMMEDIATE_BINARY_CASE(mul_i64_i, std::int64_t, Mul_fn)
+      REGISTER_BINARY_CASE(mul_f32, float, Mul_fn)
+      CONSTANT_BINARY_CASE(mul_f32_k, float, Mul_fn)
+      REGISTER_BINARY_CASE(mul_f64, double, Mul_fn)
+      CONSTANT_BINARY_CASE(mul_f64_k, double, Mul_fn)
+      // div
+      REGISTER_BINARY_CASE(div_i32, std::int32_t, Div_fn)
+      CONSTANT_BINARY_CASE(div_i32_k, std::int32_t, Div_fn)
+      IMMEDIATE_BINARY_CASE(div_i32_i, std::int32_t, Div_fn)
+      REGISTER_BINARY_CASE(div_i64, std::int64_t, Div_fn)
+      CONSTANT_BINARY_CASE(div_i64_k, std::int64_t, Div_fn)
+      IMMEDIATE_BINARY_CASE(div_i64_i, std::int64_t, Div_fn)
+      REGISTER_BINARY_CASE(div_f32, float, Div_fn)
+      CONSTANT_BINARY_CASE(div_f32_k, float, Div_fn)
+      REGISTER_BINARY_CASE(div_f64, double, Div_fn)
+      CONSTANT_BINARY_CASE(div_f64_k, double, Div_fn)
+      // mod
+      REGISTER_BINARY_CASE(mod_i32, std::int32_t, Mod_fn)
+      CONSTANT_BINARY_CASE(mod_i32_k, std::int32_t, Mod_fn)
+      IMMEDIATE_BINARY_CASE(mod_i32_i, std::int32_t, Mod_fn)
+      REGISTER_BINARY_CASE(mod_i64, std::int64_t, Mod_fn)
+      CONSTANT_BINARY_CASE(mod_i64_k, std::int64_t, Mod_fn)
+      IMMEDIATE_BINARY_CASE(mod_i64_i, std::int64_t, Mod_fn)
+      // cmp_eq
+      REGISTER_BINARY_CASE(cmp_eq_i32, std::int32_t, Cmp_eq_fn)
+      CONSTANT_BINARY_CASE(cmp_eq_i32_k, std::int32_t, Cmp_eq_fn)
+      IMMEDIATE_BINARY_CASE(cmp_eq_i32_i, std::int32_t, Cmp_eq_fn)
+      REGISTER_BINARY_CASE(cmp_eq_i64, std::int64_t, Cmp_eq_fn)
+      CONSTANT_BINARY_CASE(cmp_eq_i64_k, std::int64_t, Cmp_eq_fn)
+      IMMEDIATE_BINARY_CASE(cmp_eq_i64_i, std::int64_t, Cmp_eq_fn)
+      REGISTER_BINARY_CASE(cmp_eq_f32, float, Cmp_eq_fn)
+      CONSTANT_BINARY_CASE(cmp_eq_f32_k, float, Cmp_eq_fn)
+      REGISTER_BINARY_CASE(cmp_eq_f64, double, Cmp_eq_fn)
+      CONSTANT_BINARY_CASE(cmp_eq_f64_k, double, Cmp_eq_fn)
+      // cmp_ne
+      REGISTER_BINARY_CASE(cmp_ne_i32, std::int32_t, Cmp_ne_fn)
+      CONSTANT_BINARY_CASE(cmp_ne_i32_k, std::int32_t, Cmp_ne_fn)
+      IMMEDIATE_BINARY_CASE(cmp_ne_i32_i, std::int32_t, Cmp_ne_fn)
+      REGISTER_BINARY_CASE(cmp_ne_i64, std::int64_t, Cmp_ne_fn)
+      CONSTANT_BINARY_CASE(cmp_ne_i64_k, std::int64_t, Cmp_ne_fn)
+      IMMEDIATE_BINARY_CASE(cmp_ne_i64_i, std::int64_t, Cmp_ne_fn)
+      REGISTER_BINARY_CASE(cmp_ne_f32, float, Cmp_ne_fn)
+      CONSTANT_BINARY_CASE(cmp_ne_f32_k, float, Cmp_ne_fn)
+      REGISTER_BINARY_CASE(cmp_ne_f64, double, Cmp_ne_fn)
+      CONSTANT_BINARY_CASE(cmp_ne_f64_k, double, Cmp_ne_fn)
+      // cmp_lt
+      REGISTER_BINARY_CASE(cmp_lt_i32, std::int32_t, Cmp_lt_fn)
+      CONSTANT_BINARY_CASE(cmp_lt_i32_k, std::int32_t, Cmp_lt_fn)
+      IMMEDIATE_BINARY_CASE(cmp_lt_i32_i, std::int32_t, Cmp_lt_fn)
+      REGISTER_BINARY_CASE(cmp_lt_i64, std::int64_t, Cmp_lt_fn)
+      CONSTANT_BINARY_CASE(cmp_lt_i64_k, std::int64_t, Cmp_lt_fn)
+      IMMEDIATE_BINARY_CASE(cmp_lt_i64_i, std::int64_t, Cmp_lt_fn)
+      REGISTER_BINARY_CASE(cmp_lt_f32, float, Cmp_lt_fn)
+      CONSTANT_BINARY_CASE(cmp_lt_f32_k, float, Cmp_lt_fn)
+      REGISTER_BINARY_CASE(cmp_lt_f64, double, Cmp_lt_fn)
+      CONSTANT_BINARY_CASE(cmp_lt_f64_k, double, Cmp_lt_fn)
+      // cmp_le
+      REGISTER_BINARY_CASE(cmp_le_i32, std::int32_t, Cmp_le_fn)
+      CONSTANT_BINARY_CASE(cmp_le_i32_k, std::int32_t, Cmp_le_fn)
+      IMMEDIATE_BINARY_CASE(cmp_le_i32_i, std::int32_t, Cmp_le_fn)
+      REGISTER_BINARY_CASE(cmp_le_i64, std::int64_t, Cmp_le_fn)
+      CONSTANT_BINARY_CASE(cmp_le_i64_k, std::int64_t, Cmp_le_fn)
+      IMMEDIATE_BINARY_CASE(cmp_le_i64_i, std::int64_t, Cmp_le_fn)
+      REGISTER_BINARY_CASE(cmp_le_f32, float, Cmp_le_fn)
+      CONSTANT_BINARY_CASE(cmp_le_f32_k, float, Cmp_le_fn)
+      REGISTER_BINARY_CASE(cmp_le_f64, double, Cmp_le_fn)
+      CONSTANT_BINARY_CASE(cmp_le_f64_k, double, Cmp_le_fn)
+      // cmp_gt
+      REGISTER_BINARY_CASE(cmp_gt_i32, std::int32_t, Cmp_gt_fn)
+      CONSTANT_BINARY_CASE(cmp_gt_i32_k, std::int32_t, Cmp_gt_fn)
+      IMMEDIATE_BINARY_CASE(cmp_gt_i32_i, std::int32_t, Cmp_gt_fn)
+      REGISTER_BINARY_CASE(cmp_gt_i64, std::int64_t, Cmp_gt_fn)
+      CONSTANT_BINARY_CASE(cmp_gt_i64_k, std::int64_t, Cmp_gt_fn)
+      IMMEDIATE_BINARY_CASE(cmp_gt_i64_i, std::int64_t, Cmp_gt_fn)
+      REGISTER_BINARY_CASE(cmp_gt_f32, float, Cmp_gt_fn)
+      CONSTANT_BINARY_CASE(cmp_gt_f32_k, float, Cmp_gt_fn)
+      REGISTER_BINARY_CASE(cmp_gt_f64, double, Cmp_gt_fn)
+      CONSTANT_BINARY_CASE(cmp_gt_f64_k, double, Cmp_gt_fn)
+      // cmp_ge
+      REGISTER_BINARY_CASE(cmp_ge_i32, std::int32_t, Cmp_ge_fn)
+      CONSTANT_BINARY_CASE(cmp_ge_i32_k, std::int32_t, Cmp_ge_fn)
+      IMMEDIATE_BINARY_CASE(cmp_ge_i32_i, std::int32_t, Cmp_ge_fn)
+      REGISTER_BINARY_CASE(cmp_ge_i64, std::int64_t, Cmp_ge_fn)
+      CONSTANT_BINARY_CASE(cmp_ge_i64_k, std::int64_t, Cmp_ge_fn)
+      IMMEDIATE_BINARY_CASE(cmp_ge_i64_i, std::int64_t, Cmp_ge_fn)
+      REGISTER_BINARY_CASE(cmp_ge_f32, float, Cmp_ge_fn)
+      CONSTANT_BINARY_CASE(cmp_ge_f32_k, float, Cmp_ge_fn)
+      REGISTER_BINARY_CASE(cmp_ge_f64, double, Cmp_ge_fn)
+      CONSTANT_BINARY_CASE(cmp_ge_f64_k, double, Cmp_ge_fn)
     default:
       throw std::runtime_error{"unimplemented bytecode opcode"};
+
+#undef REGISTER_BINARY_CASE
+#undef CONSTANT_BINARY_CASE
+#undef IMMEDIATE_BINARY_CASE
     }
   }
 
@@ -782,288 +578,102 @@ namespace benson
     case bytecode::Opcode::store_64:
       run_store<8, bytecode::Wide_immediate>(instruction_pointer, *this);
       break;
-    case bytecode::Opcode::add_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_f32_k:
-      run_constant_binary<float, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::add_f64_k:
-      run_constant_binary<double, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs + rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_f32_k:
-      run_constant_binary<float, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::sub_f64_k:
-      run_constant_binary<double, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs - rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_f32_k:
-      run_constant_binary<float, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mul_f64_k:
-      run_constant_binary<double, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs * rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_f32_k:
-      run_constant_binary<float, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](float lhs, float rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::div_f64_k:
-      run_constant_binary<double, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](double lhs, double rhs)
-        {
-          return lhs / rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i32_k:
-      run_constant_binary<std::int32_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i32_i:
-      run_immediate_binary<std::int32_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int32_t lhs, std::int32_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i64_k:
-      run_constant_binary<std::int64_t, bytecode::Wide_constant>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
-    case bytecode::Opcode::mod_i64_i:
-      run_immediate_binary<std::int64_t, bytecode::Wide_immediate>(
-        instruction_pointer,
-        *this,
-        [](std::int64_t lhs, std::int64_t rhs)
-        {
-          return lhs % rhs;
-        }
-      );
-      break;
+
+#define CONSTANT_BINARY_CASE(opcode, type, fn)              \
+  case bytecode::Opcode::opcode:                            \
+    run_constant_binary<type, bytecode::Wide_constant, fn>( \
+      instruction_pointer,                                  \
+      *this                                                 \
+    );                                                      \
+    break;
+#define IMMEDIATE_BINARY_CASE(opcode, type, fn)               \
+  case bytecode::Opcode::opcode:                              \
+    run_immediate_binary<type, bytecode::Wide_immediate, fn>( \
+      instruction_pointer,                                    \
+      *this                                                   \
+    );                                                        \
+    break;
+
+      // add
+      CONSTANT_BINARY_CASE(add_i32_k, std::int32_t, Add_fn)
+      IMMEDIATE_BINARY_CASE(add_i32_i, std::int32_t, Add_fn)
+      CONSTANT_BINARY_CASE(add_i64_k, std::int64_t, Add_fn)
+      IMMEDIATE_BINARY_CASE(add_i64_i, std::int64_t, Add_fn)
+      CONSTANT_BINARY_CASE(add_f32_k, float, Add_fn)
+      CONSTANT_BINARY_CASE(add_f64_k, double, Add_fn)
+      // sub
+      CONSTANT_BINARY_CASE(sub_i32_k, std::int32_t, Sub_fn)
+      IMMEDIATE_BINARY_CASE(sub_i32_i, std::int32_t, Sub_fn)
+      CONSTANT_BINARY_CASE(sub_i64_k, std::int64_t, Sub_fn)
+      IMMEDIATE_BINARY_CASE(sub_i64_i, std::int64_t, Sub_fn)
+      CONSTANT_BINARY_CASE(sub_f32_k, float, Sub_fn)
+      CONSTANT_BINARY_CASE(sub_f64_k, double, Sub_fn)
+      // mul
+      CONSTANT_BINARY_CASE(mul_i32_k, std::int32_t, Mul_fn)
+      IMMEDIATE_BINARY_CASE(mul_i32_i, std::int32_t, Mul_fn)
+      CONSTANT_BINARY_CASE(mul_i64_k, std::int64_t, Mul_fn)
+      IMMEDIATE_BINARY_CASE(mul_i64_i, std::int64_t, Mul_fn)
+      CONSTANT_BINARY_CASE(mul_f32_k, float, Mul_fn)
+      CONSTANT_BINARY_CASE(mul_f64_k, double, Mul_fn)
+      // div
+      CONSTANT_BINARY_CASE(div_i32_k, std::int32_t, Div_fn)
+      IMMEDIATE_BINARY_CASE(div_i32_i, std::int32_t, Div_fn)
+      CONSTANT_BINARY_CASE(div_i64_k, std::int64_t, Div_fn)
+      IMMEDIATE_BINARY_CASE(div_i64_i, std::int64_t, Div_fn)
+      CONSTANT_BINARY_CASE(div_f32_k, float, Div_fn)
+      CONSTANT_BINARY_CASE(div_f64_k, double, Div_fn)
+      // mod
+      CONSTANT_BINARY_CASE(mod_i32_k, std::int32_t, Mod_fn)
+      IMMEDIATE_BINARY_CASE(mod_i32_i, std::int32_t, Mod_fn)
+      CONSTANT_BINARY_CASE(mod_i64_k, std::int64_t, Mod_fn)
+      IMMEDIATE_BINARY_CASE(mod_i64_i, std::int64_t, Mod_fn)
+      // cmp_eq
+      CONSTANT_BINARY_CASE(cmp_eq_i32_k, std::int32_t, Cmp_eq_fn)
+      IMMEDIATE_BINARY_CASE(cmp_eq_i32_i, std::int32_t, Cmp_eq_fn)
+      CONSTANT_BINARY_CASE(cmp_eq_i64_k, std::int64_t, Cmp_eq_fn)
+      IMMEDIATE_BINARY_CASE(cmp_eq_i64_i, std::int64_t, Cmp_eq_fn)
+      CONSTANT_BINARY_CASE(cmp_eq_f32_k, float, Cmp_eq_fn)
+      CONSTANT_BINARY_CASE(cmp_eq_f64_k, double, Cmp_eq_fn)
+      // cmp_ne
+      CONSTANT_BINARY_CASE(cmp_ne_i32_k, std::int32_t, Cmp_ne_fn)
+      IMMEDIATE_BINARY_CASE(cmp_ne_i32_i, std::int32_t, Cmp_ne_fn)
+      CONSTANT_BINARY_CASE(cmp_ne_i64_k, std::int64_t, Cmp_ne_fn)
+      IMMEDIATE_BINARY_CASE(cmp_ne_i64_i, std::int64_t, Cmp_ne_fn)
+      CONSTANT_BINARY_CASE(cmp_ne_f32_k, float, Cmp_ne_fn)
+      CONSTANT_BINARY_CASE(cmp_ne_f64_k, double, Cmp_ne_fn)
+      // cmp_lt
+      CONSTANT_BINARY_CASE(cmp_lt_i32_k, std::int32_t, Cmp_lt_fn)
+      IMMEDIATE_BINARY_CASE(cmp_lt_i32_i, std::int32_t, Cmp_lt_fn)
+      CONSTANT_BINARY_CASE(cmp_lt_i64_k, std::int64_t, Cmp_lt_fn)
+      IMMEDIATE_BINARY_CASE(cmp_lt_i64_i, std::int64_t, Cmp_lt_fn)
+      CONSTANT_BINARY_CASE(cmp_lt_f32_k, float, Cmp_lt_fn)
+      CONSTANT_BINARY_CASE(cmp_lt_f64_k, double, Cmp_lt_fn)
+      // cmp_le
+      CONSTANT_BINARY_CASE(cmp_le_i32_k, std::int32_t, Cmp_le_fn)
+      IMMEDIATE_BINARY_CASE(cmp_le_i32_i, std::int32_t, Cmp_le_fn)
+      CONSTANT_BINARY_CASE(cmp_le_i64_k, std::int64_t, Cmp_le_fn)
+      IMMEDIATE_BINARY_CASE(cmp_le_i64_i, std::int64_t, Cmp_le_fn)
+      CONSTANT_BINARY_CASE(cmp_le_f32_k, float, Cmp_le_fn)
+      CONSTANT_BINARY_CASE(cmp_le_f64_k, double, Cmp_le_fn)
+      // cmp_gt
+      CONSTANT_BINARY_CASE(cmp_gt_i32_k, std::int32_t, Cmp_gt_fn)
+      IMMEDIATE_BINARY_CASE(cmp_gt_i32_i, std::int32_t, Cmp_gt_fn)
+      CONSTANT_BINARY_CASE(cmp_gt_i64_k, std::int64_t, Cmp_gt_fn)
+      IMMEDIATE_BINARY_CASE(cmp_gt_i64_i, std::int64_t, Cmp_gt_fn)
+      CONSTANT_BINARY_CASE(cmp_gt_f32_k, float, Cmp_gt_fn)
+      CONSTANT_BINARY_CASE(cmp_gt_f64_k, double, Cmp_gt_fn)
+      // cmp_ge
+      CONSTANT_BINARY_CASE(cmp_ge_i32_k, std::int32_t, Cmp_ge_fn)
+      IMMEDIATE_BINARY_CASE(cmp_ge_i32_i, std::int32_t, Cmp_ge_fn)
+      CONSTANT_BINARY_CASE(cmp_ge_i64_k, std::int64_t, Cmp_ge_fn)
+      IMMEDIATE_BINARY_CASE(cmp_ge_i64_i, std::int64_t, Cmp_ge_fn)
+      CONSTANT_BINARY_CASE(cmp_ge_f32_k, float, Cmp_ge_fn)
+      CONSTANT_BINARY_CASE(cmp_ge_f64_k, double, Cmp_ge_fn)
     default:
       throw std::runtime_error{"unimplemented wide bytecode opcode"};
+
+#undef CONSTANT_BINARY_CASE
+#undef IMMEDIATE_BINARY_CASE
     }
   }
 

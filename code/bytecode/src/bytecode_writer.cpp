@@ -1,7 +1,7 @@
 #include "bytecode/bytecode_writer.h"
 
-#include <stdexcept>
 #include <limits>
+#include <stdexcept>
 
 namespace benson::bytecode
 {
@@ -514,6 +514,546 @@ namespace benson::bytecode
   )
   {
     emit_binary_immediate_instruction(Opcode::mod_i64_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_i32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_eq_i32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_i32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_eq_i32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_i32_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_eq_i32_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_i64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_eq_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_i64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_eq_i64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_i64_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_eq_i64_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_f32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_eq_f32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_f32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_eq_f32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_f64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_eq_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_eq_f64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_eq_f64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_i32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_ne_i32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_i32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_ne_i32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_i32_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_ne_i32_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_i64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_ne_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_i64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_ne_i64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_i64_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_ne_i64_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_f32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_ne_f32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_f32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_ne_f32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_f64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_ne_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ne_f64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_ne_f64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_i32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_lt_i32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_i32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_lt_i32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_i32_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_lt_i32_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_i64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_lt_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_i64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_lt_i64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_i64_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_lt_i64_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_f32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_lt_f32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_f32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_lt_f32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_f64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_lt_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_lt_f64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_lt_f64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_i32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_le_i32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_i32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_le_i32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_i32_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_le_i32_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_i64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_le_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_i64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_le_i64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_i64_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_le_i64_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_f32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_le_f32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_f32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_le_f32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_f64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_le_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_le_f64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_le_f64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_i32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_gt_i32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_i32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_gt_i32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_i32_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_gt_i32_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_i64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_gt_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_i64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_gt_i64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_i64_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_gt_i64_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_f32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_gt_f32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_f32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_gt_f32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_f64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_gt_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_gt_f64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_gt_f64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_i32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_ge_i32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_i32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_ge_i32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_i32_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_ge_i32_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_i64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_ge_i64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_i64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_ge_i64_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_i64_i(
+    Register dst,
+    Register lhs,
+    Wide_immediate rhs
+  )
+  {
+    emit_binary_immediate_instruction(Opcode::cmp_ge_i64_i, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_f32(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_ge_f32, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_f32_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_ge_f32_k, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_f64(
+    Register dst,
+    Register lhs,
+    Register rhs
+  )
+  {
+    emit_binary_register_instruction(Opcode::cmp_ge_f64, dst, lhs, rhs);
+  }
+
+  void Bytecode_writer::emit_cmp_ge_f64_k(
+    Register dst,
+    Register lhs,
+    Wide_constant rhs
+  )
+  {
+    emit_binary_constant_instruction(Opcode::cmp_ge_f64_k, dst, lhs, rhs);
   }
 
   void Bytecode_writer::flush()

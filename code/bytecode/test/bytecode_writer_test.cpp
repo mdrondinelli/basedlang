@@ -251,3 +251,84 @@ TEST_CASE(
                       }
   );
 }
+
+TEST_CASE("Bytecode_writer emits binary comparison instruction operands")
+{
+  using enum benson::bytecode::Opcode;
+  using enum benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_cmp_eq_i32(gpr_1, gpr_2, gpr_3);
+  writer.emit_cmp_ne_i64(gpr_4, gpr_5, gpr_6);
+  writer.emit_cmp_lt_f32(gpr_7, gpr_8, gpr_9);
+  writer.emit_cmp_ge_f64(gpr_10, gpr_11, gpr_12);
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(cmp_eq_i32),
+                        static_cast<std::byte>(gpr_1),
+                        static_cast<std::byte>(gpr_2),
+                        static_cast<std::byte>(gpr_3),
+                        static_cast<std::byte>(cmp_ne_i64),
+                        static_cast<std::byte>(gpr_4),
+                        static_cast<std::byte>(gpr_5),
+                        static_cast<std::byte>(gpr_6),
+                        static_cast<std::byte>(cmp_lt_f32),
+                        static_cast<std::byte>(gpr_7),
+                        static_cast<std::byte>(gpr_8),
+                        static_cast<std::byte>(gpr_9),
+                        static_cast<std::byte>(cmp_ge_f64),
+                        static_cast<std::byte>(gpr_10),
+                        static_cast<std::byte>(gpr_11),
+                        static_cast<std::byte>(gpr_12),
+                      }
+  );
+}
+
+TEST_CASE(
+  "Bytecode_writer emits binary comparison constant and immediate instruction "
+  "operands"
+)
+{
+  using benson::bytecode::Wide_constant;
+  using benson::bytecode::Wide_immediate;
+  using enum benson::bytecode::Opcode;
+  using enum benson::bytecode::Register;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_cmp_eq_i32_k(gpr_1, gpr_2, Wide_constant{3});
+  writer.emit_cmp_ne_i64_i(gpr_4, gpr_5, Wide_immediate{-7});
+  writer.emit_cmp_lt_f32_k(gpr_6, gpr_7, Wide_constant{0x0102});
+  writer.emit_cmp_ge_i32_i(gpr_8, gpr_9, Wide_immediate{0x0304});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(cmp_eq_i32_k),
+                        static_cast<std::byte>(gpr_1),
+                        static_cast<std::byte>(gpr_2),
+                        std::byte{0x03},
+                        static_cast<std::byte>(cmp_ne_i64_i),
+                        static_cast<std::byte>(gpr_4),
+                        static_cast<std::byte>(gpr_5),
+                        std::byte{0xF9},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(cmp_lt_f32_k),
+                        static_cast<std::byte>(gpr_6),
+                        static_cast<std::byte>(gpr_7),
+                        std::byte{0x02},
+                        std::byte{0x01},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(cmp_ge_i32_i),
+                        static_cast<std::byte>(gpr_8),
+                        static_cast<std::byte>(gpr_9),
+                        std::byte{0x04},
+                        std::byte{0x03},
+                      }
+  );
+}

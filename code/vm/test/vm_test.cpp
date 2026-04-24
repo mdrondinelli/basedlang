@@ -673,3 +673,172 @@ TEST_CASE("Virtual_machine runs sx_8 program emitted by Module_builder")
 
   CHECK(vm.get_register_value<std::int8_t>(gpr_1) == std::int8_t{-42});
 }
+
+TEST_CASE(
+  "Virtual_machine runs narrow comparison program emitted by Module_builder"
+)
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Wide_immediate;
+  using enum benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  writer.emit_cmp_eq_i32(gpr_1, gpr_2, gpr_3);
+  writer.emit_cmp_eq_i64_i(gpr_4, gpr_5, Wide_immediate{9});
+  writer.emit_cmp_ne_f32(gpr_6, gpr_7, gpr_8);
+  writer.emit_cmp_ne_f64_k(gpr_9, gpr_10, builder.constant(4.0));
+  writer.emit_cmp_lt_i32_i(gpr_11, gpr_12, Wide_immediate{8});
+  writer.emit_cmp_lt_i64_k(gpr_13, gpr_14, builder.constant(std::int64_t{7}));
+  writer.emit_cmp_le_f32_k(gpr_15, gpr_16, builder.constant(3.5F));
+  writer.emit_cmp_le_f64(gpr_17, gpr_18, gpr_19);
+  writer.emit_cmp_gt_i32_k(gpr_20, gpr_21, builder.constant(1));
+  writer.emit_cmp_gt_i64(gpr_22, gpr_23, gpr_24);
+  writer.emit_cmp_ge_f32(gpr_25, gpr_26, gpr_27);
+  writer.emit_cmp_ge_f64_k(gpr_28, gpr_29, builder.constant(6.0));
+  writer.emit_exit();
+  auto const module = builder.build();
+
+  auto vm = benson::Virtual_machine{};
+  vm.load(module);
+  vm.set_register_value<std::int32_t>(gpr_2, 42);
+  vm.set_register_value<std::int32_t>(gpr_3, 42);
+  vm.set_register_value<std::int64_t>(gpr_5, 9);
+  vm.set_register_value<float>(gpr_7, 1.5F);
+  vm.set_register_value<float>(gpr_8, 2.5F);
+  vm.set_register_value<double>(gpr_10, 5.0);
+  vm.set_register_value<std::int32_t>(gpr_12, 4);
+  vm.set_register_value<std::int64_t>(gpr_14, 6);
+  vm.set_register_value<float>(gpr_16, 3.5F);
+  vm.set_register_value<double>(gpr_18, 2.0);
+  vm.set_register_value<double>(gpr_19, 2.0);
+  vm.set_register_value<std::int32_t>(gpr_21, 5);
+  vm.set_register_value<std::int64_t>(gpr_23, 7);
+  vm.set_register_value<std::int64_t>(gpr_24, 3);
+  vm.set_register_value<float>(gpr_26, 2.5F);
+  vm.set_register_value<float>(gpr_27, 2.5F);
+  vm.set_register_value<double>(gpr_29, 6.0);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<bool>(gpr_1));
+  CHECK(vm.get_register_value<bool>(gpr_4));
+  CHECK(vm.get_register_value<bool>(gpr_6));
+  CHECK(vm.get_register_value<bool>(gpr_9));
+  CHECK(vm.get_register_value<bool>(gpr_11));
+  CHECK(vm.get_register_value<bool>(gpr_13));
+  CHECK(vm.get_register_value<bool>(gpr_15));
+  CHECK(vm.get_register_value<bool>(gpr_17));
+  CHECK(vm.get_register_value<bool>(gpr_20));
+  CHECK(vm.get_register_value<bool>(gpr_22));
+  CHECK(vm.get_register_value<bool>(gpr_25));
+  CHECK(vm.get_register_value<bool>(gpr_28));
+}
+
+TEST_CASE(
+  "Virtual_machine runs wide comparison program emitted by Bytecode_writer"
+)
+{
+  using benson::bytecode::Register;
+  using benson::bytecode::Wide_constant;
+  using benson::bytecode::Wide_immediate;
+
+  auto constant_memory = std::vector<std::byte>{};
+  auto constant_table = std::vector<std::ptrdiff_t>{};
+  store_constant<std::int32_t>(
+    constant_memory,
+    constant_table,
+    Wide_constant{0x0201},
+    9
+  );
+  store_constant<std::int64_t>(
+    constant_memory,
+    constant_table,
+    Wide_constant{0x0202},
+    7
+  );
+  store_constant<float>(
+    constant_memory,
+    constant_table,
+    Wide_constant{0x0203},
+    3.0F
+  );
+  store_constant<double>(
+    constant_memory,
+    constant_table,
+    Wide_constant{0x0204},
+    4.0
+  );
+  store_constant<float>(
+    constant_memory,
+    constant_table,
+    Wide_constant{0x0205},
+    1.5F
+  );
+  store_constant<double>(
+    constant_memory,
+    constant_table,
+    Wide_constant{0x0206},
+    8.0
+  );
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+  writer.emit_cmp_eq_i32_i(
+    Register::gpr_1,
+    Register::gpr_2,
+    Wide_immediate{0x0101}
+  );
+  writer
+    .emit_cmp_ne_i64_k(Register::gpr_3, Register::gpr_4, Wide_constant{0x0201});
+  writer
+    .emit_cmp_lt_f32_k(Register::gpr_5, Register::gpr_6, Wide_constant{0x0203});
+  writer
+    .emit_cmp_le_f64_k(Register::gpr_7, Register::gpr_8, Wide_constant{0x0204});
+  writer.emit_cmp_gt_i32_k(
+    Register::gpr_9,
+    Register::gpr_10,
+    Wide_constant{0x0201}
+  );
+  writer.emit_cmp_ge_i64_i(
+    Register::gpr_11,
+    Register::gpr_12,
+    Wide_immediate{0x0100}
+  );
+  writer.emit_cmp_ge_f32_k(
+    Register::gpr_13,
+    Register::gpr_14,
+    Wide_constant{0x0205}
+  );
+  writer.emit_cmp_eq_f64_k(
+    Register::gpr_15,
+    Register::gpr_16,
+    Wide_constant{0x0206}
+  );
+  writer.emit_exit();
+  writer.flush();
+
+  auto vm = benson::Virtual_machine{};
+  vm.instruction_pointer = stream.bytes().data();
+  vm.constant_memory = constant_memory.data();
+  vm.constant_table = constant_table.data();
+  vm.set_register_value<std::int32_t>(Register::gpr_2, 0x0101);
+  vm.set_register_value<std::int64_t>(Register::gpr_4, 8);
+  vm.set_register_value<float>(Register::gpr_6, 2.5F);
+  vm.set_register_value<double>(Register::gpr_8, 3.5);
+  vm.set_register_value<std::int32_t>(Register::gpr_10, 12);
+  vm.set_register_value<std::int64_t>(Register::gpr_12, 0x0100);
+  vm.set_register_value<float>(Register::gpr_14, 1.5F);
+  vm.set_register_value<double>(Register::gpr_16, 8.0);
+
+  vm.run();
+
+  CHECK(vm.get_register_value<bool>(Register::gpr_1));
+  CHECK(vm.get_register_value<bool>(Register::gpr_3));
+  CHECK(vm.get_register_value<bool>(Register::gpr_5));
+  CHECK(vm.get_register_value<bool>(Register::gpr_7));
+  CHECK(vm.get_register_value<bool>(Register::gpr_9));
+  CHECK(vm.get_register_value<bool>(Register::gpr_11));
+  CHECK(vm.get_register_value<bool>(Register::gpr_13));
+  CHECK(vm.get_register_value<bool>(Register::gpr_15));
+}

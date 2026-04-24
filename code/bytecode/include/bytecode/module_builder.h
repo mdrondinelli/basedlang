@@ -41,11 +41,10 @@ namespace benson::bytecode
     };
 
     class Label_jump_target_provider
-        : public Bytecode_writer::Jump_target_provider
     {
     public:
       [[nodiscard]] std::optional<std::ptrdiff_t>
-      target(std::ptrdiff_t patchable_immediate_position) const override;
+      target(std::ptrdiff_t patch_position) const;
 
     private:
       friend class Module_builder;

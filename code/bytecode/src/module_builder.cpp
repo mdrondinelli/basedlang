@@ -10,14 +10,14 @@ namespace benson::bytecode
 
   std::optional<std::ptrdiff_t>
   Module_builder::Label_jump_target_provider::target(
-    std::ptrdiff_t patchable_immediate_position
+    std::ptrdiff_t patch_position
   ) const
   {
     auto const retval = _builder->_label_positions[_label.index];
     if (!retval)
     {
       _builder->_unresolved_jump_offsets.push_back({
-        .position = patchable_immediate_position,
+        .position = patch_position,
         .label = _label,
       });
     }

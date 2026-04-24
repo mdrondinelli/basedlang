@@ -49,21 +49,6 @@ namespace benson::bytecode
     throw std::runtime_error{"jmp target out of range"};
   }
 
-  void Bytecode_writer::emit_jmp(Jump_target_provider const &target_provider)
-  {
-    if (auto const target = target_provider.target(_position + 2))
-    {
-      emit_jmp(*target);
-    }
-    else
-    {
-      emit_opcode(Opcode::wide);
-      emit_opcode(Opcode::jmp_i);
-      write_byte({});
-      write_byte({});
-    }
-  }
-
   void Bytecode_writer::emit_lookup_k(Register dst, Wide_constant k)
   {
     if (is_wide(k))

@@ -782,6 +782,8 @@ TEST_CASE(
   auto const do_right = builder.make_label();
   auto const return_base = builder.make_label();
 
+  // Copy the input array from constant memory into stack memory so the program
+  // can sort it in place.
   writer.emit_lookup_k(gpr_21, Wide_constant{1});
   writer.emit_lookup_k(gpr_22, builder.constant(std::int32_t{5}));
   writer.emit_load_32(gpr_4, gpr_22, Wide_immediate{0});
@@ -812,12 +814,14 @@ TEST_CASE(
   writer.emit_exit();
 
   builder.place_label(quicksort);
+  // Stack arguments are hi, lo, base above the pushed return address.
   writer.emit_load_64(gpr_4, sp, Wide_immediate{8});
   writer.emit_load_64(gpr_3, sp, Wide_immediate{16});
   writer.emit_load_64(gpr_2, sp, Wide_immediate{24});
   writer.emit_cmp_ge_i32(gpr_20, gpr_3, gpr_4);
   writer.emit_jnz(gpr_20, builder.label_target(return_base));
 
+  // Partition around the pivot stored at hi.
   writer.emit_mul_i32_i(gpr_8, gpr_4, Wide_immediate{4});
   writer.emit_add_i64(gpr_9, gpr_2, gpr_8);
   writer.emit_load_32(gpr_5, gpr_9, Wide_immediate{0});
@@ -846,6 +850,7 @@ TEST_CASE(
   writer.emit_jmp(builder.label_target(partition_loop));
 
   builder.place_label(after_partition);
+  // Move the pivot into its final slot and recurse on each side.
   writer.emit_add_i32_i(gpr_14, gpr_6, Wide_immediate{1});
   writer.emit_mul_i32_i(gpr_8, gpr_14, Wide_immediate{4});
   writer.emit_add_i64(gpr_13, gpr_2, gpr_8);
@@ -863,6 +868,7 @@ TEST_CASE(
   writer.emit_jmp(builder.label_target(after_left));
 
   builder.place_label(do_left);
+  // Caller cleanup: push base, lo, hi for the left partition.
   writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
   writer.emit_store_64(gpr_2, sp, Wide_immediate{0});
   writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
@@ -881,6 +887,7 @@ TEST_CASE(
   writer.emit_jmp(builder.label_target(return_base));
 
   builder.place_label(do_right);
+  // Caller cleanup again for the right partition.
   writer.emit_load_64(gpr_2, sp, Wide_immediate{24});
   writer.emit_sub_i64_i(sp, sp, Wide_immediate{8});
   writer.emit_store_64(gpr_2, sp, Wide_immediate{0});
@@ -892,6 +899,7 @@ TEST_CASE(
   writer.emit_add_i64_i(sp, sp, Wide_immediate{24});
 
   builder.place_label(return_base);
+  // Return the base pointer in gpr_1.
   writer.emit_load_64(gpr_1, sp, Wide_immediate{24});
   writer.emit_ret();
 

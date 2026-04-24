@@ -53,6 +53,32 @@ namespace benson::bytecode
     throw std::runtime_error{"jmp target out of range"};
   }
 
+  void Bytecode_writer::emit_call(std::ptrdiff_t target)
+  {
+    auto const narrow_offset = target - (_position + 2);
+    if (std::in_range<Immediate::Underlying_type>(narrow_offset))
+    {
+      emit_opcode(Opcode::call_i);
+      write_byte(static_cast<std::byte>(narrow_offset));
+      return;
+    }
+    auto const wide_offset = target - (_position + 4);
+    if (std::in_range<Wide_immediate::Underlying_type>(wide_offset))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::call_i);
+      write_byte(static_cast<std::byte>(wide_offset));
+      write_byte(static_cast<std::byte>(wide_offset >> 8));
+      return;
+    }
+    throw std::runtime_error{"call target out of range"};
+  }
+
+  void Bytecode_writer::emit_ret()
+  {
+    emit_opcode(Opcode::ret);
+  }
+
   void Bytecode_writer::emit_jnz(Register src, std::ptrdiff_t target)
   {
     auto const narrow_offset = target - (_position + 3);

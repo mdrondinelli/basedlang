@@ -11,6 +11,8 @@ namespace benson::bytecode
     exit,
     wide,
     jmp_i,
+    call_i,
+    ret,
     jnz_i,
     lookup_k,
     load_8,

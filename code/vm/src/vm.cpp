@@ -321,6 +321,63 @@ namespace benson
       instruction_pointer += offset.value;
     }
 
+    void push_u64(Virtual_machine &vm, std::uint64_t value)
+    {
+      auto const sp =
+        vm.get_register_value<Pointer>(bytecode::Register::sp).decode();
+      if (sp.space != Address_space::stack)
+      {
+        throw std::runtime_error{"unsupported address space for call stack"};
+      }
+      auto const new_offset = sp.offset - sizeof(std::uint64_t);
+      std::memcpy(vm.stack->data() + new_offset, &value, sizeof(value));
+      vm.set_register_value(
+        bytecode::Register::sp,
+        Pointer{Address_space::stack, new_offset}
+      );
+    }
+
+    auto pop_u64(Virtual_machine &vm) -> std::uint64_t
+    {
+      auto const sp =
+        vm.get_register_value<Pointer>(bytecode::Register::sp).decode();
+      if (sp.space != Address_space::stack)
+      {
+        throw std::runtime_error{"unsupported address space for call stack"};
+      }
+      auto value = std::uint64_t{};
+      std::memcpy(&value, vm.stack->data() + sp.offset, sizeof(value));
+      vm.set_register_value(
+        bytecode::Register::sp,
+        Pointer{Address_space::stack, sp.offset + sizeof(std::uint64_t)}
+      );
+      return value;
+    }
+
+    template <typename OffsetType>
+    void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      static_assert(
+        std::is_same_v<OffsetType, bytecode::Wide_immediate> ||
+        std::is_same_v<OffsetType, bytecode::Immediate>
+      );
+      auto offset = OffsetType{};
+      std::memcpy(&offset, instruction_pointer, sizeof(offset));
+      instruction_pointer += sizeof(offset);
+      push_u64(
+        vm,
+        static_cast<std::uint64_t>(
+          reinterpret_cast<std::uintptr_t>(instruction_pointer)
+        )
+      );
+      instruction_pointer += offset.value;
+    }
+
+    void run_ret(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      instruction_pointer = reinterpret_cast<std::byte const *>(pop_u64(vm));
+    }
+
     template <typename OffsetType>
     void run_jnz_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
@@ -384,6 +441,12 @@ namespace benson
       break;
     case bytecode::Opcode::jmp_i:
       run_jmp_i<bytecode::Immediate>(instruction_pointer);
+      break;
+    case bytecode::Opcode::call_i:
+      run_call_i<bytecode::Immediate>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::ret:
+      run_ret(instruction_pointer, *this);
       break;
     case bytecode::Opcode::jnz_i:
       run_jnz_i<bytecode::Immediate>(instruction_pointer, *this);
@@ -580,6 +643,9 @@ namespace benson
     {
     case bytecode::Opcode::jmp_i:
       run_jmp_i<bytecode::Wide_immediate>(instruction_pointer);
+      break;
+    case bytecode::Opcode::call_i:
+      run_call_i<bytecode::Wide_immediate>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::jnz_i:
       run_jnz_i<bytecode::Wide_immediate>(instruction_pointer, *this);

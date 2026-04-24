@@ -73,6 +73,41 @@ TEST_CASE("Module_builder patches label-based jnz_i instructions")
   CHECK(module.constant_table.empty());
 }
 
+TEST_CASE("Module_builder patches label-based call_i instructions")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Opcode;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const start = builder.make_label();
+  auto const subroutine = builder.make_label();
+
+  builder.place_label(start);
+  writer.emit_call(builder.label_target(subroutine));
+  writer.emit_exit();
+  builder.place_label(subroutine);
+  writer.emit_call(builder.label_target(start));
+  writer.emit_ret();
+
+  auto const module = builder.build();
+
+  CHECK(
+    module.code == std::vector<std::byte>{
+                     static_cast<std::byte>(Opcode::wide),
+                     static_cast<std::byte>(Opcode::call_i),
+                     std::byte{0x01},
+                     std::byte{0x00},
+                     static_cast<std::byte>(Opcode::exit),
+                     static_cast<std::byte>(Opcode::call_i),
+                     std::byte{0xF9},
+                     static_cast<std::byte>(Opcode::ret),
+                   }
+  );
+  CHECK(module.constant_data.empty());
+  CHECK(module.constant_table.empty());
+}
+
 TEST_CASE("Module_builder interns and deduplicates inline constants")
 {
   using benson::bytecode::Module_builder;

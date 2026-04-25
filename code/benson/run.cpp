@@ -15,7 +15,7 @@
 #include <lexing/lexeme_stream_reader.h>
 #include <parsing/parser.h>
 #include <spelling/spelling.h>
-#include <streams/istream_binary_input_stream.h>
+#include <streams/istream_input_stream.h>
 #include <streams/utf8_char_input_stream.h>
 
 namespace benson
@@ -29,7 +29,7 @@ namespace benson
     std::ostream &err
   )
   {
-    auto bs = Istream_binary_input_stream{&input};
+    auto bs = Istream_input_stream{&input};
     auto cs = Utf8_char_input_stream{&bs};
     auto spellings = Spelling_table{};
     auto ls = Lexeme_stream{&cs, &spellings};

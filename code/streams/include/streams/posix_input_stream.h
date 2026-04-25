@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_POSIX_BINARY_INPUT_STREAM_H
-#define BASEDSTREAMS_POSIX_BINARY_INPUT_STREAM_H
+#ifndef BASEDSTREAMS_POSIX_INPUT_STREAM_H
+#define BASEDSTREAMS_POSIX_INPUT_STREAM_H
 
 #include <cerrno>
 #include <cstddef>
@@ -10,16 +10,16 @@
   #include <unistd.h>
 #endif
 
-#include "streams/binary_input_stream.h"
+#include "streams/input_stream.h"
 
 namespace benson
 {
 
 #if defined(__unix__) || defined(__APPLE__)
-  class Posix_binary_input_stream: public Binary_input_stream
+  class Posix_input_stream: public Input_stream
   {
   public:
-    explicit Posix_binary_input_stream(int fd) noexcept
+    explicit Posix_input_stream(int fd) noexcept
         : _fd{fd}
     {
     }
@@ -43,7 +43,7 @@ namespace benson
           throw std::system_error{
             error,
             std::system_category(),
-            "Posix_binary_input_stream: read failed"
+            "Posix_input_stream: read failed"
           };
         }
       }
@@ -56,4 +56,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_POSIX_BINARY_INPUT_STREAM_H
+#endif // BASEDSTREAMS_POSIX_INPUT_STREAM_H

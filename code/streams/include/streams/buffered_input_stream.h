@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_BUFFERED_BINARY_INPUT_STREAM_H
-#define BASEDSTREAMS_BUFFERED_BINARY_INPUT_STREAM_H
+#ifndef BASEDSTREAMS_BUFFERED_INPUT_STREAM_H
+#define BASEDSTREAMS_BUFFERED_INPUT_STREAM_H
 
 #include <algorithm>
 #include <array>
@@ -8,23 +8,23 @@
 #include <memory>
 #include <utility>
 
-#include "streams/binary_input_stream.h"
+#include "streams/input_stream.h"
 
 namespace benson
 {
 
-  /// Buffers a concrete Binary_input_stream behind a 4 KiB heap-allocated
-  /// scratch buffer while still exposing the Binary_input_stream interface.
-  /// Preserves the Binary_input_stream contract: callers may still observe
+  /// Buffers a concrete Input_stream behind a 4 KiB heap-allocated
+  /// scratch buffer while still exposing the Input_stream interface.
+  /// Preserves the Input_stream contract: callers may still observe
   /// short positive reads and EOF as 0, but repeated small reads can be served
   /// from the internal buffer without re-entering the wrapped stream. Large
   /// reads bypass the scratch buffer once it is empty.
-  template <std::derived_from<Binary_input_stream> T>
-  class Buffered_binary_input_stream: public Binary_input_stream
+  template <std::derived_from<Input_stream> T>
+  class Buffered_input_stream: public Input_stream
   {
   public:
     template <typename... Args>
-    explicit Buffered_binary_input_stream(Args &&...args)
+    explicit Buffered_input_stream(Args &&...args)
         : _stream{std::forward<Args>(args)...},
           _buffer{std::make_unique<std::array<std::byte, 4096>>()}
     {
@@ -92,4 +92,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_BUFFERED_BINARY_INPUT_STREAM_H
+#endif // BASEDSTREAMS_BUFFERED_INPUT_STREAM_H

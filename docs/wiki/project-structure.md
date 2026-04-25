@@ -40,16 +40,35 @@ See [`parsing`](./parsing.md).
 
 ### `code/ir`
 
-The semantic and execution core. Owns:
+The HLIR model and interpreter. Owns:
 
 - types
-- symbol resolution
-- diagnostics
 - compile-time values
-- lowering to HLIR
+- executable HLIR
 - interpretation of HLIR
 
 See [`ir`](./ir.md).
+
+### `code/frontend`
+
+The semantic compiler. Owns AST-to-HLIR lowering, name resolution, type
+evaluation, operator resolution, and diagnostics.
+
+See [`frontend`](./frontend.md).
+
+### `code/bytecode`
+
+The bytecode library. Owns the low-level instruction representation, module
+shape, bytecode emission, and module-building helpers.
+
+See [`bytecode`](./bytecode.md).
+
+### `code/vm`
+
+The bytecode virtual machine. Owns bytecode module execution, VM register
+storage, and runtime address-space handling.
+
+See [`vm`](./vm.md).
 
 ### `code/benson`
 
@@ -71,6 +90,8 @@ Tests live next to the libraries they validate. This is important because most c
 - lexical behavior belongs with lexer tests
 - syntax behavior belongs with parser tests
 - semantic and lowering behavior belongs with HLIR tests
+- bytecode encoding belongs with bytecode tests
+- bytecode execution belongs with VM tests
 
 For the local build and test workflow, see [Tutorial: first change](./tutorial-first-change.md).
 
@@ -82,7 +103,10 @@ When deciding where a change belongs, ask this in order:
 2. Is this about AST node shapes, operator identity, or source spans?
 3. Is this about syntax only — consuming tokens to produce AST nodes?
 4. Is this about meaning, type checking, lowering, or diagnostics?
-5. Is this only about wiring the executable?
+5. Is this about HLIR data or HLIR interpretation?
+6. Is this about bytecode encoding or bytecode module construction?
+7. Is this about running bytecode?
+8. Is this only about wiring the executable?
 
 Those map directly to the main modules, with shared preserved-spelling storage
 living between lexing and later front-end consumers.
@@ -96,7 +120,10 @@ The repo may be reorganized internally over time. The stable structure to preser
 - spelling storage
 - AST data model
 - parser
-- semantic compiler / HLIR
+- semantic compiler
+- HLIR
+- bytecode
+- VM
 - executable wrapper
 
 If that structure changes, this page and the overview/module pages should change in the same PR.

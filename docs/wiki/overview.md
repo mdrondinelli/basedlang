@@ -1,6 +1,6 @@
 # Architecture and pipeline overview
 
-bensonlang currently has eight main modules:
+bensonlang currently has ten main modules:
 
 1. `streams`
 2. `lexing`
@@ -9,7 +9,9 @@ bensonlang currently has eight main modules:
 5. `parsing`
 6. `ir`
 7. `frontend`
-8. `benson`
+8. `bytecode`
+9. `vm`
+10. `benson`
 
 The pipeline is simple:
 
@@ -19,6 +21,7 @@ The pipeline is simple:
 4. lexemes are parsed into an AST (defined by `ast`, produced by `parsing`)
 5. the AST is compiled by `frontend` into HLIR (the `ir` data model) with name resolution, type evaluation, diagnostics, and constant evaluation
 6. the `benson` executable can currently interpret a chosen HLIR function using the `ir` interpreter
+7. separate bytecode and VM libraries are under development as a lower-level execution path
 
 ## Module boundaries
 
@@ -67,6 +70,29 @@ Owns AST→IR lowering:
 
 Depends on both `ast` and `ir`.
 
+### `bytecode`
+
+Owns the low-level bytecode representation:
+
+- opcodes and registers
+- narrow and wide operands
+- constants
+- module construction and byte emission
+
+This is not currently documented as a stable binary format.
+
+### `vm`
+
+Owns execution of bytecode modules:
+
+- VM register storage
+- stack and constant address spaces
+- bytecode dispatch
+- instruction behavior
+
+It depends on `bytecode`, but should stay independent from front-end and HLIR
+details.
+
 ### `benson`
 
 Owns command-line wiring. It is basically a throwaway tool at this point.
@@ -86,6 +112,9 @@ That is why semantic code has to support:
 HLIR is the executable representation produced by compilation. It should remain
 self-contained. Today it is directly interpreted for development convenience,
 but that should not be treated as the long-term product direction.
+
+Bytecode and the VM are a separate lower-level execution path. They are still
+subject to change and should be reviewed as implementation infrastructure.
 
 ## How to use this wiki
 

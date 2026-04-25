@@ -62,6 +62,8 @@ Read [Conventions](./conventions.md).
 - [`parsing`](./parsing.md)
 - [`ir`](./ir.md)
 - [`frontend`](./frontend.md)
+- [`bytecode`](./bytecode.md)
+- [`vm`](./vm.md)
 - [`benson`](./benson.md)
 
 ### Process

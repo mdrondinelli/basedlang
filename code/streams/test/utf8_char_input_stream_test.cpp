@@ -7,7 +7,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "streams/char_input_stream.h"
-#include "streams/istream_binary_input_stream.h"
+#include "streams/istream_input_stream.h"
 #include "streams/utf8_char_input_stream.h"
 
 TEST_CASE("Utf8_char_input_stream - read_characters")
@@ -15,7 +15,7 @@ TEST_CASE("Utf8_char_input_stream - read_characters")
   auto const with_stream = [](std::string const &bytes, auto &&fn)
   {
     auto ss = std::istringstream{bytes};
-    auto binary = benson::Istream_binary_input_stream{&ss};
+    auto binary = benson::Istream_input_stream{&ss};
     auto chars = benson::Utf8_char_input_stream{&binary};
     fn(chars);
   };
@@ -160,7 +160,7 @@ TEST_CASE("Utf8_char_input_stream - valid sequences")
   auto const with_stream = [](std::string const &bytes, auto &&fn)
   {
     auto ss = std::istringstream{bytes};
-    auto binary = benson::Istream_binary_input_stream{&ss};
+    auto binary = benson::Istream_input_stream{&ss};
     auto chars = benson::Utf8_char_input_stream{&binary};
     fn(chars);
   };
@@ -256,7 +256,7 @@ TEST_CASE("Utf8_char_input_stream - invalid sequences throw Decode_error")
   auto const throws = [](std::string const &bytes)
   {
     auto ss = std::istringstream{bytes};
-    auto binary = benson::Istream_binary_input_stream{&ss};
+    auto binary = benson::Istream_input_stream{&ss};
     auto chars = benson::Utf8_char_input_stream{&binary};
     REQUIRE_THROWS_AS(
       chars.read_character(),

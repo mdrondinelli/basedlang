@@ -3,13 +3,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "streams/char_input_stream_peeker.h"
-#include "streams/istream_binary_input_stream.h"
+#include "streams/istream_input_stream.h"
 #include "streams/utf8_char_input_stream.h"
 
 TEST_CASE("Char_input_stream_peeker - peek and read")
 {
   auto ss = std::istringstream{"abcdef"};
-  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto binary = benson::Istream_input_stream{&ss};
   auto chars = benson::Utf8_char_input_stream{&binary};
   auto reader = benson::Char_input_stream_peeker{&chars, 3};
 
@@ -33,7 +33,7 @@ TEST_CASE("Char_input_stream_peeker - peek and read")
 TEST_CASE("Char_input_stream_peeker - wraparound")
 {
   auto ss = std::istringstream{"abcdefghi"};
-  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto binary = benson::Istream_input_stream{&ss};
   auto chars = benson::Utf8_char_input_stream{&binary};
   auto reader = benson::Char_input_stream_peeker{&chars, 3};
 
@@ -57,7 +57,7 @@ TEST_CASE("Char_input_stream_peeker - wraparound")
 TEST_CASE("Char_input_stream_peeker - non-power-of-two lookahead")
 {
   auto ss = std::istringstream{"abcdefg"};
-  auto binary = benson::Istream_binary_input_stream{&ss};
+  auto binary = benson::Istream_input_stream{&ss};
   auto chars = benson::Utf8_char_input_stream{&binary};
   auto reader = benson::Char_input_stream_peeker{&chars, 2};
 

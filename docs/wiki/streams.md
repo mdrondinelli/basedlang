@@ -17,30 +17,30 @@ It owns:
 
 The public surface is centered on:
 
-- `Binary_input_stream`
-- `Buffered_binary_input_stream<T>`
+- `Input_stream`
+- `Buffered_input_stream<T>`
 - `Output_stream`
-- `Istream_binary_input_stream`
-- `Posix_binary_input_stream` (POSIX-only)
+- `Istream_input_stream`
+- `Posix_input_stream` (POSIX-only)
 - `Char_input_stream`
 - `Utf8_char_input_stream`
 - `Char_input_stream_peeker`
 
 ## Core abstractions
 
-### `Binary_input_stream`
+### `Input_stream`
 
 Abstract source of raw bytes.
 Its core operation is caller-owned bulk reads into a provided buffer.
 
-Concrete adapters such as `Istream_binary_input_stream` and
-`Posix_binary_input_stream` live at environment boundaries and do not add extra
+Concrete adapters such as `Istream_input_stream` and
+`Posix_input_stream` live at environment boundaries and do not add extra
 buffering on their own.
 
-### `Buffered_binary_input_stream<T>`
+### `Buffered_input_stream<T>`
 
-Optional buffering adapter for a concrete `Binary_input_stream`.
-It still presents the `Binary_input_stream` interface, but serves repeated
+Optional buffering adapter for a concrete `Input_stream`.
+It still presents the `Input_stream` interface, but serves repeated
 small reads from a 4 KiB scratch buffer and only goes back to the wrapped
 stream when needed.
 
@@ -54,13 +54,13 @@ Its core operation is caller-owned bulk writes from a provided buffer.
 It also exposes `flush()`, which defaults to a no-op for unbuffered sinks and
 can be overridden by buffered implementations.
 
-### `Istream_binary_input_stream`
+### `Istream_input_stream`
 
-Adapter from `std::istream` to `Binary_input_stream`.
+Adapter from `std::istream` to `Input_stream`.
 
-### `Posix_binary_input_stream`
+### `Posix_input_stream`
 
-POSIX-only adapter from a file descriptor to `Binary_input_stream`.
+POSIX-only adapter from a file descriptor to `Input_stream`.
 It is non-owning and does not close the fd.
 
 ### `Char_input_stream`
@@ -74,7 +74,7 @@ of the bulk API.
 ### `Utf8_char_input_stream`
 
 UTF-8 decoder from bytes to Unicode codepoints.
-It consumes a `Binary_input_stream` and exposes the `Char_input_stream`
+It consumes an `Input_stream` and exposes the `Char_input_stream`
 interface.
 
 This is where incremental UTF-8 decoding happens. The decoder does not preload
@@ -93,14 +93,14 @@ in `lexing`; character lookahead stays here.
 
 Common text-input pipelines now look like:
 
-`Istream_binary_input_stream` or `Posix_binary_input_stream`
--> optional `Buffered_binary_input_stream<T>`
+`Istream_input_stream` or `Posix_input_stream`
+-> optional `Buffered_input_stream<T>`
 -> `Utf8_char_input_stream`
 -> `Char_input_stream_peeker`
 -> `lexing`
 
 The provider chooses whether byte buffering is needed. Consumers continue to
-depend on abstract `Binary_input_stream` or `Char_input_stream` surfaces.
+depend on abstract `Input_stream` or `Char_input_stream` surfaces.
 
 ## What to keep stable
 

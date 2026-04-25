@@ -5,16 +5,16 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "streams/binary_input_stream.h"
-#include "streams/buffered_binary_input_stream.h"
+#include "streams/buffered_input_stream.h"
+#include "streams/input_stream.h"
 
 namespace
 {
 
-  class Chunked_binary_input_stream: public benson::Binary_input_stream
+  class Chunked_input_stream: public benson::Input_stream
   {
   public:
-    Chunked_binary_input_stream(
+    Chunked_input_stream(
       std::vector<std::byte> bytes,
       std::ptrdiff_t chunk_size,
       std::ptrdiff_t *read_calls
@@ -58,21 +58,20 @@ namespace
 
 } // namespace
 
-TEST_CASE("Buffered_binary_input_stream amortizes repeated tiny reads")
+TEST_CASE("Buffered_input_stream amortizes repeated tiny reads")
 {
   auto read_calls = std::ptrdiff_t{};
-  auto buffered =
-    benson::Buffered_binary_input_stream<Chunked_binary_input_stream>{
-      std::vector<std::byte>{
-        std::byte{'h'},
-        std::byte{'e'},
-        std::byte{'l'},
-        std::byte{'l'},
-        std::byte{'o'},
-      },
-      2,
-      &read_calls,
-    };
+  auto buffered = benson::Buffered_input_stream<Chunked_input_stream>{
+    std::vector<std::byte>{
+      std::byte{'h'},
+      std::byte{'e'},
+      std::byte{'l'},
+      std::byte{'l'},
+      std::byte{'o'},
+    },
+    2,
+    &read_calls,
+  };
 
   auto byte = std::array<std::byte, 1>{};
   auto bytes = std::vector<std::byte>{};
@@ -98,22 +97,19 @@ TEST_CASE("Buffered_binary_input_stream amortizes repeated tiny reads")
   CHECK(read_calls == 4);
 }
 
-TEST_CASE(
-  "Buffered_binary_input_stream returns buffered bytes before refilling"
-)
+TEST_CASE("Buffered_input_stream returns buffered bytes before refilling")
 {
   auto read_calls = std::ptrdiff_t{};
-  auto buffered =
-    benson::Buffered_binary_input_stream<Chunked_binary_input_stream>{
-      std::vector<std::byte>{
-        std::byte{'a'},
-        std::byte{'b'},
-        std::byte{'c'},
-        std::byte{'d'},
-      },
-      4,
-      &read_calls,
-    };
+  auto buffered = benson::Buffered_input_stream<Chunked_input_stream>{
+    std::vector<std::byte>{
+      std::byte{'a'},
+      std::byte{'b'},
+      std::byte{'c'},
+      std::byte{'d'},
+    },
+    4,
+    &read_calls,
+  };
 
   auto first = std::array<std::byte, 3>{};
   REQUIRE(buffered.read_bytes(first) == 3);

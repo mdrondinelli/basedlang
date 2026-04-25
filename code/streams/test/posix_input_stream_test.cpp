@@ -10,11 +10,11 @@
 #include <catch2/catch_test_macros.hpp>
 
 #if defined(__unix__) || defined(__APPLE__)
-  #include "streams/posix_binary_input_stream.h"
+  #include "streams/posix_input_stream.h"
 #endif
 
 #if defined(__unix__) || defined(__APPLE__)
-TEST_CASE("Posix_binary_input_stream - read_bytes")
+TEST_CASE("Posix_input_stream - read_bytes")
 {
   auto const make_pipe = []()
   {
@@ -26,7 +26,7 @@ TEST_CASE("Posix_binary_input_stream - read_bytes")
   {
     auto const fds = make_pipe();
     ::close(fds[1]);
-    auto posix = benson::Posix_binary_input_stream{fds[0]};
+    auto posix = benson::Posix_input_stream{fds[0]};
     auto buffer = std::array<std::byte, 4>{};
     REQUIRE(posix.read_bytes(buffer) == 0);
     ::close(fds[0]);
@@ -40,7 +40,7 @@ TEST_CASE("Posix_binary_input_stream - read_bytes")
       static_cast<ssize_t>(data.size())
     );
     ::close(fds[1]);
-    auto posix = benson::Posix_binary_input_stream{fds[0]};
+    auto posix = benson::Posix_input_stream{fds[0]};
     auto empty = std::span<std::byte>{};
     auto buffer = std::array<std::byte, 5>{};
     REQUIRE(posix.read_bytes(empty) == 0);
@@ -61,7 +61,7 @@ TEST_CASE("Posix_binary_input_stream - read_bytes")
       static_cast<ssize_t>(data.size())
     );
     ::close(fds[1]);
-    auto posix = benson::Posix_binary_input_stream{fds[0]};
+    auto posix = benson::Posix_input_stream{fds[0]};
     auto buffer = std::array<std::byte, 4>{};
     REQUIRE(posix.read_bytes(buffer) == 4);
     CHECK(buffer[0] == std::byte{'h'});
@@ -79,7 +79,7 @@ TEST_CASE("Posix_binary_input_stream - read_bytes")
       static_cast<ssize_t>(data.size())
     );
     ::close(fds[1]);
-    auto posix = benson::Posix_binary_input_stream{fds[0]};
+    auto posix = benson::Posix_input_stream{fds[0]};
     auto buffer = std::array<std::byte, 8>{};
     REQUIRE(posix.read_bytes(buffer) == 5);
     CHECK(buffer[0] == std::byte{'h'});
@@ -98,7 +98,7 @@ TEST_CASE("Posix_binary_input_stream - read_bytes")
       static_cast<ssize_t>(data.size())
     );
     ::close(fds[1]);
-    auto posix = benson::Posix_binary_input_stream{fds[0]};
+    auto posix = benson::Posix_input_stream{fds[0]};
     auto result = std::string{};
     auto buffer = std::array<std::byte, 2>{};
     for (;;)
@@ -118,9 +118,9 @@ TEST_CASE("Posix_binary_input_stream - read_bytes")
   }
 }
 
-TEST_CASE("Posix_binary_input_stream - read failure preserves errno")
+TEST_CASE("Posix_input_stream - read failure preserves errno")
 {
-  auto posix = benson::Posix_binary_input_stream{-1};
+  auto posix = benson::Posix_input_stream{-1};
   auto buffer = std::array<std::byte, 1>{};
 
   try

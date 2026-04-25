@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_BINARY_INPUT_STREAM_H
-#define BASEDSTREAMS_BINARY_INPUT_STREAM_H
+#ifndef BASEDSTREAMS_INPUT_STREAM_H
+#define BASEDSTREAMS_INPUT_STREAM_H
 
 #include <cstddef>
 #include <span>
@@ -9,10 +9,10 @@ namespace benson
 
   /// Abstract source of raw bytes. Implement this to feed binary data into a
   /// Utf8_char_input_stream.
-  class Binary_input_stream
+  class Input_stream
   {
   public:
-    virtual ~Binary_input_stream() = default;
+    virtual ~Input_stream() = default;
 
     /// Reads up to buffer.size() bytes into buffer and returns the number of
     /// bytes read. Implementations may return short reads, but when buffer is
@@ -21,9 +21,8 @@ namespace benson
     /// an implementation throws after writing bytes into buffer, those bytes
     /// are lost and the stream position is undefined.
     virtual std::ptrdiff_t read_bytes(std::span<std::byte> buffer) = 0;
-
   };
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_BINARY_INPUT_STREAM_H
+#endif // BASEDSTREAMS_INPUT_STREAM_H

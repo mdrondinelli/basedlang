@@ -83,10 +83,10 @@ target_link_libraries(lexing-tests PRIVATE lexing Catch2::Catch2WithMain)
 target_compile_definitions(lexing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(streams-tests
-  code/streams/test/buffered_binary_input_stream_test.cpp
+  code/streams/test/buffered_input_stream_test.cpp
   code/streams/test/char_input_stream_peeker_test.cpp
-  code/streams/test/istream_binary_input_stream_test.cpp
-  code/streams/test/posix_binary_input_stream_test.cpp
+  code/streams/test/istream_input_stream_test.cpp
+  code/streams/test/posix_input_stream_test.cpp
   code/streams/test/utf8_char_input_stream_test.cpp
 )
 target_link_libraries(streams-tests PRIVATE streams Catch2::Catch2WithMain)

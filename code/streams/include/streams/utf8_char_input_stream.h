@@ -8,13 +8,13 @@
 #include <span>
 #include <stdexcept>
 
-#include "streams/binary_input_stream.h"
 #include "streams/char_input_stream.h"
+#include "streams/input_stream.h"
 
 namespace benson
 {
 
-  /// Decodes UTF-8 bytes from a Binary_input_stream into Unicode codepoints.
+  /// Decodes UTF-8 bytes from an Input_stream into Unicode codepoints.
   /// Throws Decode_error on invalid byte sequences.
   class Utf8_char_input_stream: public Char_input_stream
   {
@@ -28,7 +28,7 @@ namespace benson
       }
     };
 
-    explicit Utf8_char_input_stream(Binary_input_stream *stream)
+    explicit Utf8_char_input_stream(Input_stream *stream)
         : _stream{stream}
     {
     }
@@ -160,7 +160,7 @@ namespace benson
       return _byte[0];
     }
 
-    Binary_input_stream *_stream;
+    Input_stream *_stream;
     std::array<std::byte, 1> _byte{};
   };
 

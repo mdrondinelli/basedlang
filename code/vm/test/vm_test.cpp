@@ -185,6 +185,7 @@ TEST_CASE("Virtual_machine runs move program emitted by Module_builder")
   writer.emit_mov(gpr_1, gpr_2);
   writer.emit_mov_i(gpr_3, Wide_immediate{-4});
   writer.emit_mov_i(gpr_4, Wide_immediate{0x0102});
+  writer.emit_mov_i(gpr_5, Wide_immediate{-0x0102});
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -199,8 +200,10 @@ TEST_CASE("Virtual_machine runs move program emitted by Module_builder")
     std::bit_cast<std::uint64_t>(-0.0)
   );
   CHECK(vm.get_register_value<std::int32_t>(gpr_3) == -4);
+  CHECK(vm.get_register_value<std::int64_t>(gpr_3) == -4);
   CHECK(vm.get_register_value<std::int32_t>(gpr_4) == 0x0102);
-  CHECK(vm.instruction_pointer == module.code.data() + 12);
+  CHECK(vm.get_register_value<std::int64_t>(gpr_5) == -0x0102);
+  CHECK(vm.instruction_pointer == module.code.data() + 17);
 }
 
 TEST_CASE(

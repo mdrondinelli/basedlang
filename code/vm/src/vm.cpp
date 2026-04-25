@@ -411,6 +411,10 @@ namespace benson
         registers{std::make_unique<std::array<std::uint64_t, 64 * 1024>>()},
         stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()}
   {
+    set_register_value(
+      bytecode::sp,
+      Pointer{Address_space::stack, stack->size()}
+    );
   }
 
   void Virtual_machine::load(bytecode::Module const &module)
@@ -422,10 +426,6 @@ namespace benson
 
   void Virtual_machine::run()
   {
-    set_register_value(
-      bytecode::sp,
-      Pointer{Address_space::stack, stack->size()}
-    );
     for (;;)
     {
       auto const opcode = static_cast<bytecode::Opcode>(*instruction_pointer++);

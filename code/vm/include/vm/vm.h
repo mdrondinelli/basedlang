@@ -56,7 +56,7 @@ namespace benson
     template <typename T>
     [[nodiscard]] T get_register_value(bytecode::Register reg) const
     {
-      auto const value = registers[reg.value];
+      auto const value = (*registers)[reg.value];
       if constexpr (std::same_as<T, float>)
       {
         return std::bit_cast<float>(static_cast<std::uint32_t>(value));
@@ -80,19 +80,19 @@ namespace benson
     {
       if constexpr (std::same_as<std::decay_t<T>, float>)
       {
-        registers[reg.value] = std::bit_cast<std::uint32_t>(value);
+        (*registers)[reg.value] = std::bit_cast<std::uint32_t>(value);
       }
       else if constexpr (std::same_as<std::decay_t<T>, double>)
       {
-        registers[reg.value] = std::bit_cast<std::uint64_t>(value);
+        (*registers)[reg.value] = std::bit_cast<std::uint64_t>(value);
       }
       else if constexpr (std::same_as<T, bool>)
       {
-        registers[reg.value] = value ? 1 : 0;
+        (*registers)[reg.value] = value ? 1 : 0;
       }
       else
       {
-        registers[reg.value] = static_cast<std::uint64_t>(value);
+        (*registers)[reg.value] = static_cast<std::uint64_t>(value);
       }
     }
 
@@ -103,8 +103,8 @@ namespace benson
     std::byte const *instruction_pointer;
     std::byte const *constant_memory;
     std::ptrdiff_t const *constant_table;
-    std::array<std::uint64_t, 65536> registers;
-    std::unique_ptr<std::array<std::byte, 4096>> stack;
+    std::unique_ptr<std::array<std::uint64_t, 64 * 1024>> registers;
+    std::unique_ptr<std::array<std::byte, 16 * 1024 * 1024>> stack;
 
   private:
     void dispatch(bytecode::Opcode opcode);

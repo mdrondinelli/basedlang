@@ -82,7 +82,7 @@ namespace benson
     {
       auto const dst = read_register(instruction_pointer, width);
       auto const src = read_register(instruction_pointer, width);
-      vm.registers[dst.value] = vm.registers[src.value];
+      (*vm.registers)[dst.value] = (*vm.registers)[src.value];
     }
 
     void run_mov_i(
@@ -311,7 +311,7 @@ namespace benson
       auto value = std::uint64_t{};
       // TODO: bounds check
       std::memcpy(&value, space_pointer + base_address + offset.value, N);
-      vm.registers[dst.value] = value;
+      (*vm.registers)[dst.value] = value;
     }
 
     template <std::size_t N>
@@ -339,7 +339,7 @@ namespace benson
       // TODO: bounds check
       std::memcpy(
         vm.stack->data() + base_address + offset.value,
-        &vm.registers[src.value],
+        &(*vm.registers)[src.value],
         N
       );
     }
@@ -422,8 +422,8 @@ namespace benson
       : instruction_pointer{nullptr},
         constant_memory{nullptr},
         constant_table{nullptr},
-        registers{},
-        stack{std::make_unique<std::array<std::byte, 4096>>()}
+        registers{std::make_unique<std::array<std::uint64_t, 64 * 1024>>()},
+        stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()}
   {
   }
 

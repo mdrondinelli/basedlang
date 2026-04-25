@@ -8,12 +8,16 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <span>
 
 #include "bytecode/constant.h"
 #include "bytecode/module.h"
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
+#include "ir/constant_value.h"
+#include "ir/type.h"
 #include "pointer.h"
+#include "spelling/spelling.h"
 
 namespace benson
 {
@@ -100,6 +104,10 @@ namespace benson
 
     void run();
 
+    ir::Constant_value
+    call(Spelling name, std::span<ir::Constant_value const> args);
+
+    bytecode::Module const *module{};
     std::byte const *instruction_pointer;
     std::byte const *constant_memory;
     std::ptrdiff_t const *constant_table;

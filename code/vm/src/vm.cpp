@@ -342,19 +342,24 @@ namespace benson
       instruction_pointer += offset.value;
     }
 
-    void push_u64(Virtual_machine &vm, std::uint64_t value)
+    void push_bytes(Virtual_machine &vm, std::span<std::byte const> bytes)
     {
       auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
       if (sp.space != Address_space::stack)
       {
         throw std::runtime_error{"unsupported address space for call stack"};
       }
-      auto const new_offset = sp.offset - sizeof(std::uint64_t);
-      std::memcpy(vm.stack->data() + new_offset, &value, sizeof(value));
+      auto const new_offset = sp.offset - bytes.size();
+      std::memcpy(vm.stack->data() + new_offset, bytes.data(), bytes.size());
       vm.set_register_value(
         bytecode::sp,
         Pointer{Address_space::stack, new_offset}
       );
+    }
+
+    void push_u64(Virtual_machine &vm, std::uint64_t value)
+    {
+      push_bytes(vm, std::as_bytes(std::span{&value, std::size_t{1}}));
     }
 
     auto pop_u64(Virtual_machine &vm) -> std::uint64_t
@@ -402,6 +407,114 @@ namespace benson
       }
     }
 
+    template <typename T>
+    void push_value(Virtual_machine &vm, T value)
+    {
+      push_bytes(vm, std::as_bytes(std::span{&value, std::size_t{1}}));
+    }
+
+    void push_arg(
+      Virtual_machine &vm,
+      ir::Type const *type,
+      ir::Constant_value const &value
+    )
+    {
+      auto const require = [&]<typename T>() -> T {
+        auto const *typed = std::get_if<T>(&value);
+        if (!typed)
+        {
+          throw std::runtime_error{"argument type mismatch"};
+        }
+        return *typed;
+      };
+      std::visit(
+        [&]<typename T>(T const &) {
+          if constexpr (std::same_as<T, ir::Int8_type>)
+          {
+            push_value(vm, require.template operator()<std::int8_t>());
+          }
+          else if constexpr (std::same_as<T, ir::Int16_type>)
+          {
+            push_value(vm, require.template operator()<std::int16_t>());
+          }
+          else if constexpr (std::same_as<T, ir::Int32_type>)
+          {
+            push_value(vm, require.template operator()<std::int32_t>());
+          }
+          else if constexpr (std::same_as<T, ir::Int64_type>)
+          {
+            push_value(vm, require.template operator()<std::int64_t>());
+          }
+          else if constexpr (std::same_as<T, ir::Float32_type>)
+          {
+            push_value(vm, require.template operator()<float>());
+          }
+          else if constexpr (std::same_as<T, ir::Float64_type>)
+          {
+            push_value(vm, require.template operator()<double>());
+          }
+          else if constexpr (std::same_as<T, ir::Bool_type>)
+          {
+            push_value(vm, std::uint8_t{require.template operator()<bool>()});
+          }
+          else
+          {
+            throw std::runtime_error{"unsupported argument type"};
+          }
+        },
+        type->data
+      );
+    }
+
+    ir::Constant_value
+    decode_return(Virtual_machine const &vm, ir::Type const *type)
+    {
+      return std::visit(
+        [&]<typename T>(T const &) -> ir::Constant_value {
+          if constexpr (std::same_as<T, ir::Int8_type>)
+          {
+            return vm.get_register_value<std::int8_t>(bytecode::gpr(1));
+          }
+          else if constexpr (std::same_as<T, ir::Int16_type>)
+          {
+            return vm.get_register_value<std::int16_t>(bytecode::gpr(1));
+          }
+          else if constexpr (std::same_as<T, ir::Int32_type>)
+          {
+            return vm.get_register_value<std::int32_t>(bytecode::gpr(1));
+          }
+          else if constexpr (std::same_as<T, ir::Int64_type>)
+          {
+            return vm.get_register_value<std::int64_t>(bytecode::gpr(1));
+          }
+          else if constexpr (std::same_as<T, ir::Float32_type>)
+          {
+            return vm.get_register_value<float>(bytecode::gpr(1));
+          }
+          else if constexpr (std::same_as<T, ir::Float64_type>)
+          {
+            return vm.get_register_value<double>(bytecode::gpr(1));
+          }
+          else if constexpr (std::same_as<T, ir::Bool_type>)
+          {
+            return vm.get_register_value<bool>(bytecode::gpr(1));
+          }
+          else if constexpr (std::same_as<T, ir::Void_type>)
+          {
+            return ir::Void_value{};
+          }
+          else
+          {
+            throw std::runtime_error{"unsupported return type"};
+          }
+        },
+        type->data
+      );
+    }
+
+    constexpr std::byte halt_byte{static_cast<std::byte>(bytecode::Opcode::exit)
+    };
+
   } // namespace
 
   Virtual_machine::Virtual_machine()
@@ -417,11 +530,12 @@ namespace benson
     );
   }
 
-  void Virtual_machine::load(bytecode::Module const &module)
+  void Virtual_machine::load(bytecode::Module const &m)
   {
-    instruction_pointer = module.code.data();
-    constant_memory = module.constant_data.data();
-    constant_table = module.constant_table.data();
+    module = &m;
+    instruction_pointer = m.code.data();
+    constant_memory = m.constant_data.data();
+    constant_table = m.constant_table.data();
   }
 
   void Virtual_machine::run()
@@ -435,6 +549,44 @@ namespace benson
       }
       dispatch(opcode);
     }
+  }
+
+  ir::Constant_value Virtual_machine::call(
+    Spelling name,
+    std::span<ir::Constant_value const> args
+  )
+  {
+    if (!module)
+    {
+      throw std::runtime_error{"no module loaded"};
+    }
+    auto const it = module->functions.find(name);
+    if (it == module->functions.end())
+    {
+      throw std::runtime_error{"unknown function"};
+    }
+    auto const &fn = it->second;
+    if (args.size() != fn.parameter_types.size())
+    {
+      throw std::runtime_error{"argument count mismatch"};
+    }
+    auto const saved_ip = instruction_pointer;
+    set_register_value(
+      bytecode::sp,
+      Pointer{Address_space::stack, stack->size()}
+    );
+    for (auto i = std::size_t{}; i < args.size(); ++i)
+    {
+      push_arg(*this, fn.parameter_types[i], args[i]);
+    }
+    push_u64(
+      *this,
+      static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(&halt_byte))
+    );
+    instruction_pointer = module->code.data() + fn.position;
+    run();
+    instruction_pointer = saved_ip;
+    return decode_return(*this, fn.return_type);
   }
 
   void Virtual_machine::dispatch(bytecode::Opcode opcode)

@@ -23,7 +23,7 @@ namespace benson
   public:
     Virtual_machine();
 
-    Pointer lookup_constant(bytecode::Wide_constant k) const
+    Pointer lookup_constant(bytecode::Constant k) const
     {
       // TODO: check that k is in range
       return Pointer{
@@ -33,7 +33,7 @@ namespace benson
     }
 
     template <typename T>
-    [[nodiscard]] T get_constant_value(bytecode::Wide_constant k) const
+    [[nodiscard]] T get_constant_value(bytecode::Constant k) const
     {
       // TODO: check that k is in range
       auto const offset = constant_table[k.value];
@@ -56,7 +56,7 @@ namespace benson
     template <typename T>
     [[nodiscard]] T get_register_value(bytecode::Register reg) const
     {
-      auto const value = registers[static_cast<std::size_t>(reg)];
+      auto const value = registers[reg.value];
       if constexpr (std::same_as<T, float>)
       {
         return std::bit_cast<float>(static_cast<std::uint32_t>(value));
@@ -80,22 +80,19 @@ namespace benson
     {
       if constexpr (std::same_as<std::decay_t<T>, float>)
       {
-        registers[static_cast<std::size_t>(reg)] =
-          std::bit_cast<std::uint32_t>(value);
+        registers[reg.value] = std::bit_cast<std::uint32_t>(value);
       }
       else if constexpr (std::same_as<std::decay_t<T>, double>)
       {
-        registers[static_cast<std::size_t>(reg)] =
-          std::bit_cast<std::uint64_t>(value);
+        registers[reg.value] = std::bit_cast<std::uint64_t>(value);
       }
       else if constexpr (std::same_as<T, bool>)
       {
-        registers[static_cast<std::size_t>(reg)] = value ? 1 : 0;
+        registers[reg.value] = value ? 1 : 0;
       }
       else
       {
-        registers[static_cast<std::size_t>(reg)] =
-          static_cast<std::uint64_t>(value);
+        registers[reg.value] = static_cast<std::uint64_t>(value);
       }
     }
 
@@ -106,7 +103,7 @@ namespace benson
     std::byte const *instruction_pointer;
     std::byte const *constant_memory;
     std::ptrdiff_t const *constant_table;
-    std::array<std::uint64_t, 256> registers;
+    std::array<std::uint64_t, 65536> registers;
     std::unique_ptr<std::array<std::byte, 4096>> stack;
 
   private:

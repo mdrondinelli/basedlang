@@ -7,6 +7,13 @@
 
 namespace
 {
+  using benson::bytecode::gpr;
+  using benson::bytecode::sp;
+
+  auto reg_byte(benson::bytecode::Register reg) -> std::byte
+  {
+    return static_cast<std::byte>(reg.value);
+  }
 
   class Recording_binary_output_stream: public benson::Binary_output_stream
   {
@@ -45,19 +52,20 @@ TEST_CASE("Bytecode_writer emits exit opcode")
 TEST_CASE("Bytecode_writer emits unary sign extend instruction operands")
 {
   using enum benson::bytecode::Opcode;
-  using enum benson::bytecode::Register;
+  using benson::bytecode::gpr;
+  using benson::bytecode::sp;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_sx_32(gpr_254, gpr_255);
+  writer.emit_sx_32(gpr(254), gpr(255));
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(sx_32),
-                        static_cast<std::byte>(gpr_254),
-                        static_cast<std::byte>(gpr_255),
+                        reg_byte(gpr(254)),
+                        reg_byte(gpr(255)),
                       }
   );
 }
@@ -70,39 +78,40 @@ TEST_CASE("Bytecode_writer emits unary negate instruction operands")
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_neg_f64(Register::gpr_254, Register::gpr_255);
+  writer.emit_neg_f64(gpr(254), gpr(255));
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::neg_f64),
-                        static_cast<std::byte>(Register::gpr_254),
-                        static_cast<std::byte>(Register::gpr_255),
+                        reg_byte(gpr(254)),
+                        reg_byte(gpr(255)),
                       }
   );
 }
 
 TEST_CASE("Bytecode_writer emits lookup constant instruction operands")
 {
+  using benson::bytecode::Constant;
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
-  using benson::bytecode::Wide_constant;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_lookup_k(Register::gpr_1, Wide_constant{3});
-  writer.emit_lookup_k(Register::gpr_2, Wide_constant{0x0405});
+  writer.emit_lookup_k(gpr(1), Constant{3});
+  writer.emit_lookup_k(gpr(2), Constant{0x0405});
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::lookup_k),
-                        static_cast<std::byte>(Register::gpr_1),
+                        reg_byte(gpr(1)),
                         std::byte{0x03},
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::lookup_k),
-                        static_cast<std::byte>(Register::gpr_2),
+                        reg_byte(gpr(2)),
+                        std::byte{0x00},
                         std::byte{0x05},
                         std::byte{0x04},
                       }
@@ -111,29 +120,30 @@ TEST_CASE("Bytecode_writer emits lookup constant instruction operands")
 
 TEST_CASE("Bytecode_writer emits move instruction operands")
 {
+  using benson::bytecode::Immediate;
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
-  using benson::bytecode::Wide_immediate;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_mov(Register::gpr_1, Register::gpr_2);
-  writer.emit_mov_i(Register::gpr_3, Wide_immediate{-4});
-  writer.emit_mov_i(Register::gpr_4, Wide_immediate{0x0102});
+  writer.emit_mov(gpr(1), gpr(2));
+  writer.emit_mov_i(gpr(3), Immediate{-4});
+  writer.emit_mov_i(gpr(4), Immediate{0x0102});
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::mov),
-                        static_cast<std::byte>(Register::gpr_1),
-                        static_cast<std::byte>(Register::gpr_2),
+                        reg_byte(gpr(1)),
+                        reg_byte(gpr(2)),
                         static_cast<std::byte>(Opcode::mov_i),
-                        static_cast<std::byte>(Register::gpr_3),
+                        reg_byte(gpr(3)),
                         std::byte{0xFC},
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::mov_i),
-                        static_cast<std::byte>(Register::gpr_4),
+                        reg_byte(gpr(4)),
+                        std::byte{0x00},
                         std::byte{0x02},
                         std::byte{0x01},
                       }
@@ -148,20 +158,85 @@ TEST_CASE("Bytecode_writer emits binary arithmetic instruction operands")
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_add_i32(Register::gpr_1, Register::gpr_2, Register::gpr_3);
-  writer.emit_mod_i64(Register::gpr_4, Register::gpr_5, Register::gpr_6);
+  writer.emit_add_i32(gpr(1), gpr(2), gpr(3));
+  writer.emit_mod_i64(gpr(4), gpr(5), gpr(6));
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::add_i32),
-                        static_cast<std::byte>(Register::gpr_1),
-                        static_cast<std::byte>(Register::gpr_2),
-                        static_cast<std::byte>(Register::gpr_3),
+                        reg_byte(gpr(1)),
+                        reg_byte(gpr(2)),
+                        reg_byte(gpr(3)),
                         static_cast<std::byte>(Opcode::mod_i64),
-                        static_cast<std::byte>(Register::gpr_4),
-                        static_cast<std::byte>(Register::gpr_5),
-                        static_cast<std::byte>(Register::gpr_6),
+                        reg_byte(gpr(4)),
+                        reg_byte(gpr(5)),
+                        reg_byte(gpr(6)),
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits wide register instruction operands")
+{
+  using benson::bytecode::Constant;
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_add_i32(gpr(256), gpr(257), gpr(258));
+  writer.emit_mov_i(gpr(300), Immediate{3});
+  writer.emit_lookup_k(gpr(301), Constant{4});
+  writer.emit_load_32(gpr(302), sp, Immediate{0});
+  writer.emit_store_32(gpr(302), sp, Immediate{0});
+  writer.emit_jnz(gpr(300), std::ptrdiff_t{43});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(add_i32),
+                        std::byte{0x00},
+                        std::byte{0x01},
+                        std::byte{0x01},
+                        std::byte{0x01},
+                        std::byte{0x02},
+                        std::byte{0x01},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(mov_i),
+                        std::byte{0x2C},
+                        std::byte{0x01},
+                        std::byte{0x03},
+                        std::byte{0x00},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(lookup_k),
+                        std::byte{0x2D},
+                        std::byte{0x01},
+                        std::byte{0x04},
+                        std::byte{0x00},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(load_32),
+                        std::byte{0x2E},
+                        std::byte{0x01},
+                        std::byte{0x00},
+                        std::byte{0x00},
+                        std::byte{0x00},
+                        std::byte{0x00},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(store_32),
+                        std::byte{0x2E},
+                        std::byte{0x01},
+                        std::byte{0x00},
+                        std::byte{0x00},
+                        std::byte{0x00},
+                        std::byte{0x00},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(jnz_i),
+                        std::byte{0x2C},
+                        std::byte{0x01},
+                        std::byte{0x01},
+                        std::byte{0x00},
                       }
   );
 }
@@ -174,20 +249,21 @@ TEST_CASE("Bytecode_writer emits jnz_i instruction operands")
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_jnz(Register::gpr_3, std::ptrdiff_t{5});
-  writer.emit_jnz(Register::gpr_4, std::ptrdiff_t{0x0108});
+  writer.emit_jnz(gpr(3), std::ptrdiff_t{5});
+  writer.emit_jnz(gpr(4), std::ptrdiff_t{0x0108});
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::jnz_i),
-                        static_cast<std::byte>(Register::gpr_3),
+                        reg_byte(gpr(3)),
                         std::byte{0x02},
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::jnz_i),
-                        static_cast<std::byte>(Register::gpr_4),
+                        reg_byte(gpr(4)),
                         std::byte{0x00},
-                        std::byte{0x01},
+                        std::byte{0xFF},
+                        std::byte{0x00},
                       }
   );
 }
@@ -221,36 +297,38 @@ TEST_CASE(
   "Bytecode_writer emits binary arithmetic immediate instruction operands"
 )
 {
+  using benson::bytecode::Immediate;
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
-  using benson::bytecode::Wide_immediate;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_add_i32_i(Register::gpr_1, Register::gpr_2, Wide_immediate{-3});
-  writer
-    .emit_mul_i32_i(Register::gpr_4, Register::gpr_5, Wide_immediate{0x0102});
-  writer
-    .emit_mod_i64_i(Register::gpr_7, Register::gpr_8, Wide_immediate{-0x0203});
+  writer.emit_add_i32_i(gpr(1), gpr(2), Immediate{-3});
+  writer.emit_mul_i32_i(gpr(4), gpr(5), Immediate{0x0102});
+  writer.emit_mod_i64_i(gpr(7), gpr(8), Immediate{-0x0203});
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::add_i32_i),
-                        static_cast<std::byte>(Register::gpr_1),
-                        static_cast<std::byte>(Register::gpr_2),
+                        reg_byte(gpr(1)),
+                        reg_byte(gpr(2)),
                         std::byte{0xFD},
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::mul_i32_i),
-                        static_cast<std::byte>(Register::gpr_4),
-                        static_cast<std::byte>(Register::gpr_5),
+                        reg_byte(gpr(4)),
+                        std::byte{0x00},
+                        reg_byte(gpr(5)),
+                        std::byte{0x00},
                         std::byte{0x02},
                         std::byte{0x01},
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::mod_i64_i),
-                        static_cast<std::byte>(Register::gpr_7),
-                        static_cast<std::byte>(Register::gpr_8),
+                        reg_byte(gpr(7)),
+                        std::byte{0x00},
+                        reg_byte(gpr(8)),
+                        std::byte{0x00},
                         std::byte{0xFD},
                         std::byte{0xFD},
                       }
@@ -261,31 +339,31 @@ TEST_CASE(
   "Bytecode_writer emits binary arithmetic constant instruction operands"
 )
 {
+  using benson::bytecode::Constant;
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
-  using benson::bytecode::Wide_constant;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_sub_i32_k(Register::gpr_1, Register::gpr_2, Wide_constant{3});
-  writer.emit_div_f64_k(Register::gpr_4, Register::gpr_5, Wide_constant{6});
-  writer.emit_mod_i32_k(Register::gpr_7, Register::gpr_8, Wide_constant{9});
+  writer.emit_sub_i32_k(gpr(1), gpr(2), Constant{3});
+  writer.emit_div_f64_k(gpr(4), gpr(5), Constant{6});
+  writer.emit_mod_i32_k(gpr(7), gpr(8), Constant{9});
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::sub_i32_k),
-                        static_cast<std::byte>(Register::gpr_1),
-                        static_cast<std::byte>(Register::gpr_2),
+                        reg_byte(gpr(1)),
+                        reg_byte(gpr(2)),
                         std::byte{3},
                         static_cast<std::byte>(Opcode::div_f64_k),
-                        static_cast<std::byte>(Register::gpr_4),
-                        static_cast<std::byte>(Register::gpr_5),
+                        reg_byte(gpr(4)),
+                        reg_byte(gpr(5)),
                         std::byte{6},
                         static_cast<std::byte>(Opcode::mod_i32_k),
-                        static_cast<std::byte>(Register::gpr_7),
-                        static_cast<std::byte>(Register::gpr_8),
+                        reg_byte(gpr(7)),
+                        reg_byte(gpr(8)),
                         std::byte{9},
                       }
   );
@@ -295,39 +373,42 @@ TEST_CASE(
   "Bytecode_writer emits wide binary arithmetic constant instruction operands"
 )
 {
+  using benson::bytecode::Constant;
   using benson::bytecode::Opcode;
   using benson::bytecode::Register;
-  using benson::bytecode::Wide_constant;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer
-    .emit_sub_i32_k(Register::gpr_1, Register::gpr_2, Wide_constant{0x0304});
-  writer
-    .emit_div_f64_k(Register::gpr_4, Register::gpr_5, Wide_constant{0x0607});
-  writer
-    .emit_mod_i32_k(Register::gpr_7, Register::gpr_8, Wide_constant{0x090A});
+  writer.emit_sub_i32_k(gpr(1), gpr(2), Constant{0x0304});
+  writer.emit_div_f64_k(gpr(4), gpr(5), Constant{0x0607});
+  writer.emit_mod_i32_k(gpr(7), gpr(8), Constant{0x090A});
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::sub_i32_k),
-                        static_cast<std::byte>(Register::gpr_1),
-                        static_cast<std::byte>(Register::gpr_2),
+                        reg_byte(gpr(1)),
+                        std::byte{0x00},
+                        reg_byte(gpr(2)),
+                        std::byte{0x00},
                         std::byte{0x04},
                         std::byte{0x03},
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::div_f64_k),
-                        static_cast<std::byte>(Register::gpr_4),
-                        static_cast<std::byte>(Register::gpr_5),
+                        reg_byte(gpr(4)),
+                        std::byte{0x00},
+                        reg_byte(gpr(5)),
+                        std::byte{0x00},
                         std::byte{0x07},
                         std::byte{0x06},
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::mod_i32_k),
-                        static_cast<std::byte>(Register::gpr_7),
-                        static_cast<std::byte>(Register::gpr_8),
+                        reg_byte(gpr(7)),
+                        std::byte{0x00},
+                        reg_byte(gpr(8)),
+                        std::byte{0x00},
                         std::byte{0x0A},
                         std::byte{0x09},
                       }
@@ -337,35 +418,36 @@ TEST_CASE(
 TEST_CASE("Bytecode_writer emits binary comparison instruction operands")
 {
   using enum benson::bytecode::Opcode;
-  using enum benson::bytecode::Register;
+  using benson::bytecode::gpr;
+  using benson::bytecode::sp;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_cmp_eq_i32(gpr_1, gpr_2, gpr_3);
-  writer.emit_cmp_ne_i64(gpr_4, gpr_5, gpr_6);
-  writer.emit_cmp_lt_f32(gpr_7, gpr_8, gpr_9);
-  writer.emit_cmp_ge_f64(gpr_10, gpr_11, gpr_12);
+  writer.emit_cmp_eq_i32(gpr(1), gpr(2), gpr(3));
+  writer.emit_cmp_ne_i64(gpr(4), gpr(5), gpr(6));
+  writer.emit_cmp_lt_f32(gpr(7), gpr(8), gpr(9));
+  writer.emit_cmp_ge_f64(gpr(10), gpr(11), gpr(12));
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(cmp_eq_i32),
-                        static_cast<std::byte>(gpr_1),
-                        static_cast<std::byte>(gpr_2),
-                        static_cast<std::byte>(gpr_3),
+                        reg_byte(gpr(1)),
+                        reg_byte(gpr(2)),
+                        reg_byte(gpr(3)),
                         static_cast<std::byte>(cmp_ne_i64),
-                        static_cast<std::byte>(gpr_4),
-                        static_cast<std::byte>(gpr_5),
-                        static_cast<std::byte>(gpr_6),
+                        reg_byte(gpr(4)),
+                        reg_byte(gpr(5)),
+                        reg_byte(gpr(6)),
                         static_cast<std::byte>(cmp_lt_f32),
-                        static_cast<std::byte>(gpr_7),
-                        static_cast<std::byte>(gpr_8),
-                        static_cast<std::byte>(gpr_9),
+                        reg_byte(gpr(7)),
+                        reg_byte(gpr(8)),
+                        reg_byte(gpr(9)),
                         static_cast<std::byte>(cmp_ge_f64),
-                        static_cast<std::byte>(gpr_10),
-                        static_cast<std::byte>(gpr_11),
-                        static_cast<std::byte>(gpr_12),
+                        reg_byte(gpr(10)),
+                        reg_byte(gpr(11)),
+                        reg_byte(gpr(12)),
                       }
   );
 }
@@ -375,40 +457,45 @@ TEST_CASE(
   "operands"
 )
 {
-  using benson::bytecode::Wide_constant;
-  using benson::bytecode::Wide_immediate;
+  using benson::bytecode::Constant;
+  using benson::bytecode::Immediate;
   using enum benson::bytecode::Opcode;
-  using enum benson::bytecode::Register;
+  using benson::bytecode::gpr;
+  using benson::bytecode::sp;
 
   auto stream = Recording_binary_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_cmp_eq_i32_k(gpr_1, gpr_2, Wide_constant{3});
-  writer.emit_cmp_ne_i64_i(gpr_4, gpr_5, Wide_immediate{-7});
-  writer.emit_cmp_lt_f32_k(gpr_6, gpr_7, Wide_constant{0x0102});
-  writer.emit_cmp_ge_i32_i(gpr_8, gpr_9, Wide_immediate{0x0304});
+  writer.emit_cmp_eq_i32_k(gpr(1), gpr(2), Constant{3});
+  writer.emit_cmp_ne_i64_i(gpr(4), gpr(5), Immediate{-7});
+  writer.emit_cmp_lt_f32_k(gpr(6), gpr(7), Constant{0x0102});
+  writer.emit_cmp_ge_i32_i(gpr(8), gpr(9), Immediate{0x0304});
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(cmp_eq_i32_k),
-                        static_cast<std::byte>(gpr_1),
-                        static_cast<std::byte>(gpr_2),
+                        reg_byte(gpr(1)),
+                        reg_byte(gpr(2)),
                         std::byte{0x03},
                         static_cast<std::byte>(cmp_ne_i64_i),
-                        static_cast<std::byte>(gpr_4),
-                        static_cast<std::byte>(gpr_5),
+                        reg_byte(gpr(4)),
+                        reg_byte(gpr(5)),
                         std::byte{0xF9},
                         static_cast<std::byte>(wide),
                         static_cast<std::byte>(cmp_lt_f32_k),
-                        static_cast<std::byte>(gpr_6),
-                        static_cast<std::byte>(gpr_7),
+                        reg_byte(gpr(6)),
+                        std::byte{0x00},
+                        reg_byte(gpr(7)),
+                        std::byte{0x00},
                         std::byte{0x02},
                         std::byte{0x01},
                         static_cast<std::byte>(wide),
                         static_cast<std::byte>(cmp_ge_i32_i),
-                        static_cast<std::byte>(gpr_8),
-                        static_cast<std::byte>(gpr_9),
+                        reg_byte(gpr(8)),
+                        std::byte{0x00},
+                        reg_byte(gpr(9)),
+                        std::byte{0x00},
                         std::byte{0x04},
                         std::byte{0x03},
                       }

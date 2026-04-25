@@ -21,31 +21,55 @@ namespace benson
     template <Operand_width width>
     bytecode::Register read_register(std::byte const *&instruction_pointer)
     {
-      auto const size = width == Operand_width::wide ? 2 : 1;
-      auto value = bytecode::Register::Underlying_type{};
-      std::memcpy(&value, instruction_pointer, size);
-      instruction_pointer += size;
-      return bytecode::Register{value};
+      if constexpr (width == Operand_width::wide)
+      {
+        auto value = bytecode::Register::Underlying_type{};
+        std::memcpy(&value, instruction_pointer, 2);
+        instruction_pointer += 2;
+        return bytecode::Register{value};
+      }
+      else
+      {
+        return bytecode::Register{
+          static_cast<std::uint8_t>(*instruction_pointer++)
+        };
+      }
     }
 
     template <Operand_width width>
     bytecode::Constant read_constant(std::byte const *&instruction_pointer)
     {
-      auto const size = width == Operand_width::wide ? 2 : 1;
-      auto value = bytecode::Constant::Underlying_type{};
-      std::memcpy(&value, instruction_pointer, size);
-      instruction_pointer += size;
-      return bytecode::Constant{value};
+      if constexpr (width == Operand_width::wide)
+      {
+        auto value = bytecode::Constant::Underlying_type{};
+        std::memcpy(&value, instruction_pointer, 2);
+        instruction_pointer += 2;
+        return bytecode::Constant{value};
+      }
+      else
+      {
+        return bytecode::Constant{
+          static_cast<std::uint8_t>(*instruction_pointer++)
+        };
+      }
     }
 
     template <Operand_width width>
     bytecode::Immediate read_immediate(std::byte const *&instruction_pointer)
     {
-      auto const size = width == Operand_width::wide ? 2 : 1;
-      auto value = bytecode::Immediate::Underlying_type{};
-      std::memcpy(&value, instruction_pointer, size);
-      instruction_pointer += size;
-      return bytecode::Immediate{value};
+      if constexpr (width == Operand_width::wide)
+      {
+        auto value = bytecode::Immediate::Underlying_type{};
+        std::memcpy(&value, instruction_pointer, 2);
+        instruction_pointer += 2;
+        return bytecode::Immediate{value};
+      }
+      else
+      {
+        return bytecode::Immediate{
+          static_cast<std::int8_t>(*instruction_pointer++)
+        };
+      }
     }
 
     template <Operand_width width>

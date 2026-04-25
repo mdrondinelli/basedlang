@@ -18,106 +18,83 @@ namespace benson
       wide,
     };
 
-    bytecode::Register
-    read_register(std::byte const *&instruction_pointer, Operand_width width)
+    template <Operand_width width>
+    bytecode::Register read_register(std::byte const *&instruction_pointer)
     {
-      if (width == Operand_width::narrow)
-      {
-        return bytecode::Register{
-          static_cast<std::uint8_t>(*instruction_pointer++)
-        };
-      }
+      auto const size = width == Operand_width::wide ? 2 : 1;
       auto value = bytecode::Register::Underlying_type{};
-      std::memcpy(&value, instruction_pointer, sizeof(value));
-      instruction_pointer += sizeof(value);
+      std::memcpy(&value, instruction_pointer, size);
+      instruction_pointer += size;
       return bytecode::Register{value};
     }
 
-    bytecode::Constant
-    read_constant(std::byte const *&instruction_pointer, Operand_width width)
+    template <Operand_width width>
+    bytecode::Constant read_constant(std::byte const *&instruction_pointer)
     {
-      if (width == Operand_width::narrow)
-      {
-        return bytecode::Constant{
-          static_cast<std::uint8_t>(*instruction_pointer++)
-        };
-      }
+      auto const size = width == Operand_width::wide ? 2 : 1;
       auto value = bytecode::Constant::Underlying_type{};
-      std::memcpy(&value, instruction_pointer, sizeof(value));
-      instruction_pointer += sizeof(value);
+      std::memcpy(&value, instruction_pointer, size);
+      instruction_pointer += size;
       return bytecode::Constant{value};
     }
 
-    bytecode::Immediate
-    read_immediate(std::byte const *&instruction_pointer, Operand_width width)
+    template <Operand_width width>
+    bytecode::Immediate read_immediate(std::byte const *&instruction_pointer)
     {
-      if (width == Operand_width::narrow)
-      {
-        return bytecode::Immediate{
-          static_cast<std::int8_t>(*instruction_pointer++)
-        };
-      }
+      auto const size = width == Operand_width::wide ? 2 : 1;
       auto value = bytecode::Immediate::Underlying_type{};
-      std::memcpy(&value, instruction_pointer, sizeof(value));
-      instruction_pointer += sizeof(value);
+      std::memcpy(&value, instruction_pointer, size);
+      instruction_pointer += size;
       return bytecode::Immediate{value};
     }
 
+    template <Operand_width width>
     void run_lookup_k(
       std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
+      Virtual_machine &vm
     )
     {
-      auto const dst = read_register(instruction_pointer, width);
-      auto const k = read_constant(instruction_pointer, width);
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const k = read_constant<width>(instruction_pointer);
       vm.set_register_value(dst, vm.lookup_constant(k));
     }
 
-    void run_mov(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
-    )
+    template <Operand_width width>
+    void run_mov(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst = read_register(instruction_pointer, width);
-      auto const src = read_register(instruction_pointer, width);
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const src = read_register<width>(instruction_pointer);
       (*vm.registers)[dst.value] = (*vm.registers)[src.value];
     }
 
-    void run_mov_i(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
-    )
+    template <Operand_width width>
+    void run_mov_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst = read_register(instruction_pointer, width);
-      auto const src = read_immediate(instruction_pointer, width);
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const src = read_immediate<width>(instruction_pointer);
       vm.set_register_value(dst, src.value);
     }
 
-    template <typename CppType, typename Fn>
+    template <Operand_width width, typename CppType, typename Fn>
     void run_register_unary(
       std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
+      Virtual_machine &vm
     )
     {
-      auto const dst = read_register(instruction_pointer, width);
-      auto const src = read_register(instruction_pointer, width);
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const src = read_register<width>(instruction_pointer);
       vm.set_register_value(dst, Fn{}(vm.get_register_value<CppType>(src)));
     }
 
-    template <typename OperandType, typename Fn>
+    template <Operand_width width, typename OperandType, typename Fn>
     void run_register_binary(
       std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
+      Virtual_machine &vm
     )
     {
-      auto const dst = read_register(instruction_pointer, width);
-      auto const lhs = read_register(instruction_pointer, width);
-      auto const rhs = read_register(instruction_pointer, width);
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const lhs = read_register<width>(instruction_pointer);
+      auto const rhs = read_register<width>(instruction_pointer);
       vm.set_register_value(
         dst,
         Fn{}(
@@ -127,16 +104,15 @@ namespace benson
       );
     }
 
-    template <typename OperandType, typename Fn>
+    template <Operand_width width, typename OperandType, typename Fn>
     void run_constant_binary(
       std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
+      Virtual_machine &vm
     )
     {
-      auto const dst = read_register(instruction_pointer, width);
-      auto const lhs = read_register(instruction_pointer, width);
-      auto const rhs = read_constant(instruction_pointer, width);
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const lhs = read_register<width>(instruction_pointer);
+      auto const rhs = read_constant<width>(instruction_pointer);
       vm.set_register_value(
         dst,
         Fn{}(
@@ -146,16 +122,15 @@ namespace benson
       );
     }
 
-    template <typename OperandType, typename Fn>
+    template <Operand_width width, typename OperandType, typename Fn>
     void run_immediate_binary(
       std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
+      Virtual_machine &vm
     )
     {
-      auto const dst = read_register(instruction_pointer, width);
-      auto const lhs = read_register(instruction_pointer, width);
-      auto const rhs = read_immediate(instruction_pointer, width);
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const lhs = read_register<width>(instruction_pointer);
+      auto const rhs = read_immediate<width>(instruction_pointer);
       vm.set_register_value(
         dst,
         Fn{}(
@@ -282,16 +257,12 @@ namespace benson
       }
     };
 
-    template <std::size_t N>
-    void run_load(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
-    )
+    template <Operand_width width, std::size_t N>
+    void run_load(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst = read_register(instruction_pointer, width);
-      auto const base = read_register(instruction_pointer, width);
-      auto const offset = read_immediate(instruction_pointer, width);
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const base = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
 
       auto [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
@@ -314,16 +285,12 @@ namespace benson
       (*vm.registers)[dst.value] = value;
     }
 
-    template <std::size_t N>
-    void run_store(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
-    )
+    template <Operand_width width, std::size_t N>
+    void run_store(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const src = read_register(instruction_pointer, width);
-      auto const base = read_register(instruction_pointer, width);
-      auto const offset = read_immediate(instruction_pointer, width);
+      auto const src = read_register<width>(instruction_pointer);
+      auto const base = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
 
       auto const [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
@@ -344,9 +311,10 @@ namespace benson
       );
     }
 
-    void run_jmp_i(std::byte const *&instruction_pointer, Operand_width width)
+    template <Operand_width width>
+    void run_jmp_i(std::byte const *&instruction_pointer)
     {
-      auto const offset = read_immediate(instruction_pointer, width);
+      auto const offset = read_immediate<width>(instruction_pointer);
       instruction_pointer += offset.value;
     }
 
@@ -381,13 +349,10 @@ namespace benson
       return value;
     }
 
-    void run_call_i(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
-    )
+    template <Operand_width width>
+    void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const offset = read_immediate(instruction_pointer, width);
+      auto const offset = read_immediate<width>(instruction_pointer);
       push_u64(
         vm,
         static_cast<std::uint64_t>(
@@ -402,14 +367,11 @@ namespace benson
       instruction_pointer = reinterpret_cast<std::byte const *>(pop_u64(vm));
     }
 
-    void run_jnz_i(
-      std::byte const *&instruction_pointer,
-      Virtual_machine &vm,
-      Operand_width width
-    )
+    template <Operand_width width>
+    void run_jnz_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const src = read_register(instruction_pointer, width);
-      auto const offset = read_immediate(instruction_pointer, width);
+      auto const src = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
       if (vm.get_register_value<std::int32_t>(src) != 0)
       {
         instruction_pointer += offset.value;
@@ -459,82 +421,78 @@ namespace benson
       wide_dispatch(static_cast<bytecode::Opcode>(*instruction_pointer++));
       break;
     case bytecode::Opcode::jmp_i:
-      run_jmp_i(instruction_pointer, Operand_width::narrow);
+      run_jmp_i<Operand_width::narrow>(instruction_pointer);
       break;
     case bytecode::Opcode::call_i:
-      run_call_i(instruction_pointer, *this, Operand_width::narrow);
+      run_call_i<Operand_width::narrow>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::ret:
       run_ret(instruction_pointer, *this);
       break;
     case bytecode::Opcode::jnz_i:
-      run_jnz_i(instruction_pointer, *this, Operand_width::narrow);
+      run_jnz_i<Operand_width::narrow>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::lookup_k:
-      run_lookup_k(instruction_pointer, *this, Operand_width::narrow);
+      run_lookup_k<Operand_width::narrow>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::mov:
-      run_mov(instruction_pointer, *this, Operand_width::narrow);
+      run_mov<Operand_width::narrow>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::mov_i:
-      run_mov_i(instruction_pointer, *this, Operand_width::narrow);
+      run_mov_i<Operand_width::narrow>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_8:
-      run_load<1>(instruction_pointer, *this, Operand_width::narrow);
+      run_load<Operand_width::narrow, 1>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_16:
-      run_load<2>(instruction_pointer, *this, Operand_width::narrow);
+      run_load<Operand_width::narrow, 2>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_32:
-      run_load<4>(instruction_pointer, *this, Operand_width::narrow);
+      run_load<Operand_width::narrow, 4>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_64:
-      run_load<8>(instruction_pointer, *this, Operand_width::narrow);
+      run_load<Operand_width::narrow, 8>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::store_8:
-      run_store<1>(instruction_pointer, *this, Operand_width::narrow);
+      run_store<Operand_width::narrow, 1>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::store_16:
-      run_store<2>(instruction_pointer, *this, Operand_width::narrow);
+      run_store<Operand_width::narrow, 2>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::store_32:
-      run_store<4>(instruction_pointer, *this, Operand_width::narrow);
+      run_store<Operand_width::narrow, 4>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::store_64:
-      run_store<8>(instruction_pointer, *this, Operand_width::narrow);
+      run_store<Operand_width::narrow, 8>(instruction_pointer, *this);
       break;
 
-#define UNARY_CASE(opcode, type, fn) \
-  case bytecode::Opcode::opcode:     \
-    run_register_unary<type, fn>(    \
-      instruction_pointer,           \
-      *this,                         \
-      Operand_width::narrow          \
-    );                               \
+#define UNARY_CASE(opcode, type, fn)                     \
+  case bytecode::Opcode::opcode:                         \
+    run_register_unary<Operand_width::narrow, type, fn>( \
+      instruction_pointer,                               \
+      *this                                              \
+    );                                                   \
     break;
-#define REGISTER_BINARY_CASE(opcode, type, fn) \
-  case bytecode::Opcode::opcode:               \
-    run_register_binary<type, fn>(             \
-      instruction_pointer,                     \
-      *this,                                   \
-      Operand_width::narrow                    \
-    );                                         \
+#define REGISTER_BINARY_CASE(opcode, type, fn)            \
+  case bytecode::Opcode::opcode:                          \
+    run_register_binary<Operand_width::narrow, type, fn>( \
+      instruction_pointer,                                \
+      *this                                               \
+    );                                                    \
     break;
-#define CONSTANT_BINARY_CASE(opcode, type, fn) \
-  case bytecode::Opcode::opcode:               \
-    run_constant_binary<type, fn>(             \
-      instruction_pointer,                     \
-      *this,                                   \
-      Operand_width::narrow                    \
-    );                                         \
+#define CONSTANT_BINARY_CASE(opcode, type, fn)            \
+  case bytecode::Opcode::opcode:                          \
+    run_constant_binary<Operand_width::narrow, type, fn>( \
+      instruction_pointer,                                \
+      *this                                               \
+    );                                                    \
     break;
-#define IMMEDIATE_BINARY_CASE(opcode, type, fn) \
-  case bytecode::Opcode::opcode:                \
-    run_immediate_binary<type, fn>(             \
-      instruction_pointer,                      \
-      *this,                                    \
-      Operand_width::narrow                     \
-    );                                          \
+#define IMMEDIATE_BINARY_CASE(opcode, type, fn)            \
+  case bytecode::Opcode::opcode:                           \
+    run_immediate_binary<Operand_width::narrow, type, fn>( \
+      instruction_pointer,                                 \
+      *this                                                \
+    );                                                     \
     break;
 
       // sx
@@ -678,79 +636,75 @@ namespace benson
     switch (opcode)
     {
     case bytecode::Opcode::jmp_i:
-      run_jmp_i(instruction_pointer, Operand_width::wide);
+      run_jmp_i<Operand_width::wide>(instruction_pointer);
       break;
     case bytecode::Opcode::call_i:
-      run_call_i(instruction_pointer, *this, Operand_width::wide);
+      run_call_i<Operand_width::wide>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::jnz_i:
-      run_jnz_i(instruction_pointer, *this, Operand_width::wide);
+      run_jnz_i<Operand_width::wide>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::lookup_k:
-      run_lookup_k(instruction_pointer, *this, Operand_width::wide);
+      run_lookup_k<Operand_width::wide>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::mov:
-      run_mov(instruction_pointer, *this, Operand_width::wide);
+      run_mov<Operand_width::wide>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::mov_i:
-      run_mov_i(instruction_pointer, *this, Operand_width::wide);
+      run_mov_i<Operand_width::wide>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_8:
-      run_load<1>(instruction_pointer, *this, Operand_width::wide);
+      run_load<Operand_width::wide, 1>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_16:
-      run_load<2>(instruction_pointer, *this, Operand_width::wide);
+      run_load<Operand_width::wide, 2>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_32:
-      run_load<4>(instruction_pointer, *this, Operand_width::wide);
+      run_load<Operand_width::wide, 4>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_64:
-      run_load<8>(instruction_pointer, *this, Operand_width::wide);
+      run_load<Operand_width::wide, 8>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::store_8:
-      run_store<1>(instruction_pointer, *this, Operand_width::wide);
+      run_store<Operand_width::wide, 1>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::store_16:
-      run_store<2>(instruction_pointer, *this, Operand_width::wide);
+      run_store<Operand_width::wide, 2>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::store_32:
-      run_store<4>(instruction_pointer, *this, Operand_width::wide);
+      run_store<Operand_width::wide, 4>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::store_64:
-      run_store<8>(instruction_pointer, *this, Operand_width::wide);
+      run_store<Operand_width::wide, 8>(instruction_pointer, *this);
       break;
 
-#define UNARY_CASE(opcode, type, fn) \
-  case bytecode::Opcode::opcode:     \
-    run_register_unary<type, fn>(    \
-      instruction_pointer,           \
-      *this,                         \
-      Operand_width::wide            \
-    );                               \
+#define UNARY_CASE(opcode, type, fn)                   \
+  case bytecode::Opcode::opcode:                       \
+    run_register_unary<Operand_width::wide, type, fn>( \
+      instruction_pointer,                             \
+      *this                                            \
+    );                                                 \
     break;
-#define REGISTER_BINARY_CASE(opcode, type, fn) \
-  case bytecode::Opcode::opcode:               \
-    run_register_binary<type, fn>(             \
-      instruction_pointer,                     \
-      *this,                                   \
-      Operand_width::wide                      \
-    );                                         \
+#define REGISTER_BINARY_CASE(opcode, type, fn)          \
+  case bytecode::Opcode::opcode:                        \
+    run_register_binary<Operand_width::wide, type, fn>( \
+      instruction_pointer,                              \
+      *this                                             \
+    );                                                  \
     break;
-#define CONSTANT_BINARY_CASE(opcode, type, fn) \
-  case bytecode::Opcode::opcode:               \
-    run_constant_binary<type, fn>(             \
-      instruction_pointer,                     \
-      *this,                                   \
-      Operand_width::wide                      \
-    );                                         \
+#define CONSTANT_BINARY_CASE(opcode, type, fn)          \
+  case bytecode::Opcode::opcode:                        \
+    run_constant_binary<Operand_width::wide, type, fn>( \
+      instruction_pointer,                              \
+      *this                                             \
+    );                                                  \
     break;
-#define IMMEDIATE_BINARY_CASE(opcode, type, fn) \
-  case bytecode::Opcode::opcode:                \
-    run_immediate_binary<type, fn>(             \
-      instruction_pointer,                      \
-      *this,                                    \
-      Operand_width::wide                       \
-    );                                          \
+#define IMMEDIATE_BINARY_CASE(opcode, type, fn)          \
+  case bytecode::Opcode::opcode:                         \
+    run_immediate_binary<Operand_width::wide, type, fn>( \
+      instruction_pointer,                               \
+      *this                                              \
+    );                                                   \
     break;
 
       // sx

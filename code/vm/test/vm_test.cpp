@@ -174,6 +174,35 @@ TEST_CASE("Virtual_machine runs negation program emitted by Module_builder")
   CHECK(vm.instruction_pointer == module.code.data() + 4);
 }
 
+TEST_CASE("Virtual_machine runs move program emitted by Module_builder")
+{
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Wide_immediate;
+  using enum benson::bytecode::Register;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  writer.emit_mov(gpr_1, gpr_2);
+  writer.emit_mov_i(gpr_3, Wide_immediate{-4});
+  writer.emit_mov_i(gpr_4, Wide_immediate{0x0102});
+  writer.emit_exit();
+  auto const module = builder.build();
+
+  auto vm = benson::Virtual_machine{};
+  vm.load(module);
+  vm.set_register_value<double>(gpr_2, -0.0);
+
+  vm.run();
+
+  CHECK(
+    std::bit_cast<std::uint64_t>(vm.get_register_value<double>(gpr_1)) ==
+    std::bit_cast<std::uint64_t>(-0.0)
+  );
+  CHECK(vm.get_register_value<std::int32_t>(gpr_3) == -4);
+  CHECK(vm.get_register_value<std::int32_t>(gpr_4) == 0x0102);
+  CHECK(vm.instruction_pointer == module.code.data() + 12);
+}
+
 TEST_CASE(
   "Virtual_machine runs integer arithmetic program emitted by Module_builder"
 )

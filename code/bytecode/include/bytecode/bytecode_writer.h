@@ -111,6 +111,10 @@ namespace benson::bytecode
 
     void emit_store_64(Register src, Register base, Wide_immediate offset);
 
+    void emit_mov(Register dst, Register src);
+
+    void emit_mov_i(Register dst, Wide_immediate src);
+
     void emit_sx_8(Register dst, Register src);
 
     void emit_sx_16(Register dst, Register src);
@@ -353,6 +357,12 @@ namespace benson::bytecode
       Opcode opcode,
       Register dst,
       Register src
+    );
+
+    void emit_unary_immediate_instruction(
+      Opcode opcode,
+      Register dst,
+      Wide_immediate src
     );
 
     void emit_binary_register_instruction(

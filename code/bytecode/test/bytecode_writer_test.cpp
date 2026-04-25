@@ -109,6 +109,37 @@ TEST_CASE("Bytecode_writer emits lookup constant instruction operands")
   );
 }
 
+TEST_CASE("Bytecode_writer emits move instruction operands")
+{
+  using benson::bytecode::Opcode;
+  using benson::bytecode::Register;
+  using benson::bytecode::Wide_immediate;
+
+  auto stream = Recording_binary_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_mov(Register::gpr_1, Register::gpr_2);
+  writer.emit_mov_i(Register::gpr_3, Wide_immediate{-4});
+  writer.emit_mov_i(Register::gpr_4, Wide_immediate{0x0102});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(Opcode::mov),
+                        static_cast<std::byte>(Register::gpr_1),
+                        static_cast<std::byte>(Register::gpr_2),
+                        static_cast<std::byte>(Opcode::mov_i),
+                        static_cast<std::byte>(Register::gpr_3),
+                        std::byte{0xFC},
+                        static_cast<std::byte>(Opcode::wide),
+                        static_cast<std::byte>(Opcode::mov_i),
+                        static_cast<std::byte>(Register::gpr_4),
+                        std::byte{0x02},
+                        std::byte{0x01},
+                      }
+  );
+}
+
 TEST_CASE("Bytecode_writer emits binary arithmetic instruction operands")
 {
   using benson::bytecode::Opcode;

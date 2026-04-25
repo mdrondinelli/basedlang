@@ -81,8 +81,8 @@ namespace benson::bytecode
         throw std::runtime_error{"jmp target never placed"};
       }
       auto const offset =
-        *target - (position + sizeof(Wide_immediate::Underlying_type));
-      if (!std::in_range<Wide_immediate::Underlying_type>(offset))
+        *target - (position + sizeof(Immediate::Underlying_type));
+      if (!std::in_range<Immediate::Underlying_type>(offset))
       {
         throw std::runtime_error{"jmp target out of range"};
       }
@@ -94,8 +94,7 @@ namespace benson::bytecode
     return built;
   }
 
-  auto Module_builder::constant(std::span<std::byte const> bytes)
-    -> Wide_constant
+  auto Module_builder::constant(std::span<std::byte const> bytes) -> Constant
   {
     for (auto i = std::size_t{}; i < _module.constant_table.size(); ++i)
     {
@@ -108,20 +107,20 @@ namespace benson::bytecode
             static_cast<std::ptrdiff_t>(_module.constant_data.size()) &&
           std::equal(bytes.begin(), bytes.end(), existing.begin()))
       {
-        return Wide_constant{i};
+        return Constant{i};
       }
     }
 
     if (_module.constant_table.size() ==
         static_cast<std::size_t>(
-          std::numeric_limits<Wide_constant::Underlying_type>::max()
+          std::numeric_limits<Constant::Underlying_type>::max()
         ) +
           1)
     {
       throw std::runtime_error{"constant table out of range"};
     }
 
-    auto const index = Wide_constant{_module.constant_table.size()};
+    auto const index = Constant{_module.constant_table.size()};
     _module.constant_table.push_back(
       static_cast<std::ptrdiff_t>(_module.constant_data.size())
     );

@@ -73,7 +73,7 @@ namespace benson::bytecode
     Label_jump_target_provider label_target(Label label);
 
     template <detail::Supported_constant T>
-    [[nodiscard]] Wide_constant constant(T value)
+    [[nodiscard]] Constant constant(T value)
     {
       return constant(std::as_bytes(std::span{&value, std::size_t{1}}));
     }
@@ -97,8 +97,7 @@ namespace benson::bytecode
       Label label;
     };
 
-    [[nodiscard]] auto constant(std::span<std::byte const> bytes)
-      -> Wide_constant;
+    [[nodiscard]] auto constant(std::span<std::byte const> bytes) -> Constant;
 
     Module _module;
     Vector_output_stream _output_stream;

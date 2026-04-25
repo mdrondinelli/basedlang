@@ -11,8 +11,9 @@ namespace benson::bytecode
 
   struct Immediate
   {
-    using Underlying_type = std::int8_t;
-    Underlying_type value;
+    using Underlying_type = std::int16_t;
+
+    Underlying_type value{};
 
     constexpr Immediate() = default;
 
@@ -26,27 +27,6 @@ namespace benson::bytecode
     }
   };
 
-  struct Wide_immediate
-  {
-    using Underlying_type = std::int16_t;
-    Underlying_type value;
-
-    constexpr Wide_immediate() = default;
-
-    template <std::integral T>
-    constexpr explicit Wide_immediate(T v)
-        : value{
-            (assert(std::in_range<Underlying_type>(v)),
-             static_cast<Underlying_type>(v))
-          }
-    {
-    }
-
-    constexpr Wide_immediate(Immediate i) : value{i.value}
-    {
-    }
-  };
-
-}
+} // namespace benson::bytecode
 
 #endif // BENSON_BYTECODE_IMMEDIATE_H

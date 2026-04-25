@@ -26,7 +26,8 @@ instructions until the program exits. Registers are machine-level storage, not
 HLIR registers. Pointer values identify an address space plus an offset.
 
 Wide bytecode instructions are dispatched through the same execution model as
-their narrow forms, but decode wider operands.
+their narrow forms, but decode 16-bit register operands and wider
+immediate/constant operands.
 
 ## What to keep stable
 

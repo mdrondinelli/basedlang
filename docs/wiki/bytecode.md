@@ -12,7 +12,7 @@ The public surface is centered on:
 
 - registers
 - opcodes
-- narrow and wide immediates
+- immediates
 - constants
 - `Module`
 - `Bytecode_writer`
@@ -23,11 +23,15 @@ All of these live in the `benson::bytecode` namespace.
 ## Core model
 
 A bytecode `Module` contains instruction bytes plus constant storage. The
-writer emits compact instruction encodings. `Module_builder` adds conveniences
-around labels and constants while still producing the same module shape.
+writer emits compact instruction encodings. `Register`, `Immediate`, and
+`Constant` are value types; the writer chooses narrow or wide wire encodings
+from their values. General registers are created with `gpr(n)`, and `sp` names
+the stack pointer register.
 
-Some operands have narrow and wide forms. The `wide` opcode prefixes an
-instruction when the following operand needs the larger encoding.
+Operand-taking instructions have narrow and wide wire forms. The `wide` opcode
+prefixes an instruction when any register, immediate, or constant operand needs
+the larger encoding. In a wide instruction, all operands are encoded as 16-bit
+values.
 
 ## What to keep stable
 

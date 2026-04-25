@@ -4,6 +4,14 @@
 
 #include "bytecode/module_builder.h"
 
+using benson::bytecode::gpr;
+using benson::bytecode::sp;
+
+auto reg_byte(benson::bytecode::Register reg) -> std::byte
+{
+  return static_cast<std::byte>(reg.value);
+}
+
 TEST_CASE("Module_builder patches label-based jmp_i instructions")
 {
   using benson::bytecode::Module_builder;
@@ -49,8 +57,8 @@ TEST_CASE("Module_builder patches label-based jnz_i instructions")
   auto const end = builder.make_label();
 
   builder.place_label(start);
-  writer.emit_jnz(Register::gpr_1, builder.label_target(end));
-  writer.emit_jnz(Register::gpr_2, builder.label_target(start));
+  writer.emit_jnz(gpr(1), builder.label_target(end));
+  writer.emit_jnz(gpr(2), builder.label_target(start));
   builder.place_label(end);
   writer.emit_exit();
 
@@ -60,12 +68,13 @@ TEST_CASE("Module_builder patches label-based jnz_i instructions")
     module.code == std::vector<std::byte>{
                      static_cast<std::byte>(Opcode::wide),
                      static_cast<std::byte>(Opcode::jnz_i),
-                     static_cast<std::byte>(Register::gpr_1),
+                     reg_byte(gpr(1)),
+                     std::byte{0x00},
                      std::byte{0x03},
                      std::byte{0x00},
                      static_cast<std::byte>(Opcode::jnz_i),
-                     static_cast<std::byte>(Register::gpr_2),
-                     std::byte{0xF8},
+                     reg_byte(gpr(2)),
+                     std::byte{0xF7},
                      static_cast<std::byte>(Opcode::exit),
                    }
   );
@@ -112,15 +121,16 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
 {
   using benson::bytecode::Module_builder;
   using enum benson::bytecode::Opcode;
-  using enum benson::bytecode::Register;
+  using benson::bytecode::gpr;
+  using benson::bytecode::sp;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
 
-  writer.emit_add_f32_k(gpr_1, gpr_2, builder.constant(0.3F));
-  writer.emit_mul_f32_k(gpr_3, gpr_4, builder.constant(0.3F));
-  writer.emit_add_i32_k(gpr_5, gpr_6, builder.constant(7));
-  writer.emit_sub_i32_k(gpr_7, gpr_8, builder.constant(7));
+  writer.emit_add_f32_k(gpr(1), gpr(2), builder.constant(0.3F));
+  writer.emit_mul_f32_k(gpr(3), gpr(4), builder.constant(0.3F));
+  writer.emit_add_i32_k(gpr(5), gpr(6), builder.constant(7));
+  writer.emit_sub_i32_k(gpr(7), gpr(8), builder.constant(7));
   writer.emit_exit();
 
   auto const module = builder.build();
@@ -128,20 +138,20 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
   CHECK(
     module.code == std::vector<std::byte>{
                      static_cast<std::byte>(add_f32_k),
-                     static_cast<std::byte>(gpr_1),
-                     static_cast<std::byte>(gpr_2),
+                     reg_byte(gpr(1)),
+                     reg_byte(gpr(2)),
                      std::byte{0x00},
                      static_cast<std::byte>(mul_f32_k),
-                     static_cast<std::byte>(gpr_3),
-                     static_cast<std::byte>(gpr_4),
+                     reg_byte(gpr(3)),
+                     reg_byte(gpr(4)),
                      std::byte{0x00},
                      static_cast<std::byte>(add_i32_k),
-                     static_cast<std::byte>(gpr_5),
-                     static_cast<std::byte>(gpr_6),
+                     reg_byte(gpr(5)),
+                     reg_byte(gpr(6)),
                      std::byte{0x01},
                      static_cast<std::byte>(sub_i32_k),
-                     static_cast<std::byte>(gpr_7),
-                     static_cast<std::byte>(gpr_8),
+                     reg_byte(gpr(7)),
+                     reg_byte(gpr(8)),
                      std::byte{0x01},
                      static_cast<std::byte>(exit),
                    }

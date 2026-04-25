@@ -1,5 +1,5 @@
-#ifndef BASEDSTREAMS_BINARY_OUTPUT_STREAM_H
-#define BASEDSTREAMS_BINARY_OUTPUT_STREAM_H
+#ifndef BASEDSTREAMS_OUTPUT_STREAM_H
+#define BASEDSTREAMS_OUTPUT_STREAM_H
 
 #include <cstddef>
 #include <span>
@@ -8,10 +8,10 @@ namespace benson
 {
 
   /// Abstract sink for raw bytes.
-  class Binary_output_stream
+  class Output_stream
   {
   public:
-    virtual ~Binary_output_stream() = default;
+    virtual ~Output_stream() = default;
 
     /// Writes all bytes in buffer to the stream. When buffer is empty, call is
     /// a no-op. If an implementation throws after consuming some bytes from
@@ -27,4 +27,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDSTREAMS_BINARY_OUTPUT_STREAM_H
+#endif // BASEDSTREAMS_OUTPUT_STREAM_H

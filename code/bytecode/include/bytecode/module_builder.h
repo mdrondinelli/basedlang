@@ -14,7 +14,7 @@
 namespace benson
 {
 
-  class Binary_output_stream;
+  class Output_stream;
 
 } // namespace benson
 
@@ -81,7 +81,7 @@ namespace benson::bytecode
     [[nodiscard]] Module build();
 
   private:
-    struct Vector_output_stream: Binary_output_stream
+    struct Vector_output_stream: Output_stream
     {
       explicit Vector_output_stream(std::vector<std::byte> *code);
 

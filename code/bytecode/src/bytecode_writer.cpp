@@ -28,7 +28,7 @@ namespace benson::bytecode
 
   } // namespace
 
-  Bytecode_writer::Bytecode_writer(Binary_output_stream *stream)
+  Bytecode_writer::Bytecode_writer(Output_stream *stream)
       : _stream{stream}, _position{}
   {
   }

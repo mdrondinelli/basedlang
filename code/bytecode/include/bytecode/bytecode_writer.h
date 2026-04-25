@@ -7,14 +7,14 @@
 #include "bytecode/immediate.h"
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
-#include "streams/binary_output_stream.h"
+#include "streams/output_stream.h"
 
 namespace benson::bytecode
 {
   class Bytecode_writer
   {
   public:
-    explicit Bytecode_writer(Binary_output_stream *stream);
+    explicit Bytecode_writer(Output_stream *stream);
 
     void emit_exit();
 
@@ -390,7 +390,7 @@ namespace benson::bytecode
       Immediate rhs
     );
 
-    Binary_output_stream *_stream;
+    Output_stream *_stream;
     std::ptrdiff_t _position;
   };
 

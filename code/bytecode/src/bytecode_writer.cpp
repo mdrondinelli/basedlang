@@ -192,6 +192,16 @@ namespace benson::bytecode
     emit_binary_immediate_instruction(Opcode::store_64, src, base, offset);
   }
 
+  void Bytecode_writer::emit_mov(Register dst, Register src)
+  {
+    emit_unary_register_instruction(Opcode::mov, dst, src);
+  }
+
+  void Bytecode_writer::emit_mov_i(Register dst, Wide_immediate src)
+  {
+    emit_unary_immediate_instruction(Opcode::mov_i, dst, src);
+  }
+
   void Bytecode_writer::emit_sx_8(Register dst, Register src)
   {
     emit_unary_register_instruction(Opcode::sx_8, dst, src);
@@ -1134,6 +1144,28 @@ namespace benson::bytecode
     emit_opcode(opcode);
     write_byte(static_cast<std::byte>(dst));
     write_byte(static_cast<std::byte>(src));
+  }
+
+  void Bytecode_writer::emit_unary_immediate_instruction(
+    Opcode opcode,
+    Register dst,
+    Wide_immediate src
+  )
+  {
+    if (is_wide(src))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(opcode);
+      write_byte(static_cast<std::byte>(dst));
+      write_byte(static_cast<std::byte>(src.value));
+      write_byte(static_cast<std::byte>(src.value >> 8));
+    }
+    else
+    {
+      emit_opcode(opcode);
+      write_byte(static_cast<std::byte>(dst));
+      write_byte(static_cast<std::byte>(src.value));
+    }
   }
 
   void Bytecode_writer::emit_binary_register_instruction(

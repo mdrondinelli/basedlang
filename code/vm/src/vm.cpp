@@ -30,6 +30,34 @@ namespace benson
       vm.set_register_value(dst, vm.lookup_constant(k));
     }
 
+    void run_mov(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const dst = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto const src = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      vm.registers[static_cast<std::size_t>(dst)] =
+        vm.registers[static_cast<std::size_t>(src)];
+    }
+
+    template <typename ImmediateType>
+    void run_mov_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      static_assert(
+        std::is_same_v<ImmediateType, bytecode::Wide_immediate> ||
+        std::is_same_v<ImmediateType, bytecode::Immediate>
+      );
+      auto const dst = static_cast<bytecode::Register>(
+        static_cast<std::uint8_t>(*instruction_pointer++)
+      );
+      auto src = ImmediateType{};
+      std::memcpy(&src, instruction_pointer, sizeof(src));
+      instruction_pointer += sizeof(src);
+      vm.set_register_value(dst, src.value);
+    }
+
     template <typename CppType, typename Fn>
     void run_register_unary(
       std::byte const *&instruction_pointer,
@@ -454,6 +482,12 @@ namespace benson
     case bytecode::Opcode::lookup_k:
       run_lookup_k<bytecode::Constant>(instruction_pointer, *this);
       break;
+    case bytecode::Opcode::mov:
+      run_mov(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::mov_i:
+      run_mov_i<bytecode::Immediate>(instruction_pointer, *this);
+      break;
     case bytecode::Opcode::load_8:
       run_load<1, bytecode::Immediate>(instruction_pointer, *this);
       break;
@@ -652,6 +686,9 @@ namespace benson
       break;
     case bytecode::Opcode::lookup_k:
       run_lookup_k<bytecode::Wide_constant>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::mov_i:
+      run_mov_i<bytecode::Wide_immediate>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::load_8:
       run_load<1, bytecode::Wide_immediate>(instruction_pointer, *this);

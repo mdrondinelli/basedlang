@@ -62,6 +62,25 @@ namespace benson::bytecode
     _label_positions[label.index] = _writer.position();
   }
 
+  void Module_builder::place_function(
+    Label label,
+    Spelling name,
+    std::vector<ir::Type *> parameter_types,
+    ir::Type *return_type
+  )
+  {
+    place_label(label);
+    auto const [it, inserted] = _module.functions.emplace(
+      name,
+      Function{
+        .position = *_label_positions[label.index],
+        .parameter_types = std::move(parameter_types),
+        .return_type = return_type,
+      }
+    );
+    assert(inserted);
+  }
+
   Module_builder::Label_jump_target_provider
   Module_builder::label_target(Label label)
   {

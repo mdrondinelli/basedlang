@@ -31,6 +31,8 @@ Use this map first:
 - syntax consumption and AST construction: [`parsing`](./parsing.md)
 - semantic lowering, diagnostics, type evaluation, and symbol resolution: [`frontend`](./frontend.md)
 - HLIR data model and interpretation: [`ir`](./ir.md)
+- bytecode encoding and module construction: [`bytecode`](./bytecode.md)
+- bytecode execution: [`vm`](./vm.md)
 - executable orchestration and CLI behavior: [`benson`](./benson.md)
 - cross-cutting or unclear ownership: [Architecture and pipeline overview](./overview.md)
 
@@ -73,6 +75,8 @@ Use this rule of thumb:
 - lexer behavior change: lexer tests
 - parser behavior change: parser tests
 - semantic or lowering change: frontend or IR-facing tests
+- bytecode encoding change: bytecode tests
+- bytecode execution change: VM tests
 - executable wiring change: CLI-facing tests
 
 Be skeptical of PRs that only add happy-path tests or only test a downstream

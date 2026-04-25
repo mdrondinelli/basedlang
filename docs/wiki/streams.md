@@ -19,7 +19,7 @@ The public surface is centered on:
 
 - `Binary_input_stream`
 - `Buffered_binary_input_stream<T>`
-- `Binary_output_stream`
+- `Output_stream`
 - `Istream_binary_input_stream`
 - `Posix_binary_input_stream` (POSIX-only)
 - `Char_input_stream`
@@ -47,7 +47,7 @@ stream when needed.
 Use this when the provider wants byte-oriented callers to be efficient without
 changing the consumer interface.
 
-### `Binary_output_stream`
+### `Output_stream`
 
 Abstract sink for raw bytes.
 Its core operation is caller-owned bulk writes from a provided buffer.

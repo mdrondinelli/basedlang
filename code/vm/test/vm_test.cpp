@@ -21,7 +21,7 @@ namespace
   using benson::bytecode::gpr;
   using benson::bytecode::sp;
 
-  class Recording_binary_output_stream: public benson::Binary_output_stream
+  class Recording_output_stream: public benson::Output_stream
   {
   public:
     void write_bytes(std::span<std::byte const> buffer) override
@@ -457,7 +457,7 @@ TEST_CASE(
     2.0
   );
 
-  auto stream = Recording_binary_output_stream{};
+  auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_add_i32_k(gpr(1), gpr(2), Constant{0x0304});
   writer.emit_sub_i32_k(gpr(4), gpr(1), Constant{0x0305});
@@ -665,7 +665,7 @@ TEST_CASE("Virtual_machine takes narrow call_i and ret")
   using benson::bytecode::Immediate;
   using benson::bytecode::Register;
 
-  auto stream = Recording_binary_output_stream{};
+  auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_call(std::ptrdiff_t{7});
   writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{100});
@@ -692,7 +692,7 @@ TEST_CASE("Virtual_machine takes wide call_i and ret")
   using benson::bytecode::Immediate;
   using benson::bytecode::Register;
 
-  auto stream = Recording_binary_output_stream{};
+  auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_call(std::ptrdiff_t{165});
   writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{100});
@@ -725,7 +725,7 @@ TEST_CASE("Virtual_machine does not take narrow jnz_i when condition is zero")
   using benson::bytecode::Immediate;
   using benson::bytecode::Register;
 
-  auto stream = Recording_binary_output_stream{};
+  auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_jnz(gpr(2), std::ptrdiff_t{7});
   writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
@@ -747,7 +747,7 @@ TEST_CASE("Virtual_machine takes narrow jnz_i when condition is non-zero")
   using benson::bytecode::Immediate;
   using benson::bytecode::Register;
 
-  auto stream = Recording_binary_output_stream{};
+  auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_jnz(gpr(2), std::ptrdiff_t{7});
   writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
@@ -769,7 +769,7 @@ TEST_CASE("Virtual_machine takes wide jnz_i when target exceeds narrow range")
   using benson::bytecode::Immediate;
   using benson::bytecode::Register;
 
-  auto stream = Recording_binary_output_stream{};
+  auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_jnz(gpr(2), std::ptrdiff_t{166});
   for (auto i = 0; i < 40; ++i)
@@ -1250,7 +1250,7 @@ TEST_CASE(
   using benson::bytecode::Immediate;
   using benson::bytecode::Register;
 
-  auto stream = Recording_binary_output_stream{};
+  auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   // offset 0x0101 = 257, which exceeds Immediate max of 127 → wide encoding
   writer.emit_store_16(gpr(1), gpr(3), Immediate{0x0101});
@@ -1401,7 +1401,7 @@ TEST_CASE(
     8.0
   );
 
-  auto stream = Recording_binary_output_stream{};
+  auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_cmp_eq_i32_i(gpr(1), gpr(2), Immediate{0x0101});
   writer.emit_cmp_ne_i64_k(gpr(3), gpr(4), Constant{0x0201});

@@ -45,7 +45,7 @@ namespace benson
       {
       }
 
-      constexpr auto operator=(Builder &&other) noexcept -> Builder &
+      auto operator=(Builder &&other) noexcept -> Builder &
       {
         auto temp{std::move(other)};
         swap(temp);

@@ -6,7 +6,7 @@
 #include "lexeme.h"
 #include "spelling/spelling.h"
 #include "streams/char_input_stream.h"
-#include "streams/lookahead_char_input_stream_reader.h"
+#include "streams/char_input_stream_peeker.h"
 
 namespace benson
 {
@@ -34,7 +34,7 @@ namespace benson
 
     char32_t consume_non_newline();
 
-    Lookahead_char_input_stream_reader _reader;
+    Char_input_stream_peeker _reader;
     Spelling_table *_spellings;
     Source_location _location;
   };

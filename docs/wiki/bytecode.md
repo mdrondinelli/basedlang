@@ -28,10 +28,9 @@ writer emits compact instruction encodings. `Register`, `Immediate`, and
 from their values. General registers are created with `gpr(n)`, and `sp` names
 the stack pointer register.
 
-Some operands have narrow and wide wire forms. The `wide` opcode prefixes an
+Instructions have narrow and wide wire forms. The `wide` opcode prefixes an
 instruction when any register, immediate, or constant operand needs the larger
-encoding. In a wide instruction, all register operands are encoded as 16-bit
-values.
+encoding. In a wide instruction, all operands are encoded as 16-bit values.
 
 ## What to keep stable
 

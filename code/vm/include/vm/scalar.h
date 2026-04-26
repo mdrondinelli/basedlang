@@ -1,11 +1,13 @@
 #ifndef BENSON_VM_SCALAR_H
 #define BENSON_VM_SCALAR_H
 
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <span>
 #include <variant>
 
-#include "bytecode/module.h"
+#include "bytecode/scalar_type.h"
 
 namespace benson::vm
 {
@@ -13,9 +15,12 @@ namespace benson::vm
   struct Scalar
   {
   public:
-    struct Void { constexpr Void() = default; };
+    struct Void
+    {
+      constexpr Void() = default;
+    };
 
-    static const Scalar void_;
+    static Scalar const void_;
 
     constexpr Scalar(std::int8_t value)
         : _value{value}
@@ -64,7 +69,8 @@ namespace benson::vm
         {
           return std::as_bytes(std::span{&value, std::size_t{1}});
         },
-        _value);
+        _value
+      );
     }
 
     template <typename T>
@@ -88,11 +94,12 @@ namespace benson::vm
       float,
       double,
       bool,
-      Void>
-         _value;
+      Void
+    >
+      _value;
   };
 
-  inline const Scalar Scalar::void_{Scalar::Void{}};
-}
+  inline Scalar const Scalar::void_{Scalar::Void{}};
+} // namespace benson::vm
 
 #endif // BENSON_VM_SCALAR_H

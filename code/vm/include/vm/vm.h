@@ -10,16 +10,17 @@
 #include <memory>
 #include <span>
 #include <stdexcept>
-#include <variant>
 
 #include "bytecode/constant.h"
 #include "bytecode/module.h"
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
-#include "pointer.h"
 #include "spelling/spelling.h"
 
-namespace benson
+#include "pointer.h"
+#include "scalar.h"
+
+namespace benson::vm
 {
 
   class Virtual_machine
@@ -98,21 +99,6 @@ namespace benson
 
       bytecode::Scalar_type type;
     };
-
-    struct Void_value
-    {
-    };
-
-    using Scalar = std::variant<
-      std::int8_t,
-      std::int16_t,
-      std::int32_t,
-      std::int64_t,
-      float,
-      double,
-      bool,
-      Void_value
-    >;
 
     Virtual_machine();
 

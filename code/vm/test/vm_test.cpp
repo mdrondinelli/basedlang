@@ -106,7 +106,7 @@ TEMPLATE_TEST_CASE(
     }
   }();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.set_register_value(gpr(255), value);
 
   CHECK(vm.get_register_value<TestType>(gpr(255)) == value);
@@ -114,7 +114,7 @@ TEMPLATE_TEST_CASE(
 
 TEST_CASE("Virtual_machine keeps exact floating-point register bit pattern")
 {
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.set_register_value(benson::bytecode::gpr(1), -0.0F);
 
   CHECK(
@@ -128,11 +128,11 @@ TEST_CASE(
   "Virtual_machine runs lookup constant program emitted by Module_builder"
 )
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::gpr;
   using benson::bytecode::Module_builder;
   using benson::bytecode::sp;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -141,7 +141,7 @@ TEST_CASE(
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   vm.run();
@@ -168,7 +168,7 @@ TEST_CASE("Virtual_machine runs negation program emitted by Module_builder")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(2), 123);
 
@@ -195,7 +195,7 @@ TEST_CASE("Virtual_machine runs move program emitted by Module_builder")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<double>(gpr(2), -0.0);
 
@@ -234,7 +234,7 @@ TEST_CASE("Virtual_machine runs program with wide registers")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   vm.run();
@@ -263,7 +263,7 @@ TEST_CASE(
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(2), 10);
   vm.set_register_value<std::int32_t>(gpr(3), 5);
@@ -302,7 +302,7 @@ TEST_CASE(
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(2), 10);
 
@@ -334,7 +334,7 @@ TEST_CASE(
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<double>(gpr(2), 10.0);
   vm.set_register_value<double>(gpr(3), 2.5);
@@ -374,7 +374,7 @@ TEST_CASE(
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(2), 10);
   vm.set_register_value<double>(gpr(14), 10.0);
@@ -476,7 +476,7 @@ TEST_CASE(
   module.constant_data = std::move(constant_memory);
   module.constant_table = std::move(constant_table);
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.module = &module;
   vm.instruction_pointer = stream.bytes().data();
   vm.set_register_value<std::int32_t>(gpr(2), 10);
@@ -498,11 +498,11 @@ TEST_CASE(
 
 TEST_CASE("Virtual_machine store_8 writes one byte to stack")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -510,7 +510,7 @@ TEST_CASE("Virtual_machine store_8 writes one byte to stack")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::uint64_t>(
     gpr(1),
@@ -530,11 +530,11 @@ TEST_CASE("Virtual_machine store_8 writes one byte to stack")
 
 TEST_CASE("Virtual_machine load_8 reads one byte from stack")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -542,7 +542,7 @@ TEST_CASE("Virtual_machine load_8 reads one byte from stack")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   (*vm.stack)[0] = static_cast<std::byte>(std::uint8_t{0xAB});
   vm.set_register_value<std::uint64_t>(
@@ -557,11 +557,11 @@ TEST_CASE("Virtual_machine load_8 reads one byte from stack")
 
 TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -570,7 +570,7 @@ TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int64_t>(gpr(1), std::int64_t{-1234567890123LL});
   vm.set_register_value<std::uint64_t>(
@@ -588,11 +588,11 @@ TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
 
 TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -601,7 +601,7 @@ TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(1), std::int32_t{0xDEAD});
   vm.set_register_value<std::uint64_t>(
@@ -628,7 +628,7 @@ TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   vm.run();
@@ -655,7 +655,7 @@ TEST_CASE("Virtual_machine runs Module_builder program with forward jmp_i")
 
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(1), 40);
 
@@ -678,7 +678,7 @@ TEST_CASE("Virtual_machine takes narrow call_i and ret")
   writer.emit_ret();
   writer.flush();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
   vm.set_register_value<std::int32_t>(gpr(1), 40);
 
@@ -686,7 +686,7 @@ TEST_CASE("Virtual_machine takes narrow call_i and ret")
 
   CHECK(vm.get_register_value<std::int32_t>(gpr(1)) == 142);
   CHECK(
-    vm.get_register_value<benson::Pointer>(sp).decode().offset ==
+    vm.get_register_value<benson::vm::Pointer>(sp).decode().offset ==
     vm.stack->size()
   );
 }
@@ -709,7 +709,7 @@ TEST_CASE("Virtual_machine takes wide call_i and ret")
   writer.emit_ret();
   writer.flush();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
   vm.set_register_value<std::int32_t>(gpr(1), 40);
   vm.set_register_value<std::int32_t>(gpr(2), 0);
@@ -719,7 +719,7 @@ TEST_CASE("Virtual_machine takes wide call_i and ret")
   CHECK(vm.get_register_value<std::int32_t>(gpr(1)) == 142);
   CHECK(vm.get_register_value<std::int32_t>(gpr(2)) == 0);
   CHECK(
-    vm.get_register_value<benson::Pointer>(sp).decode().offset ==
+    vm.get_register_value<benson::vm::Pointer>(sp).decode().offset ==
     vm.stack->size()
   );
 }
@@ -736,7 +736,7 @@ TEST_CASE("Virtual_machine does not take narrow jnz_i when condition is zero")
   writer.emit_exit();
   writer.flush();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
   vm.set_register_value<std::int32_t>(gpr(1), 40);
   vm.set_register_value<std::int32_t>(gpr(2), 0);
@@ -758,7 +758,7 @@ TEST_CASE("Virtual_machine takes narrow jnz_i when condition is non-zero")
   writer.emit_exit();
   writer.flush();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
   vm.set_register_value<std::int32_t>(gpr(1), 40);
   vm.set_register_value<std::int32_t>(gpr(2), 1);
@@ -783,7 +783,7 @@ TEST_CASE("Virtual_machine takes wide jnz_i when target exceeds narrow range")
   writer.emit_exit();
   writer.flush();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
   vm.set_register_value<std::int32_t>(gpr(1), 40);
   vm.set_register_value<std::int32_t>(gpr(2), 1);
@@ -813,7 +813,7 @@ TEST_CASE("Virtual_machine runs countdown sum program with jnz_i loop")
 
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(1), 5);
   vm.set_register_value<std::int32_t>(gpr(2), 0);
@@ -829,13 +829,13 @@ TEST_CASE(
   "Virtual_machine runs recursive quicksort program with call_i and ret"
 )
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Constant;
   using benson::bytecode::gpr;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::sp;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto const input = std::array<std::int32_t, 5>{4, 1, 3, 5, 2};
   auto const expected = std::array<std::int32_t, 5>{1, 2, 3, 4, 5};
@@ -980,7 +980,7 @@ TEST_CASE(
     input
   );
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   vm.run();
@@ -1026,7 +1026,7 @@ TEST_CASE("Virtual_machine runs factorial program with jnz_i loop")
 
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   vm.run();
@@ -1064,7 +1064,7 @@ TEST_CASE("Virtual_machine runs Newton square root program with jnz_i loop")
 
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   vm.run();
@@ -1079,13 +1079,13 @@ TEST_CASE("Virtual_machine runs Newton square root program with jnz_i loop")
 
 TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Constant;
   using benson::bytecode::gpr;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::sp;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -1205,7 +1205,7 @@ TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
     expression
   );
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   vm.run();
@@ -1233,7 +1233,7 @@ TEST_CASE("Virtual_machine runs Module_builder program with inline constants")
 
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(1), 37);
   vm.set_register_value<float>(gpr(2), 3.0F);
@@ -1249,10 +1249,10 @@ TEST_CASE(
   "Virtual_machine load_16 and store_16 use wide offset when offset > 255"
 )
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
@@ -1262,7 +1262,7 @@ TEST_CASE(
   writer.emit_exit();
   writer.flush();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
   vm.set_register_value<std::int16_t>(gpr(1), std::int16_t{0x7FFF});
   vm.set_register_value<std::uint64_t>(
@@ -1287,7 +1287,7 @@ TEST_CASE("Virtual_machine runs sx_8 program emitted by Module_builder")
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int8_t>(gpr(2), std::int8_t{-42});
 
@@ -1322,7 +1322,7 @@ TEST_CASE(
   writer.emit_exit();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
   vm.set_register_value<std::int32_t>(gpr(2), 42);
   vm.set_register_value<std::int32_t>(gpr(3), 42);
@@ -1422,7 +1422,7 @@ TEST_CASE(
   module.constant_data = std::move(constant_memory);
   module.constant_table = std::move(constant_table);
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.module = &module;
   vm.instruction_pointer = stream.bytes().data();
   vm.set_register_value<std::int32_t>(gpr(2), 0x0101);
@@ -1465,16 +1465,16 @@ TEST_CASE("Virtual_machine::call invokes an i32 add function")
   writer.emit_ret();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
-  auto const args = std::array<benson::Virtual_machine::Scalar, 2>{
+  auto const args = std::array<benson::vm::Scalar, 2>{
     std::int32_t{40},
     std::int32_t{2},
   };
   auto const result = vm.call(add, args);
-  REQUIRE(std::holds_alternative<std::int32_t>(result));
-  CHECK(std::get<std::int32_t>(result) == 42);
+  REQUIRE(result.type() == int32);
+  CHECK(result.as<std::int32_t>() == 42);
 }
 
 TEST_CASE("Virtual_machine::call round-trips a float through gpr(1)")
@@ -1494,14 +1494,14 @@ TEST_CASE("Virtual_machine::call round-trips a float through gpr(1)")
   writer.emit_ret();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   auto const args =
-    std::array<benson::Virtual_machine::Scalar, 1>{float{3.14159F}};
+    std::array<benson::vm::Scalar, 1>{float{3.14159F}};
   auto const result = vm.call(identity, args);
-  REQUIRE(std::holds_alternative<float>(result));
-  CHECK(std::get<float>(result) == 3.14159F);
+  REQUIRE(result.type() == float_);
+  CHECK(result.as<float>() == 3.14159F);
 }
 
 TEST_CASE("Virtual_machine::call returns Void_value for void functions")
@@ -1519,11 +1519,11 @@ TEST_CASE("Virtual_machine::call returns Void_value for void functions")
   writer.emit_ret();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   auto const result = vm.call(noop, {});
-  CHECK(std::holds_alternative<benson::Virtual_machine::Void_value>(result));
+  CHECK(result.type() == void_);
 }
 
 TEST_CASE("Virtual_machine::call works across consecutive invocations")
@@ -1544,18 +1544,18 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
   writer.emit_ret();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   auto const args1 =
-    std::array<benson::Virtual_machine::Scalar, 1>{std::int32_t{10}};
+    std::array<benson::vm::Scalar, 1>{std::int32_t{10}};
   auto const r1 = vm.call(inc, args1);
-  CHECK(std::get<std::int32_t>(r1) == 11);
+  CHECK(r1.as<std::int32_t>() == 11);
 
   auto const args2 =
-    std::array<benson::Virtual_machine::Scalar, 1>{std::int32_t{99}};
+    std::array<benson::vm::Scalar, 1>{std::int32_t{99}};
   auto const r2 = vm.call(inc, args2);
-  CHECK(std::get<std::int32_t>(r2) == 100);
+  CHECK(r2.as<std::int32_t>() == 100);
 }
 
 TEST_CASE("Virtual_machine::call rejects bad inputs")
@@ -1574,21 +1574,21 @@ TEST_CASE("Virtual_machine::call rejects bad inputs")
   writer.emit_ret();
   auto const module = builder.build();
 
-  auto vm = benson::Virtual_machine{};
+  auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
 
   CHECK_THROWS_AS(
     vm.call(unknown, {}),
-    benson::Virtual_machine::Unknown_function_error
+    benson::vm::Virtual_machine::Unknown_function_error
   );
   CHECK_THROWS_AS(
     vm.call(known, {}),
-    benson::Virtual_machine::Argument_count_error
+    benson::vm::Virtual_machine::Argument_count_error
   );
   auto const wrong_type =
-    std::array<benson::Virtual_machine::Scalar, 1>{std::int64_t{0}};
+    std::array<benson::vm::Scalar, 1>{std::int64_t{0}};
   CHECK_THROWS_AS(
     vm.call(known, wrong_type),
-    benson::Virtual_machine::Argument_type_error
+    benson::vm::Virtual_machine::Argument_type_error
   );
 }

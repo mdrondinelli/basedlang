@@ -7,7 +7,7 @@
 #include "bytecode/immediate.h"
 #include "vm/vm.h"
 
-namespace benson
+namespace benson::vm
 {
 
   namespace
@@ -318,48 +318,12 @@ namespace benson
       pop_bytes(vm, std::as_writable_bytes(std::span{&value, std::size_t{1}}));
     }
 
-    void push_arg(
+    void push_scalar(
       Virtual_machine &vm,
-      std::ptrdiff_t index,
-      bytecode::Scalar_type type,
-      Virtual_machine::Scalar const &value
+      Scalar const &value
     )
     {
-      auto const require = [&]<typename T>() -> T
-      {
-        auto const *typed = std::get_if<T>(&value);
-        if (!typed)
-        {
-          throw Virtual_machine::Argument_type_error{index, type};
-        }
-        return *typed;
-      };
-      switch (type)
-      {
-      case bytecode::Scalar_type::int8:
-        push_value(vm, require.template operator()<std::int8_t>());
-        break;
-      case bytecode::Scalar_type::int16:
-        push_value(vm, require.template operator()<std::int16_t>());
-        break;
-      case bytecode::Scalar_type::int32:
-        push_value(vm, require.template operator()<std::int32_t>());
-        break;
-      case bytecode::Scalar_type::int64:
-        push_value(vm, require.template operator()<std::int64_t>());
-        break;
-      case bytecode::Scalar_type::float_:
-        push_value(vm, require.template operator()<float>());
-        break;
-      case bytecode::Scalar_type::double_:
-        push_value(vm, require.template operator()<double>());
-        break;
-      case bytecode::Scalar_type::bool_:
-        push_value(vm, std::uint8_t{require.template operator()<bool>()});
-        break;
-      case bytecode::Scalar_type::void_:
-        throw Virtual_machine::Unsupported_argument_type_error{index, type};
-      }
+      push_bytes(vm, value.bytes());
     }
 
     template <Operand_width width, std::size_t N>
@@ -447,7 +411,7 @@ namespace benson
       pop_value(vm, instruction_pointer);
     }
 
-    Virtual_machine::Scalar
+    Scalar
     decode_return(Virtual_machine const &vm, bytecode::Scalar_type type)
     {
       switch (type)
@@ -467,14 +431,10 @@ namespace benson
       case bytecode::Scalar_type::bool_:
         return vm.get_register_value<bool>(bytecode::gpr(1));
       case bytecode::Scalar_type::void_:
-        return Virtual_machine::Void_value{};
+        return Scalar::void_;
       }
       throw Virtual_machine::Unsupported_return_type_error{type};
     }
-
-    constexpr std::byte halt_byte{
-      static_cast<std::byte>(bytecode::Opcode::exit)
-    };
 
   } // namespace
 
@@ -508,7 +468,7 @@ namespace benson
     }
   }
 
-  Virtual_machine::Scalar
+  Scalar
   Virtual_machine::call(Spelling name, std::span<Scalar const> args)
   {
     assert(module != nullptr);
@@ -525,19 +485,30 @@ namespace benson
         static_cast<std::ptrdiff_t>(args.size()),
       };
     }
-    set_register_value(
-      bytecode::sp,
-      Pointer{Address_space::stack, stack->size()}
-    );
-    for (auto i = std::ptrdiff_t{};
-         i < static_cast<std::ptrdiff_t>(args.size());
-         ++i)
+    for (auto const &arg : args)
     {
-      push_arg(*this, i, fn.parameter_types[i], args[i]);
+      auto const i = &arg - &args[0];
+      const auto param_type = fn.parameter_types[i];
+      if (arg.type() == param_type)
+      {
+        push_scalar(*this, args[i]);
+      }
+      else
+      {
+        throw Virtual_machine::Argument_type_error{i, param_type};
+      }
     }
-    push_value(*this, &halt_byte);
+    auto const exit_byte = bytecode::Opcode::exit;
+    push_value(
+      *this,
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uintptr_t>(&exit_byte)
+      )
+    );
+    auto const ip = instruction_pointer;
     instruction_pointer = module->code.data() + fn.position;
     run();
+    instruction_pointer = ip;
     return decode_return(*this, fn.return_type);
   }
 

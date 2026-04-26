@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace benson
+namespace benson::vm
 {
   enum class Address_space : uint64_t
   {
@@ -46,6 +46,6 @@ namespace benson
   private:
     std::uint64_t _value;
   };
-} // namespace benson
+} // namespace benson::vm
 
 #endif // BENSON_VM_ADDRESS_SPACE_H

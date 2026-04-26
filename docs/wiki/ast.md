@@ -13,6 +13,7 @@ The public surface is centered on:
 - `Source_span`
 
 This module defines the data model that the parser produces and the compiler consumes.
+`Source_span` itself is provided by `source`.
 
 ## Core abstractions
 

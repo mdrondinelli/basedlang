@@ -55,6 +55,7 @@ Read [Conventions](./conventions.md).
 
 ### Modules
 
+- [`source`](./source.md)
 - [`streams`](./streams.md)
 - [`lexing`](./lexing.md)
 - [`spelling`](./spelling.md)

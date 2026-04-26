@@ -1,17 +1,18 @@
 # Architecture and pipeline overview
 
-bensonlang currently has ten main modules:
+bensonlang currently has eleven main modules:
 
-1. `streams`
-2. `lexing`
-3. `spelling`
-4. `ast`
-5. `parsing`
-6. `ir`
-7. `frontend`
-8. `bytecode`
-9. `vm`
-10. `benson`
+1. `source`
+2. `streams`
+3. `lexing`
+4. `spelling`
+5. `ast`
+6. `parsing`
+7. `ir`
+8. `frontend`
+9. `bytecode`
+10. `vm`
+11. `benson`
 
 The pipeline is simple:
 
@@ -25,9 +26,14 @@ The pipeline is simple:
 
 ## Module boundaries
 
+### `source`
+
+Owns source coordinate data: `Source_location`, `Source_span`, and span hull
+helpers.
+
 ### `lexing`
 
-Owns tokenization, source locations, and token lookahead.
+Owns tokenization, source-location tracking at lex time, and token lookahead.
 
 ### `streams`
 
@@ -41,7 +47,7 @@ API for incremental token-text construction.
 
 ### `ast`
 
-Owns the AST data model: expression and statement node types, operator identity, and source spans over AST nodes.
+Owns the AST data model: expression and statement node types, operator identity, and `span_of` accessors over AST nodes.
 
 ### `parsing`
 

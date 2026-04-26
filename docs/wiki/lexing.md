@@ -21,7 +21,7 @@ The closed set of token kinds in the language.
 
 ### `Lexeme`
 
-A token plus its preserved text payload, if any, and source span.
+A token plus its preserved text payload, if any, and a `Source_span`.
 
 ### `Lexeme_stream`
 
@@ -37,7 +37,7 @@ The important lexer data is small:
 
 - token kind
 - preserved token text when the token kind requires it
-- source span
+- `Source_span`
 
 The lexer does not build a larger intermediate structure.
 
@@ -68,3 +68,4 @@ and literals while keeping fixed-spelling tokens allocation-free.
 - source locations must stay precise
 - lexing stays incremental rather than tokenizing the whole file up front
 - raw byte/character input remains in `streams`
+- source coordinate types remain in `source`

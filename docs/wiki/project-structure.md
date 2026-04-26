@@ -4,6 +4,13 @@ This page describes the repository in stable conceptual terms. It intentionally 
 
 ## Main code areas
 
+### `code/source`
+
+The header-only source-coordinate library. Owns `Source_location`,
+`Source_span`, and helpers for composing source spans.
+
+See [`source`](./source.md).
+
 ### `code/streams`
 
 The raw input-stream library. Owns byte input, UTF-8 decoding, and
@@ -116,6 +123,7 @@ living between lexing and later front-end consumers.
 The repo may be reorganized internally over time. The stable structure to preserve in docs and reviews is:
 
 - raw input streams
+- source coordinate data
 - lexer
 - spelling storage
 - AST data model

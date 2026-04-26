@@ -3,10 +3,12 @@
 
 #include <stdexcept>
 
+#include <spelling/spelling.h>
+#include <streams/char_input_stream.h>
+#include <streams/char_input_stream_peeker.h>
+#include <source/source_location.h>
+
 #include "lexeme.h"
-#include "spelling/spelling.h"
-#include "streams/char_input_stream.h"
-#include "streams/char_input_stream_peeker.h"
 
 namespace benson
 {

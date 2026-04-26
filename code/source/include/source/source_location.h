@@ -1,5 +1,5 @@
-#ifndef BASEDLEX_SOURCE_LOCATION_H
-#define BASEDLEX_SOURCE_LOCATION_H
+#ifndef BENSON_SOURCE_SOURCE_LOCATION_H
+#define BENSON_SOURCE_SOURCE_LOCATION_H
 
 #include <cstdint>
 
@@ -15,4 +15,4 @@ namespace benson
 
 } // namespace benson
 
-#endif // BASEDLEX_SOURCE_LOCATION_H
+#endif // BENSON_SOURCE_SOURCE_LOCATION_H

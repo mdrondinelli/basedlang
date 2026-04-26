@@ -17,7 +17,7 @@
 #include <ir/constant_value.h>
 #include <ir/hlir.h>
 #include <ir/type.h>
-#include <lexing/source_span.h>
+#include <source/source_span.h>
 #include <spelling/spelling.h>
 
 #include "operator_overload.h"

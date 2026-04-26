@@ -472,10 +472,6 @@ namespace benson
       throw Virtual_machine::Unsupported_return_type_error{type};
     }
 
-    constexpr std::byte halt_byte{
-      static_cast<std::byte>(bytecode::Opcode::exit)
-    };
-
   } // namespace
 
   Virtual_machine::Virtual_machine()
@@ -525,19 +521,23 @@ namespace benson
         static_cast<std::ptrdiff_t>(args.size()),
       };
     }
-    set_register_value(
-      bytecode::sp,
-      Pointer{Address_space::stack, stack->size()}
-    );
     for (auto i = std::ptrdiff_t{};
          i < static_cast<std::ptrdiff_t>(args.size());
          ++i)
     {
       push_arg(*this, i, fn.parameter_types[i], args[i]);
     }
-    push_value(*this, &halt_byte);
+    auto const exit_byte = bytecode::Opcode::exit;
+    push_value(
+      *this,
+      static_cast<std::uint64_t>(
+        std::bit_cast<std::uintptr_t>(&exit_byte)
+      )
+    );
+    auto const ip = instruction_pointer;
     instruction_pointer = module->code.data() + fn.position;
     run();
+    instruction_pointer = ip;
     return decode_return(*this, fn.return_type);
   }
 

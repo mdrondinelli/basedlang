@@ -8,14 +8,15 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <span>
 #include <stdexcept>
+#include <variant>
 
 #include "bytecode/constant.h"
 #include "bytecode/module.h"
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
-#include "ir/constant_value.h"
 #include "pointer.h"
 #include "spelling/spelling.h"
 
@@ -206,7 +207,7 @@ namespace benson
     ///   primitive type the VM knows how to marshal.
     /// - `Unsupported_return_type_error` — the function's return type is not a
     ///   primitive type the VM knows how to decode.
-    ir::Constant_value call(Spelling name, std::span<Scalar const> args);
+    std::optional<Scalar> call(Spelling name, std::span<Scalar const> args);
 
     bytecode::Module const *module{};
     std::byte const *instruction_pointer;

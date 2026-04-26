@@ -62,7 +62,7 @@ add_library(vm
   code/vm/src/vm.cpp
 )
 target_include_directories(vm PUBLIC code/vm/include)
-target_link_libraries(vm PUBLIC bytecode ir)
+target_link_libraries(vm PUBLIC bytecode)
 
 add_library(bensoncli
   code/benson/run.cpp

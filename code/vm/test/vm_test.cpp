@@ -14,7 +14,6 @@
 
 #include "bytecode/bytecode_writer.h"
 #include "bytecode/module_builder.h"
-#include "ir/constant_value.h"
 #include "spelling/spelling.h"
 #include "vm/vm.h"
 
@@ -1474,8 +1473,9 @@ TEST_CASE("Virtual_machine::call invokes an i32 add function")
     std::int32_t{2},
   };
   auto const result = vm.call(add, args);
-  REQUIRE(std::holds_alternative<std::int32_t>(result));
-  CHECK(std::get<std::int32_t>(result) == 42);
+  REQUIRE(result);
+  REQUIRE(std::holds_alternative<std::int32_t>(*result));
+  CHECK(std::get<std::int32_t>(*result) == 42);
 }
 
 TEST_CASE("Virtual_machine::call round-trips a float through gpr(1)")
@@ -1501,11 +1501,12 @@ TEST_CASE("Virtual_machine::call round-trips a float through gpr(1)")
   auto const args =
     std::array<benson::Virtual_machine::Scalar, 1>{float{3.14159F}};
   auto const result = vm.call(identity, args);
-  REQUIRE(std::holds_alternative<float>(result));
-  CHECK(std::get<float>(result) == 3.14159F);
+  REQUIRE(result);
+  REQUIRE(std::holds_alternative<float>(*result));
+  CHECK(std::get<float>(*result) == 3.14159F);
 }
 
-TEST_CASE("Virtual_machine::call returns Void_value for void functions")
+TEST_CASE("Virtual_machine::call returns empty optional for void functions")
 {
   using benson::bytecode::Module_builder;
   using enum benson::bytecode::Scalar_type;
@@ -1524,7 +1525,7 @@ TEST_CASE("Virtual_machine::call returns Void_value for void functions")
   vm.load(module);
 
   auto const result = vm.call(noop, {});
-  CHECK(std::holds_alternative<benson::ir::Void_value>(result));
+  CHECK(!result);
 }
 
 TEST_CASE("Virtual_machine::call works across consecutive invocations")
@@ -1551,12 +1552,14 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
   auto const args1 =
     std::array<benson::Virtual_machine::Scalar, 1>{std::int32_t{10}};
   auto const r1 = vm.call(inc, args1);
-  CHECK(std::get<std::int32_t>(r1) == 11);
+  REQUIRE(r1);
+  CHECK(std::get<std::int32_t>(*r1) == 11);
 
   auto const args2 =
     std::array<benson::Virtual_machine::Scalar, 1>{std::int32_t{99}};
   auto const r2 = vm.call(inc, args2);
-  CHECK(std::get<std::int32_t>(r2) == 100);
+  REQUIRE(r2);
+  CHECK(std::get<std::int32_t>(*r2) == 100);
 }
 
 TEST_CASE("Virtual_machine::call rejects bad inputs")

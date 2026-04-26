@@ -196,7 +196,7 @@ namespace benson
     /// - `Argument_count_error` — `args.size()` differs from the function's
     ///   declared parameter count.
     /// - `Argument_type_error` — an `args[i]` does not hold the
-    ///   `ir::Constant_value` alternative matching the i-th parameter type.
+    ///   `Scalar` alternative matching the i-th parameter type.
     /// - `Unsupported_argument_type_error` — the i-th parameter type is not a
     ///   primitive type the VM knows how to marshal.
     /// - `Unsupported_return_type_error` — the function's return type is not a

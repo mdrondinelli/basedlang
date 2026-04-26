@@ -1,8 +1,9 @@
 #ifndef BASEDAST_SOURCE_SPAN_H
 #define BASEDAST_SOURCE_SPAN_H
 
+#include <source/source_span.h>
+
 #include "ast.h"
-#include <lexing/source_span.h>
 
 namespace benson::ast
 {

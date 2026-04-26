@@ -3,6 +3,8 @@
 
 #include <stdexcept>
 
+#include <source/source_location.h>
+
 #include "lexeme.h"
 #include "spelling/spelling.h"
 #include "streams/char_input_stream.h"

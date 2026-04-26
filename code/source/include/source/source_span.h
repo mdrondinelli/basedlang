@@ -1,5 +1,5 @@
-#ifndef BASEDLEX_SOURCE_SPAN_H
-#define BASEDLEX_SOURCE_SPAN_H
+#ifndef BENSON_SOURCE_SOURCE_SPAN_H
+#define BENSON_SOURCE_SOURCE_SPAN_H
 
 #include "source_location.h"
 
@@ -18,8 +18,11 @@ namespace benson
   /// Returns the smallest span whose @c start comes from @p begin and whose
   /// @c end comes from @p end. Use this to build the span of a composite
   /// construct from the spans of its outermost tokens or sub-nodes.
-  Source_span hull(Source_span begin, Source_span end);
+  inline Source_span hull(Source_span begin, Source_span end)
+  {
+    return Source_span{.start = begin.start, .end = end.end};
+  }
 
 } // namespace benson
 
-#endif // BASEDLEX_SOURCE_SPAN_H
+#endif // BENSON_SOURCE_SOURCE_SPAN_H

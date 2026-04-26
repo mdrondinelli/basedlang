@@ -1,7 +1,8 @@
 #ifndef BASEDLEX_LEXEME_H
 #define BASEDLEX_LEXEME_H
 
-#include "source_span.h"
+#include <source/source_span.h>
+
 #include "spelling/spelling.h"
 #include "token.h"
 

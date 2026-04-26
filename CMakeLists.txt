@@ -15,13 +15,16 @@ target_include_directories(spelling INTERFACE code/spelling/include)
 add_library(streams INTERFACE)
 target_include_directories(streams INTERFACE code/streams/include)
 
+add_library(source INTERFACE)
+target_include_directories(source INTERFACE code/source/include)
+
 add_library(lexing
+  code/lexing/src/lexeme.cpp
   code/lexing/src/lexeme_stream.cpp
   code/lexing/src/lexeme_stream_reader.cpp
-  code/lexing/src/source_span.cpp
 )
 target_include_directories(lexing PUBLIC code/lexing/include)
-target_link_libraries(lexing PUBLIC spelling streams)
+target_link_libraries(lexing PUBLIC source spelling streams)
 
 add_library(ast
   code/ast/src/ast.cpp
@@ -56,7 +59,7 @@ add_library(bytecode
   code/bytecode/src/module_builder.cpp
 )
 target_include_directories(bytecode PUBLIC code/bytecode/include)
-target_link_libraries(bytecode PUBLIC streams spelling)
+target_link_libraries(bytecode PUBLIC source streams spelling)
 
 add_library(vm
   code/vm/src/vm.cpp

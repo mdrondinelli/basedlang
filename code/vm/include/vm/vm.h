@@ -15,7 +15,6 @@
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
 #include "ir/constant_value.h"
-#include "ir/type.h"
 #include "pointer.h"
 #include "spelling/spelling.h"
 
@@ -32,7 +31,7 @@ namespace benson
       // TODO: check that k is in range
       return Pointer{
         Address_space::constant,
-        static_cast<uint64_t>(constant_table[k.value])
+        static_cast<uint64_t>(module->constant_table[k.value])
       };
     }
 
@@ -40,9 +39,9 @@ namespace benson
     [[nodiscard]] T get_constant_value(bytecode::Constant k) const
     {
       // TODO: check that k is in range
-      auto const offset = constant_table[k.value];
+      auto const offset = module->constant_table[k.value];
       auto value = std::uint64_t{};
-      std::memcpy(&value, constant_memory + offset, sizeof(T));
+      std::memcpy(&value, module->constant_data.data() + offset, sizeof(T));
       if constexpr (std::same_as<T, float>)
       {
         return std::bit_cast<float>(static_cast<std::uint32_t>(value));
@@ -109,8 +108,6 @@ namespace benson
 
     bytecode::Module const *module{};
     std::byte const *instruction_pointer;
-    std::byte const *constant_memory;
-    std::ptrdiff_t const *constant_table;
     std::unique_ptr<std::array<std::uint64_t, 64 * 1024>> registers;
     std::unique_ptr<std::array<std::byte, 16 * 1024 * 1024>> stack;
 

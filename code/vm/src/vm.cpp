@@ -295,7 +295,7 @@ namespace benson
         switch (address_space)
         {
         case Address_space::constant:
-          return vm.constant_memory;
+          return vm.module->constant_data.data();
         case Address_space::stack:
           return vm.stack->data();
         default:
@@ -519,8 +519,6 @@ namespace benson
 
   Virtual_machine::Virtual_machine()
       : instruction_pointer{nullptr},
-        constant_memory{nullptr},
-        constant_table{nullptr},
         registers{std::make_unique<std::array<std::uint64_t, 64 * 1024>>()},
         stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()}
   {
@@ -534,8 +532,6 @@ namespace benson
   {
     module = &m;
     instruction_pointer = m.code.data();
-    constant_memory = m.constant_data.data();
-    constant_table = m.constant_table.data();
   }
 
   void Virtual_machine::run()

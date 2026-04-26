@@ -474,10 +474,13 @@ TEST_CASE(
   writer.emit_exit();
   writer.flush();
 
+  auto module = benson::bytecode::Module{};
+  module.constant_data = std::move(constant_memory);
+  module.constant_table = std::move(constant_table);
+
   auto vm = benson::Virtual_machine{};
+  vm.module = &module;
   vm.instruction_pointer = stream.bytes().data();
-  vm.constant_memory = constant_memory.data();
-  vm.constant_table = constant_table.data();
   vm.set_register_value<std::int32_t>(gpr(2), 10);
   vm.set_register_value<double>(gpr(14), 10.0);
 
@@ -1417,10 +1420,13 @@ TEST_CASE(
   writer.emit_exit();
   writer.flush();
 
+  auto module = benson::bytecode::Module{};
+  module.constant_data = std::move(constant_memory);
+  module.constant_table = std::move(constant_table);
+
   auto vm = benson::Virtual_machine{};
+  vm.module = &module;
   vm.instruction_pointer = stream.bytes().data();
-  vm.constant_memory = constant_memory.data();
-  vm.constant_table = constant_table.data();
   vm.set_register_value<std::int32_t>(gpr(2), 0x0101);
   vm.set_register_value<std::int64_t>(gpr(4), 8);
   vm.set_register_value<float>(gpr(6), 2.5F);

@@ -47,7 +47,7 @@ API for incremental token-text construction.
 
 ### `ast`
 
-Owns the AST data model: expression and statement node types, operator identity, and source spans over AST nodes.
+Owns the AST data model: expression and statement node types, operator identity, and `span_of` accessors over AST nodes.
 
 ### `parsing`
 

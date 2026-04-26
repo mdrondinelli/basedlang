@@ -9,12 +9,14 @@
 #include <cstring>
 #include <memory>
 #include <span>
+#include <stdexcept>
 
 #include "bytecode/constant.h"
 #include "bytecode/module.h"
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
 #include "ir/constant_value.h"
+#include "ir/type.h"
 #include "pointer.h"
 #include "spelling/spelling.h"
 
@@ -24,6 +26,74 @@ namespace benson
   class Virtual_machine
   {
   public:
+    class Call_error: public std::runtime_error
+    {
+    public:
+      using std::runtime_error::runtime_error;
+    };
+
+    class Unknown_function_error: public Call_error
+    {
+    public:
+      explicit Unknown_function_error(Spelling name)
+          : Call_error{"unknown function"}, name{name}
+      {
+      }
+
+      Spelling name;
+    };
+
+    class Argument_count_error: public Call_error
+    {
+    public:
+      Argument_count_error(std::ptrdiff_t expected, std::ptrdiff_t actual)
+          : Call_error{"argument count mismatch"},
+            expected{expected},
+            actual{actual}
+      {
+      }
+
+      std::ptrdiff_t expected;
+      std::ptrdiff_t actual;
+    };
+
+    class Argument_type_error: public Call_error
+    {
+    public:
+      Argument_type_error(std::ptrdiff_t index, ir::Type *expected_type)
+          : Call_error{"argument type mismatch"},
+            index{index},
+            expected_type{expected_type}
+      {
+      }
+
+      std::ptrdiff_t index;
+      ir::Type *expected_type;
+    };
+
+    class Unsupported_argument_type_error: public Call_error
+    {
+    public:
+      Unsupported_argument_type_error(std::ptrdiff_t index, ir::Type *type)
+          : Call_error{"unsupported argument type"}, index{index}, type{type}
+      {
+      }
+
+      std::ptrdiff_t index;
+      ir::Type *type;
+    };
+
+    class Unsupported_return_type_error: public Call_error
+    {
+    public:
+      explicit Unsupported_return_type_error(ir::Type *type)
+          : Call_error{"unsupported return type"}, type{type}
+      {
+      }
+
+      ir::Type *type;
+    };
+
     Virtual_machine();
 
     Pointer lookup_constant(bytecode::Constant k) const
@@ -103,6 +173,24 @@ namespace benson
 
     void run();
 
+    /// Looks up a function by `name` in the loaded module, pushes `args` on
+    /// the stack at their native widths, jumps to the entry, runs until the
+    /// callee returns, and decodes the return value from `gpr(1)` according to
+    /// the function's return type.
+    ///
+    /// Precondition: a module has been loaded via `load`. Violating this is a
+    /// programming error and aborts via `assert`.
+    ///
+    /// Throws:
+    /// - `Unknown_function_error` — `name` is not in `module->functions`.
+    /// - `Argument_count_error` — `args.size()` differs from the function's
+    ///   declared parameter count.
+    /// - `Argument_type_error` — an `args[i]` does not hold the
+    ///   `ir::Constant_value` alternative matching the i-th parameter type.
+    /// - `Unsupported_argument_type_error` — the i-th parameter type is not a
+    ///   primitive type the VM knows how to marshal.
+    /// - `Unsupported_return_type_error` — the function's return type is not a
+    ///   primitive type the VM knows how to decode.
     ir::Constant_value
     call(Spelling name, std::span<ir::Constant_value const> args);
 

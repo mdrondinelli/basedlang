@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -415,7 +416,8 @@ namespace benson
 
     void push_arg(
       Virtual_machine &vm,
-      ir::Type const *type,
+      std::ptrdiff_t index,
+      ir::Type *type,
       ir::Constant_value const &value
     )
     {
@@ -423,7 +425,7 @@ namespace benson
         auto const *typed = std::get_if<T>(&value);
         if (!typed)
         {
-          throw std::runtime_error{"argument type mismatch"};
+          throw Virtual_machine::Argument_type_error{index, type};
         }
         return *typed;
       };
@@ -459,7 +461,10 @@ namespace benson
           }
           else
           {
-            throw std::runtime_error{"unsupported argument type"};
+            throw Virtual_machine::Unsupported_argument_type_error{
+              index,
+              type,
+            };
           }
         },
         type->data
@@ -467,7 +472,7 @@ namespace benson
     }
 
     ir::Constant_value
-    decode_return(Virtual_machine const &vm, ir::Type const *type)
+    decode_return(Virtual_machine const &vm, ir::Type *type)
     {
       return std::visit(
         [&]<typename T>(T const &) -> ir::Constant_value {
@@ -505,7 +510,7 @@ namespace benson
           }
           else
           {
-            throw std::runtime_error{"unsupported return type"};
+            throw Virtual_machine::Unsupported_return_type_error{type};
           }
         },
         type->data
@@ -552,28 +557,30 @@ namespace benson
     std::span<ir::Constant_value const> args
   )
   {
-    if (!module)
-    {
-      throw std::runtime_error{"no module loaded"};
-    }
+    assert(module != nullptr);
     auto const it = module->functions.find(name);
     if (it == module->functions.end())
     {
-      throw std::runtime_error{"unknown function"};
+      throw Unknown_function_error{name};
     }
     auto const &fn = it->second;
     if (args.size() != fn.parameter_types.size())
     {
-      throw std::runtime_error{"argument count mismatch"};
+      throw Argument_count_error{
+        static_cast<std::ptrdiff_t>(fn.parameter_types.size()),
+        static_cast<std::ptrdiff_t>(args.size()),
+      };
     }
     auto const saved_ip = instruction_pointer;
     set_register_value(
       bytecode::sp,
       Pointer{Address_space::stack, stack->size()}
     );
-    for (auto i = std::size_t{}; i < args.size(); ++i)
+    for (auto i = std::ptrdiff_t{};
+         i < static_cast<std::ptrdiff_t>(args.size());
+         ++i)
     {
-      push_arg(*this, fn.parameter_types[i], args[i]);
+      push_arg(*this, i, fn.parameter_types[i], args[i]);
     }
     push_u64(
       *this,

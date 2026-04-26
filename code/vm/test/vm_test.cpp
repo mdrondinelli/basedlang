@@ -1600,17 +1600,18 @@ TEST_CASE("Virtual_machine::call rejects bad inputs")
   auto vm = benson::Virtual_machine{};
   vm.load(module);
 
-  CHECK_THROWS_AS(vm.call(unknown, {}), std::runtime_error);
-  CHECK_THROWS_AS(vm.call(known, {}), std::runtime_error);
+  CHECK_THROWS_AS(
+    vm.call(unknown, {}),
+    benson::Virtual_machine::Unknown_function_error
+  );
+  CHECK_THROWS_AS(
+    vm.call(known, {}),
+    benson::Virtual_machine::Argument_count_error
+  );
   auto const wrong_type =
     std::array<benson::ir::Constant_value, 1>{std::int64_t{0}};
-  CHECK_THROWS_AS(vm.call(known, wrong_type), std::runtime_error);
-}
-
-TEST_CASE("Virtual_machine::call throws when no module is loaded")
-{
-  auto spellings = benson::Spelling_table{};
-  auto const name = spellings.intern("never");
-  auto vm = benson::Virtual_machine{};
-  CHECK_THROWS_AS(vm.call(name, {}), std::runtime_error);
+  CHECK_THROWS_AS(
+    vm.call(known, wrong_type),
+    benson::Virtual_machine::Argument_type_error
+  );
 }

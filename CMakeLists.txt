@@ -32,7 +32,7 @@ add_library(ast
   code/ast/src/source_span.cpp
 )
 target_include_directories(ast PUBLIC code/ast/include)
-target_link_libraries(ast PUBLIC lexing)
+target_link_libraries(ast PUBLIC lexing source)
 
 add_library(parsing
   code/parsing/src/parser.cpp
@@ -52,7 +52,7 @@ add_library(frontend
   code/frontend/src/symbol_table.cpp
 )
 target_include_directories(frontend PUBLIC code/frontend/include)
-target_link_libraries(frontend PUBLIC ir ast spelling)
+target_link_libraries(frontend PUBLIC ir ast source spelling)
 
 add_library(bytecode
   code/bytecode/src/bytecode_writer.cpp

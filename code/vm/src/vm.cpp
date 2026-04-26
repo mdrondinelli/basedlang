@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -281,6 +282,86 @@ namespace benson
       }
     };
 
+    void push_bytes(Virtual_machine &vm, std::span<std::byte const> bytes)
+    {
+      auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
+      // TODO: safety check for sp.space == Address_space::stack
+      auto const new_offset = sp.offset - bytes.size();
+      std::memcpy(vm.stack->data() + new_offset, bytes.data(), bytes.size());
+      vm.set_register_value(
+        bytecode::sp,
+        Pointer{Address_space::stack, new_offset}
+      );
+    }
+
+    void pop_bytes(Virtual_machine &vm, std::span<std::byte> bytes)
+    {
+      auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
+      // TODO: safety check for sp.space == Address_space::stack
+      auto const new_offset = sp.offset + bytes.size();
+      std::memcpy(bytes.data(), vm.stack->data() + sp.offset, bytes.size());
+      vm.set_register_value(
+        bytecode::sp,
+        Pointer{Address_space::stack, new_offset}
+      );
+    }
+
+    template <typename T>
+    void push_value(Virtual_machine &vm, T value)
+    {
+      push_bytes(vm, std::as_bytes(std::span{&value, std::size_t{1}}));
+    }
+
+    template <typename T>
+    void pop_value(Virtual_machine &vm, T &value)
+    {
+      pop_bytes(vm, std::as_writable_bytes(std::span{&value, std::size_t{1}}));
+    }
+
+    void push_arg(
+      Virtual_machine &vm,
+      std::ptrdiff_t index,
+      bytecode::Scalar_type type,
+      Virtual_machine::Scalar const &value
+    )
+    {
+      auto const require = [&]<typename T>() -> T
+      {
+        auto const *typed = std::get_if<T>(&value);
+        if (!typed)
+        {
+          throw Virtual_machine::Argument_type_error{index, type};
+        }
+        return *typed;
+      };
+      switch (type)
+      {
+      case bytecode::Scalar_type::int8:
+        push_value(vm, require.template operator()<std::int8_t>());
+        break;
+      case bytecode::Scalar_type::int16:
+        push_value(vm, require.template operator()<std::int16_t>());
+        break;
+      case bytecode::Scalar_type::int32:
+        push_value(vm, require.template operator()<std::int32_t>());
+        break;
+      case bytecode::Scalar_type::int64:
+        push_value(vm, require.template operator()<std::int64_t>());
+        break;
+      case bytecode::Scalar_type::float_:
+        push_value(vm, require.template operator()<float>());
+        break;
+      case bytecode::Scalar_type::double_:
+        push_value(vm, require.template operator()<double>());
+        break;
+      case bytecode::Scalar_type::bool_:
+        push_value(vm, std::uint8_t{require.template operator()<bool>()});
+        break;
+      case bytecode::Scalar_type::void_:
+        throw Virtual_machine::Unsupported_argument_type_error{index, type};
+      }
+    }
+
     template <Operand_width width, std::size_t N>
     void run_load(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
@@ -295,16 +376,18 @@ namespace benson
         switch (address_space)
         {
         case Address_space::constant:
-          return vm.constant_memory;
+          return vm.module->constant_data.data();
         case Address_space::stack:
           return vm.stack->data();
+        case Address_space::heap:
+          // TODO: heap load implementation
         default:
           throw std::runtime_error{"unsupported address space for load"};
         }
       }();
 
       auto value = std::uint64_t{};
-      // TODO: bounds check
+      // TODO: safety bounds check
       std::memcpy(&value, space_pointer + base_address + offset.value, N);
       (*vm.registers)[dst.value] = value;
     }
@@ -315,7 +398,6 @@ namespace benson
       auto const src = read_register<width>(instruction_pointer);
       auto const base = read_register<width>(instruction_pointer);
       auto const offset = read_immediate<width>(instruction_pointer);
-
       auto const [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
       if (address_space == Address_space::constant)
@@ -326,8 +408,7 @@ namespace benson
       {
         throw std::runtime_error{"unsupported address space for store"};
       }
-
-      // TODO: bounds check
+      // TODO: safety bounds check
       std::memcpy(
         vm.stack->data() + base_address + offset.value,
         &(*vm.registers)[src.value],
@@ -342,55 +423,6 @@ namespace benson
       instruction_pointer += offset.value;
     }
 
-    void push_u64(Virtual_machine &vm, std::uint64_t value)
-    {
-      auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
-      if (sp.space != Address_space::stack)
-      {
-        throw std::runtime_error{"unsupported address space for call stack"};
-      }
-      auto const new_offset = sp.offset - sizeof(std::uint64_t);
-      std::memcpy(vm.stack->data() + new_offset, &value, sizeof(value));
-      vm.set_register_value(
-        bytecode::sp,
-        Pointer{Address_space::stack, new_offset}
-      );
-    }
-
-    auto pop_u64(Virtual_machine &vm) -> std::uint64_t
-    {
-      auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
-      if (sp.space != Address_space::stack)
-      {
-        throw std::runtime_error{"unsupported address space for call stack"};
-      }
-      auto value = std::uint64_t{};
-      std::memcpy(&value, vm.stack->data() + sp.offset, sizeof(value));
-      vm.set_register_value(
-        bytecode::sp,
-        Pointer{Address_space::stack, sp.offset + sizeof(std::uint64_t)}
-      );
-      return value;
-    }
-
-    template <Operand_width width>
-    void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
-    {
-      auto const offset = read_immediate<width>(instruction_pointer);
-      push_u64(
-        vm,
-        static_cast<std::uint64_t>(
-          reinterpret_cast<std::uintptr_t>(instruction_pointer)
-        )
-      );
-      instruction_pointer += offset.value;
-    }
-
-    void run_ret(std::byte const *&instruction_pointer, Virtual_machine &vm)
-    {
-      instruction_pointer = reinterpret_cast<std::byte const *>(pop_u64(vm));
-    }
-
     template <Operand_width width>
     void run_jnz_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
@@ -402,30 +434,69 @@ namespace benson
       }
     }
 
+    template <Operand_width width>
+    void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const offset = read_immediate<width>(instruction_pointer);
+      push_value(vm, std::bit_cast<std::uint64_t>(instruction_pointer));
+      instruction_pointer += offset.value;
+    }
+
+    void run_ret(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      pop_value(vm, instruction_pointer);
+    }
+
+    Virtual_machine::Scalar
+    decode_return(Virtual_machine const &vm, bytecode::Scalar_type type)
+    {
+      switch (type)
+      {
+      case bytecode::Scalar_type::int8:
+        return vm.get_register_value<std::int8_t>(bytecode::gpr(1));
+      case bytecode::Scalar_type::int16:
+        return vm.get_register_value<std::int16_t>(bytecode::gpr(1));
+      case bytecode::Scalar_type::int32:
+        return vm.get_register_value<std::int32_t>(bytecode::gpr(1));
+      case bytecode::Scalar_type::int64:
+        return vm.get_register_value<std::int64_t>(bytecode::gpr(1));
+      case bytecode::Scalar_type::float_:
+        return vm.get_register_value<float>(bytecode::gpr(1));
+      case bytecode::Scalar_type::double_:
+        return vm.get_register_value<double>(bytecode::gpr(1));
+      case bytecode::Scalar_type::bool_:
+        return vm.get_register_value<bool>(bytecode::gpr(1));
+      case bytecode::Scalar_type::void_:
+        return Virtual_machine::Void_value{};
+      }
+      throw Virtual_machine::Unsupported_return_type_error{type};
+    }
+
+    constexpr std::byte halt_byte{
+      static_cast<std::byte>(bytecode::Opcode::exit)
+    };
+
   } // namespace
 
   Virtual_machine::Virtual_machine()
       : instruction_pointer{nullptr},
-        constant_memory{nullptr},
-        constant_table{nullptr},
         registers{std::make_unique<std::array<std::uint64_t, 64 * 1024>>()},
         stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()}
-  {
-  }
-
-  void Virtual_machine::load(bytecode::Module const &module)
-  {
-    instruction_pointer = module.code.data();
-    constant_memory = module.constant_data.data();
-    constant_table = module.constant_table.data();
-  }
-
-  void Virtual_machine::run()
   {
     set_register_value(
       bytecode::sp,
       Pointer{Address_space::stack, stack->size()}
     );
+  }
+
+  void Virtual_machine::load(bytecode::Module const &m)
+  {
+    module = &m;
+    instruction_pointer = m.code.data();
+  }
+
+  void Virtual_machine::run()
+  {
     for (;;)
     {
       auto const opcode = static_cast<bytecode::Opcode>(*instruction_pointer++);
@@ -435,6 +506,39 @@ namespace benson
       }
       dispatch(opcode);
     }
+  }
+
+  Virtual_machine::Scalar
+  Virtual_machine::call(Spelling name, std::span<Scalar const> args)
+  {
+    assert(module != nullptr);
+    auto const it = module->functions.find(name);
+    if (it == module->functions.end())
+    {
+      throw Unknown_function_error{name};
+    }
+    auto const &fn = it->second;
+    if (args.size() != fn.parameter_types.size())
+    {
+      throw Argument_count_error{
+        static_cast<std::ptrdiff_t>(fn.parameter_types.size()),
+        static_cast<std::ptrdiff_t>(args.size()),
+      };
+    }
+    set_register_value(
+      bytecode::sp,
+      Pointer{Address_space::stack, stack->size()}
+    );
+    for (auto i = std::ptrdiff_t{};
+         i < static_cast<std::ptrdiff_t>(args.size());
+         ++i)
+    {
+      push_arg(*this, i, fn.parameter_types[i], args[i]);
+    }
+    push_value(*this, &halt_byte);
+    instruction_pointer = module->code.data() + fn.position;
+    run();
+    return decode_return(*this, fn.return_type);
   }
 
   void Virtual_machine::dispatch(bytecode::Opcode opcode)

@@ -56,7 +56,7 @@ add_library(bytecode
   code/bytecode/src/module_builder.cpp
 )
 target_include_directories(bytecode PUBLIC code/bytecode/include)
-target_link_libraries(bytecode PUBLIC streams)
+target_link_libraries(bytecode PUBLIC streams spelling)
 
 add_library(vm
   code/vm/src/vm.cpp

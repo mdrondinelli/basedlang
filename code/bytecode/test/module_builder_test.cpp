@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "bytecode/module_builder.h"
+#include "spelling/spelling.h"
 
 using benson::bytecode::gpr;
 using benson::bytecode::sp;
@@ -158,4 +159,39 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
   );
   CHECK(module.constant_table == std::vector<std::ptrdiff_t>{0, 4});
   CHECK(module.constant_data.size() == 8);
+}
+
+TEST_CASE("Module_builder records placed functions")
+{
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const foo = spellings.intern("foo");
+  auto const bar = spellings.intern("bar");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const foo_label = builder.make_label();
+  auto const bar_label = builder.make_label();
+
+  builder.place_function(foo_label, foo, {int32, int32}, int64);
+  writer.emit_ret();
+  builder.place_function(bar_label, bar, {}, void_);
+  writer.emit_ret();
+  writer.emit_exit();
+
+  auto const module = builder.build();
+
+  REQUIRE(module.functions.size() == 2);
+
+  auto const &foo_entry = module.functions.at(foo);
+  CHECK(foo_entry.position == 0);
+  CHECK(foo_entry.parameter_types == std::vector{int32, int32});
+  CHECK(foo_entry.return_type == int64);
+
+  auto const &bar_entry = module.functions.at(bar);
+  CHECK(bar_entry.position == 1);
+  CHECK(bar_entry.parameter_types.empty());
+  CHECK(bar_entry.return_type == void_);
 }

@@ -70,6 +70,13 @@ namespace benson::bytecode
 
     void place_label(Label label);
 
+    void place_function(
+      Label label,
+      Spelling name,
+      std::vector<Scalar_type> parameter_types,
+      Scalar_type return_type
+    );
+
     Label_jump_target_provider label_target(Label label);
 
     template <detail::Supported_constant T>

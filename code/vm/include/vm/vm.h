@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
-#include <optional>
 #include <span>
 #include <stdexcept>
 #include <variant>
@@ -100,6 +99,10 @@ namespace benson
       bytecode::Scalar_type type;
     };
 
+    struct Void_value
+    {
+    };
+
     using Scalar = std::variant<
       std::int8_t,
       std::int16_t,
@@ -107,7 +110,8 @@ namespace benson
       std::int64_t,
       float,
       double,
-      bool
+      bool,
+      Void_value
     >;
 
     Virtual_machine();
@@ -207,7 +211,7 @@ namespace benson
     ///   primitive type the VM knows how to marshal.
     /// - `Unsupported_return_type_error` — the function's return type is not a
     ///   primitive type the VM knows how to decode.
-    std::optional<Scalar> call(Spelling name, std::span<Scalar const> args);
+    Scalar call(Spelling name, std::span<Scalar const> args);
 
     bytecode::Module const *module{};
     std::byte const *instruction_pointer;

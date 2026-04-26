@@ -447,7 +447,7 @@ namespace benson
       pop_value(vm, instruction_pointer);
     }
 
-    std::optional<Virtual_machine::Scalar>
+    Virtual_machine::Scalar
     decode_return(Virtual_machine const &vm, bytecode::Scalar_type type)
     {
       switch (type)
@@ -467,7 +467,7 @@ namespace benson
       case bytecode::Scalar_type::bool_:
         return vm.get_register_value<bool>(bytecode::gpr(1));
       case bytecode::Scalar_type::void_:
-        return std::nullopt;
+        return Virtual_machine::Void_value{};
       }
       throw Virtual_machine::Unsupported_return_type_error{type};
     }
@@ -508,7 +508,7 @@ namespace benson
     }
   }
 
-  std::optional<Virtual_machine::Scalar>
+  Virtual_machine::Scalar
   Virtual_machine::call(Spelling name, std::span<Scalar const> args)
   {
     assert(module != nullptr);

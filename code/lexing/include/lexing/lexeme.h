@@ -2,8 +2,8 @@
 #define BASEDLEX_LEXEME_H
 
 #include <source/source_span.h>
+#include <spelling/spelling.h>
 
-#include "spelling/spelling.h"
 #include "token.h"
 
 namespace benson

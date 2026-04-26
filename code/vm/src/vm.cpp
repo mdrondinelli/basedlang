@@ -282,65 +282,6 @@ namespace benson
       }
     };
 
-    template <Operand_width width, std::size_t N>
-    void run_load(std::byte const *&instruction_pointer, Virtual_machine &vm)
-    {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const base = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
-
-      auto [address_space, base_address] =
-        Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
-      auto const space_pointer = [&]() -> std::byte const *
-      {
-        switch (address_space)
-        {
-        case Address_space::constant:
-          return vm.module->constant_data.data();
-        case Address_space::stack:
-          return vm.stack->data();
-        default:
-          throw std::runtime_error{"unsupported address space for load"};
-        }
-      }();
-
-      auto value = std::uint64_t{};
-      // TODO: saefty bounds check
-      std::memcpy(&value, space_pointer + base_address + offset.value, N);
-      (*vm.registers)[dst.value] = value;
-    }
-
-    template <Operand_width width, std::size_t N>
-    void run_store(std::byte const *&instruction_pointer, Virtual_machine &vm)
-    {
-      auto const src = read_register<width>(instruction_pointer);
-      auto const base = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
-      auto const [address_space, base_address] =
-        Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
-      if (address_space == Address_space::constant)
-      {
-        throw std::runtime_error{"store to constant memory"};
-      }
-      if (address_space != Address_space::stack)
-      {
-        throw std::runtime_error{"unsupported address space for store"};
-      }
-      // TODO: safety bounds check
-      std::memcpy(
-        vm.stack->data() + base_address + offset.value,
-        &(*vm.registers)[src.value],
-        N
-      );
-    }
-
-    template <Operand_width width>
-    void run_jmp_i(std::byte const *&instruction_pointer)
-    {
-      auto const offset = read_immediate<width>(instruction_pointer);
-      instruction_pointer += offset.value;
-    }
-
     void push_bytes(Virtual_machine &vm, std::span<std::byte const> bytes)
     {
       auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
@@ -353,54 +294,16 @@ namespace benson
       );
     }
 
-    void push_u64(Virtual_machine &vm, std::uint64_t value)
-    {
-      push_bytes(vm, std::as_bytes(std::span{&value, std::size_t{1}}));
-    }
-
-    auto pop_u64(Virtual_machine &vm) -> std::uint64_t
+    void pop_bytes(Virtual_machine &vm, std::span<std::byte> bytes)
     {
       auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
-      if (sp.space != Address_space::stack)
-      {
-        throw std::runtime_error{"unsupported address space for call stack"};
-      }
-      auto value = std::uint64_t{};
-      std::memcpy(&value, vm.stack->data() + sp.offset, sizeof(value));
+      // TODO: safety check for sp.space == Address_space::stack
+      auto const new_offset = sp.offset + bytes.size();
+      std::memcpy(bytes.data(), vm.stack->data() + sp.offset, bytes.size());
       vm.set_register_value(
         bytecode::sp,
-        Pointer{Address_space::stack, sp.offset + sizeof(std::uint64_t)}
+        Pointer{Address_space::stack, new_offset}
       );
-      return value;
-    }
-
-    template <Operand_width width>
-    void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
-    {
-      auto const offset = read_immediate<width>(instruction_pointer);
-      push_u64(
-        vm,
-        static_cast<std::uint64_t>(
-          reinterpret_cast<std::uintptr_t>(instruction_pointer)
-        )
-      );
-      instruction_pointer += offset.value;
-    }
-
-    void run_ret(std::byte const *&instruction_pointer, Virtual_machine &vm)
-    {
-      instruction_pointer = reinterpret_cast<std::byte const *>(pop_u64(vm));
-    }
-
-    template <Operand_width width>
-    void run_jnz_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
-    {
-      auto const src = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
-      if (vm.get_register_value<std::int32_t>(src) != 0)
-      {
-        instruction_pointer += offset.value;
-      }
     }
 
     template <typename T>
@@ -409,14 +312,21 @@ namespace benson
       push_bytes(vm, std::as_bytes(std::span{&value, std::size_t{1}}));
     }
 
+    template <typename T>
+    void pop_value(Virtual_machine &vm, T &value)
+    {
+      pop_bytes(vm, std::as_writable_bytes(std::span{&value, std::size_t{1}}));
+    }
+
     void push_arg(
       Virtual_machine &vm,
       std::ptrdiff_t index,
       ir::Type *type,
-      ir::Constant_value const &value
+      Virtual_machine::Scalar const &value
     )
     {
-      auto const require = [&]<typename T>() -> T {
+      auto const require = [&]<typename T>() -> T
+      {
         auto const *typed = std::get_if<T>(&value);
         if (!typed)
         {
@@ -425,7 +335,8 @@ namespace benson
         return *typed;
       };
       std::visit(
-        [&]<typename T>(T const &) {
+        [&]<typename T>(T const &)
+        {
           if constexpr (std::same_as<T, ir::Int8_type>)
           {
             push_value(vm, require.template operator()<std::int8_t>());
@@ -466,11 +377,96 @@ namespace benson
       );
     }
 
-    ir::Constant_value
-    decode_return(Virtual_machine const &vm, ir::Type *type)
+    template <Operand_width width, std::size_t N>
+    void run_load(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const base = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+
+      auto [address_space, base_address] =
+        Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
+      auto const space_pointer = [&]() -> std::byte const *
+      {
+        switch (address_space)
+        {
+        case Address_space::constant:
+          return vm.module->constant_data.data();
+        case Address_space::stack:
+          return vm.stack->data();
+        case Address_space::heap:
+          // TODO: heap load implementation
+        default:
+          throw std::runtime_error{"unsupported address space for load"};
+        }
+      }();
+
+      auto value = std::uint64_t{};
+      // TODO: safety bounds check
+      std::memcpy(&value, space_pointer + base_address + offset.value, N);
+      (*vm.registers)[dst.value] = value;
+    }
+
+    template <Operand_width width, std::size_t N>
+    void run_store(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const src = read_register<width>(instruction_pointer);
+      auto const base = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+      auto const [address_space, base_address] =
+        Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
+      if (address_space == Address_space::constant)
+      {
+        throw std::runtime_error{"store to constant memory"};
+      }
+      if (address_space != Address_space::stack)
+      {
+        throw std::runtime_error{"unsupported address space for store"};
+      }
+      // TODO: safety bounds check
+      std::memcpy(
+        vm.stack->data() + base_address + offset.value,
+        &(*vm.registers)[src.value],
+        N
+      );
+    }
+
+    template <Operand_width width>
+    void run_jmp_i(std::byte const *&instruction_pointer)
+    {
+      auto const offset = read_immediate<width>(instruction_pointer);
+      instruction_pointer += offset.value;
+    }
+
+    template <Operand_width width>
+    void run_jnz_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const src = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+      if (vm.get_register_value<std::int32_t>(src) != 0)
+      {
+        instruction_pointer += offset.value;
+      }
+    }
+
+    template <Operand_width width>
+    void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const offset = read_immediate<width>(instruction_pointer);
+      push_value(vm, std::bit_cast<std::uint64_t>(instruction_pointer));
+      instruction_pointer += offset.value;
+    }
+
+    void run_ret(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      pop_value(vm, instruction_pointer);
+    }
+
+    ir::Constant_value decode_return(Virtual_machine const &vm, ir::Type *type)
     {
       return std::visit(
-        [&]<typename T>(T const &) -> ir::Constant_value {
+        [&]<typename T>(T const &) -> ir::Constant_value
+        {
           if constexpr (std::same_as<T, ir::Int8_type>)
           {
             return vm.get_register_value<std::int8_t>(bytecode::gpr(1));
@@ -512,7 +508,8 @@ namespace benson
       );
     }
 
-    constexpr std::byte halt_byte{static_cast<std::byte>(bytecode::Opcode::exit)
+    constexpr std::byte halt_byte{
+      static_cast<std::byte>(bytecode::Opcode::exit)
     };
 
   } // namespace
@@ -547,10 +544,8 @@ namespace benson
     }
   }
 
-  ir::Constant_value Virtual_machine::call(
-    Spelling name,
-    std::span<ir::Constant_value const> args
-  )
+  ir::Constant_value
+  Virtual_machine::call(Spelling name, std::span<Scalar const> args)
   {
     assert(module != nullptr);
     auto const it = module->functions.find(name);
@@ -566,7 +561,6 @@ namespace benson
         static_cast<std::ptrdiff_t>(args.size()),
       };
     }
-    auto const saved_ip = instruction_pointer;
     set_register_value(
       bytecode::sp,
       Pointer{Address_space::stack, stack->size()}
@@ -577,13 +571,9 @@ namespace benson
     {
       push_arg(*this, i, fn.parameter_types[i], args[i]);
     }
-    push_u64(
-      *this,
-      static_cast<std::uint64_t>(reinterpret_cast<std::uintptr_t>(&halt_byte))
-    );
+    push_value(*this, &halt_byte);
     instruction_pointer = module->code.data() + fn.position;
     run();
-    instruction_pointer = saved_ip;
     return decode_return(*this, fn.return_type);
   }
 

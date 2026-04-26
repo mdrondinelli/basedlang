@@ -94,6 +94,16 @@ namespace benson
       ir::Type *type;
     };
 
+    using Scalar = std::variant<
+      std::int8_t,
+      std::int16_t,
+      std::int32_t,
+      std::int64_t,
+      float,
+      double,
+      bool
+    >;
+
     Virtual_machine();
 
     Pointer lookup_constant(bytecode::Constant k) const
@@ -192,7 +202,7 @@ namespace benson
     /// - `Unsupported_return_type_error` — the function's return type is not a
     ///   primitive type the VM knows how to decode.
     ir::Constant_value
-    call(Spelling name, std::span<ir::Constant_value const> args);
+    call(Spelling name, std::span<Scalar const> args);
 
     bytecode::Module const *module{};
     std::byte const *instruction_pointer;

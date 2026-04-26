@@ -1448,7 +1448,6 @@ TEST_CASE(
   CHECK(vm.get_register_value<bool>(gpr(15)));
 }
 
-
 TEST_CASE("Virtual_machine::call invokes an i32 add function")
 {
   using benson::bytecode::Immediate;
@@ -1476,7 +1475,7 @@ TEST_CASE("Virtual_machine::call invokes an i32 add function")
   auto vm = benson::Virtual_machine{};
   vm.load(module);
 
-  auto const args = std::array<benson::ir::Constant_value, 2>{
+  auto const args = std::array<benson::Virtual_machine::Scalar, 2>{
     std::int32_t{40},
     std::int32_t{2},
   };
@@ -1511,7 +1510,7 @@ TEST_CASE("Virtual_machine::call round-trips a float through gpr(1)")
   vm.load(module);
 
   auto const args =
-    std::array<benson::ir::Constant_value, 1>{float{3.14159F}};
+    std::array<benson::Virtual_machine::Scalar, 1>{float{3.14159F}};
   auto const result = vm.call(identity, args);
   REQUIRE(std::holds_alternative<float>(result));
   CHECK(std::get<float>(result) == 3.14159F);
@@ -1551,12 +1550,8 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const inc_label = builder.make_label();
-  builder.place_function(
-    inc_label,
-    inc,
-    {types.int32_type()},
-    types.int32_type()
-  );
+  builder
+    .place_function(inc_label, inc, {types.int32_type()}, types.int32_type());
   writer.emit_load_32(gpr(1), sp, Immediate{8});
   writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
   writer.emit_ret();
@@ -1566,12 +1561,12 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
   vm.load(module);
 
   auto const args1 =
-    std::array<benson::ir::Constant_value, 1>{std::int32_t{10}};
+    std::array<benson::Virtual_machine::Scalar, 1>{std::int32_t{10}};
   auto const r1 = vm.call(inc, args1);
   CHECK(std::get<std::int32_t>(r1) == 11);
 
   auto const args2 =
-    std::array<benson::ir::Constant_value, 1>{std::int32_t{99}};
+    std::array<benson::Virtual_machine::Scalar, 1>{std::int32_t{99}};
   auto const r2 = vm.call(inc, args2);
   CHECK(std::get<std::int32_t>(r2) == 100);
 }
@@ -1609,7 +1604,7 @@ TEST_CASE("Virtual_machine::call rejects bad inputs")
     benson::Virtual_machine::Argument_count_error
   );
   auto const wrong_type =
-    std::array<benson::ir::Constant_value, 1>{std::int64_t{0}};
+    std::array<benson::Virtual_machine::Scalar, 1>{std::int64_t{0}};
   CHECK_THROWS_AS(
     vm.call(known, wrong_type),
     benson::Virtual_machine::Argument_type_error

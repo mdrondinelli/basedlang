@@ -3,7 +3,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "bytecode/module_builder.h"
-#include "ir/type.h"
 #include "spelling/spelling.h"
 
 using benson::bytecode::gpr;
@@ -165,8 +164,8 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
 TEST_CASE("Module_builder records placed functions")
 {
   using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
 
-  auto types = benson::ir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto const foo = spellings.intern("foo");
   auto const bar = spellings.intern("bar");
@@ -176,14 +175,9 @@ TEST_CASE("Module_builder records placed functions")
   auto const foo_label = builder.make_label();
   auto const bar_label = builder.make_label();
 
-  builder.place_function(
-    foo_label,
-    foo,
-    {types.int32_type(), types.int32_type()},
-    types.int64_type()
-  );
+  builder.place_function(foo_label, foo, {int32, int32}, int64);
   writer.emit_ret();
-  builder.place_function(bar_label, bar, {}, types.void_type());
+  builder.place_function(bar_label, bar, {}, void_);
   writer.emit_ret();
   writer.emit_exit();
 
@@ -193,14 +187,11 @@ TEST_CASE("Module_builder records placed functions")
 
   auto const &foo_entry = module.functions.at(foo);
   CHECK(foo_entry.position == 0);
-  CHECK(
-    foo_entry.parameter_types ==
-    std::vector<benson::ir::Type *>{types.int32_type(), types.int32_type()}
-  );
-  CHECK(foo_entry.return_type == types.int64_type());
+  CHECK(foo_entry.parameter_types == std::vector{int32, int32});
+  CHECK(foo_entry.return_type == int64);
 
   auto const &bar_entry = module.functions.at(bar);
   CHECK(bar_entry.position == 1);
   CHECK(bar_entry.parameter_types.empty());
-  CHECK(bar_entry.return_type == types.void_type());
+  CHECK(bar_entry.return_type == void_);
 }

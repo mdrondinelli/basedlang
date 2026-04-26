@@ -16,7 +16,6 @@
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
 #include "ir/constant_value.h"
-#include "ir/type.h"
 #include "pointer.h"
 #include "spelling/spelling.h"
 
@@ -60,7 +59,10 @@ namespace benson
     class Argument_type_error: public Call_error
     {
     public:
-      Argument_type_error(std::ptrdiff_t index, ir::Type *expected_type)
+      Argument_type_error(
+        std::ptrdiff_t index,
+        bytecode::Scalar_type expected_type
+      )
           : Call_error{"argument type mismatch"},
             index{index},
             expected_type{expected_type}
@@ -68,30 +70,33 @@ namespace benson
       }
 
       std::ptrdiff_t index;
-      ir::Type *expected_type;
+      bytecode::Scalar_type expected_type;
     };
 
     class Unsupported_argument_type_error: public Call_error
     {
     public:
-      Unsupported_argument_type_error(std::ptrdiff_t index, ir::Type *type)
+      Unsupported_argument_type_error(
+        std::ptrdiff_t index,
+        bytecode::Scalar_type type
+      )
           : Call_error{"unsupported argument type"}, index{index}, type{type}
       {
       }
 
       std::ptrdiff_t index;
-      ir::Type *type;
+      bytecode::Scalar_type type;
     };
 
     class Unsupported_return_type_error: public Call_error
     {
     public:
-      explicit Unsupported_return_type_error(ir::Type *type)
+      explicit Unsupported_return_type_error(bytecode::Scalar_type type)
           : Call_error{"unsupported return type"}, type{type}
       {
       }
 
-      ir::Type *type;
+      bytecode::Scalar_type type;
     };
 
     using Scalar = std::variant<
@@ -201,8 +206,7 @@ namespace benson
     ///   primitive type the VM knows how to marshal.
     /// - `Unsupported_return_type_error` — the function's return type is not a
     ///   primitive type the VM knows how to decode.
-    ir::Constant_value
-    call(Spelling name, std::span<Scalar const> args);
+    ir::Constant_value call(Spelling name, std::span<Scalar const> args);
 
     bytecode::Module const *module{};
     std::byte const *instruction_pointer;

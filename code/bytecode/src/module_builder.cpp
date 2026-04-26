@@ -65,8 +65,8 @@ namespace benson::bytecode
   void Module_builder::place_function(
     Label label,
     Spelling name,
-    std::vector<ir::Type *> parameter_types,
-    ir::Type *return_type
+    std::vector<Scalar_type> parameter_types,
+    Scalar_type return_type
   )
   {
     place_label(label);

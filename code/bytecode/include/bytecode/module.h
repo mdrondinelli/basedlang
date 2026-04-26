@@ -5,17 +5,28 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ir/type.h"
 #include "spelling/spelling.h"
 
 namespace benson::bytecode
 {
 
+  enum class Scalar_type
+  {
+    int8,
+    int16,
+    int32,
+    int64,
+    float_,
+    double_,
+    bool_,
+    void_,
+  };
+
   struct Function
   {
     std::ptrdiff_t position;
-    std::vector<ir::Type *> parameter_types;
-    ir::Type *return_type;
+    std::vector<Scalar_type> parameter_types;
+    Scalar_type return_type;
   };
 
   struct Module

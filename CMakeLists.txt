@@ -56,13 +56,13 @@ add_library(bytecode
   code/bytecode/src/module_builder.cpp
 )
 target_include_directories(bytecode PUBLIC code/bytecode/include)
-target_link_libraries(bytecode PUBLIC streams ir)
+target_link_libraries(bytecode PUBLIC streams spelling)
 
 add_library(vm
   code/vm/src/vm.cpp
 )
 target_include_directories(vm PUBLIC code/vm/include)
-target_link_libraries(vm PUBLIC bytecode)
+target_link_libraries(vm PUBLIC bytecode ir)
 
 add_library(bensoncli
   code/benson/run.cpp

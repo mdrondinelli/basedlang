@@ -321,7 +321,7 @@ namespace benson
     void push_arg(
       Virtual_machine &vm,
       std::ptrdiff_t index,
-      ir::Type *type,
+      bytecode::Scalar_type type,
       Virtual_machine::Scalar const &value
     )
     {
@@ -334,47 +334,32 @@ namespace benson
         }
         return *typed;
       };
-      std::visit(
-        [&]<typename T>(T const &)
-        {
-          if constexpr (std::same_as<T, ir::Int8_type>)
-          {
-            push_value(vm, require.template operator()<std::int8_t>());
-          }
-          else if constexpr (std::same_as<T, ir::Int16_type>)
-          {
-            push_value(vm, require.template operator()<std::int16_t>());
-          }
-          else if constexpr (std::same_as<T, ir::Int32_type>)
-          {
-            push_value(vm, require.template operator()<std::int32_t>());
-          }
-          else if constexpr (std::same_as<T, ir::Int64_type>)
-          {
-            push_value(vm, require.template operator()<std::int64_t>());
-          }
-          else if constexpr (std::same_as<T, ir::Float32_type>)
-          {
-            push_value(vm, require.template operator()<float>());
-          }
-          else if constexpr (std::same_as<T, ir::Float64_type>)
-          {
-            push_value(vm, require.template operator()<double>());
-          }
-          else if constexpr (std::same_as<T, ir::Bool_type>)
-          {
-            push_value(vm, std::uint8_t{require.template operator()<bool>()});
-          }
-          else
-          {
-            throw Virtual_machine::Unsupported_argument_type_error{
-              index,
-              type,
-            };
-          }
-        },
-        type->data
-      );
+      switch (type)
+      {
+      case bytecode::Scalar_type::int8:
+        push_value(vm, require.template operator()<std::int8_t>());
+        break;
+      case bytecode::Scalar_type::int16:
+        push_value(vm, require.template operator()<std::int16_t>());
+        break;
+      case bytecode::Scalar_type::int32:
+        push_value(vm, require.template operator()<std::int32_t>());
+        break;
+      case bytecode::Scalar_type::int64:
+        push_value(vm, require.template operator()<std::int64_t>());
+        break;
+      case bytecode::Scalar_type::float_:
+        push_value(vm, require.template operator()<float>());
+        break;
+      case bytecode::Scalar_type::double_:
+        push_value(vm, require.template operator()<double>());
+        break;
+      case bytecode::Scalar_type::bool_:
+        push_value(vm, std::uint8_t{require.template operator()<bool>()});
+        break;
+      case bytecode::Scalar_type::void_:
+        throw Virtual_machine::Unsupported_argument_type_error{index, type};
+      }
     }
 
     template <Operand_width width, std::size_t N>
@@ -462,50 +447,29 @@ namespace benson
       pop_value(vm, instruction_pointer);
     }
 
-    ir::Constant_value decode_return(Virtual_machine const &vm, ir::Type *type)
+    ir::Constant_value
+    decode_return(Virtual_machine const &vm, bytecode::Scalar_type type)
     {
-      return std::visit(
-        [&]<typename T>(T const &) -> ir::Constant_value
-        {
-          if constexpr (std::same_as<T, ir::Int8_type>)
-          {
-            return vm.get_register_value<std::int8_t>(bytecode::gpr(1));
-          }
-          else if constexpr (std::same_as<T, ir::Int16_type>)
-          {
-            return vm.get_register_value<std::int16_t>(bytecode::gpr(1));
-          }
-          else if constexpr (std::same_as<T, ir::Int32_type>)
-          {
-            return vm.get_register_value<std::int32_t>(bytecode::gpr(1));
-          }
-          else if constexpr (std::same_as<T, ir::Int64_type>)
-          {
-            return vm.get_register_value<std::int64_t>(bytecode::gpr(1));
-          }
-          else if constexpr (std::same_as<T, ir::Float32_type>)
-          {
-            return vm.get_register_value<float>(bytecode::gpr(1));
-          }
-          else if constexpr (std::same_as<T, ir::Float64_type>)
-          {
-            return vm.get_register_value<double>(bytecode::gpr(1));
-          }
-          else if constexpr (std::same_as<T, ir::Bool_type>)
-          {
-            return vm.get_register_value<bool>(bytecode::gpr(1));
-          }
-          else if constexpr (std::same_as<T, ir::Void_type>)
-          {
-            return ir::Void_value{};
-          }
-          else
-          {
-            throw Virtual_machine::Unsupported_return_type_error{type};
-          }
-        },
-        type->data
-      );
+      switch (type)
+      {
+      case bytecode::Scalar_type::int8:
+        return vm.get_register_value<std::int8_t>(bytecode::gpr(1));
+      case bytecode::Scalar_type::int16:
+        return vm.get_register_value<std::int16_t>(bytecode::gpr(1));
+      case bytecode::Scalar_type::int32:
+        return vm.get_register_value<std::int32_t>(bytecode::gpr(1));
+      case bytecode::Scalar_type::int64:
+        return vm.get_register_value<std::int64_t>(bytecode::gpr(1));
+      case bytecode::Scalar_type::float_:
+        return vm.get_register_value<float>(bytecode::gpr(1));
+      case bytecode::Scalar_type::double_:
+        return vm.get_register_value<double>(bytecode::gpr(1));
+      case bytecode::Scalar_type::bool_:
+        return vm.get_register_value<bool>(bytecode::gpr(1));
+      case bytecode::Scalar_type::void_:
+        return ir::Void_value{};
+      }
+      throw Virtual_machine::Unsupported_return_type_error{type};
     }
 
     constexpr std::byte halt_byte{

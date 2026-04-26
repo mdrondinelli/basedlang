@@ -73,8 +73,8 @@ namespace benson::bytecode
     void place_function(
       Label label,
       Spelling name,
-      std::vector<ir::Type *> parameter_types,
-      ir::Type *return_type
+      std::vector<Scalar_type> parameter_types,
+      Scalar_type return_type
     );
 
     Label_jump_target_provider label_target(Label label);

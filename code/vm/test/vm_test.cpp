@@ -15,7 +15,6 @@
 #include "bytecode/bytecode_writer.h"
 #include "bytecode/module_builder.h"
 #include "ir/constant_value.h"
-#include "ir/type.h"
 #include "spelling/spelling.h"
 #include "vm/vm.h"
 
@@ -1452,20 +1451,15 @@ TEST_CASE("Virtual_machine::call invokes an i32 add function")
 {
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
 
-  auto types = benson::ir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto const add = spellings.intern("add");
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const add_label = builder.make_label();
-  builder.place_function(
-    add_label,
-    add,
-    {types.int32_type(), types.int32_type()},
-    types.int32_type()
-  );
+  builder.place_function(add_label, add, {int32, int32}, int32);
   writer.emit_load_32(gpr(2), sp, Immediate{8});
   writer.emit_load_32(gpr(3), sp, Immediate{12});
   writer.emit_add_i32(gpr(1), gpr(2), gpr(3));
@@ -1488,20 +1482,15 @@ TEST_CASE("Virtual_machine::call round-trips a float through gpr(1)")
 {
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
 
-  auto types = benson::ir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto const identity = spellings.intern("identity");
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const identity_label = builder.make_label();
-  builder.place_function(
-    identity_label,
-    identity,
-    {types.float32_type()},
-    types.float32_type()
-  );
+  builder.place_function(identity_label, identity, {float_}, float_);
   writer.emit_load_32(gpr(1), sp, Immediate{8});
   writer.emit_ret();
   auto const module = builder.build();
@@ -1519,15 +1508,15 @@ TEST_CASE("Virtual_machine::call round-trips a float through gpr(1)")
 TEST_CASE("Virtual_machine::call returns Void_value for void functions")
 {
   using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
 
-  auto types = benson::ir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto const noop = spellings.intern("noop");
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const noop_label = builder.make_label();
-  builder.place_function(noop_label, noop, {}, types.void_type());
+  builder.place_function(noop_label, noop, {}, void_);
   writer.emit_ret();
   auto const module = builder.build();
 
@@ -1542,16 +1531,15 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
 {
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
 
-  auto types = benson::ir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto const inc = spellings.intern("inc");
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const inc_label = builder.make_label();
-  builder
-    .place_function(inc_label, inc, {types.int32_type()}, types.int32_type());
+  builder.place_function(inc_label, inc, {int32}, int32);
   writer.emit_load_32(gpr(1), sp, Immediate{8});
   writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
   writer.emit_ret();
@@ -1574,8 +1562,8 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
 TEST_CASE("Virtual_machine::call rejects bad inputs")
 {
   using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
 
-  auto types = benson::ir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto const known = spellings.intern("known");
   auto const unknown = spellings.intern("unknown");
@@ -1583,12 +1571,7 @@ TEST_CASE("Virtual_machine::call rejects bad inputs")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const known_label = builder.make_label();
-  builder.place_function(
-    known_label,
-    known,
-    {types.int32_type()},
-    types.int32_type()
-  );
+  builder.place_function(known_label, known, {int32}, int32);
   writer.emit_ret();
   auto const module = builder.build();
 

@@ -128,11 +128,11 @@ TEST_CASE(
   "Virtual_machine runs lookup constant program emitted by Module_builder"
 )
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::gpr;
   using benson::bytecode::Module_builder;
   using benson::bytecode::sp;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -498,11 +498,11 @@ TEST_CASE(
 
 TEST_CASE("Virtual_machine store_8 writes one byte to stack")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -530,11 +530,11 @@ TEST_CASE("Virtual_machine store_8 writes one byte to stack")
 
 TEST_CASE("Virtual_machine load_8 reads one byte from stack")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -557,11 +557,11 @@ TEST_CASE("Virtual_machine load_8 reads one byte from stack")
 
 TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -588,11 +588,11 @@ TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
 
 TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -686,7 +686,7 @@ TEST_CASE("Virtual_machine takes narrow call_i and ret")
 
   CHECK(vm.get_register_value<std::int32_t>(gpr(1)) == 142);
   CHECK(
-    vm.get_register_value<benson::Pointer>(sp).decode().offset ==
+    vm.get_register_value<benson::vm::Pointer>(sp).decode().offset ==
     vm.stack->size()
   );
 }
@@ -719,7 +719,7 @@ TEST_CASE("Virtual_machine takes wide call_i and ret")
   CHECK(vm.get_register_value<std::int32_t>(gpr(1)) == 142);
   CHECK(vm.get_register_value<std::int32_t>(gpr(2)) == 0);
   CHECK(
-    vm.get_register_value<benson::Pointer>(sp).decode().offset ==
+    vm.get_register_value<benson::vm::Pointer>(sp).decode().offset ==
     vm.stack->size()
   );
 }
@@ -829,13 +829,13 @@ TEST_CASE(
   "Virtual_machine runs recursive quicksort program with call_i and ret"
 )
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Constant;
   using benson::bytecode::gpr;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::sp;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto const input = std::array<std::int32_t, 5>{4, 1, 3, 5, 2};
   auto const expected = std::array<std::int32_t, 5>{1, 2, 3, 4, 5};
@@ -1079,13 +1079,13 @@ TEST_CASE("Virtual_machine runs Newton square root program with jnz_i loop")
 
 TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Constant;
   using benson::bytecode::gpr;
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
   using benson::bytecode::sp;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -1249,10 +1249,10 @@ TEST_CASE(
   "Virtual_machine load_16 and store_16 use wide offset when offset > 255"
 )
 {
-  using benson::Address_space;
-  using benson::Pointer;
   using benson::bytecode::Immediate;
   using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};

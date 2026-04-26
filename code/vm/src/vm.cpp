@@ -305,7 +305,7 @@ namespace benson
       }();
 
       auto value = std::uint64_t{};
-      // TODO: bounds check
+      // TODO: saefty bounds check
       std::memcpy(&value, space_pointer + base_address + offset.value, N);
       (*vm.registers)[dst.value] = value;
     }
@@ -316,7 +316,6 @@ namespace benson
       auto const src = read_register<width>(instruction_pointer);
       auto const base = read_register<width>(instruction_pointer);
       auto const offset = read_immediate<width>(instruction_pointer);
-
       auto const [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
       if (address_space == Address_space::constant)
@@ -327,8 +326,7 @@ namespace benson
       {
         throw std::runtime_error{"unsupported address space for store"};
       }
-
-      // TODO: bounds check
+      // TODO: safety bounds check
       std::memcpy(
         vm.stack->data() + base_address + offset.value,
         &(*vm.registers)[src.value],
@@ -346,10 +344,7 @@ namespace benson
     void push_bytes(Virtual_machine &vm, std::span<std::byte const> bytes)
     {
       auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
-      if (sp.space != Address_space::stack)
-      {
-        throw std::runtime_error{"unsupported address space for call stack"};
-      }
+      // TODO: safety check for sp.space == Address_space::stack
       auto const new_offset = sp.offset - bytes.size();
       std::memcpy(vm.stack->data() + new_offset, bytes.data(), bytes.size());
       vm.set_register_value(

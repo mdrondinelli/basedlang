@@ -42,10 +42,11 @@ target_link_libraries(parsing PUBLIC ast)
 
 add_library(ir
   code/ir/src/interpret.cpp
+  code/ir/src/source_map.cpp
   code/ir/src/type.cpp
 )
 target_include_directories(ir PUBLIC code/ir/include)
-target_link_libraries(ir PUBLIC spelling)
+target_link_libraries(ir PUBLIC source spelling)
 
 add_library(frontend
   code/frontend/src/compile.cpp

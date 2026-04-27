@@ -14,6 +14,7 @@ The public surface is centered on:
 - `Constant_value`
 - `Register`, `Operand`, `Instruction`, `Terminator`
 - `Basic_block`, `Function`, `Translation_unit`
+- `Source_map`, `Instruction_site`, and `Terminator_site`
 - `interpret(...)` and `Fuel_exhausted_error`
 
 All of these live in the `benson::ir` namespace.
@@ -51,6 +52,8 @@ Key properties of these types:
 - `Operand` is `std::variant<Register, Constant_value>`.
 - `Basic_block` has parameters (registers), a list of instructions, and a `Terminator`.
 - `Function` owns its blocks and a monotonically increasing register counter.
+- `Translation_unit` owns a source map sidecar keyed by function, basic block,
+  and instruction index, or by function and basic block for terminators.
 
 ## Interpretation
 

@@ -5,8 +5,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "bytecode/scalar_type.h"
-#include "spelling/spelling.h"
+#include <spelling/spelling.h>
+
+#include "scalar_type.h"
+#include "source_map.h"
 
 namespace benson::bytecode
 {
@@ -24,6 +26,7 @@ namespace benson::bytecode
     std::vector<std::byte> constant_data;
     std::vector<std::ptrdiff_t> constant_table;
     std::unordered_map<Spelling, Function> functions;
+    Source_map source_map; // TODO: do something with this
   };
 
 } // namespace benson::bytecode

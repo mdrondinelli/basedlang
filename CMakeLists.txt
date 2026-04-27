@@ -57,6 +57,7 @@ target_link_libraries(frontend PUBLIC ir ast source spelling)
 add_library(bytecode
   code/bytecode/src/bytecode_writer.cpp
   code/bytecode/src/module_builder.cpp
+  code/bytecode/src/source_map.cpp
 )
 target_include_directories(bytecode PUBLIC code/bytecode/include)
 target_link_libraries(bytecode PUBLIC source streams spelling)

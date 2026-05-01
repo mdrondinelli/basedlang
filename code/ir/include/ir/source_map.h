@@ -2,7 +2,6 @@
 #define BENSON_IR_SOURCE_MAP_H
 
 #include <cstddef>
-#include <functional>
 #include <optional>
 #include <unordered_map>
 

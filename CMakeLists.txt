@@ -9,8 +9,12 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 add_subdirectory(extern/Catch2-3.13.0)
 
+add_library(hashing INTERFACE)
+target_include_directories(hashing INTERFACE code/hashing/include)
+
 add_library(spelling INTERFACE)
 target_include_directories(spelling INTERFACE code/spelling/include)
+target_link_libraries(spelling INTERFACE hashing)
 
 add_library(streams INTERFACE)
 target_include_directories(streams INTERFACE code/streams/include)
@@ -46,7 +50,7 @@ add_library(ir
   code/ir/src/type.cpp
 )
 target_include_directories(ir PUBLIC code/ir/include)
-target_link_libraries(ir PUBLIC source spelling)
+target_link_libraries(ir PUBLIC source spelling hashing)
 
 add_library(frontend
   code/frontend/src/compile.cpp

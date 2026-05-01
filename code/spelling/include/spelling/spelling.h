@@ -3,12 +3,16 @@
 
 #include <bit>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
+
+#include <hashing/hash.h>
 
 namespace benson
 {
@@ -87,7 +91,7 @@ namespace benson
         auto const table = std::exchange(_table, nullptr);
         assert(table->_building);
         auto const text = table->build_view();
-        auto const hash = hash_bytes(text);
+        auto const hash = hash_text(text);
         auto const mask = table->_buckets.size() - 1;
         auto index = hash & mask;
         for (;;)
@@ -180,7 +184,7 @@ namespace benson
 
     [[nodiscard]] auto lookup(std::string_view text) const noexcept -> Spelling
     {
-      auto const hash = hash_bytes(text);
+      auto const hash = hash_text(text);
       auto index = bucket_index(hash, _buckets.size());
       auto const mask = _buckets.size() - 1;
       for (;;)
@@ -201,7 +205,7 @@ namespace benson
 
     [[nodiscard]] auto intern(std::string_view text) -> Spelling
     {
-      auto const hash = hash_bytes(text);
+      auto const hash = hash_text(text);
       auto index = bucket_index(hash, _buckets.size());
       auto const mask = _buckets.size() - 1;
       for (;;)
@@ -260,16 +264,11 @@ namespace benson
       std::uint32_t length{};
     };
 
-    [[nodiscard]] static auto hash_bytes(std::string_view text) noexcept
-      -> std::size_t
+    [[nodiscard]] static auto hash_text(std::string_view text) noexcept
+      -> std::uint64_t
     {
-      auto hash = std::uint64_t{14695981039346656037ull};
-      for (auto const c : text)
-      {
-        hash ^= static_cast<unsigned char>(c);
-        hash *= 1099511628211ull;
-      }
-      return static_cast<std::size_t>(hash);
+      return hash_bytes(std::as_bytes(std::span{text.data(), text.size()}))
+        .value;
     }
 
     [[nodiscard]] static auto
@@ -319,7 +318,7 @@ namespace benson
       for (auto i = std::uint32_t{0}; i < _entries.size(); ++i)
       {
         auto const text = entry_view(_entries[i]);
-        auto const hash = hash_bytes(text);
+        auto const hash = hash_text(text);
         auto index = bucket_index(hash, bucket_count);
         while (buckets[index].has_value())
         {

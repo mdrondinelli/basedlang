@@ -1,35 +1,21 @@
+#include <hashing/hash.h>
 #include <ir/source_map.h>
 
 namespace benson::ir
 {
 
-  namespace
-  {
-
-    void hash_combine(std::size_t *seed, std::size_t value)
-    {
-      *seed ^= value + 0x9e3779b9 + (*seed << 6) + (*seed >> 2);
-    }
-
-  } // namespace
-
   std::size_t
   Source_map::Instruction_site_hash::operator()(Instruction_site site) const
   {
-    auto seed = std::size_t{};
-    hash_combine(&seed, std::hash<Function const *>{}(site.function));
-    hash_combine(&seed, std::hash<Basic_block const *>{}(site.block));
-    hash_combine(&seed, std::hash<std::ptrdiff_t>{}(site.instruction_index));
-    return seed;
+    return static_cast<std::size_t>(
+      hash_values(site.function, site.block, site.instruction_index)
+    );
   }
 
   std::size_t
   Source_map::Terminator_site_hash::operator()(Terminator_site site) const
   {
-    auto seed = std::size_t{};
-    hash_combine(&seed, std::hash<Function const *>{}(site.function));
-    hash_combine(&seed, std::hash<Basic_block const *>{}(site.block));
-    return seed;
+    return static_cast<std::size_t>(hash_values(site.function, site.block));
   }
 
   void Source_map::add(Instruction_site site, Source_span span)

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <type_traits>
 
 namespace benson
@@ -51,6 +52,12 @@ namespace benson
     auto state = Hash_state{};
     state.mix(bytes);
     return state.value;
+  }
+
+  [[nodiscard]] inline auto hash_text(std::string_view text) noexcept
+    -> std::uint64_t
+  {
+    return hash_bytes(std::as_bytes(std::span{text.data(), text.size()}));
   }
 
   template <typename... Values>

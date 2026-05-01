@@ -264,12 +264,6 @@ namespace benson
       std::uint32_t length{};
     };
 
-    [[nodiscard]] static auto hash_text(std::string_view text) noexcept
-      -> std::uint64_t
-    {
-      return hash_bytes(std::as_bytes(std::span{text.data(), text.size()}));
-    }
-
     [[nodiscard]] static auto
     bucket_index(std::uint64_t hash, std::size_t bucket_count) noexcept
       -> std::size_t

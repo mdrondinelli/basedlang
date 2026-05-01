@@ -13,52 +13,53 @@ namespace benson
   {
     std::uint64_t value{14695981039346656037ull};
 
-    [[nodiscard]] auto mix(std::span<std::byte const> bytes) const noexcept
-      -> Hash_state
+    auto mix(std::span<std::byte const> bytes) noexcept -> Hash_state &
     {
-      auto result = *this;
       for (auto const byte : bytes)
       {
-        result.value ^= static_cast<std::uint64_t>(byte);
-        result.value *= 1099511628211ull;
+        value ^= static_cast<std::uint64_t>(byte);
+        value *= 1099511628211ull;
       }
-      return result;
+      return *this;
     }
 
     template <typename T>
-    [[nodiscard]] auto mix(T const &value) const noexcept -> Hash_state
+    auto mix(T const &value) noexcept -> Hash_state &
     {
       static_assert(std::is_integral_v<T>);
       return mix(std::as_bytes(std::span{&value, 1}));
     }
 
     template <typename T>
-    [[nodiscard]] auto mix(T *value) const noexcept -> Hash_state
+    auto mix(T *value) noexcept -> Hash_state &
     {
       return mix(reinterpret_cast<std::uintptr_t>(value));
     }
 
     template <typename First, typename... Rest>
-    [[nodiscard]] auto
-    mix(First const &first, Rest const &...rest) const noexcept -> Hash_state
+    auto mix(First const &first, Rest const &...rest) noexcept -> Hash_state &
     {
-      auto state = mix(first);
-      ((state = state.mix(rest)), ...);
-      return state;
+      mix(first);
+      (mix(rest), ...);
+      return *this;
     }
   };
 
   [[nodiscard]] inline auto
   hash_bytes(std::span<std::byte const> bytes) noexcept -> Hash_state
   {
-    return Hash_state{}.mix(bytes);
+    auto state = Hash_state{};
+    state.mix(bytes);
+    return state;
   }
 
   template <typename... Values>
   [[nodiscard]] auto hash_values(Values const &...values) noexcept
     -> std::uint64_t
   {
-    return Hash_state{}.mix(values...).value;
+    auto state = Hash_state{};
+    state.mix(values...);
+    return state.value;
   }
 
 } // namespace benson

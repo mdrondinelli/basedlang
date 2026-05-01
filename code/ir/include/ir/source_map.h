@@ -20,7 +20,8 @@ namespace benson::ir
     Basic_block const *block{};
     std::ptrdiff_t instruction_index{};
 
-    bool operator==(Instruction_site const &) const = default;
+    friend bool
+    operator==(Instruction_site const &, Instruction_site const &) = default;
   };
 
   struct Terminator_site
@@ -28,7 +29,8 @@ namespace benson::ir
     Function const *function{};
     Basic_block const *block{};
 
-    bool operator==(Terminator_site const &) const = default;
+    friend bool
+    operator==(Terminator_site const &, Terminator_site const &) = default;
   };
 
   class Source_map

@@ -2,10 +2,9 @@
 #define BENSON_IR_SOURCE_MAP_H
 
 #include <cstddef>
+#include <functional>
 #include <optional>
-#include <utility>
-#include <variant>
-#include <vector>
+#include <unordered_map>
 
 #include <source/source_span.h>
 
@@ -20,15 +19,17 @@ namespace benson::ir
     Function const *function{};
     Basic_block const *block{};
     std::ptrdiff_t instruction_index{};
+
+    bool operator==(Instruction_site const &) const = default;
   };
 
   struct Terminator_site
   {
     Function const *function{};
     Basic_block const *block{};
-  };
 
-  using Source_site = std::variant<Instruction_site, Terminator_site>;
+    bool operator==(Terminator_site const &) const = default;
+  };
 
   class Source_map
   {
@@ -42,7 +43,20 @@ namespace benson::ir
     std::optional<Source_span> lookup(Terminator_site site) const;
 
   private:
-    std::vector<std::pair<Source_site, Source_span>> _entries;
+    struct Instruction_site_hash
+    {
+      std::size_t operator()(Instruction_site site) const;
+    };
+
+    struct Terminator_site_hash
+    {
+      std::size_t operator()(Terminator_site site) const;
+    };
+
+    std::unordered_map<Instruction_site, Source_span, Instruction_site_hash>
+      _instruction_spans;
+    std::unordered_map<Terminator_site, Source_span, Terminator_site_hash>
+      _terminator_spans;
   };
 
 } // namespace benson::ir

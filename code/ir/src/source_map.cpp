@@ -6,53 +6,60 @@ namespace benson::ir
   namespace
   {
 
-    bool same_site(Instruction_site lhs, Instruction_site rhs)
+    void hash_combine(std::size_t *seed, std::size_t value)
     {
-      return lhs.function == rhs.function && lhs.block == rhs.block &&
-             lhs.instruction_index == rhs.instruction_index;
-    }
-
-    bool same_site(Terminator_site lhs, Terminator_site rhs)
-    {
-      return lhs.function == rhs.function && lhs.block == rhs.block;
+      *seed ^= value + 0x9e3779b9 + (*seed << 6) + (*seed >> 2);
     }
 
   } // namespace
 
+  std::size_t
+  Source_map::Instruction_site_hash::operator()(Instruction_site site) const
+  {
+    auto seed = std::size_t{};
+    hash_combine(&seed, std::hash<Function const *>{}(site.function));
+    hash_combine(&seed, std::hash<Basic_block const *>{}(site.block));
+    hash_combine(&seed, std::hash<std::ptrdiff_t>{}(site.instruction_index));
+    return seed;
+  }
+
+  std::size_t
+  Source_map::Terminator_site_hash::operator()(Terminator_site site) const
+  {
+    auto seed = std::size_t{};
+    hash_combine(&seed, std::hash<Function const *>{}(site.function));
+    hash_combine(&seed, std::hash<Basic_block const *>{}(site.block));
+    return seed;
+  }
+
   void Source_map::add(Instruction_site site, Source_span span)
   {
-    _entries.emplace_back(site, span);
+    _instruction_spans.emplace(site, span);
   }
 
   void Source_map::add(Terminator_site site, Source_span span)
   {
-    _entries.emplace_back(site, span);
+    _terminator_spans.emplace(site, span);
   }
 
   std::optional<Source_span> Source_map::lookup(Instruction_site site) const
   {
-    for (auto const &entry : _entries)
+    auto const it = _instruction_spans.find(site);
+    if (it == _instruction_spans.end())
     {
-      if (auto const *stored = std::get_if<Instruction_site>(&entry.first);
-          stored != nullptr && same_site(*stored, site))
-      {
-        return entry.second;
-      }
+      return std::nullopt;
     }
-    return std::nullopt;
+    return it->second;
   }
 
   std::optional<Source_span> Source_map::lookup(Terminator_site site) const
   {
-    for (auto const &entry : _entries)
+    auto const it = _terminator_spans.find(site);
+    if (it == _terminator_spans.end())
     {
-      if (auto const *stored = std::get_if<Terminator_site>(&entry.first);
-          stored != nullptr && same_site(*stored, site))
-      {
-        return entry.second;
-      }
+      return std::nullopt;
     }
-    return std::nullopt;
+    return it->second;
   }
 
 } // namespace benson::ir

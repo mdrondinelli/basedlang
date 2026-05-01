@@ -108,6 +108,7 @@ target_link_libraries(parsing-tests PRIVATE parsing Catch2::Catch2WithMain)
 target_compile_definitions(parsing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(ir-tests
+  code/ir/test/source_map_test.cpp
   code/ir/test/type_test.cpp
 )
 target_link_libraries(ir-tests PRIVATE ir Catch2::Catch2WithMain)

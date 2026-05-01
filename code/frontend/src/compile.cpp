@@ -921,6 +921,7 @@ namespace benson
     // If condition is constant false, fold greedily through else-if chain
     // until a non-constant condition is hit, then fall through to runtime.
     auto runtime_cond = cond_result;
+    auto runtime_cond_ast = expr.condition.get();
     auto runtime_then = &expr.then_block;
     auto runtime_else_if_start = std::size_t{};
     if (cond_cv != nullptr)
@@ -940,6 +941,7 @@ namespace benson
         else
         {
           runtime_cond = ei_result;
+          runtime_cond_ast = part.condition.get();
           runtime_then = &part.body;
           runtime_else_if_start = i + 1;
           folded_all = false;
@@ -969,7 +971,7 @@ namespace benson
         .else_target = first_else_target,
         .else_arguments = {},
       }},
-      ast::span_of(expr)
+      ast::span_of(*runtime_cond_ast)
     );
     // Compile then block
     set_current_block(then_block);

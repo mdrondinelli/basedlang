@@ -46,11 +46,11 @@ namespace benson
   };
 
   [[nodiscard]] inline auto
-  hash_bytes(std::span<std::byte const> bytes) noexcept -> Hash_state
+  hash_bytes(std::span<std::byte const> bytes) noexcept -> std::uint64_t
   {
     auto state = Hash_state{};
     state.mix(bytes);
-    return state;
+    return state.value;
   }
 
   template <typename... Values>

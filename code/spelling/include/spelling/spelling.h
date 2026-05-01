@@ -267,8 +267,7 @@ namespace benson
     [[nodiscard]] static auto hash_text(std::string_view text) noexcept
       -> std::uint64_t
     {
-      return hash_bytes(std::as_bytes(std::span{text.data(), text.size()}))
-        .value;
+      return hash_bytes(std::as_bytes(std::span{text.data(), text.size()}));
     }
 
     [[nodiscard]] static auto

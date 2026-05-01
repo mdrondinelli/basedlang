@@ -9,8 +9,12 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror)
 
 add_subdirectory(extern/Catch2-3.13.0)
 
+add_library(hashing INTERFACE)
+target_include_directories(hashing INTERFACE code/hashing/include)
+
 add_library(spelling INTERFACE)
 target_include_directories(spelling INTERFACE code/spelling/include)
+target_link_libraries(spelling INTERFACE hashing)
 
 add_library(streams INTERFACE)
 target_include_directories(streams INTERFACE code/streams/include)
@@ -42,10 +46,11 @@ target_link_libraries(parsing PUBLIC ast)
 
 add_library(ir
   code/ir/src/interpret.cpp
+  code/ir/src/source_map.cpp
   code/ir/src/type.cpp
 )
 target_include_directories(ir PUBLIC code/ir/include)
-target_link_libraries(ir PUBLIC spelling)
+target_link_libraries(ir PUBLIC source spelling hashing)
 
 add_library(frontend
   code/frontend/src/compile.cpp
@@ -107,6 +112,7 @@ target_link_libraries(parsing-tests PRIVATE parsing Catch2::Catch2WithMain)
 target_compile_definitions(parsing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
 add_executable(ir-tests
+  code/ir/test/source_map_test.cpp
   code/ir/test/type_test.cpp
 )
 target_link_libraries(ir-tests PRIVATE ir Catch2::Catch2WithMain)

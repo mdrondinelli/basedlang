@@ -336,6 +336,43 @@ TEST_CASE("compile - function returning literal")
   CHECK(std::get<std::int32_t>(result) == 0);
 }
 
+TEST_CASE("compile - source map tracks instructions and terminators")
+{
+  auto const [types, tu] = compile_program(
+    "let f = fn(x: Int32): Int32 => {\n"
+    "  return x + 1;\n"
+    "};"
+  );
+  auto const &f = *tu.functions[0];
+  auto const *entry = f.blocks[0].get();
+  REQUIRE(entry->instructions.size() == 1);
+
+  auto const instruction_span = tu.source_map.lookup(
+    benson::ir::Instruction_site{
+      .function = &f,
+      .block = entry,
+      .instruction_index = 0,
+    }
+  );
+  REQUIRE(instruction_span.has_value());
+  CHECK(instruction_span->start.line == 2);
+  CHECK(instruction_span->start.column == 10);
+  CHECK(instruction_span->end.line == 2);
+  CHECK(instruction_span->end.column == 14);
+
+  auto const terminator_span = tu.source_map.lookup(
+    benson::ir::Terminator_site{
+      .function = &f,
+      .block = entry,
+    }
+  );
+  REQUIRE(terminator_span.has_value());
+  CHECK(terminator_span->start.line == 2);
+  CHECK(terminator_span->start.column == 3);
+  CHECK(terminator_span->end.line == 2);
+  CHECK(terminator_span->end.column == 15);
+}
+
 TEST_CASE("compile - function with parameter")
 {
   auto const [types, tu] =

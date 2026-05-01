@@ -123,7 +123,7 @@ namespace benson
 
     void set_current_block(ir::Basic_block *block);
 
-    void emit(ir::Terminator terminator);
+    void emit(ir::Terminator terminator, Source_span location);
 
     ir::Register allocate_register(ir::Type *type);
 
@@ -131,7 +131,7 @@ namespace benson
 
     ir::Type *type_of_operand(ir::Operand const &operand);
 
-    void emit(ir::Instruction instruction);
+    void emit(ir::Instruction instruction, Source_span location);
 
     ir::Operand compile_expression(ast::Expression const &expr);
 

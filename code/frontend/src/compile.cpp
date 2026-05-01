@@ -586,17 +586,27 @@ namespace benson
     return type_of_constant(std::get<Constant_value>(operand));
   }
 
-  void Compilation_context::emit(Instruction instruction)
+  void Compilation_context::emit(Instruction instruction, Source_span location)
   {
     if (_current_block == nullptr)
     {
       throw Not_a_constant_error{};
     }
     assert(!_current_block->has_terminator());
+    auto const instruction_index =
+      static_cast<std::ptrdiff_t>(_current_block->instructions.size());
     _current_block->instructions.push_back(std::move(instruction));
+    _translation_unit.source_map.add(
+      Instruction_site{
+        .function = _current_function,
+        .block = _current_block,
+        .instruction_index = instruction_index,
+      },
+      location
+    );
   }
 
-  void Compilation_context::emit(Terminator terminator)
+  void Compilation_context::emit(Terminator terminator, Source_span location)
   {
     if (_current_block == nullptr)
     {
@@ -604,6 +614,13 @@ namespace benson
     }
     assert(!_current_block->has_terminator());
     _current_block->terminator = std::move(terminator);
+    _translation_unit.source_map.add(
+      Terminator_site{
+        .function = _current_function,
+        .block = _current_block,
+      },
+      location
+    );
   }
 
   Operand Compilation_context::compile_expression(ast::Expression const &expr)
@@ -729,7 +746,7 @@ namespace benson
       auto const operand_type = type_of_operand(operand_result);
       auto const overload = find_unary_overload(*op, operand_type);
       assert(overload != nullptr);
-      return overload->compile(*this, operand_result);
+      return overload->compile(*this, operand_result, ast::span_of(expr));
     }
   }
 
@@ -750,7 +767,7 @@ namespace benson
     auto const rhs_type = type_of_operand(rhs_result);
     auto const overload = find_binary_overload(*op, lhs_type, rhs_type);
     assert(overload != nullptr);
-    return overload->compile(*this, lhs_result, rhs_result);
+    return overload->compile(*this, lhs_result, rhs_result, ast::span_of(expr));
   }
 
   Operand
@@ -820,7 +837,8 @@ namespace benson
         .result = result,
         .callee = fv->function,
         .arguments = std::move(arg_results),
-      }}
+      }},
+      ast::span_of(expr)
     );
     return result;
   }
@@ -950,7 +968,8 @@ namespace benson
         .then_arguments = {},
         .else_target = first_else_target,
         .else_arguments = {},
-      }}
+      }},
+      ast::span_of(expr)
     );
     // Compile then block
     set_current_block(then_block);
@@ -967,7 +986,8 @@ namespace benson
           .target = merge_block,
           .arguments =
             merge_param ? std::vector<Operand>{result} : std::vector<Operand>{},
-        }}
+        }},
+        ast::span_of(expr)
       );
     };
     emit_jump_to_merge(then_result);
@@ -990,7 +1010,8 @@ namespace benson
           .then_arguments = {},
           .else_target = ei_else,
           .else_arguments = {},
-        }}
+        }},
+        ast::span_of(*part.condition)
       );
       set_current_block(ei_then);
       auto const ei_result = compile_expression(part.body);
@@ -1148,7 +1169,7 @@ namespace benson
         stmt.value
       );
     }
-    emit(Terminator{Return_terminator{.value = result}});
+    emit(Terminator{Return_terminator{.value = result}}, ast::span_of(stmt));
     // Start a new (dead) block for any subsequent code
     set_current_block(new_block());
   }
@@ -1219,7 +1240,10 @@ namespace benson
     {
       emit_error("body type does not match return type", *expr.body);
     }
-    emit(Terminator{Return_terminator{.value = body_result}});
+    emit(
+      Terminator{Return_terminator{.value = body_result}},
+      ast::span_of(*expr.body)
+    );
     _symbol_table.pop_scope();
     for (auto const &block : func_ptr->blocks)
     {

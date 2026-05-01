@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "constant_value.h"
+#include "source_map.h"
 #include "spelling/spelling.h"
 #include "type.h"
 
@@ -318,6 +319,8 @@ namespace benson::ir
   {
     std::vector<std::unique_ptr<Function>> functions;
     std::unordered_map<Spelling, Function *> function_table;
+    // TODO: Update source map maintenance when optimization passes mutate HLIR.
+    Source_map source_map;
   };
 
 } // namespace benson::ir

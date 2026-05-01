@@ -2,6 +2,7 @@
 #define BASED_FRONTEND_OPERATOR_OVERLOAD_H
 
 #include <ir/hlir.h>
+#include <source/source_span.h>
 
 namespace benson
 {
@@ -17,8 +18,11 @@ namespace benson
 
     virtual ir::Type *result_type(ir::Type *operand_type) const = 0;
 
-    virtual ir::Operand
-    compile(Compilation_context &ctx, ir::Operand operand) const = 0;
+    virtual ir::Operand compile(
+      Compilation_context &ctx,
+      ir::Operand operand,
+      Source_span location
+    ) const = 0;
   };
 
   class Binary_operator_overload
@@ -35,7 +39,8 @@ namespace benson
     virtual ir::Operand compile(
       Compilation_context &ctx,
       ir::Operand lhs,
-      ir::Operand rhs
+      ir::Operand rhs,
+      Source_span location
     ) const = 0;
   };
 

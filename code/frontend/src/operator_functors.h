@@ -51,10 +51,7 @@ namespace benson
       else
       {
         auto const result = ctx.allocate_register(_result_type);
-        ctx.emit(
-          Instruction{InstructionT{.result = result, .operand = operand}},
-          location
-        );
+        ctx.emit(InstructionT{.result = result, .operand = operand}, location);
         return Operand{result};
       }
     }
@@ -116,7 +113,7 @@ namespace benson
       {
         auto const result = ctx.allocate_register(_result_type);
         ctx.emit(
-          Instruction{InstructionT{.result = result, .lhs = lhs, .rhs = rhs}},
+          InstructionT{.result = result, .lhs = lhs, .rhs = rhs},
           location
         );
         return Operand{result};

@@ -3,12 +3,14 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <variant>
 #include <vector>
 
+#include <source/source_span.h>
+
 #include "constant_value.h"
-#include "source_map.h"
 #include "spelling/spelling.h"
 #include "type.h"
 
@@ -183,7 +185,7 @@ namespace benson::ir
     std::vector<Operand> arguments;
   };
 
-  using Instruction = std::variant<
+  using Instruction_payload = std::variant<
     Constant_instruction<std::int8_t>,
     Constant_instruction<std::int16_t>,
     Constant_instruction<std::int32_t>,
@@ -267,6 +269,12 @@ namespace benson::ir
     Call_instruction
   >;
 
+  struct Instruction
+  {
+    Instruction_payload payload;
+    std::optional<Source_span> source_span{};
+  };
+
   struct Basic_block;
 
   struct Jump_terminator
@@ -289,22 +297,24 @@ namespace benson::ir
     Operand value;
   };
 
-  using Terminator = std::variant<
-    std::monostate,
-    Jump_terminator,
-    Branch_terminator,
-    Return_terminator
-  >;
+  using Terminator_payload =
+    std::variant<Jump_terminator, Branch_terminator, Return_terminator>;
+
+  struct Terminator
+  {
+    Terminator_payload payload;
+    std::optional<Source_span> source_span{};
+  };
 
   struct Basic_block
   {
     std::vector<Register> parameters;
     std::vector<Instruction> instructions;
-    Terminator terminator;
+    std::optional<Terminator> terminator;
 
     bool has_terminator() const
     {
-      return !std::holds_alternative<std::monostate>(terminator);
+      return terminator.has_value();
     }
   };
 
@@ -319,8 +329,6 @@ namespace benson::ir
   {
     std::vector<std::unique_ptr<Function>> functions;
     std::unordered_map<Spelling, Function *> function_table;
-    // TODO: Update source map maintenance when optimization passes mutate HLIR.
-    Source_map source_map;
   };
 
 } // namespace benson::ir

@@ -347,25 +347,15 @@ TEST_CASE("compile - source map tracks instructions and terminators")
   auto const *entry = f.blocks[0].get();
   REQUIRE(entry->instructions.size() == 1);
 
-  auto const instruction_span = tu.source_map.lookup(
-    benson::ir::Instruction_site{
-      .function = &f,
-      .block = entry,
-      .instruction_index = 0,
-    }
-  );
+  auto const instruction_span = entry->instructions[0].source_span;
   REQUIRE(instruction_span.has_value());
   CHECK(instruction_span->start.line == 2);
   CHECK(instruction_span->start.column == 10);
   CHECK(instruction_span->end.line == 2);
   CHECK(instruction_span->end.column == 14);
 
-  auto const terminator_span = tu.source_map.lookup(
-    benson::ir::Terminator_site{
-      .function = &f,
-      .block = entry,
-    }
-  );
+  REQUIRE(entry->terminator.has_value());
+  auto const terminator_span = entry->terminator->source_span;
   REQUIRE(terminator_span.has_value());
   CHECK(terminator_span->start.line == 2);
   CHECK(terminator_span->start.column == 3);
@@ -755,6 +745,42 @@ TEST_CASE("compile - multiple else-if branches")
   CHECK(std::get<std::int32_t>(benson::ir::interpret(f, a3)) == 30);
   auto const a4 = std::array<benson::ir::Constant_value, 1>{std::int32_t{99}};
   CHECK(std::get<std::int32_t>(benson::ir::interpret(f, a4)) == 0);
+}
+
+TEST_CASE("compile - if merge jumps point at branch closing braces")
+{
+  auto const [types, tu] = compile_program(
+    "let f = fn(x: Int32): Int32 => {\n"
+    "  return if x == 1 { 10 }\n"
+    "  else if x == 2 { 20 }\n"
+    "  else { 0 };\n"
+    "};"
+  );
+  auto const &f = *tu.functions[0];
+  auto jump_spans = std::vector<benson::Source_span>{};
+  for (auto const &block : f.blocks)
+  {
+    REQUIRE(block->terminator.has_value());
+    auto const jump =
+      std::get_if<benson::ir::Jump_terminator>(&block->terminator->payload);
+    if (jump != nullptr)
+    {
+      REQUIRE(block->terminator->source_span.has_value());
+      jump_spans.push_back(*block->terminator->source_span);
+    }
+  }
+  REQUIRE(jump_spans.size() == 3);
+  CHECK(jump_spans[0].start.line == 2);
+  CHECK(jump_spans[0].start.column == 25);
+  CHECK(jump_spans[1].start.line == 3);
+  CHECK(jump_spans[1].start.column == 23);
+  CHECK(jump_spans[2].start.line == 4);
+  CHECK(jump_spans[2].start.column == 12);
+  for (auto const &span : jump_spans)
+  {
+    CHECK(span.end.line == span.start.line);
+    CHECK(span.end.column == span.start.column);
+  }
 }
 
 TEST_CASE("compile - block scoping")

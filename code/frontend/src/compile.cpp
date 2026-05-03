@@ -973,7 +973,8 @@ namespace benson
       then_type != _type_pool->void_type()
         ? merge_block->parameters.emplace_back(allocate_register(then_type))
         : Register{};
-    auto const emit_jump_to_merge = [&](Operand const &result)
+    auto const emit_jump_to_merge =
+      [&](Operand const &result, Source_span location)
     {
       emit(
         Jump_terminator{
@@ -981,10 +982,10 @@ namespace benson
           .arguments =
             merge_param ? std::vector<Operand>{result} : std::vector<Operand>{},
         },
-        ast::span_of(expr)
+        location
       );
     };
-    emit_jump_to_merge(then_result);
+    emit_jump_to_merge(then_result, span_of(runtime_then->rbrace));
     // Compile else-if chain
     auto current_else_block = first_else_target;
     for (auto i = runtime_else_if_start; i < expr.else_if_parts.size(); ++i)
@@ -1017,7 +1018,7 @@ namespace benson
           part.body.lbrace
         );
       }
-      emit_jump_to_merge(ei_result);
+      emit_jump_to_merge(ei_result, span_of(part.body.rbrace));
       current_else_block = ei_else;
     }
     // Compile else block
@@ -1033,7 +1034,7 @@ namespace benson
           expr.else_part->body.lbrace
         );
       }
-      emit_jump_to_merge(else_result);
+      emit_jump_to_merge(else_result, span_of(expr.else_part->body.rbrace));
     }
     set_current_block(merge_block);
     if (merge_param)

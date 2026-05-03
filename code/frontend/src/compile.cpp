@@ -586,26 +586,33 @@ namespace benson
     return type_of_constant(std::get<Constant_value>(operand));
   }
 
-  void Compilation_context::emit(Instruction instruction, Source_span location)
+  void Compilation_context::emit(
+    Instruction_payload instruction,
+    Source_span location
+  )
   {
     if (_current_block == nullptr)
     {
       throw Not_a_constant_error{};
     }
     assert(!_current_block->has_terminator());
-    instruction.source_span = location;
-    _current_block->instructions.push_back(std::move(instruction));
+    _current_block->instructions.push_back(
+      Instruction{.payload = std::move(instruction), .source_span = location}
+    );
   }
 
-  void Compilation_context::emit(Terminator terminator, Source_span location)
+  void Compilation_context::emit(
+    Terminator_payload terminator,
+    Source_span location
+  )
   {
     if (_current_block == nullptr)
     {
       throw Not_a_constant_error{};
     }
     assert(!_current_block->has_terminator());
-    terminator.source_span = location;
-    _current_block->terminator = std::move(terminator);
+    _current_block->terminator =
+      Terminator{.payload = std::move(terminator), .source_span = location};
   }
 
   Operand Compilation_context::compile_expression(ast::Expression const &expr)
@@ -818,11 +825,11 @@ namespace benson
     }
     auto const result = allocate_register(ft->return_type);
     emit(
-      Instruction{Call_instruction{
+      Call_instruction{
         .result = result,
         .callee = fv->function,
         .arguments = std::move(arg_results),
-      }},
+      },
       ast::span_of(expr)
     );
     return result;
@@ -949,13 +956,13 @@ namespace benson
         ? new_block()
         : merge_block;
     emit(
-      Terminator{Branch_terminator{
+      Branch_terminator{
         .condition = runtime_cond,
         .then_target = then_block,
         .then_arguments = {},
         .else_target = first_else_target,
         .else_arguments = {},
-      }},
+      },
       ast::span_of(*runtime_cond_ast)
     );
     // Compile then block
@@ -969,11 +976,11 @@ namespace benson
     auto const emit_jump_to_merge = [&](Operand const &result)
     {
       emit(
-        Terminator{Jump_terminator{
+        Jump_terminator{
           .target = merge_block,
           .arguments =
             merge_param ? std::vector<Operand>{result} : std::vector<Operand>{},
-        }},
+        },
         ast::span_of(expr)
       );
     };
@@ -991,13 +998,13 @@ namespace benson
           ? new_block()
           : merge_block;
       emit(
-        Terminator{Branch_terminator{
+        Branch_terminator{
           .condition = ei_cond_result,
           .then_target = ei_then,
           .then_arguments = {},
           .else_target = ei_else,
           .else_arguments = {},
-        }},
+        },
         ast::span_of(*part.condition)
       );
       set_current_block(ei_then);
@@ -1156,7 +1163,7 @@ namespace benson
         stmt.value
       );
     }
-    emit(Terminator{Return_terminator{.value = result}}, ast::span_of(stmt));
+    emit(Return_terminator{.value = result}, ast::span_of(stmt));
     // Start a new (dead) block for any subsequent code
     set_current_block(new_block());
   }
@@ -1227,10 +1234,7 @@ namespace benson
     {
       emit_error("body type does not match return type", *expr.body);
     }
-    emit(
-      Terminator{Return_terminator{.value = body_result}},
-      ast::span_of(*expr.body)
-    );
+    emit(Return_terminator{.value = body_result}, ast::span_of(*expr.body));
     _symbol_table.pop_scope();
     for (auto const &block : func_ptr->blocks)
     {

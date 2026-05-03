@@ -72,7 +72,7 @@ Owns AST→IR lowering:
 - type evaluation
 - operator overload resolution
 - diagnostics
-- emission of HLIR (via `Compilation_context`, `compile`)
+- emission of HLIR (via `Frontend`, `compile`)
 
 Depends on both `ast` and `ir`.
 

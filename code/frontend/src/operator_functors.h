@@ -38,11 +38,8 @@ namespace benson
       return _result_type;
     }
 
-    Operand compile(
-      Compilation_context &ctx,
-      Operand operand,
-      Source_span location
-    ) const override
+    Operand
+    compile(Frontend &ctx, Operand operand, Source_span location) const override
     {
       if (auto const cv = std::get_if<Constant_value>(&operand))
       {
@@ -95,7 +92,7 @@ namespace benson
     }
 
     Operand compile(
-      Compilation_context &ctx,
+      Frontend &ctx,
       Operand lhs,
       Operand rhs,
       Source_span location
@@ -362,8 +359,7 @@ namespace benson
       return operand_type;
     }
 
-    Operand
-    compile(Compilation_context &, Operand operand, Source_span) const override
+    Operand compile(Frontend &, Operand operand, Source_span) const override
     {
       return operand;
     }
@@ -395,8 +391,7 @@ namespace benson
       return _type;
     }
 
-    Operand
-    compile(Compilation_context &, Operand operand, Source_span) const override
+    Operand compile(Frontend &, Operand operand, Source_span) const override
     {
       auto const cv = std::get_if<Constant_value>(&operand);
       assert(cv != nullptr);
@@ -428,8 +423,7 @@ namespace benson
       return _type;
     }
 
-    Operand
-    compile(Compilation_context &, Operand operand, Source_span) const override
+    Operand compile(Frontend &, Operand operand, Source_span) const override
     {
       auto const cv = std::get_if<Constant_value>(&operand);
       assert(cv != nullptr);
@@ -456,7 +450,7 @@ namespace benson
       return std::get<Pointer_type>(operand_type->data).pointee;
     }
 
-    Operand compile(Compilation_context &, Operand, Source_span) const override
+    Operand compile(Frontend &, Operand, Source_span) const override
     {
       throw std::runtime_error{"dereference is not implemented"};
     }

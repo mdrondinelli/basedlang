@@ -7,7 +7,7 @@
 namespace benson
 {
 
-  class Compilation_context;
+  class Frontend;
 
   class Unary_operator_overload
   {
@@ -18,11 +18,8 @@ namespace benson
 
     virtual ir::Type *result_type(ir::Type *operand_type) const = 0;
 
-    virtual ir::Operand compile(
-      Compilation_context &ctx,
-      ir::Operand operand,
-      Source_span location
-    ) const = 0;
+    virtual ir::Operand
+    compile(Frontend &ctx, ir::Operand operand, Source_span location) const = 0;
   };
 
   class Binary_operator_overload
@@ -37,7 +34,7 @@ namespace benson
     virtual ir::Type *result_type() const = 0;
 
     virtual ir::Operand compile(
-      Compilation_context &ctx,
+      Frontend &ctx,
       ir::Operand lhs,
       ir::Operand rhs,
       Source_span location

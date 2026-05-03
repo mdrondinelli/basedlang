@@ -43,10 +43,7 @@ namespace benson
     T _previous;
   };
 
-  Compilation_context::Compilation_context(
-    Type_pool *type_pool,
-    Spelling_table *spellings
-  )
+  Frontend::Frontend(Type_pool *type_pool, Spelling_table *spellings)
       : _type_pool{type_pool}, _spellings{spellings}
   {
     assert(_type_pool != nullptr);
@@ -315,8 +312,7 @@ namespace benson
     );
   }
 
-  Translation_unit
-  Compilation_context::compile(ast::Translation_unit const &ast)
+  Translation_unit Frontend::compile(ast::Translation_unit const &ast)
   {
     for (auto const &stmt : ast.statements)
     {
@@ -335,7 +331,7 @@ namespace benson
     return std::move(_translation_unit);
   }
 
-  Type *Compilation_context::type_of_constant(Constant_value const &value)
+  Type *Frontend::type_of_constant(Constant_value const &value)
   {
     return std::visit(
       [this](auto const &v) -> Type *
@@ -387,7 +383,7 @@ namespace benson
   }
 
   [[noreturn]] void
-  Compilation_context::emit_error(std::string message, Source_span location)
+  Frontend::emit_error(std::string message, Source_span location)
   {
     _diagnostics.push_back(
       Diagnostic{
@@ -399,12 +395,12 @@ namespace benson
     throw Compilation_error{};
   }
 
-  Symbol *Compilation_context::try_lookup_identifier(Lexeme const &identifier)
+  Symbol *Frontend::try_lookup_identifier(Lexeme const &identifier)
   {
     return _symbol_table.lookup(identifier.spelling);
   }
 
-  Symbol *Compilation_context::lookup_identifier(Lexeme const &identifier)
+  Symbol *Frontend::lookup_identifier(Lexeme const &identifier)
   {
     auto const sym = try_lookup_identifier(identifier);
     if (sym == nullptr)
@@ -421,7 +417,7 @@ namespace benson
   }
 
   Unary_operator_overload *
-  Compilation_context::find_unary_overload(ast::Operator op, Type *operand_type)
+  Frontend::find_unary_overload(ast::Operator op, Type *operand_type)
   {
     auto const it = _unary_overloads.find(op);
     if (it != _unary_overloads.end())
@@ -437,7 +433,7 @@ namespace benson
     return nullptr;
   }
 
-  Binary_operator_overload *Compilation_context::find_binary_overload(
+  Binary_operator_overload *Frontend::find_binary_overload(
     ast::Operator op,
     Type *lhs_type,
     Type *rhs_type
@@ -458,10 +454,7 @@ namespace benson
     return nullptr;
   }
 
-  bool Compilation_context::is_type_compatible(
-    Type *parameter_type,
-    Type *argument_type
-  )
+  bool Frontend::is_type_compatible(Type *parameter_type, Type *argument_type)
   {
     if (parameter_type == argument_type)
     {
@@ -491,8 +484,7 @@ namespace benson
     return false;
   }
 
-  Type *
-  Compilation_context::compile_type_expression(ast::Expression const &expr)
+  Type *Frontend::compile_type_expression(ast::Expression const &expr)
   {
     auto const value = evaluate_constant_expression(expr);
     auto const tv = std::get_if<Type_value>(&value);
@@ -504,7 +496,7 @@ namespace benson
   }
 
   Constant_value
-  Compilation_context::evaluate_constant_expression(ast::Expression const &expr)
+  Frontend::evaluate_constant_expression(ast::Expression const &expr)
   {
     auto result = Operand{};
     try
@@ -541,12 +533,12 @@ namespace benson
     return *cv;
   }
 
-  bool Compilation_context::is_top_level() const
+  bool Frontend::is_top_level() const
   {
     return _current_function == nullptr;
   }
 
-  Basic_block *Compilation_context::new_block()
+  Basic_block *Frontend::new_block()
   {
     assert(_current_function != nullptr);
     auto block = std::make_unique<Basic_block>();
@@ -555,12 +547,12 @@ namespace benson
     return ptr;
   }
 
-  void Compilation_context::set_current_block(Basic_block *block)
+  void Frontend::set_current_block(Basic_block *block)
   {
     _current_block = block;
   }
 
-  Register Compilation_context::allocate_register(Type *type)
+  Register Frontend::allocate_register(Type *type)
   {
     if (_current_function == nullptr)
     {
@@ -571,13 +563,13 @@ namespace benson
     return reg;
   }
 
-  Type *Compilation_context::type_of_register(Register r) const
+  Type *Frontend::type_of_register(Register r) const
   {
     assert(*r >= 0 && *r < static_cast<std::int32_t>(_register_types.size()));
     return _register_types[*r];
   }
 
-  Type *Compilation_context::type_of_operand(Operand const &operand)
+  Type *Frontend::type_of_operand(Operand const &operand)
   {
     if (auto const r = std::get_if<Register>(&operand))
     {
@@ -586,10 +578,7 @@ namespace benson
     return type_of_constant(std::get<Constant_value>(operand));
   }
 
-  void Compilation_context::emit(
-    Instruction_payload instruction,
-    Source_span location
-  )
+  void Frontend::emit(Instruction_payload instruction, Source_span location)
   {
     if (_current_block == nullptr)
     {
@@ -601,10 +590,7 @@ namespace benson
     );
   }
 
-  void Compilation_context::emit(
-    Terminator_payload terminator,
-    Source_span location
-  )
+  void Frontend::emit(Terminator_payload terminator, Source_span location)
   {
     if (_current_block == nullptr)
     {
@@ -615,7 +601,7 @@ namespace benson
       Terminator{.payload = std::move(terminator), .source_span = location};
   }
 
-  Operand Compilation_context::compile_expression(ast::Expression const &expr)
+  Operand Frontend::compile_expression(ast::Expression const &expr)
   {
     try
     {
@@ -644,9 +630,7 @@ namespace benson
     }
   }
 
-  Operand Compilation_context::compile_expression(
-    ast::Int_literal_expression const &expr
-  )
+  Operand Frontend::compile_expression(ast::Int_literal_expression const &expr)
   {
     return compile_int_literal(
       _spellings->lookup(expr.literal.spelling),
@@ -655,9 +639,8 @@ namespace benson
     );
   }
 
-  Operand Compilation_context::compile_expression(
-    ast::Float_literal_expression const &expr
-  )
+  Operand
+  Frontend::compile_expression(ast::Float_literal_expression const &expr)
   {
     return compile_float_literal(
       _spellings->lookup(expr.literal.spelling),
@@ -665,9 +648,7 @@ namespace benson
     );
   }
 
-  Operand Compilation_context::compile_expression(
-    ast::Identifier_expression const &expr
-  )
+  Operand Frontend::compile_expression(ast::Identifier_expression const &expr)
   {
     auto const sym = lookup_identifier(expr.identifier);
     auto const ob = std::get_if<Object_binding>(&sym->data);
@@ -680,8 +661,7 @@ namespace benson
     return *cv;
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::Recurse_expression const &expr)
+  Operand Frontend::compile_expression(ast::Recurse_expression const &expr)
   {
     if (is_top_level())
     {
@@ -690,8 +670,7 @@ namespace benson
     return Constant_value{Function_value{.function = _current_function}};
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::Fn_expression const &expr)
+  Operand Frontend::compile_expression(ast::Fn_expression const &expr)
   {
     auto const func = compile_function(expr);
     auto const cv = Constant_value{Function_value{.function = func}};
@@ -706,14 +685,12 @@ namespace benson
     return cv;
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::Paren_expression const &expr)
+  Operand Frontend::compile_expression(ast::Paren_expression const &expr)
   {
     return compile_expression(*expr.inner);
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::Prefix_expression const &expr)
+  Operand Frontend::compile_expression(ast::Prefix_expression const &expr)
   {
     auto const op = ast::get_prefix_operator(expr.op.token);
     assert(op.has_value());
@@ -742,14 +719,12 @@ namespace benson
     }
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::Postfix_expression const &expr)
+  Operand Frontend::compile_expression(ast::Postfix_expression const &expr)
   {
     emit_error("dereference is not supported in this context", expr.op);
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::Binary_expression const &expr)
+  Operand Frontend::compile_expression(ast::Binary_expression const &expr)
   {
     auto const lhs_result = compile_expression(*expr.left);
     auto const rhs_result = compile_expression(*expr.right);
@@ -762,8 +737,7 @@ namespace benson
     return overload->compile(*this, lhs_result, rhs_result, ast::span_of(expr));
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::Call_expression const &expr)
+  Operand Frontend::compile_expression(ast::Call_expression const &expr)
   {
     auto const callee_result = compile_expression(*expr.callee);
     auto const callee_type = type_of_operand(callee_result);
@@ -835,14 +809,13 @@ namespace benson
     return result;
   }
 
-  Operand Compilation_context::compile_expression(ast::Index_expression const &)
+  Operand Frontend::compile_expression(ast::Index_expression const &)
   {
     throw std::runtime_error{"index expressions are not implemented"};
   }
 
-  Operand Compilation_context::compile_expression(
-    ast::Prefix_bracket_expression const &expr
-  )
+  Operand
+  Frontend::compile_expression(ast::Prefix_bracket_expression const &expr)
   {
     auto const element_result = compile_expression(*expr.operand);
     auto const element_cv = std::get_if<Constant_value>(&element_result);
@@ -881,8 +854,7 @@ namespace benson
     };
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::Block_expression const &expr)
+  Operand Frontend::compile_expression(ast::Block_expression const &expr)
   {
     _symbol_table.push_scope();
     for (auto const &stmt : expr.statements)
@@ -895,8 +867,7 @@ namespace benson
     return result;
   }
 
-  Operand
-  Compilation_context::compile_expression(ast::If_expression const &expr)
+  Operand Frontend::compile_expression(ast::If_expression const &expr)
   {
     auto const cond_result = compile_expression(*expr.condition);
     auto const cond_type = type_of_operand(cond_result);
@@ -1044,7 +1015,7 @@ namespace benson
     return Constant_value{Void_value{}};
   }
 
-  void Compilation_context::compile_statement(ast::Statement const &stmt)
+  void Frontend::compile_statement(ast::Statement const &stmt)
   {
     std::visit(
       [this](auto const &s)
@@ -1055,7 +1026,7 @@ namespace benson
     );
   }
 
-  void Compilation_context::compile_statement(ast::Let_statement const &stmt)
+  void Frontend::compile_statement(ast::Let_statement const &stmt)
   {
     auto const is_mutable = stmt.kw_mut.has_value();
     if (is_mutable && is_top_level())
@@ -1143,7 +1114,7 @@ namespace benson
     }
   }
 
-  void Compilation_context::compile_statement(ast::While_statement const &stmt)
+  void Frontend::compile_statement(ast::While_statement const &stmt)
   {
     emit_error(
       "while statements are not supported without mutation",
@@ -1151,7 +1122,7 @@ namespace benson
     );
   }
 
-  void Compilation_context::compile_statement(ast::Return_statement const &stmt)
+  void Frontend::compile_statement(ast::Return_statement const &stmt)
   {
     auto const result = compile_expression(stmt.value);
     auto const result_type = type_of_operand(result);
@@ -1169,15 +1140,12 @@ namespace benson
     set_current_block(new_block());
   }
 
-  void Compilation_context::compile_statement(
-    ast::Expression_statement const &stmt
-  )
+  void Frontend::compile_statement(ast::Expression_statement const &stmt)
   {
     compile_expression(stmt.expression);
   }
 
-  Function *
-  Compilation_context::compile_function(ast::Fn_expression const &expr)
+  Function *Frontend::compile_function(ast::Fn_expression const &expr)
   {
     auto parameter_types = std::vector<Type *>{};
     for (auto const &param : expr.parameters)
@@ -1250,7 +1218,7 @@ namespace benson
     Type_pool *type_pool
   )
   {
-    auto ctx = Compilation_context{type_pool, spellings};
+    auto ctx = Frontend{type_pool, spellings};
     return ctx.compile(ast);
   }
 
@@ -1275,7 +1243,7 @@ namespace benson
     return value;
   }
 
-  Operand Compilation_context::compile_int_literal(
+  Operand Frontend::compile_int_literal(
     std::string_view text,
     bool negate,
     Lexeme const &token
@@ -1343,10 +1311,8 @@ namespace benson
     );
   }
 
-  Operand Compilation_context::compile_float_literal(
-    std::string_view text,
-    Lexeme const &token
-  )
+  Operand
+  Frontend::compile_float_literal(std::string_view text, Lexeme const &token)
   {
     assert(!text.empty());
     auto const suffix =

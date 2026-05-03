@@ -8,7 +8,7 @@ produces executable HLIR (the [`ir`](./ir.md) data model).
 The public surface is centered on:
 
 - `compile(...)`
-- `Compilation_context`
+- `Frontend`
 - `Diagnostic`, `Diagnostic_note`, `Compilation_failure`
 - `Symbol`, `Symbol_table`, `Object_binding`
 - `Unary_operator_overload`, `Binary_operator_overload`
@@ -43,7 +43,7 @@ The key semantic data model is:
 
 ### Semantic compilation
 
-`Compilation_context` walks the AST and handles:
+`Frontend` walks the AST and handles:
 
 - builtin seeding
 - name resolution

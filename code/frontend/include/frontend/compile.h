@@ -82,10 +82,10 @@ namespace benson
     std::optional<Source_span> expression_location;
   };
 
-  class Compilation_context
+  class Frontend
   {
   public:
-    Compilation_context(ir::Type_pool *type_pool, Spelling_table *spellings);
+    Frontend(ir::Type_pool *type_pool, Spelling_table *spellings);
 
     ir::Translation_unit compile(ast::Translation_unit const &ast);
 

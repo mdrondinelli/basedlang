@@ -48,7 +48,7 @@ struct Compile_fixture
 {
   benson::Spelling_table spellings;
   benson::ir::Type_pool types;
-  benson::Compilation_context compiler;
+  benson::Frontend compiler;
 
   explicit Compile_fixture()
       : spellings{}, compiler{&types, &spellings}

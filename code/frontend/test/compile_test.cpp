@@ -347,25 +347,15 @@ TEST_CASE("compile - source map tracks instructions and terminators")
   auto const *entry = f.blocks[0].get();
   REQUIRE(entry->instructions.size() == 1);
 
-  auto const instruction_span = tu.source_map.lookup(
-    benson::ir::Instruction_site{
-      .function = &f,
-      .block = entry,
-      .instruction_index = 0,
-    }
-  );
+  auto const instruction_span = entry->instructions[0].source_span;
   REQUIRE(instruction_span.has_value());
   CHECK(instruction_span->start.line == 2);
   CHECK(instruction_span->start.column == 10);
   CHECK(instruction_span->end.line == 2);
   CHECK(instruction_span->end.column == 14);
 
-  auto const terminator_span = tu.source_map.lookup(
-    benson::ir::Terminator_site{
-      .function = &f,
-      .block = entry,
-    }
-  );
+  REQUIRE(entry->terminator.has_value());
+  auto const terminator_span = entry->terminator->source_span;
   REQUIRE(terminator_span.has_value());
   CHECK(terminator_span->start.line == 2);
   CHECK(terminator_span->start.column == 3);

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdint>
 #include <span>
 #include <utility>
@@ -253,7 +254,7 @@ namespace benson::ir
             register_values[*inst.result] = interpret(*inst.callee, args, fuel);
           }
         },
-        instruction
+        instruction.payload
       );
     }
 
@@ -280,16 +281,13 @@ namespace benson::ir
       {
         execute_instruction(registers, inst, fuel);
       }
+      assert(block->terminator.has_value());
       auto const result = std::visit(
         [&](auto const &t)
           -> std::pair<Basic_block const *, std::vector<Operand> const *>
         {
           using T = std::decay_t<decltype(t)>;
-          if constexpr (std::is_same_v<T, std::monostate>)
-          {
-            std::unreachable();
-          }
-          else if constexpr (std::is_same_v<T, Jump_terminator>)
+          if constexpr (std::is_same_v<T, Jump_terminator>)
           {
             return {t.target, &t.arguments};
           }
@@ -305,7 +303,7 @@ namespace benson::ir
             return {nullptr, nullptr};
           }
         },
-        block->terminator
+        block->terminator->payload
       );
       if (result.first == nullptr)
       {

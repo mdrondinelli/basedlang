@@ -593,17 +593,8 @@ namespace benson
       throw Not_a_constant_error{};
     }
     assert(!_current_block->has_terminator());
-    auto const instruction_index =
-      static_cast<std::ptrdiff_t>(_current_block->instructions.size());
+    instruction.source_span = location;
     _current_block->instructions.push_back(std::move(instruction));
-    _translation_unit.source_map.add(
-      Instruction_site{
-        .function = _current_function,
-        .block = _current_block,
-        .instruction_index = instruction_index,
-      },
-      location
-    );
   }
 
   void Compilation_context::emit(Terminator terminator, Source_span location)
@@ -613,14 +604,8 @@ namespace benson
       throw Not_a_constant_error{};
     }
     assert(!_current_block->has_terminator());
+    terminator.source_span = location;
     _current_block->terminator = std::move(terminator);
-    _translation_unit.source_map.add(
-      Terminator_site{
-        .function = _current_function,
-        .block = _current_block,
-      },
-      location
-    );
   }
 
   Operand Compilation_context::compile_expression(ast::Expression const &expr)

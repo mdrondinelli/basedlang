@@ -174,7 +174,9 @@ TEST_CASE("Virtual_machine uses constant and stack address spaces")
       .decode();
   CHECK(vm.get_register_value<std::int32_t>(gpr(3)) == 42);
   CHECK(stack_pointer.space == Address_space::stack);
-  CHECK(stack_pointer.offset == vm.stack->size() - 12);
+  CHECK(
+    stack_pointer.offset == static_cast<std::uint64_t>(vm.stack->size() - 12)
+  );
 }
 
 TEST_CASE("Virtual_machine indexed call slides register window")
@@ -362,16 +364,16 @@ TEST_CASE(
   auto const initial_ip = vm.instruction_pointer;
   auto const initial_sp = vm.stack_pointer;
   auto const initial_call_stack_size = vm.call_stack.size();
-  vm.frame_base = 3;
+  vm.base_register = 3;
 
   CHECK_THROWS_AS(vm.call(fail, {}), std::runtime_error);
 
   CHECK(vm.instruction_pointer == initial_ip);
-  CHECK(vm.frame_base == 3);
+  CHECK(vm.base_register == 3);
   CHECK(vm.stack_pointer == initial_sp);
   CHECK(vm.call_stack.size() == initial_call_stack_size);
 
-  vm.frame_base = 0;
+  vm.base_register = 0;
   auto const result = vm.call(ok, {});
 
   REQUIRE(result.type() == int32);

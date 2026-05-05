@@ -3,6 +3,7 @@
 
 #include <array>
 #include <bit>
+#include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -137,7 +138,9 @@ namespace benson::vm
     template <typename T>
     [[nodiscard]] T get_register_value(bytecode::Register reg) const
     {
-      auto const value = registers[frame_base + reg.value];
+      auto const index = base_register + reg.value;
+      assert(index >= 0);
+      auto const value = registers[static_cast<std::size_t>(index)];
       if constexpr (std::same_as<T, float>)
       {
         return std::bit_cast<float>(static_cast<std::uint32_t>(value));
@@ -159,21 +162,26 @@ namespace benson::vm
     template <typename T>
     void set_register_value(bytecode::Register reg, T value)
     {
+      auto const index = base_register + reg.value;
+      assert(index >= 0);
       if constexpr (std::same_as<std::decay_t<T>, float>)
       {
-        registers[frame_base + reg.value] = std::bit_cast<std::uint32_t>(value);
+        registers[static_cast<std::size_t>(index)] =
+          std::bit_cast<std::uint32_t>(value);
       }
       else if constexpr (std::same_as<std::decay_t<T>, double>)
       {
-        registers[frame_base + reg.value] = std::bit_cast<std::uint64_t>(value);
+        registers[static_cast<std::size_t>(index)] =
+          std::bit_cast<std::uint64_t>(value);
       }
       else if constexpr (std::same_as<T, bool>)
       {
-        registers[frame_base + reg.value] = value ? 1 : 0;
+        registers[static_cast<std::size_t>(index)] = value ? 1 : 0;
       }
       else
       {
-        registers[frame_base + reg.value] = static_cast<std::uint64_t>(value);
+        registers[static_cast<std::size_t>(index)] =
+          static_cast<std::uint64_t>(value);
       }
     }
 
@@ -203,15 +211,15 @@ namespace benson::vm
     std::byte const *instruction_pointer;
     std::vector<std::uint64_t> registers;
     std::unique_ptr<std::array<std::byte, 16 * 1024 * 1024>> stack;
-    std::uint64_t stack_pointer{};
-    std::size_t frame_base{};
+    std::ptrdiff_t stack_pointer{};
+    std::ptrdiff_t base_register{};
 
     struct Call_frame
     {
       std::byte const *return_address;
-      std::size_t frame_base;
-      std::uint64_t stack_pointer;
-      std::optional<std::size_t> destination;
+      std::ptrdiff_t base_register;
+      std::ptrdiff_t stack_pointer;
+      std::optional<std::ptrdiff_t> return_register;
     };
 
     std::vector<Call_frame> call_stack;

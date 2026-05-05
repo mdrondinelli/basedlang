@@ -18,6 +18,7 @@ namespace benson::bytecode
     std::ptrdiff_t position;
     std::vector<Scalar_type> parameter_types;
     Scalar_type return_type;
+    std::ptrdiff_t register_count;
   };
 
   struct Module
@@ -25,7 +26,8 @@ namespace benson::bytecode
     std::vector<std::byte> code;
     std::vector<std::byte> constant_data;
     std::vector<std::ptrdiff_t> constant_table;
-    std::unordered_map<Spelling, Function> functions;
+    std::vector<Function> functions;
+    std::unordered_map<Spelling, std::size_t> function_indices;
     Source_map source_map; // TODO: do something with this
   };
 

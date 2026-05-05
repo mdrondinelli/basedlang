@@ -59,30 +59,62 @@ namespace benson::bytecode
     throw std::runtime_error{"jmp target out of range"};
   }
 
-  void Bytecode_writer::emit_call(std::ptrdiff_t target)
+  void Bytecode_writer::emit_call_i(
+    Immediate function,
+    Register base,
+    Register dst
+  )
   {
-    auto const narrow_offset = target - (_position + 2);
-    if (std::in_range<std::int8_t>(narrow_offset))
-    {
-      emit_opcode(Opcode::call_i);
-      write_byte(static_cast<std::byte>(narrow_offset));
-      return;
-    }
-    auto const wide_offset = target - (_position + 4);
-    if (std::in_range<Immediate::Underlying_type>(wide_offset))
+    assert(function.value >= 0);
+    if (is_wide(function) || is_wide(base) || is_wide(dst))
     {
       emit_opcode(Opcode::wide);
       emit_opcode(Opcode::call_i);
-      write_byte(static_cast<std::byte>(wide_offset));
-      write_byte(static_cast<std::byte>(wide_offset >> 8));
+      write_byte(static_cast<std::byte>(function.value));
+      write_byte(static_cast<std::byte>(function.value >> 8));
+      write_wide_register(base);
+      write_wide_register(dst);
       return;
     }
-    throw std::runtime_error{"call target out of range"};
+    emit_opcode(Opcode::call_i);
+    write_byte(static_cast<std::byte>(function.value));
+    write_narrow_register(base);
+    write_narrow_register(dst);
   }
 
-  void Bytecode_writer::emit_ret()
+  void Bytecode_writer::emit_call_void_i(Immediate function, Register base)
   {
+    assert(function.value >= 0);
+    if (is_wide(function) || is_wide(base))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::call_void_i);
+      write_byte(static_cast<std::byte>(function.value));
+      write_byte(static_cast<std::byte>(function.value >> 8));
+      write_wide_register(base);
+      return;
+    }
+    emit_opcode(Opcode::call_void_i);
+    write_byte(static_cast<std::byte>(function.value));
+    write_narrow_register(base);
+  }
+
+  void Bytecode_writer::emit_ret(Register src)
+  {
+    if (is_wide(src))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::ret);
+      write_wide_register(src);
+      return;
+    }
     emit_opcode(Opcode::ret);
+    write_narrow_register(src);
+  }
+
+  void Bytecode_writer::emit_ret_void()
+  {
+    emit_opcode(Opcode::ret_void);
   }
 
   void Bytecode_writer::emit_jnz(Register src, std::ptrdiff_t target)
@@ -162,6 +194,26 @@ namespace benson::bytecode
     emit_binary_immediate_instruction(Opcode::load_64, dst, base, offset);
   }
 
+  void Bytecode_writer::emit_load_sp_8(Register dst, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::load_sp_8, dst, offset);
+  }
+
+  void Bytecode_writer::emit_load_sp_16(Register dst, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::load_sp_16, dst, offset);
+  }
+
+  void Bytecode_writer::emit_load_sp_32(Register dst, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::load_sp_32, dst, offset);
+  }
+
+  void Bytecode_writer::emit_load_sp_64(Register dst, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::load_sp_64, dst, offset);
+  }
+
   void Bytecode_writer::emit_store_8(
     Register src,
     Register base,
@@ -196,6 +248,59 @@ namespace benson::bytecode
   )
   {
     emit_binary_immediate_instruction(Opcode::store_64, src, base, offset);
+  }
+
+  void Bytecode_writer::emit_store_sp_8(Register src, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::store_sp_8, src, offset);
+  }
+
+  void Bytecode_writer::emit_store_sp_16(Register src, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::store_sp_16, src, offset);
+  }
+
+  void Bytecode_writer::emit_store_sp_32(Register src, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::store_sp_32, src, offset);
+  }
+
+  void Bytecode_writer::emit_store_sp_64(Register src, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::store_sp_64, src, offset);
+  }
+
+  void Bytecode_writer::emit_push_sp_i(Immediate amount)
+  {
+    assert(amount.value >= 0);
+    if (is_wide(amount))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::push_sp_i);
+      write_byte(static_cast<std::byte>(amount.value));
+      write_byte(static_cast<std::byte>(amount.value >> 8));
+      return;
+    }
+    emit_opcode(Opcode::push_sp_i);
+    write_byte(static_cast<std::byte>(amount.value));
+  }
+
+  void Bytecode_writer::emit_push_sp(Register amount)
+  {
+    if (is_wide(amount))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::push_sp);
+      write_wide_register(amount);
+      return;
+    }
+    emit_opcode(Opcode::push_sp);
+    write_narrow_register(amount);
+  }
+
+  void Bytecode_writer::emit_mov_sp_i(Register dst, Immediate offset)
+  {
+    emit_unary_immediate_instruction(Opcode::mov_sp_i, dst, offset);
   }
 
   void Bytecode_writer::emit_mov(Register dst, Register src)

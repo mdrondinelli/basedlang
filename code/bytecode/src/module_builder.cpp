@@ -62,23 +62,55 @@ namespace benson::bytecode
     _label_positions[label.index] = _writer.position();
   }
 
-  void Module_builder::place_function(
+  auto Module_builder::declare_function(
+    Spelling name,
+    std::vector<Scalar_type> parameter_types,
+    Scalar_type return_type,
+    std::ptrdiff_t register_count
+  ) -> Immediate
+  {
+    assert(register_count >= 0);
+    auto const index =
+      Immediate{static_cast<std::ptrdiff_t>(_module.functions.size())};
+    auto const [it, inserted] =
+      _module.function_indices.emplace(name, index.value);
+    assert(inserted);
+    _module.functions.push_back(
+      Function{
+        .position = {},
+        .parameter_types = std::move(parameter_types),
+        .return_type = return_type,
+        .register_count = register_count,
+      }
+    );
+    return index;
+  }
+
+  void Module_builder::place_function(Immediate function, Label label)
+  {
+    assert(function.value >= 0);
+    assert(static_cast<std::size_t>(function.value) < _module.functions.size());
+    place_label(label);
+    _module.functions[static_cast<std::size_t>(function.value)].position =
+      *_label_positions[label.index];
+  }
+
+  auto Module_builder::place_function(
     Label label,
     Spelling name,
     std::vector<Scalar_type> parameter_types,
-    Scalar_type return_type
-  )
+    Scalar_type return_type,
+    std::ptrdiff_t register_count
+  ) -> Immediate
   {
-    place_label(label);
-    auto const [it, inserted] = _module.functions.emplace(
+    auto const function = declare_function(
       name,
-      Function{
-        .position = *_label_positions[label.index],
-        .parameter_types = std::move(parameter_types),
-        .return_type = return_type,
-      }
+      std::move(parameter_types),
+      return_type,
+      register_count
     );
-    assert(inserted);
+    place_function(function, label);
+    return function;
   }
 
   Module_builder::Label_jump_target_provider

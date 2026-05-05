@@ -21,9 +21,14 @@ These live under the `benson` namespace, with bytecode inputs coming from
 
 ## Core model
 
-The VM loads a bytecode `Module`, initializes machine state, and dispatches
-instructions until the program exits. Registers are machine-level storage, not
-HLIR registers. Pointer values identify an address space plus an offset.
+The VM loads a bytecode `Module`, initializes machine state, and executes named
+functions through `Virtual_machine::call`. Registers are machine-level storage,
+not HLIR registers. Calls slide a register window over a dynamic register array.
+Pointer values identify an address space plus an offset.
+
+The stack pointer is VM-owned state, not a bytecode register. Bytecode can push
+stack space for addressable locals, and the VM restores the caller stack pointer
+when a function returns.
 
 Wide bytecode instructions are dispatched through the same execution model as
 their narrow forms, but decode 16-bit register operands and wider

@@ -25,13 +25,17 @@ All of these live in the `benson::bytecode` namespace.
 A bytecode `Module` contains instruction bytes plus constant storage. The
 writer emits compact instruction encodings. `Register`, `Immediate`, and
 `Constant` are value types; the writer chooses narrow or wide wire encodings
-from their values. General registers are created with `gpr(n)`, and `sp` names
-the stack pointer register.
+from their values. General registers are created with zero-based `gpr(n)`.
 
 Operand-taking instructions have narrow and wide wire forms. The `wide` opcode
 prefixes an instruction when any register, immediate, or constant operand needs
 the larger encoding. In a wide instruction, all operands are encoded as 16-bit
 values.
+
+Calls address functions by immediate function index. The VM owns call frames,
+the active register window, and the stack pointer. Bytecode can reserve
+addressable stack-local storage with `push_sp` instructions, but return restores
+the caller stack pointer.
 
 ## What to keep stable
 

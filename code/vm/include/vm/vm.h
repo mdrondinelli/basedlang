@@ -8,8 +8,10 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <span>
 #include <stdexcept>
+#include <vector>
 
 #include "bytecode/constant.h"
 #include "bytecode/module.h"
@@ -135,7 +137,7 @@ namespace benson::vm
     template <typename T>
     [[nodiscard]] T get_register_value(bytecode::Register reg) const
     {
-      auto const value = (*registers)[reg.value];
+      auto const value = registers[frame_base + reg.value];
       if constexpr (std::same_as<T, float>)
       {
         return std::bit_cast<float>(static_cast<std::uint32_t>(value));
@@ -159,36 +161,34 @@ namespace benson::vm
     {
       if constexpr (std::same_as<std::decay_t<T>, float>)
       {
-        (*registers)[reg.value] = std::bit_cast<std::uint32_t>(value);
+        registers[frame_base + reg.value] = std::bit_cast<std::uint32_t>(value);
       }
       else if constexpr (std::same_as<std::decay_t<T>, double>)
       {
-        (*registers)[reg.value] = std::bit_cast<std::uint64_t>(value);
+        registers[frame_base + reg.value] = std::bit_cast<std::uint64_t>(value);
       }
       else if constexpr (std::same_as<T, bool>)
       {
-        (*registers)[reg.value] = value ? 1 : 0;
+        registers[frame_base + reg.value] = value ? 1 : 0;
       }
       else
       {
-        (*registers)[reg.value] = static_cast<std::uint64_t>(value);
+        registers[frame_base + reg.value] = static_cast<std::uint64_t>(value);
       }
     }
 
     void load(bytecode::Module const &module);
 
-    void run();
-
-    /// Looks up a function by `name` in the loaded module, pushes `args` on
-    /// the stack at their native widths, jumps to the entry, runs until the
-    /// callee returns, and decodes the return value from `gpr(1)` according to
-    /// the function's return type.
+    /// Looks up a function by `name` in the loaded module, copies `args` into
+    /// registers starting at `gpr(0)`, runs the function, and decodes the
+    /// returned value.
     ///
     /// Precondition: a module has been loaded via `load`. Violating this is a
     /// programming error and aborts via `assert`.
     ///
     /// Throws:
-    /// - `Unknown_function_error` — `name` is not in `module->functions`.
+    /// - `Unknown_function_error` — `name` is not in
+    /// `module->function_indices`.
     /// - `Argument_count_error` — `args.size()` differs from the function's
     ///   declared parameter count.
     /// - `Argument_type_error` — an `args[i]` does not hold the
@@ -201,15 +201,29 @@ namespace benson::vm
 
     bytecode::Module const *module{};
     std::byte const *instruction_pointer;
-    std::unique_ptr<std::array<std::uint64_t, 64 * 1024>> registers;
+    std::vector<std::uint64_t> registers;
     std::unique_ptr<std::array<std::byte, 16 * 1024 * 1024>> stack;
+    std::uint64_t stack_pointer{};
+    std::size_t frame_base{};
+
+    struct Call_frame
+    {
+      std::byte const *return_address;
+      std::size_t frame_base;
+      std::uint64_t stack_pointer;
+      std::optional<std::size_t> destination;
+    };
+
+    std::vector<Call_frame> call_stack;
 
   private:
+    void run();
+
     void dispatch(bytecode::Opcode opcode);
 
     void wide_dispatch(bytecode::Opcode opcode);
   };
 
-} // namespace benson
+} // namespace benson::vm
 
 #endif // BENSON_VM_VM_H

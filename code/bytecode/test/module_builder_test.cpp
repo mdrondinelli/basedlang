@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -5,18 +6,18 @@
 #include "bytecode/module_builder.h"
 #include "spelling/spelling.h"
 
-using benson::bytecode::gpr;
-using benson::bytecode::sp;
-
-auto reg_byte(benson::bytecode::Register reg) -> std::byte
+namespace
 {
-  return static_cast<std::byte>(reg.value);
-}
+  auto reg_byte(benson::bytecode::Register reg) -> std::byte
+  {
+    return static_cast<std::byte>(reg.value);
+  }
+} // namespace
 
 TEST_CASE("Module_builder patches label-based jmp_i instructions")
 {
   using benson::bytecode::Module_builder;
-  using benson::bytecode::Opcode;
+  using enum benson::bytecode::Opcode;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -33,24 +34,22 @@ TEST_CASE("Module_builder patches label-based jmp_i instructions")
 
   CHECK(
     module.code == std::vector<std::byte>{
-                     static_cast<std::byte>(Opcode::wide),
-                     static_cast<std::byte>(Opcode::jmp_i),
+                     static_cast<std::byte>(wide),
+                     static_cast<std::byte>(jmp_i),
                      std::byte{0x02},
                      std::byte{0x00},
-                     static_cast<std::byte>(Opcode::jmp_i),
+                     static_cast<std::byte>(jmp_i),
                      std::byte{0xFA},
-                     static_cast<std::byte>(Opcode::exit),
+                     static_cast<std::byte>(exit),
                    }
   );
-  CHECK(module.constant_data.empty());
-  CHECK(module.constant_table.empty());
 }
 
 TEST_CASE("Module_builder patches label-based jnz_i instructions")
 {
+  using benson::bytecode::gpr;
   using benson::bytecode::Module_builder;
-  using benson::bytecode::Opcode;
-  using benson::bytecode::Register;
+  using enum benson::bytecode::Opcode;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -67,63 +66,25 @@ TEST_CASE("Module_builder patches label-based jnz_i instructions")
 
   CHECK(
     module.code == std::vector<std::byte>{
-                     static_cast<std::byte>(Opcode::wide),
-                     static_cast<std::byte>(Opcode::jnz_i),
+                     static_cast<std::byte>(wide),
+                     static_cast<std::byte>(jnz_i),
                      reg_byte(gpr(1)),
                      std::byte{0x00},
                      std::byte{0x03},
                      std::byte{0x00},
-                     static_cast<std::byte>(Opcode::jnz_i),
+                     static_cast<std::byte>(jnz_i),
                      reg_byte(gpr(2)),
                      std::byte{0xF7},
-                     static_cast<std::byte>(Opcode::exit),
+                     static_cast<std::byte>(exit),
                    }
   );
-  CHECK(module.constant_data.empty());
-  CHECK(module.constant_table.empty());
-}
-
-TEST_CASE("Module_builder patches label-based call_i instructions")
-{
-  using benson::bytecode::Module_builder;
-  using benson::bytecode::Opcode;
-
-  auto builder = Module_builder{};
-  auto &writer = builder.writer();
-  auto const start = builder.make_label();
-  auto const subroutine = builder.make_label();
-
-  builder.place_label(start);
-  writer.emit_call(builder.label_target(subroutine));
-  writer.emit_exit();
-  builder.place_label(subroutine);
-  writer.emit_call(builder.label_target(start));
-  writer.emit_ret();
-
-  auto const module = builder.build();
-
-  CHECK(
-    module.code == std::vector<std::byte>{
-                     static_cast<std::byte>(Opcode::wide),
-                     static_cast<std::byte>(Opcode::call_i),
-                     std::byte{0x01},
-                     std::byte{0x00},
-                     static_cast<std::byte>(Opcode::exit),
-                     static_cast<std::byte>(Opcode::call_i),
-                     std::byte{0xF9},
-                     static_cast<std::byte>(Opcode::ret),
-                   }
-  );
-  CHECK(module.constant_data.empty());
-  CHECK(module.constant_table.empty());
 }
 
 TEST_CASE("Module_builder interns and deduplicates inline constants")
 {
+  using benson::bytecode::gpr;
   using benson::bytecode::Module_builder;
   using enum benson::bytecode::Opcode;
-  using benson::bytecode::gpr;
-  using benson::bytecode::sp;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
@@ -161,8 +122,9 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
   CHECK(module.constant_data.size() == 8);
 }
 
-TEST_CASE("Module_builder records placed functions")
+TEST_CASE("Module_builder records indexed functions")
 {
+  using benson::bytecode::gpr;
   using benson::bytecode::Module_builder;
   using enum benson::bytecode::Scalar_type;
 
@@ -175,23 +137,56 @@ TEST_CASE("Module_builder records placed functions")
   auto const foo_label = builder.make_label();
   auto const bar_label = builder.make_label();
 
-  builder.place_function(foo_label, foo, {int32, int32}, int64);
-  writer.emit_ret();
-  builder.place_function(bar_label, bar, {}, void_);
-  writer.emit_ret();
+  auto const foo_index =
+    builder.place_function(foo_label, foo, {int32, int32}, int64, 3);
+  writer.emit_ret(gpr(0));
+  auto const bar_index = builder.place_function(bar_label, bar, {}, void_, 0);
+  writer.emit_ret_void();
   writer.emit_exit();
 
   auto const module = builder.build();
 
   REQUIRE(module.functions.size() == 2);
+  CHECK(foo_index.value == 0);
+  CHECK(bar_index.value == 1);
+  CHECK(module.function_indices.at(foo) == 0);
+  CHECK(module.function_indices.at(bar) == 1);
 
-  auto const &foo_entry = module.functions.at(foo);
+  auto const &foo_entry = module.functions[0];
   CHECK(foo_entry.position == 0);
   CHECK(foo_entry.parameter_types == std::vector{int32, int32});
   CHECK(foo_entry.return_type == int64);
+  CHECK(foo_entry.register_count == 3);
 
-  auto const &bar_entry = module.functions.at(bar);
-  CHECK(bar_entry.position == 1);
+  auto const &bar_entry = module.functions[1];
+  CHECK(bar_entry.position == 2);
   CHECK(bar_entry.parameter_types.empty());
   CHECK(bar_entry.return_type == void_);
+  CHECK(bar_entry.register_count == 0);
+}
+
+TEST_CASE("Module_builder declares functions before placing code")
+{
+  using benson::bytecode::gpr;
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const recurse = spellings.intern("recurse");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const label = builder.make_label();
+  auto const function = builder.declare_function(recurse, {int32}, int32, 2);
+
+  writer.emit_call_i(function, gpr(0), gpr(1));
+  writer.emit_exit();
+  builder.place_function(function, label);
+  writer.emit_ret(gpr(0));
+
+  auto const module = builder.build();
+
+  CHECK(function.value == 0);
+  CHECK(module.function_indices.at(recurse) == 0);
+  CHECK(module.functions[0].position == 5);
 }

@@ -77,7 +77,7 @@ namespace benson::bytecode
     assert(inserted);
     _module.functions.push_back(
       Function{
-        .position = {},
+        .position = -1,
         .parameter_types = std::move(parameter_types),
         .return_type = return_type,
         .register_count = register_count,
@@ -90,6 +90,9 @@ namespace benson::bytecode
   {
     assert(function.value >= 0);
     assert(static_cast<std::size_t>(function.value) < _module.functions.size());
+    assert(
+      _module.functions[static_cast<std::size_t>(function.value)].position == -1
+    );
     place_label(label);
     _module.functions[static_cast<std::size_t>(function.value)].position =
       *_label_positions[label.index];
@@ -123,6 +126,13 @@ namespace benson::bytecode
   auto Module_builder::build() -> Module
   {
     _writer.flush();
+    for (auto const &function : _module.functions)
+    {
+      if (function.position == -1)
+      {
+        throw std::runtime_error{"function never placed"};
+      }
+    }
     for (auto const &[position, label] : _unresolved_jump_offsets)
     {
       assert(label.index < _label_positions.size());

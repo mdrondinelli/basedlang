@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <stdexcept>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -189,4 +190,21 @@ TEST_CASE("Module_builder declares functions before placing code")
   CHECK(function.value == 0);
   CHECK(module.function_indices.at(recurse) == 0);
   CHECK(module.functions[0].position == 5);
+}
+
+TEST_CASE("Module_builder rejects declared functions that were never placed")
+{
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const unplaced = spellings.intern("unplaced");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const function = builder.declare_function(unplaced, {}, void_, 0);
+  writer.emit_exit();
+
+  CHECK(function.value == 0);
+  CHECK_THROWS_AS(builder.build(), std::runtime_error);
 }

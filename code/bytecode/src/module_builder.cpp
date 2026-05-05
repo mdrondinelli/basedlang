@@ -86,34 +86,15 @@ namespace benson::bytecode
     return index;
   }
 
-  void Module_builder::place_function(Immediate function, Label label)
+  void Module_builder::place_function(Immediate function)
   {
     assert(function.value >= 0);
     assert(static_cast<std::size_t>(function.value) < _module.functions.size());
     assert(
       _module.functions[static_cast<std::size_t>(function.value)].position == -1
     );
-    place_label(label);
     _module.functions[static_cast<std::size_t>(function.value)].position =
-      *_label_positions[label.index];
-  }
-
-  auto Module_builder::place_function(
-    Label label,
-    Spelling name,
-    std::vector<Scalar_type> parameter_types,
-    Scalar_type return_type,
-    std::ptrdiff_t register_count
-  ) -> Immediate
-  {
-    auto const function = declare_function(
-      name,
-      std::move(parameter_types),
-      return_type,
-      register_count
-    );
-    place_function(function, label);
-    return function;
+      _writer.position();
   }
 
   Module_builder::Label_jump_target_provider

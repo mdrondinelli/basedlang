@@ -108,10 +108,8 @@ TEST_CASE("Virtual_machine runs arithmetic and comparison instructions")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const entry_label = builder.make_label();
-  auto const entry_index =
-    builder.place_function(entry_label, entry, {}, void_, 3);
-  (void) entry_index;
+  auto const entry_index = builder.declare_function(entry, {}, void_, 3);
+  builder.place_function(entry_index);
   writer.emit_mov_i(gpr(0), Immediate{40});
   writer.emit_add_i32_i(gpr(1), gpr(0), Immediate{2});
   writer.emit_cmp_eq_i32_i(gpr(2), gpr(1), Immediate{42});
@@ -142,10 +140,8 @@ TEST_CASE("Virtual_machine uses constant and stack address spaces")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const entry_label = builder.make_label();
-  auto const entry_index =
-    builder.place_function(entry_label, entry, {}, void_, 5);
-  (void) entry_index;
+  auto const entry_index = builder.declare_function(entry, {}, void_, 5);
+  builder.place_function(entry_index);
   writer.emit_lookup_k(gpr(0), Constant{0});
   writer.emit_load_32(gpr(1), gpr(0), Immediate{0});
   writer.emit_mov_i(gpr(4), Immediate{8});
@@ -191,20 +187,17 @@ TEST_CASE("Virtual_machine indexed call slides register window")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const add_label = builder.make_label();
   auto const add_index =
     builder.declare_function(add, {int32, int32}, int32, 3);
-  auto const entry_label = builder.make_label();
-  auto const entry_index =
-    builder.place_function(entry_label, entry, {}, void_, 12);
-  (void) entry_index;
+  auto const entry_index = builder.declare_function(entry, {}, void_, 12);
+  builder.place_function(entry_index);
 
   writer.emit_mov_i(gpr(10), Immediate{40});
   writer.emit_mov_i(gpr(11), Immediate{2});
   writer.emit_call_i(add_index, gpr(10), gpr(0));
   writer.emit_ret_void();
 
-  builder.place_function(add_index, add_label);
+  builder.place_function(add_index);
   writer.emit_add_i32(gpr(2), gpr(0), gpr(1));
   writer.emit_ret(gpr(2));
 
@@ -233,20 +226,17 @@ TEST_CASE("Virtual_machine void call restores caller frame and stack pointer")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const clobber_label = builder.make_label();
   auto const clobber_index =
     builder.declare_function(clobber, {int32}, void_, 2);
-  auto const entry_label = builder.make_label();
-  auto const entry_index =
-    builder.place_function(entry_label, entry, {}, void_, 11);
-  (void) entry_index;
+  auto const entry_index = builder.declare_function(entry, {}, void_, 11);
+  builder.place_function(entry_index);
 
   writer.emit_mov_i(gpr(5), Immediate{123});
   writer.emit_mov_i(gpr(10), Immediate{456});
   writer.emit_call_void_i(clobber_index, gpr(10));
   writer.emit_ret_void();
 
-  builder.place_function(clobber_index, clobber_label);
+  builder.place_function(clobber_index);
   writer.emit_push_sp_i(Immediate{16});
   writer.emit_mov_i(gpr(0), Immediate{99});
   writer.emit_ret_void();
@@ -276,20 +266,17 @@ TEST_CASE("Virtual_machine indexed call uses wide relative registers")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const add_label = builder.make_label();
   auto const add_index =
     builder.declare_function(add, {int32, int32}, int32, 270);
-  auto const entry_label = builder.make_label();
-  auto const entry_index =
-    builder.place_function(entry_label, entry, {}, int32, 303);
-  (void) entry_index;
+  auto const entry_index = builder.declare_function(entry, {}, int32, 303);
+  builder.place_function(entry_index);
 
   writer.emit_mov_i(gpr(300), Immediate{40});
   writer.emit_mov_i(gpr(301), Immediate{2});
   writer.emit_call_i(add_index, gpr(300), gpr(302));
   writer.emit_ret(gpr(302));
 
-  builder.place_function(add_index, add_label);
+  builder.place_function(add_index);
   auto const done = builder.make_label();
   writer.emit_add_i32(gpr(260), gpr(0), gpr(1));
   writer.emit_cmp_eq_i32_i(gpr(261), gpr(260), Immediate{42});
@@ -323,18 +310,15 @@ TEST_CASE("Virtual_machine call frame uses relative stack loads and stores")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const spill_label = builder.make_label();
   auto const spill_index = builder.declare_function(spill, {int32}, int32, 3);
-  auto const entry_label = builder.make_label();
-  auto const entry_index =
-    builder.place_function(entry_label, entry, {}, int32, 22);
-  (void) entry_index;
+  auto const entry_index = builder.declare_function(entry, {}, int32, 22);
+  builder.place_function(entry_index);
 
   writer.emit_mov_i(gpr(21), Immediate{77});
   writer.emit_call_i(spill_index, gpr(21), gpr(0));
   writer.emit_ret(gpr(0));
 
-  builder.place_function(spill_index, spill_label);
+  builder.place_function(spill_index);
   writer.emit_push_sp_i(Immediate{4});
   writer.emit_mov_sp_i(gpr(1), Immediate{0});
   writer.emit_store_32(gpr(0), gpr(1), Immediate{0});
@@ -367,18 +351,15 @@ TEST_CASE("Virtual_machine call frame uses relative constant loads")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const value_k = builder.constant(std::int32_t{1234});
-  auto const load_label = builder.make_label();
   auto const load_index = builder.declare_function(load, {}, int32, 4);
-  auto const entry_label = builder.make_label();
-  auto const entry_index =
-    builder.place_function(entry_label, entry, {}, int32, 41);
-  (void) entry_index;
+  auto const entry_index = builder.declare_function(entry, {}, int32, 41);
+  builder.place_function(entry_index);
 
   writer.emit_mov_i(gpr(39), Immediate{99});
   writer.emit_call_i(load_index, gpr(40), gpr(0));
   writer.emit_ret(gpr(0));
 
-  builder.place_function(load_index, load_label);
+  builder.place_function(load_index);
   writer.emit_lookup_k(gpr(0), value_k);
   writer.emit_load_32(gpr(1), gpr(0), Immediate{0});
   writer.emit_mov_sp_i(gpr(2), Immediate{-4});
@@ -410,10 +391,9 @@ TEST_CASE("Virtual_machine::call runs loop body in its register frame")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const loop = builder.make_label();
-  auto const factorial_label = builder.make_label();
   auto const factorial_index =
-    builder.place_function(factorial_label, factorial, {int32}, int32, 4);
-  (void) factorial_index;
+    builder.declare_function(factorial, {int32}, int32, 4);
+  builder.place_function(factorial_index);
 
   writer.emit_mov_i(gpr(1), Immediate{1});
   builder.place_label(loop);
@@ -445,10 +425,9 @@ TEST_CASE("Virtual_machine::call invokes an i32 add function")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const add_label = builder.make_label();
   auto const add_index =
-    builder.place_function(add_label, add, {int32, int32}, int32, 3);
-  (void) add_index;
+    builder.declare_function(add, {int32, int32}, int32, 3);
+  builder.place_function(add_index);
   writer.emit_add_i32(gpr(2), gpr(0), gpr(1));
   writer.emit_ret(gpr(2));
   auto const module = builder.build();
@@ -476,10 +455,8 @@ TEST_CASE("Virtual_machine::call returns void for void functions")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const noop_label = builder.make_label();
-  auto const noop_index =
-    builder.place_function(noop_label, noop, {}, void_, 0);
-  (void) noop_index;
+  auto const noop_index = builder.declare_function(noop, {}, void_, 0);
+  builder.place_function(noop_index);
   writer.emit_ret_void();
   auto const module = builder.build();
 
@@ -502,10 +479,8 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const inc_label = builder.make_label();
-  auto const inc_index =
-    builder.place_function(inc_label, inc, {int32}, int32, 2);
-  (void) inc_index;
+  auto const inc_index = builder.declare_function(inc, {int32}, int32, 2);
+  builder.place_function(inc_index);
   writer.emit_add_i32_i(gpr(1), gpr(0), Immediate{1});
   writer.emit_ret(gpr(1));
   auto const module = builder.build();
@@ -537,19 +512,16 @@ TEST_CASE(
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const fail_label = builder.make_label();
-  auto const fail_index =
-    builder.place_function(fail_label, fail, {}, void_, 2);
-  (void) fail_index;
+  auto const fail_index = builder.declare_function(fail, {}, void_, 2);
+  builder.place_function(fail_index);
   writer.emit_lookup_k(gpr(0), Constant{0});
   writer.emit_mov_i(gpr(1), Immediate{42});
   writer.emit_push_sp_i(Immediate{16});
   writer.emit_store_32(gpr(1), gpr(0), Immediate{0});
   writer.emit_ret_void();
 
-  auto const ok_label = builder.make_label();
-  auto const ok_index = builder.place_function(ok_label, ok, {}, int32, 1);
-  (void) ok_index;
+  auto const ok_index = builder.declare_function(ok, {}, int32, 1);
+  builder.place_function(ok_index);
   writer.emit_mov_i(gpr(0), Immediate{7});
   writer.emit_ret(gpr(0));
 
@@ -592,9 +564,8 @@ TEST_CASE("Virtual_machine::call decodes the return value from absolute gpr(0)")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const ok_label = builder.make_label();
-  auto const ok_index = builder.place_function(ok_label, ok, {}, int32, 1);
-  (void) ok_index;
+  auto const ok_index = builder.declare_function(ok, {}, int32, 1);
+  builder.place_function(ok_index);
   writer.emit_mov_i(gpr(0), benson::bytecode::Immediate{7});
   writer.emit_ret(gpr(0));
   auto const module = builder.build();
@@ -620,10 +591,8 @@ TEST_CASE("Virtual_machine::call rejects bad inputs")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const known_label = builder.make_label();
-  auto const known_index =
-    builder.place_function(known_label, known, {int32}, int32, 1);
-  (void) known_index;
+  auto const known_index = builder.declare_function(known, {int32}, int32, 1);
+  builder.place_function(known_index);
   writer.emit_ret(gpr(0));
   auto const module = builder.build();
 

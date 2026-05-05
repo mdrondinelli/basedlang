@@ -135,13 +135,12 @@ TEST_CASE("Module_builder records indexed functions")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const foo_label = builder.make_label();
-  auto const bar_label = builder.make_label();
-
   auto const foo_index =
-    builder.place_function(foo_label, foo, {int32, int32}, int64, 3);
+    builder.declare_function(foo, {int32, int32}, int64, 3);
+  builder.place_function(foo_index);
   writer.emit_ret(gpr(0));
-  auto const bar_index = builder.place_function(bar_label, bar, {}, void_, 0);
+  auto const bar_index = builder.declare_function(bar, {}, void_, 0);
+  builder.place_function(bar_index);
   writer.emit_ret_void();
   writer.emit_exit();
 
@@ -177,19 +176,17 @@ TEST_CASE("Module_builder declares functions before placing code")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const label = builder.make_label();
   auto const function = builder.declare_function(recurse, {int32}, int32, 2);
 
-  writer.emit_call_i(function, gpr(0), gpr(1));
   writer.emit_exit();
-  builder.place_function(function, label);
+  builder.place_function(function);
   writer.emit_ret(gpr(0));
 
   auto const module = builder.build();
 
   CHECK(function.value == 0);
   CHECK(module.function_indices.at(recurse) == 0);
-  CHECK(module.functions[0].position == 5);
+  CHECK(module.functions[0].position == 1);
 }
 
 TEST_CASE("Module_builder rejects declared functions that were never placed")

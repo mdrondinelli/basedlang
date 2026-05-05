@@ -37,6 +37,11 @@ the active register window, and the stack pointer. Bytecode can reserve
 addressable stack-local storage with `push_sp` instructions, but return restores
 the caller stack pointer.
 
+Function declarations and placements are separate steps. Declare a function to
+reserve its index and metadata, then call `place_function(index)` at the start
+of the function body to stamp its code offset. Labels remain for jump targets
+only.
+
 ## What to keep stable
 
 - bytecode owns the encoded instruction stream, not VM execution behavior

@@ -264,6 +264,177 @@ TEST_CASE("Virtual_machine void call restores caller frame and stack pointer")
   CHECK(vm.stack_pointer == initial_sp);
 }
 
+TEST_CASE("Virtual_machine indexed call uses wide relative registers")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const add = spellings.intern("add");
+  auto const entry = spellings.intern("entry");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const add_label = builder.make_label();
+  auto const add_index =
+    builder.declare_function(add, {int32, int32}, int32, 270);
+  auto const entry_label = builder.make_label();
+  auto const entry_index =
+    builder.place_function(entry_label, entry, {}, int32, 303);
+  (void) entry_index;
+
+  writer.emit_mov_i(gpr(300), Immediate{40});
+  writer.emit_mov_i(gpr(301), Immediate{2});
+  writer.emit_call_i(add_index, gpr(300), gpr(302));
+  writer.emit_ret(gpr(302));
+
+  builder.place_function(add_index, add_label);
+  auto const done = builder.make_label();
+  writer.emit_add_i32(gpr(260), gpr(0), gpr(1));
+  writer.emit_cmp_eq_i32_i(gpr(261), gpr(260), Immediate{42});
+  writer.emit_jnz(gpr(261), builder.label_target(done));
+  writer.emit_mov_i(gpr(260), Immediate{-1});
+  builder.place_label(done);
+  writer.emit_ret(gpr(260));
+
+  auto const module = builder.build();
+
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+
+  auto const result = vm.call(entry, {});
+
+  REQUIRE(result.type() == int32);
+  CHECK(result.as<std::int32_t>() == 42);
+  CHECK(vm.get_register_value<std::int32_t>(gpr(300)) == 40);
+  CHECK(vm.get_register_value<std::int32_t>(gpr(301)) == 2);
+}
+
+TEST_CASE("Virtual_machine call frame uses relative stack loads and stores")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const spill = spellings.intern("spill");
+  auto const entry = spellings.intern("entry");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const spill_label = builder.make_label();
+  auto const spill_index = builder.declare_function(spill, {int32}, int32, 3);
+  auto const entry_label = builder.make_label();
+  auto const entry_index =
+    builder.place_function(entry_label, entry, {}, int32, 22);
+  (void) entry_index;
+
+  writer.emit_mov_i(gpr(21), Immediate{77});
+  writer.emit_call_i(spill_index, gpr(21), gpr(0));
+  writer.emit_ret(gpr(0));
+
+  builder.place_function(spill_index, spill_label);
+  writer.emit_push_sp_i(Immediate{4});
+  writer.emit_mov_sp_i(gpr(1), Immediate{0});
+  writer.emit_store_32(gpr(0), gpr(1), Immediate{0});
+  writer.emit_load_sp_32(gpr(2), Immediate{0});
+  writer.emit_ret(gpr(2));
+
+  auto const module = builder.build();
+
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+  auto const initial_sp = vm.stack_pointer;
+
+  auto const result = vm.call(entry, {});
+
+  REQUIRE(result.type() == int32);
+  CHECK(result.as<std::int32_t>() == 77);
+  CHECK(vm.stack_pointer == initial_sp);
+}
+
+TEST_CASE("Virtual_machine call frame uses relative constant loads")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const load = spellings.intern("load");
+  auto const entry = spellings.intern("entry");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const value_k = builder.constant(std::int32_t{1234});
+  auto const load_label = builder.make_label();
+  auto const load_index = builder.declare_function(load, {}, int32, 4);
+  auto const entry_label = builder.make_label();
+  auto const entry_index =
+    builder.place_function(entry_label, entry, {}, int32, 41);
+  (void) entry_index;
+
+  writer.emit_mov_i(gpr(39), Immediate{99});
+  writer.emit_call_i(load_index, gpr(40), gpr(0));
+  writer.emit_ret(gpr(0));
+
+  builder.place_function(load_index, load_label);
+  writer.emit_lookup_k(gpr(0), value_k);
+  writer.emit_load_32(gpr(1), gpr(0), Immediate{0});
+  writer.emit_mov_sp_i(gpr(2), Immediate{-4});
+  writer.emit_store_32(gpr(1), gpr(2), Immediate{0});
+  writer.emit_load_32(gpr(3), gpr(2), Immediate{0});
+  writer.emit_ret(gpr(3));
+
+  auto const module = builder.build();
+
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+
+  auto const result = vm.call(entry, {});
+
+  REQUIRE(result.type() == int32);
+  CHECK(result.as<std::int32_t>() == 1234);
+  CHECK(vm.get_register_value<std::int32_t>(gpr(39)) == 99);
+}
+
+TEST_CASE("Virtual_machine::call runs loop body in its register frame")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const factorial = spellings.intern("factorial");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const loop = builder.make_label();
+  auto const factorial_label = builder.make_label();
+  auto const factorial_index =
+    builder.place_function(factorial_label, factorial, {int32}, int32, 4);
+  (void) factorial_index;
+
+  writer.emit_mov_i(gpr(1), Immediate{1});
+  builder.place_label(loop);
+  writer.emit_mul_i32(gpr(1), gpr(1), gpr(0));
+  writer.emit_sub_i32_i(gpr(0), gpr(0), Immediate{1});
+  writer.emit_cmp_gt_i32_i(gpr(2), gpr(0), Immediate{1});
+  writer.emit_jnz(gpr(2), builder.label_target(loop));
+  writer.emit_ret(gpr(1));
+
+  auto const module = builder.build();
+
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+
+  auto const args = std::array<benson::vm::Scalar, 1>{std::int32_t{5}};
+  auto const result = vm.call(factorial, args);
+
+  REQUIRE(result.type() == int32);
+  CHECK(result.as<std::int32_t>() == 120);
+}
+
 TEST_CASE("Virtual_machine::call invokes an i32 add function")
 {
   using benson::bytecode::Module_builder;
@@ -318,6 +489,37 @@ TEST_CASE("Virtual_machine::call returns void for void functions")
   auto const result = vm.call(noop, {});
 
   CHECK(result.type() == void_);
+}
+
+TEST_CASE("Virtual_machine::call works across consecutive invocations")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const inc = spellings.intern("inc");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const inc_label = builder.make_label();
+  auto const inc_index =
+    builder.place_function(inc_label, inc, {int32}, int32, 2);
+  (void) inc_index;
+  writer.emit_add_i32_i(gpr(1), gpr(0), Immediate{1});
+  writer.emit_ret(gpr(1));
+  auto const module = builder.build();
+
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+
+  auto const args1 = std::array<benson::vm::Scalar, 1>{std::int32_t{10}};
+  auto const r1 = vm.call(inc, args1);
+  CHECK(r1.as<std::int32_t>() == 11);
+
+  auto const args2 = std::array<benson::vm::Scalar, 1>{std::int32_t{99}};
+  auto const r2 = vm.call(inc, args2);
+  CHECK(r2.as<std::int32_t>() == 100);
 }
 
 TEST_CASE(

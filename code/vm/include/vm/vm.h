@@ -135,12 +135,34 @@ namespace benson::vm
       }
     }
 
+    [[nodiscard]] std::uint64_t *absolute_register(std::ptrdiff_t index)
+    {
+      assert(index >= 0);
+      return &registers[static_cast<std::size_t>(index)];
+    }
+
+    [[nodiscard]] std::uint64_t const *
+    absolute_register(std::ptrdiff_t index) const
+    {
+      assert(index >= 0);
+      return &registers[static_cast<std::size_t>(index)];
+    }
+
+    [[nodiscard]] std::uint64_t *relative_register(std::ptrdiff_t offset)
+    {
+      return absolute_register(base_register + offset);
+    }
+
+    [[nodiscard]] std::uint64_t const *
+    relative_register(std::ptrdiff_t offset) const
+    {
+      return absolute_register(base_register + offset);
+    }
+
     template <typename T>
     [[nodiscard]] T get_register_value(bytecode::Register reg) const
     {
-      auto const index = base_register + reg.value;
-      assert(index >= 0);
-      auto const value = registers[static_cast<std::size_t>(index)];
+      auto const value = *relative_register(reg.value);
       if constexpr (std::same_as<T, float>)
       {
         return std::bit_cast<float>(static_cast<std::uint32_t>(value));
@@ -162,26 +184,21 @@ namespace benson::vm
     template <typename T>
     void set_register_value(bytecode::Register reg, T value)
     {
-      auto const index = base_register + reg.value;
-      assert(index >= 0);
       if constexpr (std::same_as<std::decay_t<T>, float>)
       {
-        registers[static_cast<std::size_t>(index)] =
-          std::bit_cast<std::uint32_t>(value);
+        *relative_register(reg.value) = std::bit_cast<std::uint32_t>(value);
       }
       else if constexpr (std::same_as<std::decay_t<T>, double>)
       {
-        registers[static_cast<std::size_t>(index)] =
-          std::bit_cast<std::uint64_t>(value);
+        *relative_register(reg.value) = std::bit_cast<std::uint64_t>(value);
       }
       else if constexpr (std::same_as<T, bool>)
       {
-        registers[static_cast<std::size_t>(index)] = value ? 1 : 0;
+        *relative_register(reg.value) = value ? 1 : 0;
       }
       else
       {
-        registers[static_cast<std::size_t>(index)] =
-          static_cast<std::uint64_t>(value);
+        *relative_register(reg.value) = static_cast<std::uint64_t>(value);
       }
     }
 

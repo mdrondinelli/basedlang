@@ -75,33 +75,6 @@ namespace benson::vm
       }
     }
 
-    std::size_t register_index(std::ptrdiff_t index)
-    {
-      assert(index >= 0);
-      return static_cast<std::size_t>(index);
-    }
-
-    std::size_t
-    register_index(std::ptrdiff_t base_register, bytecode::Register reg)
-    {
-      return register_index(base_register + reg.value);
-    }
-
-    std::size_t memory_index(std::ptrdiff_t offset)
-    {
-      assert(offset >= 0);
-      return static_cast<std::size_t>(offset);
-    }
-
-    std::size_t memory_index(std::uint64_t base, std::ptrdiff_t offset)
-    {
-      assert(
-        base <=
-        static_cast<std::uint64_t>(std::numeric_limits<std::ptrdiff_t>::max())
-      );
-      return memory_index(static_cast<std::ptrdiff_t>(base) + offset);
-    }
-
     template <Operand_width width>
     void run_lookup_k(
       std::byte const *&instruction_pointer,
@@ -118,8 +91,7 @@ namespace benson::vm
     {
       auto const dst = read_register<width>(instruction_pointer);
       auto const src = read_register<width>(instruction_pointer);
-      vm.registers[register_index(vm.base_register, dst)] =
-        vm.registers[register_index(vm.base_register, src)];
+      *vm.relative_register(dst.value) = *vm.relative_register(src.value);
     }
 
     template <Operand_width width>
@@ -318,12 +290,11 @@ namespace benson::vm
       auto const dst = read_register<width>(instruction_pointer);
       auto const base = read_register<width>(instruction_pointer);
       auto const offset = read_immediate<width>(instruction_pointer);
-
-      auto [address_space, base_address] =
+      auto [space, address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
       auto const space_pointer = [&]() -> std::byte const *
       {
-        switch (address_space)
+        switch (space)
         {
         case Address_space::constant:
           return vm.module->constant_data.data();
@@ -335,15 +306,14 @@ namespace benson::vm
           throw std::runtime_error{"unsupported address space for load"};
         }
       }();
-
       auto value = std::uint64_t{};
       // TODO: safety bounds check
       std::memcpy(
         &value,
-        space_pointer + memory_index(base_address, offset.value),
+        space_pointer + address + offset.value,
         N
       );
-      vm.registers[register_index(vm.base_register, dst)] = value;
+      *vm.relative_register(dst.value) = value;
     }
 
     template <Operand_width width, std::size_t N>
@@ -352,20 +322,20 @@ namespace benson::vm
       auto const src = read_register<width>(instruction_pointer);
       auto const base = read_register<width>(instruction_pointer);
       auto const offset = read_immediate<width>(instruction_pointer);
-      auto const [address_space, base_address] =
+      auto const [space, address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
-      if (address_space == Address_space::constant)
+      if (space == Address_space::constant)
       {
         throw std::runtime_error{"store to constant memory"};
       }
-      if (address_space != Address_space::stack)
+      if (space != Address_space::stack)
       {
         throw std::runtime_error{"unsupported address space for store"};
       }
       // TODO: safety bounds check
       std::memcpy(
-        vm.stack->data() + memory_index(base_address, offset.value),
-        &vm.registers[register_index(vm.base_register, src)],
+        vm.stack->data() + address + offset.value,
+        vm.relative_register(src.value),
         N
       );
     }
@@ -379,10 +349,10 @@ namespace benson::vm
       // TODO: safety bounds check
       std::memcpy(
         &value,
-        vm.stack->data() + memory_index(vm.stack_pointer + offset.value),
+        vm.stack->data() + vm.stack_pointer + offset.value,
         N
       );
-      vm.registers[register_index(vm.base_register, dst)] = value;
+      *vm.relative_register(dst.value) = value;
     }
 
     template <Operand_width width, std::size_t N>
@@ -395,8 +365,8 @@ namespace benson::vm
       auto const offset = read_immediate<width>(instruction_pointer);
       // TODO: safety bounds check
       std::memcpy(
-        vm.stack->data() + memory_index(vm.stack_pointer + offset.value),
-        &vm.registers[register_index(vm.base_register, src)],
+        vm.stack->data() + vm.stack_pointer + offset.value,
+        vm.relative_register(src.value),
         N
       );
     }
@@ -408,7 +378,7 @@ namespace benson::vm
     )
     {
       auto const amount = read_immediate<width>(instruction_pointer);
-      assert(amount.value >= 0);
+      // TODO: validate non-negative amount when running unverified bytecode.
       vm.stack_pointer -= amount.value;
     }
 
@@ -416,7 +386,7 @@ namespace benson::vm
     void run_push_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
       auto const amount = read_register<width>(instruction_pointer);
-      // TODO: validate non-negative amount when running unverified bytecode.
+      // TODO: validate non-negative amount at runtime.
       vm.stack_pointer -= vm.get_register_value<std::int64_t>(amount);
     }
 
@@ -428,13 +398,11 @@ namespace benson::vm
     {
       auto const dst = read_register<width>(instruction_pointer);
       auto const offset = read_immediate<width>(instruction_pointer);
-      auto const pointer_offset = vm.stack_pointer + offset.value;
-      assert(pointer_offset >= 0);
       vm.set_register_value(
         dst,
         Pointer{
           Address_space::stack,
-          static_cast<std::uint64_t>(pointer_offset)
+          static_cast<std::uint64_t>(vm.stack_pointer + offset.value)
         }
       );
     }
@@ -498,10 +466,10 @@ namespace benson::vm
       auto frame = vm.call_stack.back();
       vm.call_stack.pop_back();
       assert(frame.return_register);
-      auto const value = vm.registers[register_index(vm.base_register, src)];
+      auto const value = *vm.relative_register(src.value);
       vm.base_register = frame.base_register;
       vm.stack_pointer = frame.stack_pointer;
-      vm.registers[register_index(*frame.return_register)] = value;
+      *vm.absolute_register(*frame.return_register) = value;
       instruction_pointer = frame.return_address;
     }
 

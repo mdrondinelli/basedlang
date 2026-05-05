@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -315,6 +316,66 @@ TEST_CASE("Virtual_machine::call returns void for void functions")
   auto const result = vm.call(noop, {});
 
   CHECK(result.type() == void_);
+}
+
+TEST_CASE(
+  "Virtual_machine::call restores execution state after bytecode throws"
+)
+{
+  using benson::bytecode::Constant;
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const fail = spellings.intern("fail");
+  auto const ok = spellings.intern("ok");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const fail_label = builder.make_label();
+  auto const fail_index =
+    builder.place_function(fail_label, fail, {}, void_, 2);
+  (void) fail_index;
+  writer.emit_lookup_k(gpr(0), Constant{0});
+  writer.emit_mov_i(gpr(1), Immediate{42});
+  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_store_32(gpr(1), gpr(0), Immediate{0});
+  writer.emit_ret_void();
+
+  auto const ok_label = builder.make_label();
+  auto const ok_index = builder.place_function(ok_label, ok, {}, int32, 1);
+  (void) ok_index;
+  writer.emit_mov_i(gpr(0), Immediate{7});
+  writer.emit_ret(gpr(0));
+
+  auto module = builder.build();
+  store_constant(
+    &module.constant_data,
+    &module.constant_table,
+    Constant{0},
+    std::int32_t{0}
+  );
+
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+  auto const initial_ip = vm.instruction_pointer;
+  auto const initial_sp = vm.stack_pointer;
+  auto const initial_call_stack_size = vm.call_stack.size();
+  vm.frame_base = 3;
+
+  CHECK_THROWS_AS(vm.call(fail, {}), std::runtime_error);
+
+  CHECK(vm.instruction_pointer == initial_ip);
+  CHECK(vm.frame_base == 3);
+  CHECK(vm.stack_pointer == initial_sp);
+  CHECK(vm.call_stack.size() == initial_call_stack_size);
+
+  vm.frame_base = 0;
+  auto const result = vm.call(ok, {});
+
+  REQUIRE(result.type() == int32);
+  CHECK(result.as<std::int32_t>() == 7);
 }
 
 TEST_CASE("Virtual_machine::call rejects bad inputs")

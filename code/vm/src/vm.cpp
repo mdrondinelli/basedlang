@@ -567,6 +567,31 @@ namespace benson::vm
     auto const old_frame_base = frame_base;
     auto const old_stack_pointer = stack_pointer;
     auto const old_call_stack_size = call_stack.size();
+
+    struct State_guard
+    {
+      Virtual_machine *vm;
+      std::byte const *instruction_pointer;
+      std::size_t frame_base;
+      std::uint64_t stack_pointer;
+      std::size_t call_stack_size;
+
+      ~State_guard()
+      {
+        vm->call_stack.resize(call_stack_size);
+        vm->instruction_pointer = instruction_pointer;
+        vm->frame_base = frame_base;
+        vm->stack_pointer = stack_pointer;
+      }
+    };
+
+    auto const state_guard = State_guard{
+      .vm = this,
+      .instruction_pointer = ip,
+      .frame_base = old_frame_base,
+      .stack_pointer = old_stack_pointer,
+      .call_stack_size = old_call_stack_size,
+    };
     frame_base = 0;
     registers.resize(
       std::max<std::size_t>(
@@ -620,10 +645,6 @@ namespace benson::vm
     );
     instruction_pointer = module->code.data() + fn.position;
     run();
-    call_stack.resize(old_call_stack_size);
-    instruction_pointer = ip;
-    frame_base = old_frame_base;
-    stack_pointer = old_stack_pointer;
     return decode_return(*this, fn.return_type);
   }
 

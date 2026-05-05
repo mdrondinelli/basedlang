@@ -582,6 +582,33 @@ TEST_CASE(
   CHECK(result.as<std::int32_t>() == 7);
 }
 
+TEST_CASE("Virtual_machine::call decodes the return value from absolute gpr(0)")
+{
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const ok = spellings.intern("ok");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const ok_label = builder.make_label();
+  auto const ok_index = builder.place_function(ok_label, ok, {}, int32, 1);
+  (void) ok_index;
+  writer.emit_mov_i(gpr(0), benson::bytecode::Immediate{7});
+  writer.emit_ret(gpr(0));
+  auto const module = builder.build();
+
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+  vm.base_register = 3;
+
+  auto const result = vm.call(ok, {});
+
+  REQUIRE(result.type() == int32);
+  CHECK(result.as<std::int32_t>() == 7);
+}
+
 TEST_CASE("Virtual_machine::call rejects bad inputs")
 {
   using benson::bytecode::Module_builder;

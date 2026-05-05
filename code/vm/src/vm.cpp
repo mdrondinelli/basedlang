@@ -485,24 +485,29 @@ namespace benson::vm
       instruction_pointer = frame.return_address;
     }
 
-    Scalar decode_return(Virtual_machine const &vm, bytecode::Scalar_type type)
+    Scalar decode_return(
+      Virtual_machine const &vm,
+      bytecode::Scalar_type type,
+      std::ptrdiff_t return_register
+    )
     {
+      auto const value = *vm.absolute_register(return_register);
       switch (type)
       {
       case bytecode::Scalar_type::int8:
-        return vm.get_register_value<std::int8_t>(bytecode::gpr(0));
+        return static_cast<std::int8_t>(value);
       case bytecode::Scalar_type::int16:
-        return vm.get_register_value<std::int16_t>(bytecode::gpr(0));
+        return static_cast<std::int16_t>(value);
       case bytecode::Scalar_type::int32:
-        return vm.get_register_value<std::int32_t>(bytecode::gpr(0));
+        return static_cast<std::int32_t>(value);
       case bytecode::Scalar_type::int64:
-        return vm.get_register_value<std::int64_t>(bytecode::gpr(0));
+        return static_cast<std::int64_t>(value);
       case bytecode::Scalar_type::float_:
-        return vm.get_register_value<float>(bytecode::gpr(0));
+        return std::bit_cast<float>(static_cast<std::uint32_t>(value));
       case bytecode::Scalar_type::double_:
-        return vm.get_register_value<double>(bytecode::gpr(0));
+        return std::bit_cast<double>(value);
       case bytecode::Scalar_type::bool_:
-        return vm.get_register_value<bool>(bytecode::gpr(0));
+        return value != 0;
       case bytecode::Scalar_type::void_:
         return Scalar::void_;
       }
@@ -633,19 +638,28 @@ namespace benson::vm
       }
     }
     auto const exit_byte = bytecode::Opcode::exit;
+    auto return_register = std::optional<std::ptrdiff_t>{};
+    if (fn.return_type != bytecode::Scalar_type::void_)
+    {
+      return_register = static_cast<std::ptrdiff_t>(registers.size());
+      registers.resize(registers.size() + 1);
+    }
     call_stack.push_back(
       Call_frame{
         .return_address = reinterpret_cast<std::byte const *>(&exit_byte),
         .base_register = old_base_register,
         .stack_pointer = old_stack_pointer,
-        .return_register = fn.return_type == bytecode::Scalar_type::void_
-                             ? std::nullopt
-                             : std::optional<std::ptrdiff_t>{0},
+        .return_register = return_register,
       }
     );
     instruction_pointer = module->code.data() + fn.position;
     run();
-    return decode_return(*this, fn.return_type);
+    if (fn.return_type == bytecode::Scalar_type::void_)
+    {
+      return Scalar::void_;
+    }
+    assert(return_register);
+    return decode_return(*this, fn.return_type, *return_register);
   }
 
   void Virtual_machine::dispatch(bytecode::Opcode opcode)

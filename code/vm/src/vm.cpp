@@ -282,50 +282,6 @@ namespace benson::vm
       }
     };
 
-    void push_bytes(Virtual_machine &vm, std::span<std::byte const> bytes)
-    {
-      auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
-      // TODO: safety check for sp.space == Address_space::stack
-      auto const new_offset = sp.offset - bytes.size();
-      std::memcpy(vm.stack->data() + new_offset, bytes.data(), bytes.size());
-      vm.set_register_value(
-        bytecode::sp,
-        Pointer{Address_space::stack, new_offset}
-      );
-    }
-
-    void pop_bytes(Virtual_machine &vm, std::span<std::byte> bytes)
-    {
-      auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
-      // TODO: safety check for sp.space == Address_space::stack
-      auto const new_offset = sp.offset + bytes.size();
-      std::memcpy(bytes.data(), vm.stack->data() + sp.offset, bytes.size());
-      vm.set_register_value(
-        bytecode::sp,
-        Pointer{Address_space::stack, new_offset}
-      );
-    }
-
-    template <typename T>
-    void push_value(Virtual_machine &vm, T value)
-    {
-      push_bytes(vm, std::as_bytes(std::span{&value, std::size_t{1}}));
-    }
-
-    template <typename T>
-    void pop_value(Virtual_machine &vm, T &value)
-    {
-      pop_bytes(vm, std::as_writable_bytes(std::span{&value, std::size_t{1}}));
-    }
-
-    void push_scalar(
-      Virtual_machine &vm,
-      Scalar const &value
-    )
-    {
-      push_bytes(vm, value.bytes());
-    }
-
     template <Operand_width width, std::size_t N>
     void run_load(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
@@ -402,13 +358,97 @@ namespace benson::vm
     void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
       auto const offset = read_immediate<width>(instruction_pointer);
-      push_value(vm, std::bit_cast<std::uint64_t>(instruction_pointer));
+      auto const return_address =
+        std::bit_cast<std::uint64_t>(instruction_pointer);
+      vm.stack_pointer -= sizeof(return_address);
+      std::memcpy(
+        vm.stack->data() + vm.stack_pointer,
+        &return_address,
+        sizeof(return_address)
+      );
       instruction_pointer += offset.value;
     }
 
     void run_ret(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      pop_value(vm, instruction_pointer);
+      std::memcpy(
+        &instruction_pointer,
+        vm.stack->data() + vm.stack_pointer,
+        sizeof(instruction_pointer)
+      );
+      vm.stack_pointer += sizeof(instruction_pointer);
+    }
+
+    template <Operand_width width>
+    void
+    run_push_sp_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const amount = read_immediate<width>(instruction_pointer);
+      // TODO: validate non-negative when running unverified bytecode
+      vm.stack_pointer -= amount.value;
+    }
+
+    template <Operand_width width>
+    void run_push_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const amount = read_register<width>(instruction_pointer);
+      // TODO: validate non-negative when running unverified bytecode
+      vm.stack_pointer -= vm.get_register_value<std::int64_t>(amount);
+    }
+
+    template <Operand_width width>
+    void
+    run_mov_sp_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+      vm.set_register_value(
+        dst,
+        Pointer{
+          Address_space::stack,
+          static_cast<std::uint64_t>(vm.stack_pointer + offset.value)
+        }
+      );
+    }
+
+    template <Operand_width width, std::size_t N>
+    void run_load_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+      // TODO: bounds check
+      auto const source = vm.stack->data() + vm.stack_pointer + offset.value;
+      if constexpr (N == 8)
+      {
+        auto value = std::uint64_t{};
+        std::memcpy(&value, source, N);
+        (*vm.registers)[dst.value] = value;
+      }
+      else
+      {
+        using Signed = std::conditional_t<
+          N == 1,
+          std::int8_t,
+          std::conditional_t<N == 2, std::int16_t, std::int32_t>>;
+        auto narrow = Signed{};
+        std::memcpy(&narrow, source, N);
+        (*vm.registers)[dst.value] =
+          static_cast<std::uint64_t>(static_cast<std::int64_t>(narrow));
+      }
+    }
+
+    template <Operand_width width, std::size_t N>
+    void
+    run_store_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const src = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+      // TODO: bounds check
+      std::memcpy(
+        vm.stack->data() + vm.stack_pointer + offset.value,
+        &(*vm.registers)[src.value],
+        N
+      );
     }
 
     Scalar
@@ -441,12 +481,9 @@ namespace benson::vm
   Virtual_machine::Virtual_machine()
       : instruction_pointer{nullptr},
         registers{std::make_unique<std::array<std::uint64_t, 64 * 1024>>()},
-        stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()}
+        stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()},
+        stack_pointer{static_cast<std::ptrdiff_t>(stack->size())}
   {
-    set_register_value(
-      bytecode::sp,
-      Pointer{Address_space::stack, stack->size()}
-    );
   }
 
   void Virtual_machine::load(bytecode::Module const &m)
@@ -488,22 +525,27 @@ namespace benson::vm
     for (auto const &arg : args)
     {
       auto const i = &arg - &args[0];
-      const auto param_type = fn.parameter_types[i];
-      if (arg.type() == param_type)
-      {
-        push_scalar(*this, args[i]);
-      }
-      else
+      auto const param_type = fn.parameter_types[i];
+      if (arg.type() != param_type)
       {
         throw Virtual_machine::Argument_type_error{i, param_type};
       }
+      auto const arg_bytes = arg.bytes();
+      stack_pointer -= static_cast<std::ptrdiff_t>(arg_bytes.size());
+      std::memcpy(
+        stack->data() + stack_pointer,
+        arg_bytes.data(),
+        arg_bytes.size()
+      );
     }
     auto const exit_byte = bytecode::Opcode::exit;
-    push_value(
-      *this,
-      static_cast<std::uint64_t>(
-        std::bit_cast<std::uintptr_t>(&exit_byte)
-      )
+    auto const return_address =
+      static_cast<std::uint64_t>(std::bit_cast<std::uintptr_t>(&exit_byte));
+    stack_pointer -= sizeof(return_address);
+    std::memcpy(
+      stack->data() + stack_pointer,
+      &return_address,
+      sizeof(return_address)
     );
     auto const ip = instruction_pointer;
     instruction_pointer = module->code.data() + fn.position;
@@ -563,6 +605,39 @@ namespace benson::vm
       break;
     case bytecode::Opcode::store_64:
       run_store<Operand_width::narrow, 8>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::push_sp_i:
+      run_push_sp_i<Operand_width::narrow>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::push_sp:
+      run_push_sp<Operand_width::narrow>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::mov_sp_i:
+      run_mov_sp_i<Operand_width::narrow>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_8:
+      run_load_sp<Operand_width::narrow, 1>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_16:
+      run_load_sp<Operand_width::narrow, 2>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_32:
+      run_load_sp<Operand_width::narrow, 4>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_64:
+      run_load_sp<Operand_width::narrow, 8>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_8:
+      run_store_sp<Operand_width::narrow, 1>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_16:
+      run_store_sp<Operand_width::narrow, 2>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_32:
+      run_store_sp<Operand_width::narrow, 4>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_64:
+      run_store_sp<Operand_width::narrow, 8>(instruction_pointer, *this);
       break;
 
 #define UNARY_CASE(opcode, type, fn)                     \
@@ -775,6 +850,39 @@ namespace benson::vm
       break;
     case bytecode::Opcode::store_64:
       run_store<Operand_width::wide, 8>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::push_sp_i:
+      run_push_sp_i<Operand_width::wide>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::push_sp:
+      run_push_sp<Operand_width::wide>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::mov_sp_i:
+      run_mov_sp_i<Operand_width::wide>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_8:
+      run_load_sp<Operand_width::wide, 1>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_16:
+      run_load_sp<Operand_width::wide, 2>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_32:
+      run_load_sp<Operand_width::wide, 4>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_64:
+      run_load_sp<Operand_width::wide, 8>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_8:
+      run_store_sp<Operand_width::wide, 1>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_16:
+      run_store_sp<Operand_width::wide, 2>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_32:
+      run_store_sp<Operand_width::wide, 4>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_64:
+      run_store_sp<Operand_width::wide, 8>(instruction_pointer, *this);
       break;
 
 #define UNARY_CASE(opcode, type, fn)                   \

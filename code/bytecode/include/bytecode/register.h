@@ -28,11 +28,9 @@ namespace benson::bytecode
     }
   };
 
-  inline constexpr auto sp = Register{0};
-
   constexpr auto gpr(int n) -> Register
   {
-    assert(n >= 1);
+    assert(n >= 0);
     assert(n <= std::numeric_limits<Register::Underlying_type>::max());
     return Register{n};
   }

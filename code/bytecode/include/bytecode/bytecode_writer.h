@@ -341,6 +341,28 @@ namespace benson::bytecode
 
     void emit_cmp_ge_f64_k(Register dst, Register lhs, Constant rhs);
 
+    void emit_push_sp_i(Immediate amount);
+
+    void emit_push_sp(Register amount);
+
+    void emit_mov_sp_i(Register dst, Immediate offset);
+
+    void emit_load_sp_8(Register dst, Immediate offset);
+
+    void emit_load_sp_16(Register dst, Immediate offset);
+
+    void emit_load_sp_32(Register dst, Immediate offset);
+
+    void emit_load_sp_64(Register dst, Immediate offset);
+
+    void emit_store_sp_8(Register src, Immediate offset);
+
+    void emit_store_sp_16(Register src, Immediate offset);
+
+    void emit_store_sp_32(Register src, Immediate offset);
+
+    void emit_store_sp_64(Register src, Immediate offset);
+
     std::ptrdiff_t position() const noexcept
     {
       return _position;

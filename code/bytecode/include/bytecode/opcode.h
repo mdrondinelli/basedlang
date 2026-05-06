@@ -138,6 +138,17 @@ namespace benson::bytecode
     cmp_ge_f32_k,
     cmp_ge_f64,
     cmp_ge_f64_k,
+    push_sp_i,
+    push_sp,
+    mov_sp_i,
+    load_sp_8,
+    load_sp_16,
+    load_sp_32,
+    load_sp_64,
+    store_sp_8,
+    store_sp_16,
+    store_sp_32,
+    store_sp_64,
   };
 
 } // namespace benson::bytecode

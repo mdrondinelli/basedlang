@@ -6,7 +6,6 @@
 #include "spelling/spelling.h"
 
 using benson::bytecode::gpr;
-using benson::bytecode::sp;
 
 auto reg_byte(benson::bytecode::Register reg) -> std::byte
 {
@@ -123,7 +122,6 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
   using benson::bytecode::Module_builder;
   using enum benson::bytecode::Opcode;
   using benson::bytecode::gpr;
-  using benson::bytecode::sp;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();

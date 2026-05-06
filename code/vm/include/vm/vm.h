@@ -203,6 +203,7 @@ namespace benson::vm
     std::byte const *instruction_pointer;
     std::unique_ptr<std::array<std::uint64_t, 64 * 1024>> registers;
     std::unique_ptr<std::array<std::byte, 16 * 1024 * 1024>> stack;
+    std::ptrdiff_t stack_pointer{};
 
   private:
     void dispatch(bytecode::Opcode opcode);

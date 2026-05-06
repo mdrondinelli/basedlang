@@ -1,5 +1,6 @@
 #include "bytecode/bytecode_writer.h"
 
+#include <cassert>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -59,30 +60,65 @@ namespace benson::bytecode
     throw std::runtime_error{"jmp target out of range"};
   }
 
-  void Bytecode_writer::emit_call(std::ptrdiff_t target)
+  void
+  Bytecode_writer::emit_call_i(Immediate function, Register base, Register dst)
   {
-    auto const narrow_offset = target - (_position + 2);
-    if (std::in_range<std::int8_t>(narrow_offset))
-    {
-      emit_opcode(Opcode::call_i);
-      write_byte(static_cast<std::byte>(narrow_offset));
-      return;
-    }
-    auto const wide_offset = target - (_position + 4);
-    if (std::in_range<Immediate::Underlying_type>(wide_offset))
+    assert(function.value >= 0);
+    if (is_wide(function) || is_wide(base) || is_wide(dst))
     {
       emit_opcode(Opcode::wide);
       emit_opcode(Opcode::call_i);
-      write_byte(static_cast<std::byte>(wide_offset));
-      write_byte(static_cast<std::byte>(wide_offset >> 8));
-      return;
+      write_byte(static_cast<std::byte>(function.value));
+      write_byte(static_cast<std::byte>(function.value >> 8));
+      write_wide_register(base);
+      write_wide_register(dst);
     }
-    throw std::runtime_error{"call target out of range"};
+    else
+    {
+      emit_opcode(Opcode::call_i);
+      write_byte(static_cast<std::byte>(function.value));
+      write_narrow_register(base);
+      write_narrow_register(dst);
+    }
   }
 
-  void Bytecode_writer::emit_ret()
+  void Bytecode_writer::emit_call_void_i(Immediate function, Register base)
   {
-    emit_opcode(Opcode::ret);
+    assert(function.value >= 0);
+    if (is_wide(function) || is_wide(base))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::call_void_i);
+      write_byte(static_cast<std::byte>(function.value));
+      write_byte(static_cast<std::byte>(function.value >> 8));
+      write_wide_register(base);
+    }
+    else
+    {
+      emit_opcode(Opcode::call_void_i);
+      write_byte(static_cast<std::byte>(function.value));
+      write_narrow_register(base);
+    }
+  }
+
+  void Bytecode_writer::emit_ret(Register src)
+  {
+    if (is_wide(src))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(Opcode::ret);
+      write_wide_register(src);
+    }
+    else
+    {
+      emit_opcode(Opcode::ret);
+      write_narrow_register(src);
+    }
+  }
+
+  void Bytecode_writer::emit_ret_void()
+  {
+    emit_opcode(Opcode::ret_void);
   }
 
   void Bytecode_writer::emit_jnz(Register src, std::ptrdiff_t target)

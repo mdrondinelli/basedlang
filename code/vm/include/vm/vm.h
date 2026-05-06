@@ -3,13 +3,16 @@
 
 #include <array>
 #include <bit>
+#include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <span>
 #include <stdexcept>
+#include <vector>
 
 #include "bytecode/constant.h"
 #include "bytecode/module.h"
@@ -135,7 +138,7 @@ namespace benson::vm
     template <typename T>
     [[nodiscard]] T get_register_value(bytecode::Register reg) const
     {
-      auto const value = (*registers)[reg.value];
+      auto const value = *relative_register(reg.value);
       if constexpr (std::same_as<T, float>)
       {
         return std::bit_cast<float>(static_cast<std::uint32_t>(value));
@@ -159,30 +162,57 @@ namespace benson::vm
     {
       if constexpr (std::same_as<std::decay_t<T>, float>)
       {
-        (*registers)[reg.value] = std::bit_cast<std::uint32_t>(value);
+        *relative_register(reg.value) = std::bit_cast<std::uint32_t>(value);
       }
       else if constexpr (std::same_as<std::decay_t<T>, double>)
       {
-        (*registers)[reg.value] = std::bit_cast<std::uint64_t>(value);
+        *relative_register(reg.value) = std::bit_cast<std::uint64_t>(value);
       }
       else if constexpr (std::same_as<T, bool>)
       {
-        (*registers)[reg.value] = value ? 1 : 0;
+        *relative_register(reg.value) = value ? 1 : 0;
       }
       else
       {
-        (*registers)[reg.value] = static_cast<std::uint64_t>(value);
+        *relative_register(reg.value) = static_cast<std::uint64_t>(value);
       }
+    }
+
+    [[nodiscard]] std::uint64_t *absolute_register(std::ptrdiff_t index)
+    {
+      assert(index >= 0);
+      return &registers[static_cast<std::size_t>(index)];
+    }
+
+    [[nodiscard]] std::uint64_t const *absolute_register(std::ptrdiff_t index
+    ) const
+    {
+      assert(index >= 0);
+      return &registers[static_cast<std::size_t>(index)];
+    }
+
+    [[nodiscard]] std::uint64_t *relative_register(std::ptrdiff_t offset)
+    {
+      return absolute_register(base_register + offset);
+    }
+
+    [[nodiscard]] std::uint64_t const *relative_register(std::ptrdiff_t offset
+    ) const
+    {
+      return absolute_register(base_register + offset);
     }
 
     void load(bytecode::Module const &module);
 
     void run();
 
-    /// Looks up a function by `name` in the loaded module, pushes `args` on
-    /// the stack at their native widths, jumps to the entry, runs until the
-    /// callee returns, and decodes the return value from `gpr(1)` according to
-    /// the function's return type.
+    /// Looks up a function by `name` in the loaded module, places `args` in
+    /// the function's register window starting at `gpr(0)`, jumps to the
+    /// entry, runs until the callee returns, and decodes the return value
+    /// according to the function's return type. The return value is read from
+    /// a per-call return slot allocated above the function's register window
+    /// (i.e., at the absolute register index immediately past the callee's
+    /// last register).
     ///
     /// Precondition: a module has been loaded via `load`. Violating this is a
     /// programming error and aborts via `assert`.
@@ -200,11 +230,21 @@ namespace benson::vm
     ///   primitive type the VM knows how to decode.
     Scalar call(Spelling name, std::span<Scalar const> args);
 
+    struct Call_frame
+    {
+      std::byte const *return_address;
+      std::ptrdiff_t base_register;
+      std::ptrdiff_t stack_pointer;
+      std::optional<std::ptrdiff_t> return_register;
+    };
+
     bytecode::Module const *module{};
     std::byte const *instruction_pointer;
-    std::unique_ptr<std::array<std::uint64_t, 64 * 1024>> registers;
+    std::vector<std::uint64_t> registers;
     std::unique_ptr<std::array<std::byte, 16 * 1024 * 1024>> stack;
     std::ptrdiff_t stack_pointer{};
+    std::ptrdiff_t base_register{};
+    std::vector<Call_frame> call_stack{};
 
   private:
     void dispatch(bytecode::Opcode opcode);

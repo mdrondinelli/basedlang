@@ -73,7 +73,8 @@ namespace benson::bytecode
     [[nodiscard]] Immediate declare_function(
       Spelling name,
       std::vector<Scalar_type> parameter_types,
-      Scalar_type return_type
+      Scalar_type return_type,
+      std::ptrdiff_t register_count
     );
 
     void place_function(Immediate function);

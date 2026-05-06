@@ -18,6 +18,11 @@ namespace benson::bytecode
     std::ptrdiff_t position;
     std::vector<Scalar_type> parameter_types;
     Scalar_type return_type;
+    // Number of registers the body of this function may access relative to
+    // its base register. A function declared with `register_count == 0` may
+    // not access any register at runtime; this is a programmer-level contract
+    // enforced by the bytecode emitter, not at runtime.
+    std::ptrdiff_t register_count;
   };
 
   struct Module

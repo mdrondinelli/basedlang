@@ -149,6 +149,8 @@ namespace benson::bytecode
     store_sp_16,
     store_sp_32,
     store_sp_64,
+    call_void_i,
+    ret_void,
   };
 
 } // namespace benson::bytecode

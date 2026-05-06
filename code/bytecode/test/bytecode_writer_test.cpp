@@ -263,28 +263,72 @@ TEST_CASE("Bytecode_writer emits jnz_i instruction operands")
   );
 }
 
-TEST_CASE("Bytecode_writer emits call_i and ret instruction operands")
+TEST_CASE("Bytecode_writer emits indexed call and return operands")
 {
+  using benson::bytecode::Immediate;
   using benson::bytecode::Opcode;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_call(std::ptrdiff_t{5});
-  writer.emit_call(std::ptrdiff_t{0x0108});
-  writer.emit_ret();
+  writer.emit_call_i(Immediate{3}, gpr(7), gpr(2));
+  writer.emit_call_void_i(Immediate{5}, gpr(9));
+  writer.emit_ret(gpr(4));
+  writer.emit_ret_void();
   writer.flush();
 
   CHECK(
-    stream.bytes() == std::vector<std::byte>{
-                        static_cast<std::byte>(Opcode::call_i),
-                        std::byte{0x03},
-                        static_cast<std::byte>(Opcode::wide),
-                        static_cast<std::byte>(Opcode::call_i),
-                        std::byte{0x02},
-                        std::byte{0x01},
-                        static_cast<std::byte>(Opcode::ret),
-                      }
+    stream.bytes() ==
+    std::vector<std::byte>{
+      static_cast<std::byte>(Opcode::call_i),
+      std::byte{0x03},
+      reg_byte(gpr(7)),
+      reg_byte(gpr(2)),
+      static_cast<std::byte>(Opcode::call_void_i),
+      std::byte{0x05},
+      reg_byte(gpr(9)),
+      static_cast<std::byte>(Opcode::ret),
+      reg_byte(gpr(4)),
+      static_cast<std::byte>(Opcode::ret_void),
+    }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits wide indexed call and return operands")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_call_i(Immediate{0x0102}, gpr(300), gpr(7));
+  writer.emit_call_void_i(Immediate{4}, gpr(301));
+  writer.emit_ret(gpr(302));
+  writer.flush();
+
+  CHECK(
+    stream.bytes() ==
+    std::vector<std::byte>{
+      static_cast<std::byte>(Opcode::wide),
+      static_cast<std::byte>(Opcode::call_i),
+      std::byte{0x02},
+      std::byte{0x01},
+      std::byte{0x2C},
+      std::byte{0x01},
+      std::byte{0x07},
+      std::byte{0x00},
+      static_cast<std::byte>(Opcode::wide),
+      static_cast<std::byte>(Opcode::call_void_i),
+      std::byte{0x04},
+      std::byte{0x00},
+      std::byte{0x2D},
+      std::byte{0x01},
+      static_cast<std::byte>(Opcode::wide),
+      static_cast<std::byte>(Opcode::ret),
+      std::byte{0x2E},
+      std::byte{0x01},
+    }
   );
 }
 

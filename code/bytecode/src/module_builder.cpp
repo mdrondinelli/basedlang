@@ -65,13 +65,16 @@ namespace benson::bytecode
   auto Module_builder::declare_function(
     Spelling name,
     std::vector<Scalar_type> parameter_types,
-    Scalar_type return_type
+    Scalar_type return_type,
+    std::ptrdiff_t register_count
   ) -> Immediate
   {
+    assert(register_count >= 0);
     _module.functions.push_back(Function{
       .position = -1,
       .parameter_types = std::move(parameter_types),
       .return_type = return_type,
+      .register_count = register_count,
     });
     auto const index = _module.functions.size() - 1;
     assert(_module.function_indices.emplace(name, index).second);

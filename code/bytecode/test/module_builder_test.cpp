@@ -83,41 +83,6 @@ TEST_CASE("Module_builder patches label-based jnz_i instructions")
   CHECK(module.constant_table.empty());
 }
 
-TEST_CASE("Module_builder patches label-based call_i instructions")
-{
-  using benson::bytecode::Module_builder;
-  using benson::bytecode::Opcode;
-
-  auto builder = Module_builder{};
-  auto &writer = builder.writer();
-  auto const start = builder.make_label();
-  auto const subroutine = builder.make_label();
-
-  builder.place_label(start);
-  writer.emit_call(builder.label_target(subroutine));
-  writer.emit_exit();
-  builder.place_label(subroutine);
-  writer.emit_call(builder.label_target(start));
-  writer.emit_ret();
-
-  auto const module = builder.build();
-
-  CHECK(
-    module.code == std::vector<std::byte>{
-                     static_cast<std::byte>(Opcode::wide),
-                     static_cast<std::byte>(Opcode::call_i),
-                     std::byte{0x01},
-                     std::byte{0x00},
-                     static_cast<std::byte>(Opcode::exit),
-                     static_cast<std::byte>(Opcode::call_i),
-                     std::byte{0xF9},
-                     static_cast<std::byte>(Opcode::ret),
-                   }
-  );
-  CHECK(module.constant_data.empty());
-  CHECK(module.constant_table.empty());
-}
-
 TEST_CASE("Module_builder interns and deduplicates inline constants")
 {
   using benson::bytecode::Module_builder;
@@ -171,13 +136,14 @@ TEST_CASE("Module_builder records indexed functions")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const foo_index = builder.declare_function(foo, {int32, int32}, int64);
-  auto const bar_index = builder.declare_function(bar, {}, void_);
+  auto const foo_index =
+    builder.declare_function(foo, {int32, int32}, int64, 3);
+  auto const bar_index = builder.declare_function(bar, {}, void_, 0);
 
   builder.place_function(foo_index);
-  writer.emit_ret();
+  writer.emit_ret(gpr(0));
   builder.place_function(bar_index);
-  writer.emit_ret();
+  writer.emit_ret_void();
   writer.emit_exit();
 
   auto const module = builder.build();
@@ -190,11 +156,13 @@ TEST_CASE("Module_builder records indexed functions")
   CHECK(foo_entry.position == 0);
   CHECK(foo_entry.parameter_types == std::vector{int32, int32});
   CHECK(foo_entry.return_type == int64);
+  CHECK(foo_entry.register_count == 3);
 
   auto const &bar_entry = module.functions[1];
-  CHECK(bar_entry.position == 1);
+  CHECK(bar_entry.position == 2);
   CHECK(bar_entry.parameter_types.empty());
   CHECK(bar_entry.return_type == void_);
+  CHECK(bar_entry.register_count == 0);
 
   CHECK(module.function_indices.at(foo) == 0);
   CHECK(module.function_indices.at(bar) == 1);
@@ -210,11 +178,11 @@ TEST_CASE("Module_builder declares functions before placing code")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const recurse_index = builder.declare_function(recurse, {}, void_);
+  auto const recurse_index = builder.declare_function(recurse, {}, void_, 0);
   writer.emit_exit();
   auto const placement_position = writer.position();
   builder.place_function(recurse_index);
-  writer.emit_ret();
+  writer.emit_ret_void();
 
   auto const module = builder.build();
 
@@ -225,6 +193,7 @@ TEST_CASE("Module_builder declares functions before placing code")
   CHECK(entry.position == placement_position);
   CHECK(entry.parameter_types.empty());
   CHECK(entry.return_type == void_);
+  CHECK(entry.register_count == 0);
 }
 
 TEST_CASE("Module_builder rejects declared functions that were never placed")
@@ -236,7 +205,7 @@ TEST_CASE("Module_builder rejects declared functions that were never placed")
   auto const ghost = spellings.intern("ghost");
 
   auto builder = Module_builder{};
-  (void)builder.declare_function(ghost, {}, void_);
+  (void) builder.declare_function(ghost, {}, void_, 0);
 
   CHECK_THROWS_AS(builder.build(), std::runtime_error);
 }

@@ -70,12 +70,13 @@ namespace benson::bytecode
 
     void place_label(Label label);
 
-    void place_function(
-      Label label,
+    [[nodiscard]] Immediate declare_function(
       Spelling name,
       std::vector<Scalar_type> parameter_types,
       Scalar_type return_type
     );
+
+    void place_function(Immediate function);
 
     Label_jump_target_provider label_target(Label label);
 

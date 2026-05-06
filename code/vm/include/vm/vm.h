@@ -188,7 +188,8 @@ namespace benson::vm
     /// programming error and aborts via `assert`.
     ///
     /// Throws:
-    /// - `Unknown_function_error` — `name` is not in `module->functions`.
+    /// - `Unknown_function_error` — `name` is not in
+    ///   `module->function_indices`.
     /// - `Argument_count_error` — `args.size()` differs from the function's
     ///   declared parameter count.
     /// - `Argument_type_error` — an `args[i]` does not hold the

@@ -509,12 +509,12 @@ namespace benson::vm
   Virtual_machine::call(Spelling name, std::span<Scalar const> args)
   {
     assert(module != nullptr);
-    auto const it = module->functions.find(name);
-    if (it == module->functions.end())
+    auto const it = module->function_indices.find(name);
+    if (it == module->function_indices.end())
     {
       throw Unknown_function_error{name};
     }
-    auto const &fn = it->second;
+    auto const &fn = module->functions[it->second];
     if (args.size() != fn.parameter_types.size())
     {
       throw Argument_count_error{

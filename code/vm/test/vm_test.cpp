@@ -1434,8 +1434,8 @@ TEST_CASE("Virtual_machine::call invokes an i32 add function")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const add_label = builder.make_label();
-  builder.place_function(add_label, add, {int32, int32}, int32);
+  auto const add_index = builder.declare_function(add, {int32, int32}, int32);
+  builder.place_function(add_index);
   writer.emit_load_sp_32(gpr(2), Immediate{8});
   writer.emit_load_sp_32(gpr(3), Immediate{12});
   writer.emit_add_i32(gpr(1), gpr(2), gpr(3));
@@ -1465,8 +1465,9 @@ TEST_CASE("Virtual_machine::call round-trips a float through gpr(1)")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const identity_label = builder.make_label();
-  builder.place_function(identity_label, identity, {float_}, float_);
+  auto const identity_index =
+    builder.declare_function(identity, {float_}, float_);
+  builder.place_function(identity_index);
   writer.emit_load_sp_32(gpr(1), Immediate{8});
   writer.emit_ret();
   auto const module = builder.build();
@@ -1491,8 +1492,8 @@ TEST_CASE("Virtual_machine::call returns Void_value for void functions")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const noop_label = builder.make_label();
-  builder.place_function(noop_label, noop, {}, void_);
+  auto const noop_index = builder.declare_function(noop, {}, void_);
+  builder.place_function(noop_index);
   writer.emit_ret();
   auto const module = builder.build();
 
@@ -1514,8 +1515,8 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const inc_label = builder.make_label();
-  builder.place_function(inc_label, inc, {int32}, int32);
+  auto const inc_index = builder.declare_function(inc, {int32}, int32);
+  builder.place_function(inc_index);
   writer.emit_load_sp_32(gpr(1), Immediate{8});
   writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
   writer.emit_ret();
@@ -1546,8 +1547,8 @@ TEST_CASE("Virtual_machine::call rejects bad inputs")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const known_label = builder.make_label();
-  builder.place_function(known_label, known, {int32}, int32);
+  auto const known_index = builder.declare_function(known, {int32}, int32);
+  builder.place_function(known_index);
   writer.emit_ret();
   auto const module = builder.build();
 

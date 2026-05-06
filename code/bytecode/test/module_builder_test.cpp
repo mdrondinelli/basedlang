@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -159,7 +160,7 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
   CHECK(module.constant_data.size() == 8);
 }
 
-TEST_CASE("Module_builder records placed functions")
+TEST_CASE("Module_builder records indexed functions")
 {
   using benson::bytecode::Module_builder;
   using enum benson::bytecode::Scalar_type;
@@ -170,26 +171,72 @@ TEST_CASE("Module_builder records placed functions")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  auto const foo_label = builder.make_label();
-  auto const bar_label = builder.make_label();
+  auto const foo_index = builder.declare_function(foo, {int32, int32}, int64);
+  auto const bar_index = builder.declare_function(bar, {}, void_);
 
-  builder.place_function(foo_label, foo, {int32, int32}, int64);
+  builder.place_function(foo_index);
   writer.emit_ret();
-  builder.place_function(bar_label, bar, {}, void_);
+  builder.place_function(bar_index);
   writer.emit_ret();
   writer.emit_exit();
 
   auto const module = builder.build();
 
   REQUIRE(module.functions.size() == 2);
+  CHECK(foo_index.value == 0);
+  CHECK(bar_index.value == 1);
 
-  auto const &foo_entry = module.functions.at(foo);
+  auto const &foo_entry = module.functions[0];
   CHECK(foo_entry.position == 0);
   CHECK(foo_entry.parameter_types == std::vector{int32, int32});
   CHECK(foo_entry.return_type == int64);
 
-  auto const &bar_entry = module.functions.at(bar);
+  auto const &bar_entry = module.functions[1];
   CHECK(bar_entry.position == 1);
   CHECK(bar_entry.parameter_types.empty());
   CHECK(bar_entry.return_type == void_);
+
+  CHECK(module.function_indices.at(foo) == 0);
+  CHECK(module.function_indices.at(bar) == 1);
+}
+
+TEST_CASE("Module_builder declares functions before placing code")
+{
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const recurse = spellings.intern("recurse");
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  auto const recurse_index = builder.declare_function(recurse, {}, void_);
+  writer.emit_exit();
+  auto const placement_position = writer.position();
+  builder.place_function(recurse_index);
+  writer.emit_ret();
+
+  auto const module = builder.build();
+
+  REQUIRE(module.functions.size() == 1);
+  CHECK(recurse_index.value == 0);
+  CHECK(module.function_indices.at(recurse) == 0);
+  auto const &entry = module.functions[0];
+  CHECK(entry.position == placement_position);
+  CHECK(entry.parameter_types.empty());
+  CHECK(entry.return_type == void_);
+}
+
+TEST_CASE("Module_builder rejects declared functions that were never placed")
+{
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+
+  auto spellings = benson::Spelling_table{};
+  auto const ghost = spellings.intern("ghost");
+
+  auto builder = Module_builder{};
+  (void)builder.declare_function(ghost, {}, void_);
+
+  CHECK_THROWS_AS(builder.build(), std::runtime_error);
 }

@@ -141,7 +141,7 @@ namespace benson::bytecode
       write_byte(static_cast<std::byte>(wide_offset >> 8));
       return;
     }
-    throw std::runtime_error{"jmp target out of range"};
+    throw std::runtime_error{"jnz target out of range"};
   }
 
   void Bytecode_writer::emit_lookup_k(Register dst, Constant k)

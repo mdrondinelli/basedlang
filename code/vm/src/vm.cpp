@@ -17,6 +17,21 @@ namespace benson::vm
   namespace
   {
 
+    // Resizes `registers` to `new_size`, growing capacity geometrically when
+    // it is exceeded. The C++ standard does not require `std::vector::resize`
+    // to amortize capacity growth (only push_back-shaped operations do), so
+    // this helper makes the contract explicit and independent of the
+    // implementation's reallocation strategy.
+    void
+    grow_registers(std::vector<std::uint64_t> *registers, std::size_t new_size)
+    {
+      if (new_size > registers->capacity())
+      {
+        registers->reserve(std::max(new_size, registers->capacity() * 2));
+      }
+      registers->resize(new_size);
+    }
+
     enum class Operand_width
     {
       narrow,
@@ -382,7 +397,10 @@ namespace benson::vm
       vm.base_register = new_base_register;
       auto const required_size =
         static_cast<std::size_t>(new_base_register + function.register_count);
-      vm.registers.resize(std::max(vm.registers.size(), required_size));
+      if (required_size > vm.registers.size())
+      {
+        grow_registers(&vm.registers, required_size);
+      }
       instruction_pointer = vm.module->code.data() + function.position;
     }
 
@@ -517,7 +535,6 @@ namespace benson::vm
 
   Virtual_machine::Virtual_machine()
       : instruction_pointer{nullptr},
-        registers(64 * 1024),
         stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()},
         stack_pointer{static_cast<std::ptrdiff_t>(stack->size())}
   {
@@ -597,13 +614,14 @@ namespace benson::vm
       .call_stack_size = old_call_stack_size,
     };
     base_register = 0;
-    registers.resize(std::max(
-      registers.size(),
-      std::max<std::size_t>(
-        args.size(),
-        static_cast<std::size_t>(fn.register_count)
-      )
-    ));
+    auto const window_size = std::max<std::size_t>(
+      args.size(),
+      static_cast<std::size_t>(fn.register_count)
+    );
+    if (window_size > registers.size())
+    {
+      grow_registers(&registers, window_size);
+    }
     for (auto const &arg : args)
     {
       auto const i = &arg - &args[0];
@@ -638,7 +656,7 @@ namespace benson::vm
     if (fn.return_type != bytecode::Scalar_type::void_)
     {
       return_register = static_cast<std::ptrdiff_t>(registers.size());
-      registers.resize(registers.size() + 1);
+      grow_registers(&registers, registers.size() + 1);
     }
     auto const exit_byte = bytecode::Opcode::exit;
     call_stack.push_back(Call_frame{

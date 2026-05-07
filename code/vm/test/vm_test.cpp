@@ -106,6 +106,7 @@ TEMPLATE_TEST_CASE(
   }();
 
   auto vm = benson::vm::Virtual_machine{};
+  vm.registers.resize(256);
   vm.set_register_value(gpr(255), value);
 
   CHECK(vm.get_register_value<TestType>(gpr(255)) == value);
@@ -114,6 +115,7 @@ TEMPLATE_TEST_CASE(
 TEST_CASE("Virtual_machine keeps exact floating-point register bit pattern")
 {
   auto vm = benson::vm::Virtual_machine{};
+  vm.registers.resize(2);
   vm.set_register_value(benson::bytecode::gpr(1), -0.0F);
 
   CHECK(
@@ -141,6 +143,7 @@ TEST_CASE(
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
 
   vm.run();
 
@@ -167,6 +170,7 @@ TEST_CASE("Virtual_machine runs negation program emitted by Module_builder")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   vm.set_register_value<std::int32_t>(gpr(2), 123);
 
   vm.run();
@@ -193,6 +197,7 @@ TEST_CASE("Virtual_machine runs move program emitted by Module_builder")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(6);
   vm.set_register_value<double>(gpr(2), -0.0);
 
   vm.run();
@@ -232,6 +237,7 @@ TEST_CASE("Virtual_machine runs program with wide registers")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(307);
 
   vm.run();
 
@@ -260,6 +266,7 @@ TEST_CASE(
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(12);
   vm.set_register_value<std::int32_t>(gpr(2), 10);
   vm.set_register_value<std::int32_t>(gpr(3), 5);
   vm.set_register_value<std::int32_t>(gpr(5), 3);
@@ -298,6 +305,7 @@ TEST_CASE(
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(7);
   vm.set_register_value<std::int32_t>(gpr(2), 10);
 
   vm.run();
@@ -329,6 +337,7 @@ TEST_CASE(
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(10);
   vm.set_register_value<double>(gpr(2), 10.0);
   vm.set_register_value<double>(gpr(3), 2.5);
   vm.set_register_value<double>(gpr(5), 1.5);
@@ -368,6 +377,7 @@ TEST_CASE(
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(21);
   vm.set_register_value<std::int32_t>(gpr(2), 10);
   vm.set_register_value<double>(gpr(14), 10.0);
 
@@ -471,6 +481,7 @@ TEST_CASE(
   auto vm = benson::vm::Virtual_machine{};
   vm.module = &module;
   vm.instruction_pointer = stream.bytes().data();
+  vm.registers.resize(21);
   vm.set_register_value<std::int32_t>(gpr(2), 10);
   vm.set_register_value<double>(gpr(14), 10.0);
 
@@ -504,6 +515,7 @@ TEST_CASE("Virtual_machine store_8 writes one byte to stack")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   vm.set_register_value<std::uint64_t>(
     gpr(1),
     static_cast<std::uint64_t>(std::int8_t{-42})
@@ -536,6 +548,7 @@ TEST_CASE("Virtual_machine load_8 reads one byte from stack")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   (*vm.stack)[0] = static_cast<std::byte>(std::uint8_t{0xAB});
   vm.set_register_value<std::uint64_t>(
     gpr(2),
@@ -564,6 +577,7 @@ TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(4);
   vm.set_register_value<std::int64_t>(gpr(1), std::int64_t{-1234567890123LL});
   vm.set_register_value<std::uint64_t>(
     gpr(3),
@@ -595,6 +609,7 @@ TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(4);
   vm.set_register_value<std::int32_t>(gpr(1), std::int32_t{0xDEAD});
   vm.set_register_value<std::uint64_t>(
     gpr(3),
@@ -621,6 +636,7 @@ TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
 
   vm.run();
 
@@ -648,6 +664,7 @@ TEST_CASE("Virtual_machine runs Module_builder program with forward jmp_i")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(2);
   vm.set_register_value<std::int32_t>(gpr(1), 40);
 
   vm.run();
@@ -765,6 +782,33 @@ TEST_CASE("Virtual_machine indexed call uses wide relative registers")
   CHECK(result.as<std::int32_t>() == 42);
 }
 
+TEST_CASE("Virtual_machine grows registers vector for wide register window")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Module_builder;
+  using enum benson::bytecode::Scalar_type;
+  auto spellings = benson::Spelling_table{};
+  auto const wide = spellings.intern("wide");
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  // register_count of 500 forces the VM to grow its registers vector from
+  // empty (the constructor leaves it that way) past any small initial size.
+  auto const wide_index = builder.declare_function(wide, {}, int32, 500);
+  builder.place_function(wide_index);
+  writer.emit_mov_i(gpr(499), Immediate{42});
+  writer.emit_ret(gpr(499));
+  auto const module = builder.build();
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+  REQUIRE(vm.registers.empty());
+  auto const result = vm.call(wide, {});
+  REQUIRE(result.type() == int32);
+  CHECK(result.as<std::int32_t>() == 42);
+  // The window plus one return slot must fit in registers.
+  CHECK(vm.registers.size() >= 501);
+  CHECK(vm.registers.capacity() >= vm.registers.size());
+}
+
 TEST_CASE("Virtual_machine does not take narrow jnz_i when condition is zero")
 {
   using benson::bytecode::Immediate;
@@ -779,6 +823,7 @@ TEST_CASE("Virtual_machine does not take narrow jnz_i when condition is zero")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
+  vm.registers.resize(3);
   vm.set_register_value<std::int32_t>(gpr(1), 40);
   vm.set_register_value<std::int32_t>(gpr(2), 0);
 
@@ -801,6 +846,7 @@ TEST_CASE("Virtual_machine takes narrow jnz_i when condition is non-zero")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
+  vm.registers.resize(3);
   vm.set_register_value<std::int32_t>(gpr(1), 40);
   vm.set_register_value<std::int32_t>(gpr(2), 1);
 
@@ -826,6 +872,7 @@ TEST_CASE("Virtual_machine takes wide jnz_i when target exceeds narrow range")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
+  vm.registers.resize(3);
   vm.set_register_value<std::int32_t>(gpr(1), 40);
   vm.set_register_value<std::int32_t>(gpr(2), 1);
 
@@ -855,6 +902,7 @@ TEST_CASE("Virtual_machine runs countdown sum program with jnz_i loop")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(4);
   vm.set_register_value<std::int32_t>(gpr(1), 5);
   vm.set_register_value<std::int32_t>(gpr(2), 0);
 
@@ -932,6 +980,7 @@ TEST_CASE("Virtual_machine runs factorial program with jnz_i loop")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(6);
 
   vm.run();
 
@@ -969,6 +1018,7 @@ TEST_CASE("Virtual_machine runs Newton square root program with jnz_i loop")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(12);
 
   vm.run();
 
@@ -1111,6 +1161,7 @@ TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(16);
 
   vm.run();
 
@@ -1136,6 +1187,7 @@ TEST_CASE("Virtual_machine runs Module_builder program with inline constants")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   vm.set_register_value<std::int32_t>(gpr(1), 37);
   vm.set_register_value<float>(gpr(2), 3.0F);
 
@@ -1165,6 +1217,7 @@ TEST_CASE(
 
   auto vm = benson::vm::Virtual_machine{};
   vm.instruction_pointer = stream.bytes().data();
+  vm.registers.resize(4);
   vm.set_register_value<std::int16_t>(gpr(1), std::int16_t{0x7FFF});
   vm.set_register_value<std::uint64_t>(
     gpr(3),
@@ -1189,6 +1242,7 @@ TEST_CASE("Virtual_machine runs sx_8 program emitted by Module_builder")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   vm.set_register_value<std::int8_t>(gpr(2), std::int8_t{-42});
 
   vm.run();
@@ -1223,6 +1277,7 @@ TEST_CASE(
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(30);
   vm.set_register_value<std::int32_t>(gpr(2), 42);
   vm.set_register_value<std::int32_t>(gpr(3), 42);
   vm.set_register_value<std::int64_t>(gpr(5), 9);
@@ -1324,6 +1379,7 @@ TEST_CASE(
   auto vm = benson::vm::Virtual_machine{};
   vm.module = &module;
   vm.instruction_pointer = stream.bytes().data();
+  vm.registers.resize(17);
   vm.set_register_value<std::int32_t>(gpr(2), 0x0101);
   vm.set_register_value<std::int64_t>(gpr(4), 8);
   vm.set_register_value<float>(gpr(6), 2.5F);
@@ -1608,6 +1664,7 @@ TEST_CASE(
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(2);
   vm.set_register_value<std::int64_t>(gpr(1), 24);
   auto const initial = vm.stack_pointer;
 
@@ -1630,6 +1687,7 @@ TEST_CASE("Virtual_machine push_sp accepts negative register values")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(2);
   vm.set_register_value<std::int64_t>(gpr(1), std::int64_t{-16});
   auto const initial = vm.stack_pointer;
 
@@ -1656,6 +1714,7 @@ TEST_CASE("Virtual_machine mov_sp_i produces a stack pointer at sp + offset")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(4);
 
   vm.run();
 
@@ -1685,6 +1744,7 @@ TEST_CASE("Virtual_machine store_sp_8 then load_sp_8 round-trips a value")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   vm.set_register_value<std::int8_t>(gpr(1), std::int8_t{0x42});
 
   vm.run();
@@ -1707,6 +1767,7 @@ TEST_CASE("Virtual_machine store_sp_16 then load_sp_16 round-trips a value")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   vm.set_register_value<std::int16_t>(gpr(1), std::int16_t{0x1234});
 
   vm.run();
@@ -1729,6 +1790,7 @@ TEST_CASE("Virtual_machine store_sp_32 then load_sp_32 round-trips a value")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   vm.set_register_value<std::int32_t>(gpr(1), std::int32_t{0x12345678});
 
   vm.run();
@@ -1753,6 +1815,7 @@ TEST_CASE("Virtual_machine store_sp_64 then load_sp_64 round-trips a value")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(3);
   auto const value = std::int64_t{0x0102030405060708LL};
   vm.set_register_value<std::int64_t>(gpr(1), value);
 
@@ -1780,6 +1843,7 @@ TEST_CASE("Virtual_machine load_sp_N sign-extends negative values")
 
   auto vm = benson::vm::Virtual_machine{};
   vm.load(module);
+  vm.registers.resize(14);
   vm.set_register_value<std::int8_t>(gpr(1), std::int8_t{-1});
   vm.set_register_value<std::int16_t>(gpr(2), std::int16_t{-2});
   vm.set_register_value<std::int32_t>(gpr(3), std::int32_t{-3});

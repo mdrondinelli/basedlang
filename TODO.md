@@ -6,5 +6,4 @@
   * `store_sp_* <offset> <src_reg>`
 * Add `Function` bytecode type
   * Stop using `Immediate` for function indices
-* Rename `read_*` functions in bytecode implementation to `decode_*`
 * Switch arithmetic bytecode ops to have dst register as the last operand

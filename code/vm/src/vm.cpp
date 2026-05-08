@@ -41,7 +41,7 @@ namespace benson::vm
     };
 
     template <Operand_width width>
-    bytecode::Register read_register(std::byte const *&instruction_pointer)
+    bytecode::Register decode_register(std::byte const *&instruction_pointer)
     {
       if constexpr (width == Operand_width::wide)
       {
@@ -59,7 +59,7 @@ namespace benson::vm
     }
 
     template <Operand_width width>
-    bytecode::Constant read_constant(std::byte const *&instruction_pointer)
+    bytecode::Constant decode_constant(std::byte const *&instruction_pointer)
     {
       if constexpr (width == Operand_width::wide)
       {
@@ -77,7 +77,7 @@ namespace benson::vm
     }
 
     template <Operand_width width>
-    bytecode::Immediate read_immediate(std::byte const *&instruction_pointer)
+    bytecode::Immediate decode_immediate(std::byte const *&instruction_pointer)
     {
       if constexpr (width == Operand_width::wide)
       {
@@ -100,24 +100,24 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const k = read_constant<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const k = decode_constant<width>(instruction_pointer);
       vm.set_register_value(dst, vm.lookup_constant(k));
     }
 
     template <Operand_width width>
     void run_mov(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const src = read_register<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const src = decode_register<width>(instruction_pointer);
       *vm.relative_register(dst.value) = *vm.relative_register(src.value);
     }
 
     template <Operand_width width>
     void run_mov_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const src = read_immediate<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const src = decode_immediate<width>(instruction_pointer);
       vm.set_register_value(dst, src.value);
     }
 
@@ -127,8 +127,8 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const src = read_register<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const src = decode_register<width>(instruction_pointer);
       vm.set_register_value(dst, Fn{}(vm.get_register_value<CppType>(src)));
     }
 
@@ -138,9 +138,9 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const lhs = read_register<width>(instruction_pointer);
-      auto const rhs = read_register<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const lhs = decode_register<width>(instruction_pointer);
+      auto const rhs = decode_register<width>(instruction_pointer);
       vm.set_register_value(
         dst,
         Fn{}(
@@ -156,9 +156,9 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const lhs = read_register<width>(instruction_pointer);
-      auto const rhs = read_constant<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const lhs = decode_register<width>(instruction_pointer);
+      auto const rhs = decode_constant<width>(instruction_pointer);
       vm.set_register_value(
         dst,
         Fn{}(
@@ -174,9 +174,9 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const lhs = read_register<width>(instruction_pointer);
-      auto const rhs = read_immediate<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const lhs = decode_register<width>(instruction_pointer);
+      auto const rhs = decode_immediate<width>(instruction_pointer);
       vm.set_register_value(
         dst,
         Fn{}(
@@ -306,9 +306,9 @@ namespace benson::vm
     template <Operand_width width, std::size_t N>
     void run_load(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const base = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const base = decode_register<width>(instruction_pointer);
+      auto const offset = decode_immediate<width>(instruction_pointer);
 
       auto [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
@@ -336,9 +336,9 @@ namespace benson::vm
     template <Operand_width width, std::size_t N>
     void run_store(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const src = read_register<width>(instruction_pointer);
-      auto const base = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
+      auto const src = decode_register<width>(instruction_pointer);
+      auto const base = decode_register<width>(instruction_pointer);
+      auto const offset = decode_immediate<width>(instruction_pointer);
       auto const [address_space, base_address] =
         Pointer{vm.get_register_value<std::uint64_t>(base)}.decode();
       if (address_space == Address_space::constant)
@@ -360,15 +360,15 @@ namespace benson::vm
     template <Operand_width width>
     void run_jmp_i(std::byte const *&instruction_pointer)
     {
-      auto const offset = read_immediate<width>(instruction_pointer);
+      auto const offset = decode_immediate<width>(instruction_pointer);
       instruction_pointer += offset.value;
     }
 
     template <Operand_width width>
     void run_jnz_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const src = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
+      auto const src = decode_register<width>(instruction_pointer);
+      auto const offset = decode_immediate<width>(instruction_pointer);
       if (vm.get_register_value<std::int32_t>(src) != 0)
       {
         instruction_pointer += offset.value;
@@ -378,13 +378,13 @@ namespace benson::vm
     template <Operand_width width, bool has_return>
     void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const function_index = read_immediate<width>(instruction_pointer);
+      auto const function_index = decode_immediate<width>(instruction_pointer);
       assert(function_index.value >= 0);
-      auto const base = read_register<width>(instruction_pointer);
+      auto const base = decode_register<width>(instruction_pointer);
       auto return_register = std::optional<std::ptrdiff_t>{};
       if constexpr (has_return)
       {
-        auto const dst = read_register<width>(instruction_pointer);
+        auto const dst = decode_register<width>(instruction_pointer);
         return_register = vm.base_register + dst.value;
       }
       auto const new_base_register = vm.base_register + base.value;
@@ -411,7 +411,7 @@ namespace benson::vm
     template <Operand_width width>
     void run_ret(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const src = read_register<width>(instruction_pointer);
+      auto const src = decode_register<width>(instruction_pointer);
       auto const frame = vm.call_stack.back();
       vm.call_stack.pop_back();
       assert(frame.return_register);
@@ -440,7 +440,7 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const amount = read_immediate<width>(instruction_pointer);
+      auto const amount = decode_immediate<width>(instruction_pointer);
       // TODO: validate non-negative when running unverified bytecode
       vm.stack_pointer -= amount.value;
     }
@@ -448,7 +448,7 @@ namespace benson::vm
     template <Operand_width width>
     void run_alloca(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const amount = read_register<width>(instruction_pointer);
+      auto const amount = decode_register<width>(instruction_pointer);
       // TODO: validate non-negative when running unverified bytecode
       vm.stack_pointer -= vm.get_register_value<std::int64_t>(amount);
     }
@@ -459,8 +459,8 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const offset = decode_immediate<width>(instruction_pointer);
       vm.set_register_value(
         dst,
         Pointer{
@@ -473,8 +473,8 @@ namespace benson::vm
     template <Operand_width width, std::size_t N>
     void run_load_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
+      auto const offset = decode_immediate<width>(instruction_pointer);
       // TODO: bounds check
       auto const source = vm.stack->data() + vm.stack_pointer + offset.value;
       if constexpr (N == 8)
@@ -503,8 +503,8 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const src = read_register<width>(instruction_pointer);
-      auto const offset = read_immediate<width>(instruction_pointer);
+      auto const src = decode_register<width>(instruction_pointer);
+      auto const offset = decode_immediate<width>(instruction_pointer);
       // TODO: bounds check
       std::memcpy(
         vm.stack->data() + vm.stack_pointer + offset.value,

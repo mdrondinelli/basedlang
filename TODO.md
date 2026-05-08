@@ -1,10 +1,10 @@
 # TODO
 
-* Split up HLIR compiler tests
-* Bytecode interpreter (4 part plan)
-  1. Design bytecode, implement data model
-  2. Implement bytecode interpreter
-  3. Implement HLIR -> bytecode compilation
-  4. Replace/remove HLIR interpreter
-* Design/Implement alloca instruction for heap allocation (depends on bytecode interpreter)
-* Implement mutability for local `let` bindings (depends on alloca)
+* Implement mutability for local `let` bindings
+* Change bytecode operand order for `load_sp_*`, `store_sp_*` instructions
+  * `load_sp_* <offset> <dst_reg>`
+  * `store_sp_* <offset> <src_reg>`
+* Add `Function` bytecode type
+  * Stop using `Immediate` for function indices
+* Rename `read_*` functions in bytecode implementation to `decode_*`
+* Switch arithmetic bytecode ops to have dst register as the last operand

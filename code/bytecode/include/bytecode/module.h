@@ -7,13 +7,14 @@
 
 #include <spelling/spelling.h>
 
+#include "function.h"
 #include "scalar_type.h"
 #include "source_map.h"
 
 namespace benson::bytecode
 {
 
-  struct Function
+  struct Function_entry
   {
     std::ptrdiff_t position;
     std::vector<Scalar_type> parameter_types;
@@ -30,8 +31,8 @@ namespace benson::bytecode
     std::vector<std::byte> code;
     std::vector<std::byte> constant_data;
     std::vector<std::ptrdiff_t> constant_table;
-    std::vector<Function> functions;
-    std::unordered_map<Spelling, std::size_t> function_indices;
+    std::vector<Function_entry> functions;
+    std::unordered_map<Spelling, Function> function_indices;
     Source_map source_map; // TODO: do something with this
   };
 

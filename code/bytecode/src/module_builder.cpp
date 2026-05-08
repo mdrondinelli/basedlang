@@ -67,25 +67,33 @@ namespace benson::bytecode
     std::vector<Scalar_type> parameter_types,
     Scalar_type return_type,
     std::ptrdiff_t register_count
-  ) -> Immediate
+  ) -> Function
   {
     assert(register_count >= 0);
-    _module.functions.push_back(Function{
-      .position = -1,
-      .parameter_types = std::move(parameter_types),
-      .return_type = return_type,
-      .register_count = register_count,
-    });
+    if (_module.functions.size() >
+        std::numeric_limits<Function::Underlying_type>::max())
+    {
+      throw std::runtime_error{"function table out of range"};
+    }
+    _module.functions.push_back(
+      Function_entry{
+        .position = -1,
+        .parameter_types = std::move(parameter_types),
+        .return_type = return_type,
+        .register_count = register_count,
+      }
+    );
     auto const index = _module.functions.size() - 1;
-    auto const emplaced = _module.function_indices.emplace(name, index).second;
+    auto const function = Function{index};
+    auto const emplaced =
+      _module.function_indices.emplace(name, function).second;
     assert(emplaced);
-    (void)emplaced;
-    return Immediate{static_cast<std::ptrdiff_t>(index)};
+    (void) emplaced;
+    return function;
   }
 
-  void Module_builder::place_function(Immediate function)
+  void Module_builder::place_function(Function function)
   {
-    assert(function.value >= 0);
     assert(static_cast<std::size_t>(function.value) < _module.functions.size());
     auto &entry = _module.functions[static_cast<std::size_t>(function.value)];
     assert(entry.position == -1);

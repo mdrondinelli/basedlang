@@ -77,6 +77,24 @@ namespace benson::vm
     }
 
     template <Operand_width width>
+    bytecode::Function decode_function(std::byte const *&instruction_pointer)
+    {
+      if constexpr (width == Operand_width::wide)
+      {
+        auto value = bytecode::Function::Underlying_type{};
+        std::memcpy(&value, instruction_pointer, 2);
+        instruction_pointer += 2;
+        return bytecode::Function{value};
+      }
+      else
+      {
+        return bytecode::Function{
+          static_cast<std::uint8_t>(*instruction_pointer++)
+        };
+      }
+    }
+
+    template <Operand_width width>
     bytecode::Immediate decode_immediate(std::byte const *&instruction_pointer)
     {
       if constexpr (width == Operand_width::wide)
@@ -378,8 +396,7 @@ namespace benson::vm
     template <Operand_width width, bool has_return>
     void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const function_index = decode_immediate<width>(instruction_pointer);
-      assert(function_index.value >= 0);
+      auto const function_index = decode_function<width>(instruction_pointer);
       auto const base = decode_register<width>(instruction_pointer);
       auto return_register = std::optional<std::ptrdiff_t>{};
       if constexpr (has_return)
@@ -388,8 +405,7 @@ namespace benson::vm
         return_register = vm.base_register + dst.value;
       }
       auto const new_base_register = vm.base_register + base.value;
-      auto const &function =
-        vm.module->functions[static_cast<std::size_t>(function_index.value)];
+      auto const &function = vm.module->functions[function_index.value];
       vm.call_stack.push_back(
         Virtual_machine::Call_frame{
           .return_address = instruction_pointer,
@@ -580,7 +596,7 @@ namespace benson::vm
     {
       throw Unknown_function_error{name};
     }
-    auto const &fn = module->functions[it->second];
+    auto const &fn = module->functions[it->second.value];
     if (args.size() != fn.parameter_types.size())
     {
       throw Argument_count_error{

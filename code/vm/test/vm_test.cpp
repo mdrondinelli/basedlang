@@ -136,8 +136,8 @@ TEST_CASE(
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_lookup_k(gpr(1), builder.constant(5));
-  writer.emit_lookup_k(gpr(2), builder.constant(2.5));
+  writer.emit_lookup_k(builder.constant(5), gpr(1));
+  writer.emit_lookup_k(builder.constant(2.5), gpr(2));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -164,7 +164,7 @@ TEST_CASE("Virtual_machine runs negation program emitted by Module_builder")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_neg_i32(gpr(1), gpr(2));
+  writer.emit_neg_i32(gpr(2), gpr(1));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -188,10 +188,10 @@ TEST_CASE("Virtual_machine runs move program emitted by Module_builder")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_mov(gpr(1), gpr(2));
-  writer.emit_mov_i(gpr(3), Immediate{-4});
-  writer.emit_mov_i(gpr(4), Immediate{0x0102});
-  writer.emit_mov_i(gpr(5), Immediate{-0x0102});
+  writer.emit_mov(gpr(2), gpr(1));
+  writer.emit_mov_i(Immediate{-4}, gpr(3));
+  writer.emit_mov_i(Immediate{0x0102}, gpr(4));
+  writer.emit_mov_i(Immediate{-0x0102}, gpr(5));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -221,17 +221,17 @@ TEST_CASE("Virtual_machine runs program with wide registers")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   auto const done = builder.make_label();
-  writer.emit_mov_i(gpr(300), Immediate{5});
-  writer.emit_mov_i(gpr(301), Immediate{7});
-  writer.emit_add_i32(gpr(302), gpr(300), gpr(301));
+  writer.emit_mov_i(Immediate{5}, gpr(300));
+  writer.emit_mov_i(Immediate{7}, gpr(301));
+  writer.emit_add_i32(gpr(300), gpr(301), gpr(302));
   writer.emit_alloca_i(Immediate{8});
   writer.emit_store_sp_32(Immediate{0}, gpr(302));
   writer.emit_load_sp_32(Immediate{0}, gpr(303));
   writer.emit_jnz(gpr(303), builder.label_target(done));
-  writer.emit_mov_i(gpr(304), Immediate{1});
+  writer.emit_mov_i(Immediate{1}, gpr(304));
   builder.place_label(done);
-  writer.emit_mov(gpr(305), gpr(303));
-  writer.emit_neg_i32(gpr(306), gpr(305));
+  writer.emit_mov(gpr(303), gpr(305));
+  writer.emit_neg_i32(gpr(305), gpr(306));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -256,11 +256,11 @@ TEST_CASE(
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_add_i32(gpr(1), gpr(2), gpr(3));
-  writer.emit_sub_i32(gpr(4), gpr(1), gpr(5));
-  writer.emit_mul_i32(gpr(6), gpr(4), gpr(7));
-  writer.emit_div_i32(gpr(8), gpr(6), gpr(9));
-  writer.emit_mod_i32(gpr(10), gpr(8), gpr(11));
+  writer.emit_add_i32(gpr(2), gpr(3), gpr(1));
+  writer.emit_sub_i32(gpr(1), gpr(5), gpr(4));
+  writer.emit_mul_i32(gpr(4), gpr(7), gpr(6));
+  writer.emit_div_i32(gpr(6), gpr(9), gpr(8));
+  writer.emit_mod_i32(gpr(8), gpr(11), gpr(10));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -295,11 +295,11 @@ TEST_CASE(
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_add_i32_i(gpr(1), gpr(2), Immediate{5});
-  writer.emit_sub_i32_i(gpr(3), gpr(1), Immediate{-3});
-  writer.emit_mul_i32_i(gpr(4), gpr(3), Immediate{0x0102});
-  writer.emit_div_i32_i(gpr(5), gpr(4), Immediate{6});
-  writer.emit_mod_i32_i(gpr(6), gpr(5), Immediate{7});
+  writer.emit_add_i32_i(gpr(2), Immediate{5}, gpr(1));
+  writer.emit_sub_i32_i(gpr(1), Immediate{-3}, gpr(3));
+  writer.emit_mul_i32_i(gpr(3), Immediate{0x0102}, gpr(4));
+  writer.emit_div_i32_i(gpr(4), Immediate{6}, gpr(5));
+  writer.emit_mod_i32_i(gpr(5), Immediate{7}, gpr(6));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -328,10 +328,10 @@ TEST_CASE(
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_add_f64(gpr(1), gpr(2), gpr(3));
-  writer.emit_sub_f64(gpr(4), gpr(1), gpr(5));
-  writer.emit_mul_f64(gpr(6), gpr(4), gpr(7));
-  writer.emit_div_f64(gpr(8), gpr(6), gpr(9));
+  writer.emit_add_f64(gpr(2), gpr(3), gpr(1));
+  writer.emit_sub_f64(gpr(1), gpr(5), gpr(4));
+  writer.emit_mul_f64(gpr(4), gpr(7), gpr(6));
+  writer.emit_div_f64(gpr(6), gpr(9), gpr(8));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -363,15 +363,15 @@ TEST_CASE(
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_add_i32_k(gpr(1), gpr(2), builder.constant(5));
-  writer.emit_sub_i32_k(gpr(4), gpr(1), builder.constant(3));
-  writer.emit_mul_i32_k(gpr(6), gpr(4), builder.constant(4));
-  writer.emit_div_i32_k(gpr(8), gpr(6), builder.constant(6));
-  writer.emit_mod_i32_k(gpr(10), gpr(8), builder.constant(7));
-  writer.emit_add_f64_k(gpr(12), gpr(14), builder.constant(2.5));
-  writer.emit_sub_f64_k(gpr(16), gpr(12), builder.constant(1.5));
-  writer.emit_mul_f64_k(gpr(18), gpr(16), builder.constant(4.0));
-  writer.emit_div_f64_k(gpr(20), gpr(18), builder.constant(2.0));
+  writer.emit_add_i32_k(gpr(2), builder.constant(5), gpr(1));
+  writer.emit_sub_i32_k(gpr(1), builder.constant(3), gpr(4));
+  writer.emit_mul_i32_k(gpr(4), builder.constant(4), gpr(6));
+  writer.emit_div_i32_k(gpr(6), builder.constant(6), gpr(8));
+  writer.emit_mod_i32_k(gpr(8), builder.constant(7), gpr(10));
+  writer.emit_add_f64_k(gpr(14), builder.constant(2.5), gpr(12));
+  writer.emit_sub_f64_k(gpr(12), builder.constant(1.5), gpr(16));
+  writer.emit_mul_f64_k(gpr(16), builder.constant(4.0), gpr(18));
+  writer.emit_div_f64_k(gpr(18), builder.constant(2.0), gpr(20));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -462,15 +462,15 @@ TEST_CASE(
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
-  writer.emit_add_i32_k(gpr(1), gpr(2), Constant{0x0304});
-  writer.emit_sub_i32_k(gpr(4), gpr(1), Constant{0x0305});
-  writer.emit_mul_i32_k(gpr(6), gpr(4), Constant{0x0306});
-  writer.emit_div_i32_k(gpr(8), gpr(6), Constant{0x0307});
-  writer.emit_mod_i32_k(gpr(10), gpr(8), Constant{0x0308});
-  writer.emit_add_f64_k(gpr(12), gpr(14), Constant{0x0309});
-  writer.emit_sub_f64_k(gpr(16), gpr(12), Constant{0x030A});
-  writer.emit_mul_f64_k(gpr(18), gpr(16), Constant{0x030B});
-  writer.emit_div_f64_k(gpr(20), gpr(18), Constant{0x030C});
+  writer.emit_add_i32_k(gpr(2), Constant{0x0304}, gpr(1));
+  writer.emit_sub_i32_k(gpr(1), Constant{0x0305}, gpr(4));
+  writer.emit_mul_i32_k(gpr(4), Constant{0x0306}, gpr(6));
+  writer.emit_div_i32_k(gpr(6), Constant{0x0307}, gpr(8));
+  writer.emit_mod_i32_k(gpr(8), Constant{0x0308}, gpr(10));
+  writer.emit_add_f64_k(gpr(14), Constant{0x0309}, gpr(12));
+  writer.emit_sub_f64_k(gpr(12), Constant{0x030A}, gpr(16));
+  writer.emit_mul_f64_k(gpr(16), Constant{0x030B}, gpr(18));
+  writer.emit_div_f64_k(gpr(18), Constant{0x030C}, gpr(20));
   writer.emit_exit();
   writer.flush();
 
@@ -509,7 +509,7 @@ TEST_CASE("Virtual_machine store_8 writes one byte to stack")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_store_8(gpr(1), gpr(2), Immediate{0});
+  writer.emit_store_8(gpr(2), Immediate{0}, gpr(1));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -542,7 +542,7 @@ TEST_CASE("Virtual_machine load_8 sign-extends one byte from stack")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_load_8(gpr(1), gpr(2), Immediate{0});
+  writer.emit_load_8(gpr(2), Immediate{0}, gpr(1));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -570,7 +570,7 @@ TEST_CASE("Virtual_machine load_16 sign-extends two bytes from stack")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_load_16(gpr(1), gpr(2), Immediate{0});
+  writer.emit_load_16(gpr(2), Immediate{0}, gpr(1));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -599,8 +599,8 @@ TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_store_64(gpr(1), gpr(3), Immediate{0});
-  writer.emit_load_64(gpr(2), gpr(3), Immediate{0});
+  writer.emit_store_64(gpr(3), Immediate{0}, gpr(1));
+  writer.emit_load_64(gpr(3), Immediate{0}, gpr(2));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -631,8 +631,8 @@ TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_store_32(gpr(1), gpr(3), Immediate{8});
-  writer.emit_load_32(gpr(2), gpr(3), Immediate{8});
+  writer.emit_store_32(gpr(3), Immediate{8}, gpr(1));
+  writer.emit_load_32(gpr(3), Immediate{8}, gpr(2));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -658,8 +658,8 @@ TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_lookup_k(gpr(2), builder.constant(std::int32_t{-0x1234567}));
-  writer.emit_load_32(gpr(1), gpr(2), Immediate{0});
+  writer.emit_lookup_k(builder.constant(std::int32_t{-0x1234567}), gpr(2));
+  writer.emit_load_32(gpr(2), Immediate{0}, gpr(1));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -684,9 +684,9 @@ TEST_CASE("Virtual_machine runs Module_builder program with forward jmp_i")
   auto &writer = builder.writer();
   auto const done = builder.make_label();
   writer.emit_jmp(builder.label_target(done));
-  writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
+  writer.emit_add_i32_i(gpr(1), Immediate{1}, gpr(1));
   builder.place_label(done);
-  writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{2});
+  writer.emit_add_i32_i(gpr(1), Immediate{2}, gpr(1));
   writer.emit_exit();
 
   auto const module = builder.build();
@@ -718,13 +718,13 @@ TEST_CASE("Virtual_machine indexed call slides register window")
     builder.declare_function(add, {int32, int32}, int32, 3);
 
   builder.place_function(entry_index);
-  writer.emit_mov_i(gpr(10), Immediate{40});
-  writer.emit_mov_i(gpr(11), Immediate{2});
+  writer.emit_mov_i(Immediate{40}, gpr(10));
+  writer.emit_mov_i(Immediate{2}, gpr(11));
   writer.emit_call_i(add_index, gpr(10), gpr(0));
   writer.emit_ret(gpr(0));
 
   builder.place_function(add_index);
-  writer.emit_add_i32(gpr(2), gpr(0), gpr(1));
+  writer.emit_add_i32(gpr(0), gpr(1), gpr(2));
   writer.emit_ret(gpr(2));
 
   auto const module = builder.build();
@@ -754,14 +754,14 @@ TEST_CASE("Virtual_machine void call restores caller frame and stack pointer")
     builder.declare_function(clobber, {int32}, void_, 1);
 
   builder.place_function(entry_index);
-  writer.emit_mov_i(gpr(5), Immediate{123});
-  writer.emit_mov_i(gpr(10), Immediate{456});
+  writer.emit_mov_i(Immediate{123}, gpr(5));
+  writer.emit_mov_i(Immediate{456}, gpr(10));
   writer.emit_call_void_i(clobber_index, gpr(10));
   writer.emit_ret(gpr(5));
 
   builder.place_function(clobber_index);
   writer.emit_alloca_i(Immediate{16});
-  writer.emit_mov_i(gpr(0), Immediate{99});
+  writer.emit_mov_i(Immediate{99}, gpr(0));
   writer.emit_ret_void();
 
   auto const module = builder.build();
@@ -793,12 +793,12 @@ TEST_CASE("Virtual_machine indexed call uses wide relative registers")
     builder.declare_function(callee, {int32}, int32, 270);
 
   builder.place_function(entry_index);
-  writer.emit_mov_i(gpr(300), Immediate{40});
+  writer.emit_mov_i(Immediate{40}, gpr(300));
   writer.emit_call_i(callee_index, gpr(300), gpr(302));
   writer.emit_ret(gpr(302));
 
   builder.place_function(callee_index);
-  writer.emit_add_i32_i(gpr(269), gpr(0), Immediate{2});
+  writer.emit_add_i32_i(gpr(0), Immediate{2}, gpr(269));
   writer.emit_ret(gpr(269));
 
   auto const module = builder.build();
@@ -824,7 +824,7 @@ TEST_CASE("Virtual_machine grows registers vector for wide register window")
   // empty (the constructor leaves it that way) past any small initial size.
   auto const wide_index = builder.declare_function(wide, {}, int32, 500);
   builder.place_function(wide_index);
-  writer.emit_mov_i(gpr(499), Immediate{42});
+  writer.emit_mov_i(Immediate{42}, gpr(499));
   writer.emit_ret(gpr(499));
   auto const module = builder.build();
   auto vm = benson::vm::Virtual_machine{};
@@ -846,7 +846,7 @@ TEST_CASE("Virtual_machine does not take narrow jnz_i when condition is zero")
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_jnz(gpr(2), std::ptrdiff_t{7});
-  writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
+  writer.emit_add_i32_i(gpr(1), Immediate{1}, gpr(1));
   writer.emit_exit();
   writer.flush();
 
@@ -869,7 +869,7 @@ TEST_CASE("Virtual_machine takes narrow jnz_i when condition is non-zero")
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   writer.emit_jnz(gpr(2), std::ptrdiff_t{7});
-  writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
+  writer.emit_add_i32_i(gpr(1), Immediate{1}, gpr(1));
   writer.emit_exit();
   writer.flush();
 
@@ -894,7 +894,7 @@ TEST_CASE("Virtual_machine takes wide jnz_i when target exceeds narrow range")
   writer.emit_jnz(gpr(2), std::ptrdiff_t{166});
   for (auto i = 0; i < 40; ++i)
   {
-    writer.emit_add_i32_i(gpr(1), gpr(1), Immediate{1});
+    writer.emit_add_i32_i(gpr(1), Immediate{1}, gpr(1));
   }
   writer.emit_exit();
   writer.flush();
@@ -917,9 +917,9 @@ TEST_CASE("Virtual_machine runs Module_builder program with inline constants")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_add_i32_k(gpr(1), gpr(1), builder.constant(5));
-  writer.emit_mul_f32_k(gpr(2), gpr(2), builder.constant(0.5F));
-  writer.emit_add_f32_k(gpr(2), gpr(2), builder.constant(0.5F));
+  writer.emit_add_i32_k(gpr(1), builder.constant(5), gpr(1));
+  writer.emit_mul_f32_k(gpr(2), builder.constant(0.5F), gpr(2));
+  writer.emit_add_f32_k(gpr(2), builder.constant(0.5F), gpr(2));
   writer.emit_exit();
 
   auto const module = builder.build();
@@ -949,8 +949,8 @@ TEST_CASE(
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
   // offset 0x0101 = 257, which exceeds Immediate max of 127 → wide encoding
-  writer.emit_store_16(gpr(1), gpr(3), Immediate{0x0101});
-  writer.emit_load_16(gpr(2), gpr(3), Immediate{0x0101});
+  writer.emit_store_16(gpr(3), Immediate{0x0101}, gpr(1));
+  writer.emit_load_16(gpr(3), Immediate{0x0101}, gpr(2));
   writer.emit_exit();
   writer.flush();
 
@@ -975,7 +975,7 @@ TEST_CASE("Virtual_machine runs sx_8 program emitted by Module_builder")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_sx_8(gpr(1), gpr(2));
+  writer.emit_sx_8(gpr(2), gpr(1));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -999,18 +999,18 @@ TEST_CASE(
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_cmp_eq_i32(gpr(1), gpr(2), gpr(3));
-  writer.emit_cmp_eq_i64_i(gpr(4), gpr(5), Immediate{9});
-  writer.emit_cmp_ne_f32(gpr(6), gpr(7), gpr(8));
-  writer.emit_cmp_ne_f64_k(gpr(9), gpr(10), builder.constant(4.0));
-  writer.emit_cmp_lt_i32_i(gpr(11), gpr(12), Immediate{8});
-  writer.emit_cmp_lt_i64_k(gpr(13), gpr(14), builder.constant(std::int64_t{7}));
-  writer.emit_cmp_le_f32_k(gpr(15), gpr(16), builder.constant(3.5F));
-  writer.emit_cmp_le_f64(gpr(17), gpr(18), gpr(19));
-  writer.emit_cmp_gt_i32_k(gpr(20), gpr(21), builder.constant(1));
-  writer.emit_cmp_gt_i64(gpr(22), gpr(23), gpr(24));
-  writer.emit_cmp_ge_f32(gpr(25), gpr(26), gpr(27));
-  writer.emit_cmp_ge_f64_k(gpr(28), gpr(29), builder.constant(6.0));
+  writer.emit_cmp_eq_i32(gpr(2), gpr(3), gpr(1));
+  writer.emit_cmp_eq_i64_i(gpr(5), Immediate{9}, gpr(4));
+  writer.emit_cmp_ne_f32(gpr(7), gpr(8), gpr(6));
+  writer.emit_cmp_ne_f64_k(gpr(10), builder.constant(4.0), gpr(9));
+  writer.emit_cmp_lt_i32_i(gpr(12), Immediate{8}, gpr(11));
+  writer.emit_cmp_lt_i64_k(gpr(14), builder.constant(std::int64_t{7}), gpr(13));
+  writer.emit_cmp_le_f32_k(gpr(16), builder.constant(3.5F), gpr(15));
+  writer.emit_cmp_le_f64(gpr(18), gpr(19), gpr(17));
+  writer.emit_cmp_gt_i32_k(gpr(21), builder.constant(1), gpr(20));
+  writer.emit_cmp_gt_i64(gpr(23), gpr(24), gpr(22));
+  writer.emit_cmp_ge_f32(gpr(26), gpr(27), gpr(25));
+  writer.emit_cmp_ge_f64_k(gpr(29), builder.constant(6.0), gpr(28));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -1100,14 +1100,14 @@ TEST_CASE(
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
-  writer.emit_cmp_eq_i32_i(gpr(1), gpr(2), Immediate{0x0101});
-  writer.emit_cmp_ne_i64_k(gpr(3), gpr(4), Constant{0x0201});
-  writer.emit_cmp_lt_f32_k(gpr(5), gpr(6), Constant{0x0203});
-  writer.emit_cmp_le_f64_k(gpr(7), gpr(8), Constant{0x0204});
-  writer.emit_cmp_gt_i32_k(gpr(9), gpr(10), Constant{0x0201});
-  writer.emit_cmp_ge_i64_i(gpr(11), gpr(12), Immediate{0x0100});
-  writer.emit_cmp_ge_f32_k(gpr(13), gpr(14), Constant{0x0205});
-  writer.emit_cmp_eq_f64_k(gpr(15), gpr(16), Constant{0x0206});
+  writer.emit_cmp_eq_i32_i(gpr(2), Immediate{0x0101}, gpr(1));
+  writer.emit_cmp_ne_i64_k(gpr(4), Constant{0x0201}, gpr(3));
+  writer.emit_cmp_lt_f32_k(gpr(6), Constant{0x0203}, gpr(5));
+  writer.emit_cmp_le_f64_k(gpr(8), Constant{0x0204}, gpr(7));
+  writer.emit_cmp_gt_i32_k(gpr(10), Constant{0x0201}, gpr(9));
+  writer.emit_cmp_ge_i64_i(gpr(12), Immediate{0x0100}, gpr(11));
+  writer.emit_cmp_ge_f32_k(gpr(14), Constant{0x0205}, gpr(13));
+  writer.emit_cmp_eq_f64_k(gpr(16), Constant{0x0206}, gpr(15));
   writer.emit_exit();
   writer.flush();
 
@@ -1154,7 +1154,7 @@ TEST_CASE("Virtual_machine::call invokes an int32 add function")
   auto const add_index =
     builder.declare_function(add, {int32, int32}, int32, 3);
   builder.place_function(add_index);
-  writer.emit_add_i32(gpr(2), gpr(0), gpr(1));
+  writer.emit_add_i32(gpr(0), gpr(1), gpr(2));
   writer.emit_ret(gpr(2));
   auto const module = builder.build();
 
@@ -1232,7 +1232,7 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
   auto &writer = builder.writer();
   auto const inc_index = builder.declare_function(inc, {int32}, int32, 1);
   builder.place_function(inc_index);
-  writer.emit_add_i32_i(gpr(0), gpr(0), Immediate{1});
+  writer.emit_add_i32_i(gpr(0), Immediate{1}, gpr(0));
   writer.emit_ret(gpr(0));
   auto const module = builder.build();
 
@@ -1264,8 +1264,8 @@ TEST_CASE(
   auto const boom_index = builder.declare_function(boom, {}, int32, 1);
   builder.place_function(boom_index);
   // store_8 to a constant pointer throws "store to constant memory".
-  writer.emit_lookup_k(gpr(0), builder.constant(std::int32_t{0}));
-  writer.emit_store_8(gpr(0), gpr(0), Immediate{0});
+  writer.emit_lookup_k(builder.constant(std::int32_t{0}), gpr(0));
+  writer.emit_store_8(gpr(0), Immediate{0}, gpr(0));
   writer.emit_ret(gpr(0));
   auto const module = builder.build();
 
@@ -1299,7 +1299,7 @@ TEST_CASE(
   auto &writer = builder.writer();
   auto const answer_index = builder.declare_function(answer, {}, int32, 1);
   builder.place_function(answer_index);
-  writer.emit_mov_i(gpr(0), Immediate{42});
+  writer.emit_mov_i(Immediate{42}, gpr(0));
   writer.emit_ret(gpr(0));
   auto const module = builder.build();
 
@@ -1445,9 +1445,9 @@ TEST_CASE("Virtual_machine mov_sp_i produces a stack pointer at sp + offset")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   writer.emit_alloca_i(Immediate{32});
-  writer.emit_mov_sp_i(gpr(1), Immediate{0});
-  writer.emit_mov_sp_i(gpr(2), Immediate{8});
-  writer.emit_mov_sp_i(gpr(3), Immediate{-4});
+  writer.emit_mov_sp_i(Immediate{0}, gpr(1));
+  writer.emit_mov_sp_i(Immediate{8}, gpr(2));
+  writer.emit_mov_sp_i(Immediate{-4}, gpr(3));
   writer.emit_exit();
   auto const module = builder.build();
 

@@ -192,47 +192,46 @@ TEST_CASE("Bytecode_writer emits wide register instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(add_i32),
-      std::byte{0x00},
-      std::byte{0x01},
-      std::byte{0x01},
-      std::byte{0x01},
-      std::byte{0x02},
-      std::byte{0x01},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(mov_i),
-      std::byte{0x2C},
-      std::byte{0x01},
-      std::byte{0x03},
-      std::byte{0x00},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(lookup_k),
-      std::byte{0x2D},
-      std::byte{0x01},
-      std::byte{0x04},
-      std::byte{0x00},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(load_sp_32),
-      std::byte{0x2E},
-      std::byte{0x01},
-      std::byte{0x00},
-      std::byte{0x00},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(store_sp_32),
-      std::byte{0x2E},
-      std::byte{0x01},
-      std::byte{0x00},
-      std::byte{0x00},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(jnz_i),
-      std::byte{0x2C},
-      std::byte{0x01},
-      std::byte{0x01},
-      std::byte{0x00},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(add_i32),
+                        std::byte{0x00},
+                        std::byte{0x01},
+                        std::byte{0x01},
+                        std::byte{0x01},
+                        std::byte{0x02},
+                        std::byte{0x01},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(mov_i),
+                        std::byte{0x2C},
+                        std::byte{0x01},
+                        std::byte{0x03},
+                        std::byte{0x00},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(lookup_k),
+                        std::byte{0x2D},
+                        std::byte{0x01},
+                        std::byte{0x04},
+                        std::byte{0x00},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(load_sp_32),
+                        std::byte{0x2E},
+                        std::byte{0x01},
+                        std::byte{0x00},
+                        std::byte{0x00},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(store_sp_32),
+                        std::byte{0x2E},
+                        std::byte{0x01},
+                        std::byte{0x00},
+                        std::byte{0x00},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(jnz_i),
+                        std::byte{0x2C},
+                        std::byte{0x01},
+                        std::byte{0x01},
+                        std::byte{0x00},
+                      }
   );
 }
 
@@ -278,19 +277,18 @@ TEST_CASE("Bytecode_writer emits indexed call and return operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(Opcode::call_i),
-      std::byte{0x03},
-      reg_byte(gpr(7)),
-      reg_byte(gpr(2)),
-      static_cast<std::byte>(Opcode::call_void_i),
-      std::byte{0x05},
-      reg_byte(gpr(9)),
-      static_cast<std::byte>(Opcode::ret),
-      reg_byte(gpr(4)),
-      static_cast<std::byte>(Opcode::ret_void),
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(Opcode::call_i),
+                        std::byte{0x03},
+                        reg_byte(gpr(7)),
+                        reg_byte(gpr(2)),
+                        static_cast<std::byte>(Opcode::call_void_i),
+                        std::byte{0x05},
+                        reg_byte(gpr(9)),
+                        static_cast<std::byte>(Opcode::ret),
+                        reg_byte(gpr(4)),
+                        static_cast<std::byte>(Opcode::ret_void),
+                      }
   );
 }
 
@@ -308,27 +306,26 @@ TEST_CASE("Bytecode_writer emits wide indexed call and return operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(Opcode::wide),
-      static_cast<std::byte>(Opcode::call_i),
-      std::byte{0x02},
-      std::byte{0x01},
-      std::byte{0x2C},
-      std::byte{0x01},
-      std::byte{0x07},
-      std::byte{0x00},
-      static_cast<std::byte>(Opcode::wide),
-      static_cast<std::byte>(Opcode::call_void_i),
-      std::byte{0x04},
-      std::byte{0x00},
-      std::byte{0x2D},
-      std::byte{0x01},
-      static_cast<std::byte>(Opcode::wide),
-      static_cast<std::byte>(Opcode::ret),
-      std::byte{0x2E},
-      std::byte{0x01},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(Opcode::wide),
+                        static_cast<std::byte>(Opcode::call_i),
+                        std::byte{0x02},
+                        std::byte{0x01},
+                        std::byte{0x2C},
+                        std::byte{0x01},
+                        std::byte{0x07},
+                        std::byte{0x00},
+                        static_cast<std::byte>(Opcode::wide),
+                        static_cast<std::byte>(Opcode::call_void_i),
+                        std::byte{0x04},
+                        std::byte{0x00},
+                        std::byte{0x2D},
+                        std::byte{0x01},
+                        static_cast<std::byte>(Opcode::wide),
+                        static_cast<std::byte>(Opcode::ret),
+                        std::byte{0x2E},
+                        std::byte{0x01},
+                      }
   );
 }
 
@@ -539,7 +536,7 @@ TEST_CASE(
   );
 }
 
-TEST_CASE("Bytecode_writer emits push_sp_i instruction operands")
+TEST_CASE("Bytecode_writer emits alloca_i instruction operands")
 {
   using benson::bytecode::Immediate;
   using enum benson::bytecode::Opcode;
@@ -547,34 +544,32 @@ TEST_CASE("Bytecode_writer emits push_sp_i instruction operands")
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_alloca_i(Immediate{16});
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(push_sp_i),
-      std::byte{0x10},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(alloca_i),
+                        std::byte{0x10},
+                      }
   );
 }
 
-TEST_CASE("Bytecode_writer emits push_sp instruction operands")
+TEST_CASE("Bytecode_writer emits alloca instruction operands")
 {
   using enum benson::bytecode::Opcode;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_push_sp(gpr(7));
+  writer.emit_alloca(gpr(7));
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(push_sp),
-      reg_byte(gpr(7)),
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(alloca),
+                        reg_byte(gpr(7)),
+                      }
   );
 }
 
@@ -590,12 +585,11 @@ TEST_CASE("Bytecode_writer emits mov_sp_i instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(mov_sp_i),
-      reg_byte(gpr(3)),
-      std::byte{0xFC},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(mov_sp_i),
+                        reg_byte(gpr(3)),
+                        std::byte{0xFC},
+                      }
   );
 }
 
@@ -611,12 +605,11 @@ TEST_CASE("Bytecode_writer emits load_sp_8 instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(load_sp_8),
-      reg_byte(gpr(2)),
-      std::byte{0x01},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(load_sp_8),
+                        reg_byte(gpr(2)),
+                        std::byte{0x01},
+                      }
   );
 }
 
@@ -632,12 +625,11 @@ TEST_CASE("Bytecode_writer emits load_sp_16 instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(load_sp_16),
-      reg_byte(gpr(2)),
-      std::byte{0x02},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(load_sp_16),
+                        reg_byte(gpr(2)),
+                        std::byte{0x02},
+                      }
   );
 }
 
@@ -653,12 +645,11 @@ TEST_CASE("Bytecode_writer emits load_sp_32 instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(load_sp_32),
-      reg_byte(gpr(2)),
-      std::byte{0x04},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(load_sp_32),
+                        reg_byte(gpr(2)),
+                        std::byte{0x04},
+                      }
   );
 }
 
@@ -674,12 +665,11 @@ TEST_CASE("Bytecode_writer emits load_sp_64 instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(load_sp_64),
-      reg_byte(gpr(2)),
-      std::byte{0x08},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(load_sp_64),
+                        reg_byte(gpr(2)),
+                        std::byte{0x08},
+                      }
   );
 }
 
@@ -695,12 +685,11 @@ TEST_CASE("Bytecode_writer emits store_sp_8 instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(store_sp_8),
-      reg_byte(gpr(5)),
-      std::byte{0x01},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(store_sp_8),
+                        reg_byte(gpr(5)),
+                        std::byte{0x01},
+                      }
   );
 }
 
@@ -716,12 +705,11 @@ TEST_CASE("Bytecode_writer emits store_sp_16 instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(store_sp_16),
-      reg_byte(gpr(5)),
-      std::byte{0x02},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(store_sp_16),
+                        reg_byte(gpr(5)),
+                        std::byte{0x02},
+                      }
   );
 }
 
@@ -737,12 +725,11 @@ TEST_CASE("Bytecode_writer emits store_sp_32 instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(store_sp_32),
-      reg_byte(gpr(5)),
-      std::byte{0x04},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(store_sp_32),
+                        reg_byte(gpr(5)),
+                        std::byte{0x04},
+                      }
   );
 }
 
@@ -758,12 +745,11 @@ TEST_CASE("Bytecode_writer emits store_sp_64 instruction operands")
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(store_sp_64),
-      reg_byte(gpr(5)),
-      std::byte{0x08},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(store_sp_64),
+                        reg_byte(gpr(5)),
+                        std::byte{0x08},
+                      }
   );
 }
 
@@ -775,42 +761,41 @@ TEST_CASE("Bytecode_writer emits wide stack-pointer instruction operands")
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_push_sp_i(Immediate{0x0102});
-  writer.emit_push_sp(gpr(300));
+  writer.emit_alloca_i(Immediate{0x0102});
+  writer.emit_alloca(gpr(300));
   writer.emit_mov_sp_i(gpr(301), Immediate{-0x0102});
   writer.emit_load_sp_32(gpr(302), Immediate{0x0304});
   writer.emit_store_sp_64(gpr(303), Immediate{-0x0506});
   writer.flush();
 
   CHECK(
-    stream.bytes() ==
-    std::vector<std::byte>{
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(push_sp_i),
-      std::byte{0x02},
-      std::byte{0x01},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(push_sp),
-      std::byte{0x2C},
-      std::byte{0x01},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(mov_sp_i),
-      std::byte{0x2D},
-      std::byte{0x01},
-      std::byte{0xFE},
-      std::byte{0xFE},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(load_sp_32),
-      std::byte{0x2E},
-      std::byte{0x01},
-      std::byte{0x04},
-      std::byte{0x03},
-      static_cast<std::byte>(wide),
-      static_cast<std::byte>(store_sp_64),
-      std::byte{0x2F},
-      std::byte{0x01},
-      std::byte{0xFA},
-      std::byte{0xFA},
-    }
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(alloca_i),
+                        std::byte{0x02},
+                        std::byte{0x01},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(alloca),
+                        std::byte{0x2C},
+                        std::byte{0x01},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(mov_sp_i),
+                        std::byte{0x2D},
+                        std::byte{0x01},
+                        std::byte{0xFE},
+                        std::byte{0xFE},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(load_sp_32),
+                        std::byte{0x2E},
+                        std::byte{0x01},
+                        std::byte{0x04},
+                        std::byte{0x03},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(store_sp_64),
+                        std::byte{0x2F},
+                        std::byte{0x01},
+                        std::byte{0xFA},
+                        std::byte{0xFA},
+                      }
   );
 }

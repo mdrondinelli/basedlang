@@ -224,7 +224,7 @@ TEST_CASE("Virtual_machine runs program with wide registers")
   writer.emit_mov_i(gpr(300), Immediate{5});
   writer.emit_mov_i(gpr(301), Immediate{7});
   writer.emit_add_i32(gpr(302), gpr(300), gpr(301));
-  writer.emit_push_sp_i(Immediate{8});
+  writer.emit_alloca_i(Immediate{8});
   writer.emit_store_sp_32(gpr(302), Immediate{0});
   writer.emit_load_sp_32(gpr(303), Immediate{0});
   writer.emit_jnz(gpr(303), builder.label_target(done));
@@ -731,7 +731,7 @@ TEST_CASE("Virtual_machine void call restores caller frame and stack pointer")
   writer.emit_ret(gpr(5));
 
   builder.place_function(clobber_index);
-  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_alloca_i(Immediate{16});
   writer.emit_mov_i(gpr(0), Immediate{99});
   writer.emit_ret_void();
 
@@ -913,7 +913,8 @@ TEST_CASE("Virtual_machine runs countdown sum program with jnz_i loop")
   CHECK(!vm.get_register_value<bool>(gpr(3)));
 }
 
-TEST_CASE("Virtual_machine runs recursive factorial program with call_i and ret"
+TEST_CASE(
+  "Virtual_machine runs recursive factorial program with call_i and ret"
 )
 {
   using benson::bytecode::Immediate;
@@ -1056,7 +1057,7 @@ TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
   writer.emit_load_32(gpr(1), gpr(10), Immediate{0});
   // calculate the pointer to the start of the RPN expression
   writer.emit_add_i64_i(gpr(11), gpr(10), Immediate{4});
-  // pre-load -8 to advance the stack pointer via push_sp
+  // pre-load -8 to advance the stack pointer via alloca
   writer.emit_mov_i(gpr(15), Immediate{-8});
 
   builder.place_label(loop);
@@ -1092,14 +1093,14 @@ TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
 
   // push the operand value onto the stack
   builder.place_label(operand);
-  writer.emit_push_sp_i(Immediate{8});
+  writer.emit_alloca_i(Immediate{8});
   writer.emit_store_sp_64(gpr(4), Immediate{0});
   writer.emit_jmp(builder.label_target(advance));
 
   builder.place_label(add);
   writer.emit_load_sp_64(gpr(5), Immediate{0});
   writer.emit_load_sp_64(gpr(4), Immediate{8});
-  writer.emit_push_sp(gpr(15));
+  writer.emit_alloca(gpr(15));
   writer.emit_add_i32(gpr(6), gpr(4), gpr(5));
   writer.emit_store_sp_64(gpr(6), Immediate{0});
   writer.emit_jmp(builder.label_target(advance));
@@ -1107,7 +1108,7 @@ TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
   builder.place_label(sub);
   writer.emit_load_sp_64(gpr(5), Immediate{0});
   writer.emit_load_sp_64(gpr(4), Immediate{8});
-  writer.emit_push_sp(gpr(15));
+  writer.emit_alloca(gpr(15));
   writer.emit_sub_i32(gpr(6), gpr(4), gpr(5));
   writer.emit_store_sp_64(gpr(6), Immediate{0});
   writer.emit_jmp(builder.label_target(advance));
@@ -1115,7 +1116,7 @@ TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
   builder.place_label(mul);
   writer.emit_load_sp_64(gpr(5), Immediate{0});
   writer.emit_load_sp_64(gpr(4), Immediate{8});
-  writer.emit_push_sp(gpr(15));
+  writer.emit_alloca(gpr(15));
   writer.emit_mul_i32(gpr(6), gpr(4), gpr(5));
   writer.emit_store_sp_64(gpr(6), Immediate{0});
   writer.emit_jmp(builder.label_target(advance));
@@ -1129,7 +1130,7 @@ TEST_CASE("Virtual_machine runs stack RPN program with jnz_i dispatch loop")
   // pop top of stack to gpr(9) and exit
   builder.place_label(done);
   writer.emit_load_sp_64(gpr(9), Immediate{0});
-  writer.emit_push_sp(gpr(15));
+  writer.emit_alloca(gpr(15));
   writer.emit_exit();
 
   auto module = builder.build();
@@ -1509,7 +1510,8 @@ TEST_CASE("Virtual_machine::call works across consecutive invocations")
   CHECK(r2.as<std::int32_t>() == 100);
 }
 
-TEST_CASE("Virtual_machine::call restores execution state after bytecode throws"
+TEST_CASE(
+  "Virtual_machine::call restores execution state after bytecode throws"
 )
 {
   using benson::bytecode::Immediate;
@@ -1621,22 +1623,21 @@ TEST_CASE("Virtual_machine::call rejects bad inputs")
     vm.call(known, {}),
     benson::vm::Virtual_machine::Argument_count_error
   );
-  auto const wrong_type =
-    std::array<benson::vm::Scalar, 1>{std::int64_t{0}};
+  auto const wrong_type = std::array<benson::vm::Scalar, 1>{std::int64_t{0}};
   CHECK_THROWS_AS(
     vm.call(known, wrong_type),
     benson::vm::Virtual_machine::Argument_type_error
   );
 }
 
-TEST_CASE("Virtual_machine push_sp_i shrinks stack_pointer by the immediate")
+TEST_CASE("Virtual_machine alloca_i shrinks stack_pointer by the immediate")
 {
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_alloca_i(Immediate{16});
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -1650,7 +1651,7 @@ TEST_CASE("Virtual_machine push_sp_i shrinks stack_pointer by the immediate")
 }
 
 TEST_CASE(
-  "Virtual_machine push_sp shrinks stack_pointer by the register's int64 value"
+  "Virtual_machine alloca shrinks stack_pointer by the register's int64 value"
 )
 {
   using benson::bytecode::Immediate;
@@ -1658,7 +1659,7 @@ TEST_CASE(
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp(gpr(1));
+  writer.emit_alloca(gpr(1));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -1673,15 +1674,15 @@ TEST_CASE(
   CHECK(vm.stack_pointer == initial - 24);
 }
 
-TEST_CASE("Virtual_machine push_sp accepts negative register values")
+TEST_CASE("Virtual_machine alloca accepts negative register values")
 {
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp_i(Immediate{32});
-  writer.emit_push_sp(gpr(1));
+  writer.emit_alloca_i(Immediate{32});
+  writer.emit_alloca(gpr(1));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -1705,7 +1706,7 @@ TEST_CASE("Virtual_machine mov_sp_i produces a stack pointer at sp + offset")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp_i(Immediate{32});
+  writer.emit_alloca_i(Immediate{32});
   writer.emit_mov_sp_i(gpr(1), Immediate{0});
   writer.emit_mov_sp_i(gpr(2), Immediate{8});
   writer.emit_mov_sp_i(gpr(3), Immediate{-4});
@@ -1736,7 +1737,7 @@ TEST_CASE("Virtual_machine store_sp_8 then load_sp_8 round-trips a value")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_alloca_i(Immediate{16});
   writer.emit_store_sp_8(gpr(1), Immediate{0});
   writer.emit_load_sp_8(gpr(2), Immediate{0});
   writer.emit_exit();
@@ -1759,7 +1760,7 @@ TEST_CASE("Virtual_machine store_sp_16 then load_sp_16 round-trips a value")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_alloca_i(Immediate{16});
   writer.emit_store_sp_16(gpr(1), Immediate{0});
   writer.emit_load_sp_16(gpr(2), Immediate{0});
   writer.emit_exit();
@@ -1782,7 +1783,7 @@ TEST_CASE("Virtual_machine store_sp_32 then load_sp_32 round-trips a value")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_alloca_i(Immediate{16});
   writer.emit_store_sp_32(gpr(1), Immediate{0});
   writer.emit_load_sp_32(gpr(2), Immediate{0});
   writer.emit_exit();
@@ -1807,7 +1808,7 @@ TEST_CASE("Virtual_machine store_sp_64 then load_sp_64 round-trips a value")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_alloca_i(Immediate{16});
   writer.emit_store_sp_64(gpr(1), Immediate{0});
   writer.emit_load_sp_64(gpr(2), Immediate{0});
   writer.emit_exit();
@@ -1831,7 +1832,7 @@ TEST_CASE("Virtual_machine load_sp_N sign-extends negative values")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_push_sp_i(Immediate{16});
+  writer.emit_alloca_i(Immediate{16});
   writer.emit_store_sp_8(gpr(1), Immediate{0});
   writer.emit_load_sp_8(gpr(11), Immediate{0});
   writer.emit_store_sp_16(gpr(2), Immediate{0});

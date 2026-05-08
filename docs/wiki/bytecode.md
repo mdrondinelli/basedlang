@@ -56,8 +56,8 @@ register `src` back into the caller's `dst`, and `ret_void`, which writes
 nothing. Both restore the caller's stack pointer.
 
 The stack pointer is VM-owned and is not addressable as a bytecode register.
-Bytecode reserves stack-local storage with `push_sp_i amount`, taking an
-immediate byte count, or `push_sp reg`, taking a register that holds a
+Bytecode reserves stack-local storage with `alloca_i amount`, taking an
+immediate byte count, or `alloca reg`, taking a register that holds a
 non-negative byte count. Stack memory is then accessed through `mov_sp_i
 dst, offset`, which materializes a stack-space `Pointer` at `sp + offset`
 into a register, or directly through `load_sp_N dst, offset` and

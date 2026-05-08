@@ -225,8 +225,8 @@ TEST_CASE("Virtual_machine runs program with wide registers")
   writer.emit_mov_i(gpr(301), Immediate{7});
   writer.emit_add_i32(gpr(302), gpr(300), gpr(301));
   writer.emit_alloca_i(Immediate{8});
-  writer.emit_store_sp_32(gpr(302), Immediate{0});
-  writer.emit_load_sp_32(gpr(303), Immediate{0});
+  writer.emit_store_sp_32(Immediate{0}, gpr(302));
+  writer.emit_load_sp_32(Immediate{0}, gpr(303));
   writer.emit_jnz(gpr(303), builder.label_target(done));
   writer.emit_mov_i(gpr(304), Immediate{1});
   builder.place_label(done);
@@ -1447,8 +1447,8 @@ TEST_CASE("Virtual_machine store_sp_8 then load_sp_8 round-trips a value")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   writer.emit_alloca_i(Immediate{16});
-  writer.emit_store_sp_8(gpr(1), Immediate{0});
-  writer.emit_load_sp_8(gpr(2), Immediate{0});
+  writer.emit_store_sp_8(Immediate{0}, gpr(1));
+  writer.emit_load_sp_8(Immediate{0}, gpr(2));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -1470,8 +1470,8 @@ TEST_CASE("Virtual_machine store_sp_16 then load_sp_16 round-trips a value")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   writer.emit_alloca_i(Immediate{16});
-  writer.emit_store_sp_16(gpr(1), Immediate{0});
-  writer.emit_load_sp_16(gpr(2), Immediate{0});
+  writer.emit_store_sp_16(Immediate{0}, gpr(1));
+  writer.emit_load_sp_16(Immediate{0}, gpr(2));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -1493,8 +1493,8 @@ TEST_CASE("Virtual_machine store_sp_32 then load_sp_32 round-trips a value")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   writer.emit_alloca_i(Immediate{16});
-  writer.emit_store_sp_32(gpr(1), Immediate{0});
-  writer.emit_load_sp_32(gpr(2), Immediate{0});
+  writer.emit_store_sp_32(Immediate{0}, gpr(1));
+  writer.emit_load_sp_32(Immediate{0}, gpr(2));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -1518,8 +1518,8 @@ TEST_CASE("Virtual_machine store_sp_64 then load_sp_64 round-trips a value")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   writer.emit_alloca_i(Immediate{16});
-  writer.emit_store_sp_64(gpr(1), Immediate{0});
-  writer.emit_load_sp_64(gpr(2), Immediate{0});
+  writer.emit_store_sp_64(Immediate{0}, gpr(1));
+  writer.emit_load_sp_64(Immediate{0}, gpr(2));
   writer.emit_exit();
   auto const module = builder.build();
 
@@ -1542,12 +1542,12 @@ TEST_CASE("Virtual_machine load_sp_N sign-extends negative values")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
   writer.emit_alloca_i(Immediate{16});
-  writer.emit_store_sp_8(gpr(1), Immediate{0});
-  writer.emit_load_sp_8(gpr(11), Immediate{0});
-  writer.emit_store_sp_16(gpr(2), Immediate{0});
-  writer.emit_load_sp_16(gpr(12), Immediate{0});
-  writer.emit_store_sp_32(gpr(3), Immediate{0});
-  writer.emit_load_sp_32(gpr(13), Immediate{0});
+  writer.emit_store_sp_8(Immediate{0}, gpr(1));
+  writer.emit_load_sp_8(Immediate{0}, gpr(11));
+  writer.emit_store_sp_16(Immediate{0}, gpr(2));
+  writer.emit_load_sp_16(Immediate{0}, gpr(12));
+  writer.emit_store_sp_32(Immediate{0}, gpr(3));
+  writer.emit_load_sp_32(Immediate{0}, gpr(13));
   writer.emit_exit();
   auto const module = builder.build();
 

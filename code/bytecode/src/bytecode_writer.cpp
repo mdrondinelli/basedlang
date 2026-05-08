@@ -1129,44 +1129,44 @@ namespace benson::bytecode
     emit_unary_immediate_instruction(Opcode::mov_sp_i, dst, offset);
   }
 
-  void Bytecode_writer::emit_load_sp_8(Register dst, Immediate offset)
+  void Bytecode_writer::emit_load_sp_8(Immediate offset, Register dst)
   {
-    emit_unary_immediate_instruction(Opcode::load_sp_8, dst, offset);
+    emit_immediate_register_instruction(Opcode::load_sp_8, offset, dst);
   }
 
-  void Bytecode_writer::emit_load_sp_16(Register dst, Immediate offset)
+  void Bytecode_writer::emit_load_sp_16(Immediate offset, Register dst)
   {
-    emit_unary_immediate_instruction(Opcode::load_sp_16, dst, offset);
+    emit_immediate_register_instruction(Opcode::load_sp_16, offset, dst);
   }
 
-  void Bytecode_writer::emit_load_sp_32(Register dst, Immediate offset)
+  void Bytecode_writer::emit_load_sp_32(Immediate offset, Register dst)
   {
-    emit_unary_immediate_instruction(Opcode::load_sp_32, dst, offset);
+    emit_immediate_register_instruction(Opcode::load_sp_32, offset, dst);
   }
 
-  void Bytecode_writer::emit_load_sp_64(Register dst, Immediate offset)
+  void Bytecode_writer::emit_load_sp_64(Immediate offset, Register dst)
   {
-    emit_unary_immediate_instruction(Opcode::load_sp_64, dst, offset);
+    emit_immediate_register_instruction(Opcode::load_sp_64, offset, dst);
   }
 
-  void Bytecode_writer::emit_store_sp_8(Register src, Immediate offset)
+  void Bytecode_writer::emit_store_sp_8(Immediate offset, Register src)
   {
-    emit_unary_immediate_instruction(Opcode::store_sp_8, src, offset);
+    emit_immediate_register_instruction(Opcode::store_sp_8, offset, src);
   }
 
-  void Bytecode_writer::emit_store_sp_16(Register src, Immediate offset)
+  void Bytecode_writer::emit_store_sp_16(Immediate offset, Register src)
   {
-    emit_unary_immediate_instruction(Opcode::store_sp_16, src, offset);
+    emit_immediate_register_instruction(Opcode::store_sp_16, offset, src);
   }
 
-  void Bytecode_writer::emit_store_sp_32(Register src, Immediate offset)
+  void Bytecode_writer::emit_store_sp_32(Immediate offset, Register src)
   {
-    emit_unary_immediate_instruction(Opcode::store_sp_32, src, offset);
+    emit_immediate_register_instruction(Opcode::store_sp_32, offset, src);
   }
 
-  void Bytecode_writer::emit_store_sp_64(Register src, Immediate offset)
+  void Bytecode_writer::emit_store_sp_64(Immediate offset, Register src)
   {
-    emit_unary_immediate_instruction(Opcode::store_sp_64, src, offset);
+    emit_immediate_register_instruction(Opcode::store_sp_64, offset, src);
   }
 
   void Bytecode_writer::flush()
@@ -1238,6 +1238,28 @@ namespace benson::bytecode
       emit_opcode(opcode);
       write_narrow_register(dst);
       write_byte(static_cast<std::byte>(src.value));
+    }
+  }
+
+  void Bytecode_writer::emit_immediate_register_instruction(
+    Opcode opcode,
+    Immediate offset,
+    Register reg
+  )
+  {
+    if (is_wide(offset) || is_wide(reg))
+    {
+      emit_opcode(Opcode::wide);
+      emit_opcode(opcode);
+      write_byte(static_cast<std::byte>(offset.value));
+      write_byte(static_cast<std::byte>(offset.value >> 8));
+      write_wide_register(reg);
+    }
+    else
+    {
+      emit_opcode(opcode);
+      write_byte(static_cast<std::byte>(offset.value));
+      write_narrow_register(reg);
     }
   }
 

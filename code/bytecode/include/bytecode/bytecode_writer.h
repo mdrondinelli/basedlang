@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "bytecode/constant.h"
+#include "bytecode/function.h"
 #include "bytecode/immediate.h"
 #include "bytecode/opcode.h"
 #include "bytecode/register.h"
@@ -20,9 +21,9 @@ namespace benson::bytecode
 
     void emit_jmp(std::ptrdiff_t target);
 
-    void emit_call_i(Immediate function, Register base, Register dst);
+    void emit_call_i(Function function, Register base, Register dst);
 
-    void emit_call_void_i(Immediate function, Register base);
+    void emit_call_void_i(Function function, Register base);
 
     void emit_ret(Register src);
 

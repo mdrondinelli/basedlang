@@ -164,8 +164,8 @@ TEST_CASE("Module_builder records indexed functions")
   CHECK(bar_entry.return_type == void_);
   CHECK(bar_entry.register_count == 0);
 
-  CHECK(module.function_indices.at(foo) == 0);
-  CHECK(module.function_indices.at(bar) == 1);
+  CHECK(module.function_indices.at(foo).value == 0);
+  CHECK(module.function_indices.at(bar).value == 1);
 }
 
 TEST_CASE("Module_builder declares functions before placing code")
@@ -188,7 +188,7 @@ TEST_CASE("Module_builder declares functions before placing code")
 
   REQUIRE(module.functions.size() == 1);
   CHECK(recurse_index.value == 0);
-  CHECK(module.function_indices.at(recurse) == 0);
+  CHECK(module.function_indices.at(recurse).value == 0);
   auto const &entry = module.functions[0];
   CHECK(entry.position == placement_position);
   CHECK(entry.parameter_types.empty());

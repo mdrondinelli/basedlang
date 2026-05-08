@@ -264,14 +264,14 @@ TEST_CASE("Bytecode_writer emits jnz_i instruction operands")
 
 TEST_CASE("Bytecode_writer emits indexed call and return operands")
 {
-  using benson::bytecode::Immediate;
+  using benson::bytecode::Function;
   using benson::bytecode::Opcode;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_call_i(Immediate{3}, gpr(7), gpr(2));
-  writer.emit_call_void_i(Immediate{5}, gpr(9));
+  writer.emit_call_i(Function{3}, gpr(7), gpr(2));
+  writer.emit_call_void_i(Function{5}, gpr(9));
   writer.emit_ret(gpr(4));
   writer.emit_ret_void();
   writer.flush();
@@ -294,14 +294,14 @@ TEST_CASE("Bytecode_writer emits indexed call and return operands")
 
 TEST_CASE("Bytecode_writer emits wide indexed call and return operands")
 {
-  using benson::bytecode::Immediate;
+  using benson::bytecode::Function;
   using benson::bytecode::Opcode;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_call_i(Immediate{0x0102}, gpr(300), gpr(7));
-  writer.emit_call_void_i(Immediate{4}, gpr(301));
+  writer.emit_call_i(Function{0x0102}, gpr(300), gpr(7));
+  writer.emit_call_void_i(Function{4}, gpr(301));
   writer.emit_ret(gpr(302));
   writer.flush();
 

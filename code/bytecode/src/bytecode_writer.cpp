@@ -27,6 +27,11 @@ namespace benson::bytecode
              i.value > std::numeric_limits<std::int8_t>::max();
     }
 
+    bool is_wide(Function function)
+    {
+      return function.value > std::numeric_limits<std::uint8_t>::max();
+    }
+
   } // namespace
 
   Bytecode_writer::Bytecode_writer(Output_stream *stream)
@@ -61,12 +66,11 @@ namespace benson::bytecode
   }
 
   void Bytecode_writer::emit_call_i(
-    Immediate function,
+    Function function,
     Register base,
     Register dst
   )
   {
-    assert(function.value >= 0);
     if (is_wide(function) || is_wide(base) || is_wide(dst))
     {
       emit_opcode(Opcode::wide);
@@ -85,9 +89,8 @@ namespace benson::bytecode
     }
   }
 
-  void Bytecode_writer::emit_call_void_i(Immediate function, Register base)
+  void Bytecode_writer::emit_call_void_i(Function function, Register base)
   {
-    assert(function.value >= 0);
     if (is_wide(function) || is_wide(base))
     {
       emit_opcode(Opcode::wide);

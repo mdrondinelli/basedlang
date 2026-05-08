@@ -12,6 +12,7 @@ The public surface is centered on:
 
 - registers
 - opcodes
+- function operands
 - immediates
 - constants
 - `Module`
@@ -24,17 +25,17 @@ All of these live in the `benson::bytecode` namespace.
 
 A `Module` carries the encoded instruction bytes alongside the data needed to
 execute and reference into them. That data is a constant blob, a constant
-table indexing into the blob, a vector of `Function` records, and a name-to-
-index map keyed by `Spelling`. A `Function` records its entry position in the
-code stream, its parameter and return types, and the number of register slots
-its body may access. The map's values are indices into the function vector;
-those indices are stable for the lifetime of the module and are what the
-`call_i` and `call_void_i` opcodes consume as operands.
+table indexing into the blob, a vector of `Function_entry` records, and a
+name-to-index map keyed by `Spelling`. A `Function_entry` records its entry
+position in the code stream, its parameter and return types, and the number of
+register slots its body may access. The map's values are `Function` operands:
+typed indices into the function vector that are stable for the lifetime of the
+module and are what the `call_i` and `call_void_i` opcodes consume.
 
 Functions are produced through `Module_builder` in two steps. `declare_function`
 takes a name, parameter types, return type, and register count, reserves the
-next index in the function vector, and returns it as an `Immediate`. The body
-is then emitted through the writer, and `place_function` stamps the writer's
+next index in the function vector, and returns it as a `Function`. The body is
+then emitted through the writer, and `place_function` stamps the writer's
 current position into the function record. The two-step shape is what makes
 forward references work: the index exists from the moment a function is
 declared, so other code can emit calls to it before its body has been placed.
@@ -47,13 +48,13 @@ programmer-level contract enforced at the bytecode-emitter level, not at
 runtime.
 
 Calls go through function indices. `call_i fn, base, dst` is the value-
-returning form: `fn` is a function-index immediate, `base` names the start
-of the callee's register window expressed in the caller's frame, and `dst`
-is the caller-relative register that will receive the return value. The
-void variant `call_void_i fn, base` drops `dst`. Returns are `ret src`,
-which writes the value held in the caller-relative-from-the-callee
-register `src` back into the caller's `dst`, and `ret_void`, which writes
-nothing. Both restore the caller's stack pointer.
+returning form: `fn` is a function operand, `base` names the start of the
+callee's register window expressed in the caller's frame, and `dst` is the
+caller-relative register that will receive the return value. The void variant
+`call_void_i fn, base` drops `dst`. Returns are `ret src`, which writes the
+value held in the caller-relative-from-the-callee register `src` back into the
+caller-relative register named by `dst`, and `ret_void`, which writes nothing.
+Both restore the caller's stack pointer.
 
 The stack pointer is VM-owned and is not addressable as a bytecode register.
 Bytecode reserves stack-local storage with `alloca_i amount`, taking an

@@ -92,10 +92,10 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
   auto builder = Module_builder{};
   auto &writer = builder.writer();
 
-  writer.emit_add_f32_k(gpr(1), gpr(2), builder.constant(0.3F));
-  writer.emit_mul_f32_k(gpr(3), gpr(4), builder.constant(0.3F));
-  writer.emit_add_i32_k(gpr(5), gpr(6), builder.constant(7));
-  writer.emit_sub_i32_k(gpr(7), gpr(8), builder.constant(7));
+  writer.emit_add_f32_k(gpr(2), builder.constant(0.3F), gpr(1));
+  writer.emit_mul_f32_k(gpr(4), builder.constant(0.3F), gpr(3));
+  writer.emit_add_i32_k(gpr(6), builder.constant(7), gpr(5));
+  writer.emit_sub_i32_k(gpr(8), builder.constant(7), gpr(7));
   writer.emit_exit();
 
   auto const module = builder.build();
@@ -103,21 +103,21 @@ TEST_CASE("Module_builder interns and deduplicates inline constants")
   CHECK(
     module.code == std::vector<std::byte>{
                      static_cast<std::byte>(add_f32_k),
-                     reg_byte(gpr(1)),
                      reg_byte(gpr(2)),
                      std::byte{0x00},
+                     reg_byte(gpr(1)),
                      static_cast<std::byte>(mul_f32_k),
-                     reg_byte(gpr(3)),
                      reg_byte(gpr(4)),
                      std::byte{0x00},
+                     reg_byte(gpr(3)),
                      static_cast<std::byte>(add_i32_k),
-                     reg_byte(gpr(5)),
                      reg_byte(gpr(6)),
                      std::byte{0x01},
+                     reg_byte(gpr(5)),
                      static_cast<std::byte>(sub_i32_k),
-                     reg_byte(gpr(7)),
                      reg_byte(gpr(8)),
                      std::byte{0x01},
+                     reg_byte(gpr(7)),
                      static_cast<std::byte>(exit),
                    }
   );

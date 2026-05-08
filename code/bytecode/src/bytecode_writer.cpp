@@ -150,46 +150,46 @@ namespace benson::bytecode
     throw std::runtime_error{"jnz target out of range"};
   }
 
-  void Bytecode_writer::emit_lookup_k(Register dst, Constant k)
+  void Bytecode_writer::emit_lookup_k(Constant k, Register dst)
   {
     if (is_wide(dst) || is_wide(k))
     {
       emit_opcode(Opcode::wide);
       emit_opcode(Opcode::lookup_k);
-      write_wide_register(dst);
       write_byte(static_cast<std::byte>(k.value));
       write_byte(static_cast<std::byte>(k.value >> 8));
+      write_wide_register(dst);
     }
     else
     {
       emit_opcode(Opcode::lookup_k);
-      write_narrow_register(dst);
       write_byte(static_cast<std::byte>(k.value));
+      write_narrow_register(dst);
     }
   }
 
 #define DEFINE_UNARY_REGISTER_EMITTER(name)                     \
-  void Bytecode_writer::emit_##name(Register dst, Register src) \
+  void Bytecode_writer::emit_##name(Register src, Register dst) \
   {                                                             \
-    emit_unary_register_instruction(Opcode::name, dst, src);    \
+    emit_unary_register_instruction(Opcode::name, src, dst);    \
   }
 
 #define DEFINE_BINARY_REGISTER_EMITTER(name)                                  \
-  void Bytecode_writer::emit_##name(Register dst, Register lhs, Register rhs) \
+  void Bytecode_writer::emit_##name(Register lhs, Register rhs, Register dst) \
   {                                                                           \
-    emit_binary_register_instruction(Opcode::name, dst, lhs, rhs);            \
+    emit_binary_register_instruction(Opcode::name, lhs, rhs, dst);            \
   }
 
 #define DEFINE_BINARY_CONSTANT_EMITTER(name)                                  \
-  void Bytecode_writer::emit_##name(Register dst, Register lhs, Constant rhs) \
+  void Bytecode_writer::emit_##name(Register lhs, Constant rhs, Register dst) \
   {                                                                           \
-    emit_binary_constant_instruction(Opcode::name, dst, lhs, rhs);            \
+    emit_binary_constant_instruction(Opcode::name, lhs, rhs, dst);            \
   }
 
 #define DEFINE_BINARY_IMMEDIATE_EMITTER(name)                                  \
-  void Bytecode_writer::emit_##name(Register dst, Register lhs, Immediate rhs) \
+  void Bytecode_writer::emit_##name(Register lhs, Immediate rhs, Register dst) \
   {                                                                            \
-    emit_binary_immediate_instruction(Opcode::name, dst, lhs, rhs);            \
+    emit_binary_immediate_instruction(Opcode::name, lhs, rhs, dst);            \
   }
 
   DEFINE_BINARY_IMMEDIATE_EMITTER(load_8)
@@ -210,9 +210,9 @@ namespace benson::bytecode
   DEFINE_UNARY_REGISTER_EMITTER(neg_f32)
   DEFINE_UNARY_REGISTER_EMITTER(neg_f64)
 
-  void Bytecode_writer::emit_mov_i(Register dst, Immediate src)
+  void Bytecode_writer::emit_mov_i(Immediate src, Register dst)
   {
-    emit_unary_immediate_instruction(Opcode::mov_i, dst, src);
+    emit_unary_immediate_instruction(Opcode::mov_i, src, dst);
   }
 
   DEFINE_BINARY_REGISTER_EMITTER(add_i32)
@@ -360,9 +360,9 @@ namespace benson::bytecode
     }
   }
 
-  void Bytecode_writer::emit_mov_sp_i(Register dst, Immediate offset)
+  void Bytecode_writer::emit_mov_sp_i(Immediate offset, Register dst)
   {
-    emit_unary_immediate_instruction(Opcode::mov_sp_i, dst, offset);
+    emit_unary_immediate_instruction(Opcode::mov_sp_i, offset, dst);
   }
 
 #define DEFINE_IMMEDIATE_REGISTER_EMITTER(name)                     \
@@ -412,45 +412,45 @@ namespace benson::bytecode
 
   void Bytecode_writer::emit_unary_register_instruction(
     Opcode opcode,
-    Register dst,
-    Register src
+    Register src,
+    Register dst
   )
   {
-    auto const wide = is_wide(dst) || is_wide(src);
+    auto const wide = is_wide(src) || is_wide(dst);
     if (wide)
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      write_wide_register(dst);
       write_wide_register(src);
+      write_wide_register(dst);
     }
     else
     {
       emit_opcode(opcode);
-      write_narrow_register(dst);
       write_narrow_register(src);
+      write_narrow_register(dst);
     }
   }
 
   void Bytecode_writer::emit_unary_immediate_instruction(
     Opcode opcode,
-    Register dst,
-    Immediate src
+    Immediate src,
+    Register dst
   )
   {
     if (is_wide(dst) || is_wide(src))
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      write_wide_register(dst);
       write_byte(static_cast<std::byte>(src.value));
       write_byte(static_cast<std::byte>(src.value >> 8));
+      write_wide_register(dst);
     }
     else
     {
       emit_opcode(opcode);
-      write_narrow_register(dst);
       write_byte(static_cast<std::byte>(src.value));
+      write_narrow_register(dst);
     }
   }
 
@@ -478,9 +478,9 @@ namespace benson::bytecode
 
   void Bytecode_writer::emit_binary_register_instruction(
     Opcode opcode,
-    Register dst,
     Register lhs,
-    Register rhs
+    Register rhs,
+    Register dst
   )
   {
     auto const wide = is_wide(dst) || is_wide(lhs) || is_wide(rhs);
@@ -488,66 +488,66 @@ namespace benson::bytecode
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      write_wide_register(dst);
       write_wide_register(lhs);
       write_wide_register(rhs);
+      write_wide_register(dst);
     }
     else
     {
       emit_opcode(opcode);
-      write_narrow_register(dst);
       write_narrow_register(lhs);
       write_narrow_register(rhs);
+      write_narrow_register(dst);
     }
   }
 
   void Bytecode_writer::emit_binary_constant_instruction(
     Opcode opcode,
-    Register dst,
     Register lhs,
-    Constant rhs
+    Constant rhs,
+    Register dst
   )
   {
     if (is_wide(dst) || is_wide(lhs) || is_wide(rhs))
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      write_wide_register(dst);
       write_wide_register(lhs);
       write_byte(static_cast<std::byte>(rhs.value));
       write_byte(static_cast<std::byte>(rhs.value >> 8));
+      write_wide_register(dst);
     }
     else
     {
       emit_opcode(opcode);
-      write_narrow_register(dst);
       write_narrow_register(lhs);
       write_byte(static_cast<std::byte>(rhs.value));
+      write_narrow_register(dst);
     }
   }
 
   void Bytecode_writer::emit_binary_immediate_instruction(
     Opcode opcode,
-    Register dst,
     Register lhs,
-    Immediate rhs
+    Immediate rhs,
+    Register dst
   )
   {
     if (is_wide(dst) || is_wide(lhs) || is_wide(rhs))
     {
       emit_opcode(Opcode::wide);
       emit_opcode(opcode);
-      write_wide_register(dst);
       write_wide_register(lhs);
       write_byte(static_cast<std::byte>(rhs.value));
       write_byte(static_cast<std::byte>(rhs.value >> 8));
+      write_wide_register(dst);
     }
     else
     {
       emit_opcode(opcode);
-      write_narrow_register(dst);
       write_narrow_register(lhs);
       write_byte(static_cast<std::byte>(rhs.value));
+      write_narrow_register(dst);
     }
   }
 

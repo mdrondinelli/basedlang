@@ -60,11 +60,16 @@ The stack pointer is VM-owned and is not addressable as a bytecode register.
 Bytecode reserves stack-local storage with `alloca_i amount`, taking an
 immediate byte count, or `alloca reg`, taking a register that holds a
 non-negative byte count. Stack memory is then accessed through `mov_sp_i
-dst, offset`, which materializes a stack-space `Pointer` at `sp + offset`
+offset, dst`, which materializes a stack-space `Pointer` at `sp + offset`
 into a register, or directly through `load_sp_N offset, dst` and
 `store_sp_N offset, src` for `N` in {1, 2, 4, 8}. For `N < 8` the load
 sign-extends into a 64-bit register; for `N == 8` it is a plain 64-bit
 copy.
+
+Value-producing instructions encode their destination register last. This
+includes moves, sign extension, arithmetic, comparisons, constant lookup, and
+loads. Generic memory access uses `load_N address, offset, dst` and
+`store_N address, offset, src`.
 
 General registers are zero-based: `gpr(n)` is valid for any `n >= 0`. There
 is no longer any sentinel register reserved for the stack pointer.

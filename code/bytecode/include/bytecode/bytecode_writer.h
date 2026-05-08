@@ -76,259 +76,259 @@ namespace benson::bytecode
       }
     }
 
-    void emit_lookup_k(Register dst, Constant k);
+    void emit_lookup_k(Constant k, Register dst);
 
-    void emit_load_8(Register dst, Register base, Immediate offset);
+    void emit_load_8(Register base, Immediate offset, Register dst);
 
-    void emit_load_16(Register dst, Register base, Immediate offset);
+    void emit_load_16(Register base, Immediate offset, Register dst);
 
-    void emit_load_32(Register dst, Register base, Immediate offset);
+    void emit_load_32(Register base, Immediate offset, Register dst);
 
-    void emit_load_64(Register dst, Register base, Immediate offset);
+    void emit_load_64(Register base, Immediate offset, Register dst);
 
-    void emit_store_8(Register src, Register base, Immediate offset);
+    void emit_store_8(Register base, Immediate offset, Register src);
 
-    void emit_store_16(Register src, Register base, Immediate offset);
+    void emit_store_16(Register base, Immediate offset, Register src);
 
-    void emit_store_32(Register src, Register base, Immediate offset);
+    void emit_store_32(Register base, Immediate offset, Register src);
 
-    void emit_store_64(Register src, Register base, Immediate offset);
+    void emit_store_64(Register base, Immediate offset, Register src);
 
-    void emit_mov(Register dst, Register src);
+    void emit_mov(Register src, Register dst);
 
-    void emit_mov_i(Register dst, Immediate src);
+    void emit_mov_i(Immediate src, Register dst);
 
-    void emit_sx_8(Register dst, Register src);
+    void emit_sx_8(Register src, Register dst);
 
-    void emit_sx_16(Register dst, Register src);
+    void emit_sx_16(Register src, Register dst);
 
-    void emit_sx_32(Register dst, Register src);
+    void emit_sx_32(Register src, Register dst);
 
-    void emit_neg_i32(Register dst, Register src);
+    void emit_neg_i32(Register src, Register dst);
 
-    void emit_neg_i64(Register dst, Register src);
+    void emit_neg_i64(Register src, Register dst);
 
-    void emit_neg_f32(Register dst, Register src);
+    void emit_neg_f32(Register src, Register dst);
 
-    void emit_neg_f64(Register dst, Register src);
+    void emit_neg_f64(Register src, Register dst);
 
-    void emit_add_i32(Register dst, Register lhs, Register rhs);
+    void emit_add_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_add_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_add_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_add_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_add_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_add_i64(Register dst, Register lhs, Register rhs);
+    void emit_add_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_add_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_add_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_add_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_add_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_add_f32(Register dst, Register lhs, Register rhs);
+    void emit_add_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_add_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_add_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_add_f64(Register dst, Register lhs, Register rhs);
+    void emit_add_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_add_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_add_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_sub_i32(Register dst, Register lhs, Register rhs);
+    void emit_sub_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_sub_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_sub_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_sub_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_sub_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_sub_i64(Register dst, Register lhs, Register rhs);
+    void emit_sub_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_sub_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_sub_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_sub_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_sub_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_sub_f32(Register dst, Register lhs, Register rhs);
+    void emit_sub_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_sub_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_sub_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_sub_f64(Register dst, Register lhs, Register rhs);
+    void emit_sub_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_sub_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_sub_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_mul_i32(Register dst, Register lhs, Register rhs);
+    void emit_mul_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_mul_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_mul_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_mul_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_mul_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_mul_i64(Register dst, Register lhs, Register rhs);
+    void emit_mul_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_mul_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_mul_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_mul_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_mul_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_mul_f32(Register dst, Register lhs, Register rhs);
+    void emit_mul_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_mul_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_mul_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_mul_f64(Register dst, Register lhs, Register rhs);
+    void emit_mul_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_mul_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_mul_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_div_i32(Register dst, Register lhs, Register rhs);
+    void emit_div_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_div_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_div_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_div_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_div_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_div_i64(Register dst, Register lhs, Register rhs);
+    void emit_div_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_div_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_div_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_div_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_div_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_div_f32(Register dst, Register lhs, Register rhs);
+    void emit_div_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_div_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_div_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_div_f64(Register dst, Register lhs, Register rhs);
+    void emit_div_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_div_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_div_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_mod_i32(Register dst, Register lhs, Register rhs);
+    void emit_mod_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_mod_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_mod_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_mod_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_mod_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_mod_i64(Register dst, Register lhs, Register rhs);
+    void emit_mod_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_mod_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_mod_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_mod_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_mod_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_eq_i32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_eq_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_eq_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_eq_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_eq_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_eq_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_eq_i64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_eq_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_eq_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_eq_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_eq_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_eq_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_eq_f32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_eq_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_eq_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_eq_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_eq_f64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_eq_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_eq_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_eq_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_ne_i32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_ne_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_ne_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_ne_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_ne_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_ne_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_ne_i64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_ne_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_ne_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_ne_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_ne_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_ne_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_ne_f32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_ne_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_ne_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_ne_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_ne_f64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_ne_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_ne_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_ne_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_lt_i32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_lt_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_lt_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_lt_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_lt_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_lt_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_lt_i64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_lt_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_lt_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_lt_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_lt_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_lt_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_lt_f32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_lt_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_lt_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_lt_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_lt_f64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_lt_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_lt_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_lt_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_le_i32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_le_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_le_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_le_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_le_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_le_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_le_i64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_le_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_le_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_le_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_le_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_le_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_le_f32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_le_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_le_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_le_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_le_f64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_le_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_le_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_le_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_gt_i32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_gt_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_gt_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_gt_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_gt_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_gt_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_gt_i64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_gt_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_gt_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_gt_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_gt_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_gt_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_gt_f32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_gt_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_gt_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_gt_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_gt_f64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_gt_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_gt_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_gt_f64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_ge_i32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_ge_i32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_ge_i32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_ge_i32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_ge_i32_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_ge_i32_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_ge_i64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_ge_i64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_ge_i64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_ge_i64_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_ge_i64_i(Register dst, Register lhs, Immediate rhs);
+    void emit_cmp_ge_i64_i(Register lhs, Immediate rhs, Register dst);
 
-    void emit_cmp_ge_f32(Register dst, Register lhs, Register rhs);
+    void emit_cmp_ge_f32(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_ge_f32_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_ge_f32_k(Register lhs, Constant rhs, Register dst);
 
-    void emit_cmp_ge_f64(Register dst, Register lhs, Register rhs);
+    void emit_cmp_ge_f64(Register lhs, Register rhs, Register dst);
 
-    void emit_cmp_ge_f64_k(Register dst, Register lhs, Constant rhs);
+    void emit_cmp_ge_f64_k(Register lhs, Constant rhs, Register dst);
 
     void emit_alloca_i(Immediate amount);
 
     void emit_alloca(Register amount);
 
-    void emit_mov_sp_i(Register dst, Immediate offset);
+    void emit_mov_sp_i(Immediate offset, Register dst);
 
     void emit_load_sp_8(Immediate offset, Register dst);
 
@@ -364,14 +364,14 @@ namespace benson::bytecode
 
     void emit_unary_register_instruction(
       Opcode opcode,
-      Register dst,
-      Register src
+      Register src,
+      Register dst
     );
 
     void emit_unary_immediate_instruction(
       Opcode opcode,
-      Register dst,
-      Immediate src
+      Immediate src,
+      Register dst
     );
 
     void emit_immediate_register_instruction(
@@ -382,23 +382,23 @@ namespace benson::bytecode
 
     void emit_binary_register_instruction(
       Opcode opcode,
-      Register dst,
       Register lhs,
-      Register rhs
+      Register rhs,
+      Register dst
     );
 
     void emit_binary_constant_instruction(
       Opcode opcode,
-      Register dst,
       Register lhs,
-      Constant rhs
+      Constant rhs,
+      Register dst
     );
 
     void emit_binary_immediate_instruction(
       Opcode opcode,
-      Register dst,
       Register lhs,
-      Immediate rhs
+      Immediate rhs,
+      Register dst
     );
 
     Output_stream *_stream;

@@ -345,10 +345,26 @@ namespace benson::vm
         }
       }();
 
-      auto value = std::uint64_t{};
       // TODO: safety bounds check
-      std::memcpy(&value, space_pointer + base_address + offset.value, N);
-      *vm.relative_register(dst.value) = value;
+      auto const source = space_pointer + base_address + offset.value;
+      if constexpr (N == 8)
+      {
+        auto value = std::uint64_t{};
+        std::memcpy(&value, source, N);
+        *vm.relative_register(dst.value) = value;
+      }
+      else
+      {
+        using Signed = std::conditional_t<
+          N == 1,
+          std::int8_t,
+          std::conditional_t<N == 2, std::int16_t, std::int32_t>
+        >;
+        auto narrow = Signed{};
+        std::memcpy(&narrow, source, N);
+        *vm.relative_register(dst.value) =
+          static_cast<std::uint64_t>(static_cast<std::int64_t>(narrow));
+      }
     }
 
     template <Operand_width width, std::size_t N>

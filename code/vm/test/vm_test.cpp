@@ -532,7 +532,7 @@ TEST_CASE("Virtual_machine store_8 writes one byte to stack")
   );
 }
 
-TEST_CASE("Virtual_machine load_8 reads one byte from stack")
+TEST_CASE("Virtual_machine load_8 sign-extends one byte from stack")
 {
   using benson::bytecode::Immediate;
   using benson::bytecode::Module_builder;
@@ -557,7 +557,36 @@ TEST_CASE("Virtual_machine load_8 reads one byte from stack")
 
   vm.run();
 
-  CHECK(vm.get_register_value<std::uint8_t>(gpr(1)) == 0xAB);
+  CHECK(vm.get_register_value<std::int64_t>(gpr(1)) == -85);
+}
+
+TEST_CASE("Virtual_machine load_16 sign-extends two bytes from stack")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Module_builder;
+  using benson::bytecode::Register;
+  using benson::vm::Address_space;
+  using benson::vm::Pointer;
+
+  auto builder = Module_builder{};
+  auto &writer = builder.writer();
+  writer.emit_load_16(gpr(1), gpr(2), Immediate{0});
+  writer.emit_exit();
+  auto const module = builder.build();
+
+  auto vm = benson::vm::Virtual_machine{};
+  vm.load(module);
+  vm.registers.resize(3);
+  auto const value = std::int16_t{-0x1234};
+  std::memcpy(vm.stack->data(), &value, sizeof(value));
+  vm.set_register_value<std::uint64_t>(
+    gpr(2),
+    static_cast<std::uint64_t>(Pointer{Address_space::stack, 0})
+  );
+
+  vm.run();
+
+  CHECK(vm.get_register_value<std::int64_t>(gpr(1)) == value);
 }
 
 TEST_CASE("Virtual_machine store_64 and load_64 round-trip a 64-bit value")
@@ -618,7 +647,7 @@ TEST_CASE("Virtual_machine load_32 and store_32 respect immediate offset")
 
   vm.run();
 
-  CHECK(vm.get_register_value<std::int32_t>(gpr(2)) == std::int32_t{0xDEAD});
+  CHECK(vm.get_register_value<std::int64_t>(gpr(2)) == std::int32_t{0xDEAD});
 }
 
 TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
@@ -629,7 +658,7 @@ TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
 
   auto builder = Module_builder{};
   auto &writer = builder.writer();
-  writer.emit_lookup_k(gpr(2), builder.constant(std::int32_t{0x1234ABCD}));
+  writer.emit_lookup_k(gpr(2), builder.constant(std::int32_t{-0x1234567}));
   writer.emit_load_32(gpr(1), gpr(2), Immediate{0});
   writer.emit_exit();
   auto const module = builder.build();
@@ -641,7 +670,7 @@ TEST_CASE("Virtual_machine load_32 reads from constant memory via pointer")
   vm.run();
 
   CHECK(
-    vm.get_register_value<std::int32_t>(gpr(1)) == std::int32_t{0x1234ABCD}
+    vm.get_register_value<std::int64_t>(gpr(1)) == std::int32_t{-0x1234567}
   );
 }
 

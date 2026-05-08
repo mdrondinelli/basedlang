@@ -473,8 +473,8 @@ namespace benson::vm
     template <Operand_width width, std::size_t N>
     void run_load_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const dst = decode_register<width>(instruction_pointer);
       auto const offset = decode_immediate<width>(instruction_pointer);
+      auto const dst = decode_register<width>(instruction_pointer);
       // TODO: bounds check
       auto const source = vm.stack->data() + vm.stack_pointer + offset.value;
       if constexpr (N == 8)
@@ -503,8 +503,8 @@ namespace benson::vm
       Virtual_machine &vm
     )
     {
-      auto const src = decode_register<width>(instruction_pointer);
       auto const offset = decode_immediate<width>(instruction_pointer);
+      auto const src = decode_register<width>(instruction_pointer);
       // TODO: bounds check
       std::memcpy(
         vm.stack->data() + vm.stack_pointer + offset.value,

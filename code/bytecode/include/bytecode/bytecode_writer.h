@@ -329,21 +329,21 @@ namespace benson::bytecode
 
     void emit_mov_sp_i(Register dst, Immediate offset);
 
-    void emit_load_sp_8(Register dst, Immediate offset);
+    void emit_load_sp_8(Immediate offset, Register dst);
 
-    void emit_load_sp_16(Register dst, Immediate offset);
+    void emit_load_sp_16(Immediate offset, Register dst);
 
-    void emit_load_sp_32(Register dst, Immediate offset);
+    void emit_load_sp_32(Immediate offset, Register dst);
 
-    void emit_load_sp_64(Register dst, Immediate offset);
+    void emit_load_sp_64(Immediate offset, Register dst);
 
-    void emit_store_sp_8(Register src, Immediate offset);
+    void emit_store_sp_8(Immediate offset, Register src);
 
-    void emit_store_sp_16(Register src, Immediate offset);
+    void emit_store_sp_16(Immediate offset, Register src);
 
-    void emit_store_sp_32(Register src, Immediate offset);
+    void emit_store_sp_32(Immediate offset, Register src);
 
-    void emit_store_sp_64(Register src, Immediate offset);
+    void emit_store_sp_64(Immediate offset, Register src);
 
     std::ptrdiff_t position() const noexcept
     {
@@ -371,6 +371,12 @@ namespace benson::bytecode
       Opcode opcode,
       Register dst,
       Immediate src
+    );
+
+    void emit_immediate_register_instruction(
+      Opcode opcode,
+      Immediate offset,
+      Register reg
     );
 
     void emit_binary_register_instruction(

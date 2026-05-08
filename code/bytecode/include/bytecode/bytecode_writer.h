@@ -20,9 +20,13 @@ namespace benson::bytecode
 
     void emit_jmp(std::ptrdiff_t target);
 
-    void emit_call(std::ptrdiff_t target);
+    void emit_call_i(Immediate function, Register base, Register dst);
 
-    void emit_ret();
+    void emit_call_void_i(Immediate function, Register base);
+
+    void emit_ret(Register src);
+
+    void emit_ret_void();
 
     template <typename JumpTargetProvider>
     void emit_jmp(JumpTargetProvider &&provider)
@@ -41,28 +45,6 @@ namespace benson::bytecode
       {
         emit_opcode(Opcode::wide);
         emit_opcode(Opcode::jmp_i);
-        write_byte({});
-        write_byte({});
-      }
-    }
-
-    template <typename JumpTargetProvider>
-    void emit_call(JumpTargetProvider &&provider)
-    {
-      auto const patch_position = position() + 2;
-      auto const target = provider.target(patch_position);
-      static_assert(std::is_same_v<
-                    std::remove_cv_t<decltype(target)>,
-                    std::optional<std::ptrdiff_t>
-      >);
-      if (target)
-      {
-        emit_call(*target);
-      }
-      else
-      {
-        emit_opcode(Opcode::wide);
-        emit_opcode(Opcode::call_i);
         write_byte({});
         write_byte({});
       }
@@ -340,6 +322,28 @@ namespace benson::bytecode
     void emit_cmp_ge_f64(Register dst, Register lhs, Register rhs);
 
     void emit_cmp_ge_f64_k(Register dst, Register lhs, Constant rhs);
+
+    void emit_alloca_i(Immediate amount);
+
+    void emit_alloca(Register amount);
+
+    void emit_mov_sp_i(Register dst, Immediate offset);
+
+    void emit_load_sp_8(Register dst, Immediate offset);
+
+    void emit_load_sp_16(Register dst, Immediate offset);
+
+    void emit_load_sp_32(Register dst, Immediate offset);
+
+    void emit_load_sp_64(Register dst, Immediate offset);
+
+    void emit_store_sp_8(Register src, Immediate offset);
+
+    void emit_store_sp_16(Register src, Immediate offset);
+
+    void emit_store_sp_32(Register src, Immediate offset);
+
+    void emit_store_sp_64(Register src, Immediate offset);
 
     std::ptrdiff_t position() const noexcept
     {

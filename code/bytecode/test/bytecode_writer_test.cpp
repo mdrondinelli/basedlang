@@ -8,7 +8,6 @@
 namespace
 {
   using benson::bytecode::gpr;
-  using benson::bytecode::sp;
 
   auto reg_byte(benson::bytecode::Register reg) -> std::byte
   {
@@ -53,7 +52,6 @@ TEST_CASE("Bytecode_writer emits unary sign extend instruction operands")
 {
   using enum benson::bytecode::Opcode;
   using benson::bytecode::gpr;
-  using benson::bytecode::sp;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
@@ -188,9 +186,9 @@ TEST_CASE("Bytecode_writer emits wide register instruction operands")
   writer.emit_add_i32(gpr(256), gpr(257), gpr(258));
   writer.emit_mov_i(gpr(300), Immediate{3});
   writer.emit_lookup_k(gpr(301), Constant{4});
-  writer.emit_load_32(gpr(302), sp, Immediate{0});
-  writer.emit_store_32(gpr(302), sp, Immediate{0});
-  writer.emit_jnz(gpr(300), std::ptrdiff_t{43});
+  writer.emit_load_sp_32(gpr(302), Immediate{0});
+  writer.emit_store_sp_32(gpr(302), Immediate{0});
+  writer.emit_jnz(gpr(300), std::ptrdiff_t{39});
   writer.flush();
 
   CHECK(
@@ -216,19 +214,15 @@ TEST_CASE("Bytecode_writer emits wide register instruction operands")
                         std::byte{0x04},
                         std::byte{0x00},
                         static_cast<std::byte>(wide),
-                        static_cast<std::byte>(load_32),
+                        static_cast<std::byte>(load_sp_32),
                         std::byte{0x2E},
                         std::byte{0x01},
-                        std::byte{0x00},
-                        std::byte{0x00},
                         std::byte{0x00},
                         std::byte{0x00},
                         static_cast<std::byte>(wide),
-                        static_cast<std::byte>(store_32),
+                        static_cast<std::byte>(store_sp_32),
                         std::byte{0x2E},
                         std::byte{0x01},
-                        std::byte{0x00},
-                        std::byte{0x00},
                         std::byte{0x00},
                         std::byte{0x00},
                         static_cast<std::byte>(wide),
@@ -268,27 +262,69 @@ TEST_CASE("Bytecode_writer emits jnz_i instruction operands")
   );
 }
 
-TEST_CASE("Bytecode_writer emits call_i and ret instruction operands")
+TEST_CASE("Bytecode_writer emits indexed call and return operands")
 {
+  using benson::bytecode::Immediate;
   using benson::bytecode::Opcode;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
 
-  writer.emit_call(std::ptrdiff_t{5});
-  writer.emit_call(std::ptrdiff_t{0x0108});
-  writer.emit_ret();
+  writer.emit_call_i(Immediate{3}, gpr(7), gpr(2));
+  writer.emit_call_void_i(Immediate{5}, gpr(9));
+  writer.emit_ret(gpr(4));
+  writer.emit_ret_void();
   writer.flush();
 
   CHECK(
     stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::call_i),
                         std::byte{0x03},
+                        reg_byte(gpr(7)),
+                        reg_byte(gpr(2)),
+                        static_cast<std::byte>(Opcode::call_void_i),
+                        std::byte{0x05},
+                        reg_byte(gpr(9)),
+                        static_cast<std::byte>(Opcode::ret),
+                        reg_byte(gpr(4)),
+                        static_cast<std::byte>(Opcode::ret_void),
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits wide indexed call and return operands")
+{
+  using benson::bytecode::Immediate;
+  using benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_call_i(Immediate{0x0102}, gpr(300), gpr(7));
+  writer.emit_call_void_i(Immediate{4}, gpr(301));
+  writer.emit_ret(gpr(302));
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
                         static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::call_i),
                         std::byte{0x02},
                         std::byte{0x01},
+                        std::byte{0x2C},
+                        std::byte{0x01},
+                        std::byte{0x07},
+                        std::byte{0x00},
+                        static_cast<std::byte>(Opcode::wide),
+                        static_cast<std::byte>(Opcode::call_void_i),
+                        std::byte{0x04},
+                        std::byte{0x00},
+                        std::byte{0x2D},
+                        std::byte{0x01},
+                        static_cast<std::byte>(Opcode::wide),
                         static_cast<std::byte>(Opcode::ret),
+                        std::byte{0x2E},
+                        std::byte{0x01},
                       }
   );
 }
@@ -419,7 +455,6 @@ TEST_CASE("Bytecode_writer emits binary comparison instruction operands")
 {
   using enum benson::bytecode::Opcode;
   using benson::bytecode::gpr;
-  using benson::bytecode::sp;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
@@ -461,7 +496,6 @@ TEST_CASE(
   using benson::bytecode::Immediate;
   using enum benson::bytecode::Opcode;
   using benson::bytecode::gpr;
-  using benson::bytecode::sp;
 
   auto stream = Recording_output_stream{};
   auto writer = benson::bytecode::Bytecode_writer{&stream};
@@ -498,6 +532,270 @@ TEST_CASE(
                         std::byte{0x00},
                         std::byte{0x04},
                         std::byte{0x03},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits alloca_i instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_alloca_i(Immediate{16});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(alloca_i),
+                        std::byte{0x10},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits alloca instruction operands")
+{
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_alloca(gpr(7));
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(alloca),
+                        reg_byte(gpr(7)),
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits mov_sp_i instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_mov_sp_i(gpr(3), Immediate{-4});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(mov_sp_i),
+                        reg_byte(gpr(3)),
+                        std::byte{0xFC},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits load_sp_8 instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_load_sp_8(gpr(2), Immediate{1});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(load_sp_8),
+                        reg_byte(gpr(2)),
+                        std::byte{0x01},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits load_sp_16 instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_load_sp_16(gpr(2), Immediate{2});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(load_sp_16),
+                        reg_byte(gpr(2)),
+                        std::byte{0x02},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits load_sp_32 instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_load_sp_32(gpr(2), Immediate{4});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(load_sp_32),
+                        reg_byte(gpr(2)),
+                        std::byte{0x04},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits load_sp_64 instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_load_sp_64(gpr(2), Immediate{8});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(load_sp_64),
+                        reg_byte(gpr(2)),
+                        std::byte{0x08},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits store_sp_8 instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_store_sp_8(gpr(5), Immediate{1});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(store_sp_8),
+                        reg_byte(gpr(5)),
+                        std::byte{0x01},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits store_sp_16 instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_store_sp_16(gpr(5), Immediate{2});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(store_sp_16),
+                        reg_byte(gpr(5)),
+                        std::byte{0x02},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits store_sp_32 instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_store_sp_32(gpr(5), Immediate{4});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(store_sp_32),
+                        reg_byte(gpr(5)),
+                        std::byte{0x04},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits store_sp_64 instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_store_sp_64(gpr(5), Immediate{8});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(store_sp_64),
+                        reg_byte(gpr(5)),
+                        std::byte{0x08},
+                      }
+  );
+}
+
+TEST_CASE("Bytecode_writer emits wide stack-pointer instruction operands")
+{
+  using benson::bytecode::Immediate;
+  using enum benson::bytecode::Opcode;
+
+  auto stream = Recording_output_stream{};
+  auto writer = benson::bytecode::Bytecode_writer{&stream};
+
+  writer.emit_alloca_i(Immediate{0x0102});
+  writer.emit_alloca(gpr(300));
+  writer.emit_mov_sp_i(gpr(301), Immediate{-0x0102});
+  writer.emit_load_sp_32(gpr(302), Immediate{0x0304});
+  writer.emit_store_sp_64(gpr(303), Immediate{-0x0506});
+  writer.flush();
+
+  CHECK(
+    stream.bytes() == std::vector<std::byte>{
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(alloca_i),
+                        std::byte{0x02},
+                        std::byte{0x01},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(alloca),
+                        std::byte{0x2C},
+                        std::byte{0x01},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(mov_sp_i),
+                        std::byte{0x2D},
+                        std::byte{0x01},
+                        std::byte{0xFE},
+                        std::byte{0xFE},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(load_sp_32),
+                        std::byte{0x2E},
+                        std::byte{0x01},
+                        std::byte{0x04},
+                        std::byte{0x03},
+                        static_cast<std::byte>(wide),
+                        static_cast<std::byte>(store_sp_64),
+                        std::byte{0x2F},
+                        std::byte{0x01},
+                        std::byte{0xFA},
+                        std::byte{0xFA},
                       }
   );
 }

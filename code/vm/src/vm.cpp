@@ -1,8 +1,12 @@
+#include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <stdexcept>
+#include <utility>
 
 #include "bytecode/immediate.h"
 #include "vm/vm.h"
@@ -12,6 +16,23 @@ namespace benson::vm
 
   namespace
   {
+
+    // Resizes `registers` to `new_size`, growing capacity geometrically when
+    // it is exceeded. The C++ standard does not require `std::vector::resize`
+    // to amortize capacity growth (only push_back-shaped operations do), so
+    // this helper makes the contract explicit and independent of the
+    // implementation's reallocation strategy.
+    void grow_registers(
+      std::vector<std::uint64_t> *registers,
+      std::size_t new_size
+    )
+    {
+      if (new_size > registers->capacity())
+      {
+        registers->reserve(std::max(new_size, registers->capacity() * 2));
+      }
+      registers->resize(new_size);
+    }
 
     enum class Operand_width
     {
@@ -89,7 +110,7 @@ namespace benson::vm
     {
       auto const dst = read_register<width>(instruction_pointer);
       auto const src = read_register<width>(instruction_pointer);
-      (*vm.registers)[dst.value] = (*vm.registers)[src.value];
+      *vm.relative_register(dst.value) = *vm.relative_register(src.value);
     }
 
     template <Operand_width width>
@@ -282,50 +303,6 @@ namespace benson::vm
       }
     };
 
-    void push_bytes(Virtual_machine &vm, std::span<std::byte const> bytes)
-    {
-      auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
-      // TODO: safety check for sp.space == Address_space::stack
-      auto const new_offset = sp.offset - bytes.size();
-      std::memcpy(vm.stack->data() + new_offset, bytes.data(), bytes.size());
-      vm.set_register_value(
-        bytecode::sp,
-        Pointer{Address_space::stack, new_offset}
-      );
-    }
-
-    void pop_bytes(Virtual_machine &vm, std::span<std::byte> bytes)
-    {
-      auto const sp = vm.get_register_value<Pointer>(bytecode::sp).decode();
-      // TODO: safety check for sp.space == Address_space::stack
-      auto const new_offset = sp.offset + bytes.size();
-      std::memcpy(bytes.data(), vm.stack->data() + sp.offset, bytes.size());
-      vm.set_register_value(
-        bytecode::sp,
-        Pointer{Address_space::stack, new_offset}
-      );
-    }
-
-    template <typename T>
-    void push_value(Virtual_machine &vm, T value)
-    {
-      push_bytes(vm, std::as_bytes(std::span{&value, std::size_t{1}}));
-    }
-
-    template <typename T>
-    void pop_value(Virtual_machine &vm, T &value)
-    {
-      pop_bytes(vm, std::as_writable_bytes(std::span{&value, std::size_t{1}}));
-    }
-
-    void push_scalar(
-      Virtual_machine &vm,
-      Scalar const &value
-    )
-    {
-      push_bytes(vm, value.bytes());
-    }
-
     template <Operand_width width, std::size_t N>
     void run_load(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
@@ -353,7 +330,7 @@ namespace benson::vm
       auto value = std::uint64_t{};
       // TODO: safety bounds check
       std::memcpy(&value, space_pointer + base_address + offset.value, N);
-      (*vm.registers)[dst.value] = value;
+      *vm.relative_register(dst.value) = value;
     }
 
     template <Operand_width width, std::size_t N>
@@ -375,7 +352,7 @@ namespace benson::vm
       // TODO: safety bounds check
       std::memcpy(
         vm.stack->data() + base_address + offset.value,
-        &(*vm.registers)[src.value],
+        vm.relative_register(src.value),
         N
       );
     }
@@ -398,55 +375,182 @@ namespace benson::vm
       }
     }
 
-    template <Operand_width width>
+    template <Operand_width width, bool has_return>
     void run_call_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      auto const offset = read_immediate<width>(instruction_pointer);
-      push_value(vm, std::bit_cast<std::uint64_t>(instruction_pointer));
-      instruction_pointer += offset.value;
+      auto const function_index = read_immediate<width>(instruction_pointer);
+      assert(function_index.value >= 0);
+      auto const base = read_register<width>(instruction_pointer);
+      auto return_register = std::optional<std::ptrdiff_t>{};
+      if constexpr (has_return)
+      {
+        auto const dst = read_register<width>(instruction_pointer);
+        return_register = vm.base_register + dst.value;
+      }
+      auto const new_base_register = vm.base_register + base.value;
+      auto const &function =
+        vm.module->functions[static_cast<std::size_t>(function_index.value)];
+      vm.call_stack.push_back(
+        Virtual_machine::Call_frame{
+          .return_address = instruction_pointer,
+          .base_register = vm.base_register,
+          .stack_pointer = vm.stack_pointer,
+          .return_register = return_register,
+        }
+      );
+      vm.base_register = new_base_register;
+      auto const required_size =
+        static_cast<std::size_t>(new_base_register + function.register_count);
+      if (required_size > vm.registers.size())
+      {
+        grow_registers(&vm.registers, required_size);
+      }
+      instruction_pointer = vm.module->code.data() + function.position;
     }
 
+    template <Operand_width width>
     void run_ret(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
-      pop_value(vm, instruction_pointer);
+      auto const src = read_register<width>(instruction_pointer);
+      auto const frame = vm.call_stack.back();
+      vm.call_stack.pop_back();
+      assert(frame.return_register);
+      auto const value = *vm.relative_register(src.value);
+      vm.base_register = frame.base_register;
+      vm.stack_pointer = frame.stack_pointer;
+      *vm.absolute_register(*frame.return_register) = value;
+      instruction_pointer = frame.return_address;
     }
 
-    Scalar
-    decode_return(Virtual_machine const &vm, bytecode::Scalar_type type)
+    void run_ret_void(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
     {
+      auto const frame = vm.call_stack.back();
+      vm.call_stack.pop_back();
+      vm.base_register = frame.base_register;
+      vm.stack_pointer = frame.stack_pointer;
+      instruction_pointer = frame.return_address;
+    }
+
+    template <Operand_width width>
+    void run_alloca_i(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
+    {
+      auto const amount = read_immediate<width>(instruction_pointer);
+      // TODO: validate non-negative when running unverified bytecode
+      vm.stack_pointer -= amount.value;
+    }
+
+    template <Operand_width width>
+    void run_alloca(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const amount = read_register<width>(instruction_pointer);
+      // TODO: validate non-negative when running unverified bytecode
+      vm.stack_pointer -= vm.get_register_value<std::int64_t>(amount);
+    }
+
+    template <Operand_width width>
+    void run_mov_sp_i(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
+    {
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+      vm.set_register_value(
+        dst,
+        Pointer{
+          Address_space::stack,
+          static_cast<std::uint64_t>(vm.stack_pointer + offset.value)
+        }
+      );
+    }
+
+    template <Operand_width width, std::size_t N>
+    void run_load_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    {
+      auto const dst = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+      // TODO: bounds check
+      auto const source = vm.stack->data() + vm.stack_pointer + offset.value;
+      if constexpr (N == 8)
+      {
+        auto value = std::uint64_t{};
+        std::memcpy(&value, source, N);
+        *vm.relative_register(dst.value) = value;
+      }
+      else
+      {
+        using Signed = std::conditional_t<
+          N == 1,
+          std::int8_t,
+          std::conditional_t<N == 2, std::int16_t, std::int32_t>
+        >;
+        auto narrow = Signed{};
+        std::memcpy(&narrow, source, N);
+        *vm.relative_register(dst.value) =
+          static_cast<std::uint64_t>(static_cast<std::int64_t>(narrow));
+      }
+    }
+
+    template <Operand_width width, std::size_t N>
+    void run_store_sp(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
+    {
+      auto const src = read_register<width>(instruction_pointer);
+      auto const offset = read_immediate<width>(instruction_pointer);
+      // TODO: bounds check
+      std::memcpy(
+        vm.stack->data() + vm.stack_pointer + offset.value,
+        vm.relative_register(src.value),
+        N
+      );
+    }
+
+    // Decodes a non-void return value. Callers that handle void returns
+    // short-circuit before invoking this function, so this switch covers
+    // every type it is ever called with.
+    Scalar decode_return(
+      Virtual_machine const &vm,
+      bytecode::Scalar_type type,
+      std::ptrdiff_t return_register
+    )
+    {
+      auto const value = *vm.absolute_register(return_register);
       switch (type)
       {
       case bytecode::Scalar_type::int8:
-        return vm.get_register_value<std::int8_t>(bytecode::gpr(1));
+        return static_cast<std::int8_t>(value);
       case bytecode::Scalar_type::int16:
-        return vm.get_register_value<std::int16_t>(bytecode::gpr(1));
+        return static_cast<std::int16_t>(value);
       case bytecode::Scalar_type::int32:
-        return vm.get_register_value<std::int32_t>(bytecode::gpr(1));
+        return static_cast<std::int32_t>(value);
       case bytecode::Scalar_type::int64:
-        return vm.get_register_value<std::int64_t>(bytecode::gpr(1));
+        return static_cast<std::int64_t>(value);
       case bytecode::Scalar_type::float_:
-        return vm.get_register_value<float>(bytecode::gpr(1));
+        return std::bit_cast<float>(static_cast<std::uint32_t>(value));
       case bytecode::Scalar_type::double_:
-        return vm.get_register_value<double>(bytecode::gpr(1));
+        return std::bit_cast<double>(value);
       case bytecode::Scalar_type::bool_:
-        return vm.get_register_value<bool>(bytecode::gpr(1));
-      case bytecode::Scalar_type::void_:
-        return Scalar::void_;
+        return value != 0;
+      default:
+        std::unreachable();
       }
-      throw Virtual_machine::Unsupported_return_type_error{type};
     }
 
   } // namespace
 
   Virtual_machine::Virtual_machine()
       : instruction_pointer{nullptr},
-        registers{std::make_unique<std::array<std::uint64_t, 64 * 1024>>()},
-        stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()}
+        stack{std::make_unique<std::array<std::byte, 16 * 1024 * 1024>>()},
+        stack_pointer{static_cast<std::ptrdiff_t>(stack->size())}
   {
-    set_register_value(
-      bytecode::sp,
-      Pointer{Address_space::stack, stack->size()}
-    );
   }
 
   void Virtual_machine::load(bytecode::Module const &m)
@@ -468,16 +572,15 @@ namespace benson::vm
     }
   }
 
-  Scalar
-  Virtual_machine::call(Spelling name, std::span<Scalar const> args)
+  Scalar Virtual_machine::call(Spelling name, std::span<Scalar const> args)
   {
     assert(module != nullptr);
-    auto const it = module->functions.find(name);
-    if (it == module->functions.end())
+    auto const it = module->function_indices.find(name);
+    if (it == module->function_indices.end())
     {
       throw Unknown_function_error{name};
     }
-    auto const &fn = it->second;
+    auto const &fn = module->functions[it->second];
     if (args.size() != fn.parameter_types.size())
     {
       throw Argument_count_error{
@@ -488,28 +591,103 @@ namespace benson::vm
     for (auto const &arg : args)
     {
       auto const i = &arg - &args[0];
-      const auto param_type = fn.parameter_types[i];
-      if (arg.type() == param_type)
-      {
-        push_scalar(*this, args[i]);
-      }
-      else
+      auto const param_type = fn.parameter_types[i];
+      if (arg.type() != param_type)
       {
         throw Virtual_machine::Argument_type_error{i, param_type};
       }
     }
-    auto const exit_byte = bytecode::Opcode::exit;
-    push_value(
-      *this,
-      static_cast<std::uint64_t>(
-        std::bit_cast<std::uintptr_t>(&exit_byte)
-      )
-    );
     auto const ip = instruction_pointer;
+    auto const old_base_register = base_register;
+    auto const old_stack_pointer = stack_pointer;
+    auto const old_call_stack_size = call_stack.size();
+
+    struct State_guard
+    {
+      Virtual_machine *vm;
+      std::byte const *instruction_pointer;
+      std::ptrdiff_t base_register;
+      std::ptrdiff_t stack_pointer;
+      std::size_t call_stack_size;
+
+      ~State_guard()
+      {
+        vm->call_stack.resize(call_stack_size);
+        vm->instruction_pointer = instruction_pointer;
+        vm->base_register = base_register;
+        vm->stack_pointer = stack_pointer;
+      }
+    };
+
+    auto const state_guard = State_guard{
+      .vm = this,
+      .instruction_pointer = ip,
+      .base_register = old_base_register,
+      .stack_pointer = old_stack_pointer,
+      .call_stack_size = old_call_stack_size,
+    };
+    base_register = 0;
+    auto const window_size = std::max<std::size_t>(
+      args.size(),
+      static_cast<std::size_t>(fn.register_count)
+    );
+    if (window_size > registers.size())
+    {
+      grow_registers(&registers, window_size);
+    }
+    for (auto const &arg : args)
+    {
+      auto const i = &arg - &args[0];
+      switch (arg.type())
+      {
+      case bytecode::Scalar_type::int8:
+        set_register_value(bytecode::Register{i}, arg.as<std::int8_t>());
+        break;
+      case bytecode::Scalar_type::int16:
+        set_register_value(bytecode::Register{i}, arg.as<std::int16_t>());
+        break;
+      case bytecode::Scalar_type::int32:
+        set_register_value(bytecode::Register{i}, arg.as<std::int32_t>());
+        break;
+      case bytecode::Scalar_type::int64:
+        set_register_value(bytecode::Register{i}, arg.as<std::int64_t>());
+        break;
+      case bytecode::Scalar_type::float_:
+        set_register_value(bytecode::Register{i}, arg.as<float>());
+        break;
+      case bytecode::Scalar_type::double_:
+        set_register_value(bytecode::Register{i}, arg.as<double>());
+        break;
+      case bytecode::Scalar_type::bool_:
+        set_register_value(bytecode::Register{i}, arg.as<bool>());
+        break;
+      case bytecode::Scalar_type::void_:
+        throw Unsupported_argument_type_error{i, arg.type()};
+      }
+    }
+    auto return_register = std::optional<std::ptrdiff_t>{};
+    if (fn.return_type != bytecode::Scalar_type::void_)
+    {
+      return_register = static_cast<std::ptrdiff_t>(registers.size());
+      grow_registers(&registers, registers.size() + 1);
+    }
+    auto const exit_byte = bytecode::Opcode::exit;
+    call_stack.push_back(
+      Call_frame{
+        .return_address = reinterpret_cast<std::byte const *>(&exit_byte),
+        .base_register = old_base_register,
+        .stack_pointer = old_stack_pointer,
+        .return_register = return_register,
+      }
+    );
     instruction_pointer = module->code.data() + fn.position;
     run();
-    instruction_pointer = ip;
-    return decode_return(*this, fn.return_type);
+    if (fn.return_type == bytecode::Scalar_type::void_)
+    {
+      return Scalar::void_;
+    }
+    assert(return_register);
+    return decode_return(*this, fn.return_type, *return_register);
   }
 
   void Virtual_machine::dispatch(bytecode::Opcode opcode)
@@ -523,10 +701,16 @@ namespace benson::vm
       run_jmp_i<Operand_width::narrow>(instruction_pointer);
       break;
     case bytecode::Opcode::call_i:
-      run_call_i<Operand_width::narrow>(instruction_pointer, *this);
+      run_call_i<Operand_width::narrow, true>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::call_void_i:
+      run_call_i<Operand_width::narrow, false>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::ret:
-      run_ret(instruction_pointer, *this);
+      run_ret<Operand_width::narrow>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::ret_void:
+      run_ret_void(instruction_pointer, *this);
       break;
     case bytecode::Opcode::jnz_i:
       run_jnz_i<Operand_width::narrow>(instruction_pointer, *this);
@@ -563,6 +747,39 @@ namespace benson::vm
       break;
     case bytecode::Opcode::store_64:
       run_store<Operand_width::narrow, 8>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::alloca_i:
+      run_alloca_i<Operand_width::narrow>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::alloca:
+      run_alloca<Operand_width::narrow>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::mov_sp_i:
+      run_mov_sp_i<Operand_width::narrow>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_8:
+      run_load_sp<Operand_width::narrow, 1>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_16:
+      run_load_sp<Operand_width::narrow, 2>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_32:
+      run_load_sp<Operand_width::narrow, 4>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_64:
+      run_load_sp<Operand_width::narrow, 8>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_8:
+      run_store_sp<Operand_width::narrow, 1>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_16:
+      run_store_sp<Operand_width::narrow, 2>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_32:
+      run_store_sp<Operand_width::narrow, 4>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_64:
+      run_store_sp<Operand_width::narrow, 8>(instruction_pointer, *this);
       break;
 
 #define UNARY_CASE(opcode, type, fn)                     \
@@ -738,7 +955,16 @@ namespace benson::vm
       run_jmp_i<Operand_width::wide>(instruction_pointer);
       break;
     case bytecode::Opcode::call_i:
-      run_call_i<Operand_width::wide>(instruction_pointer, *this);
+      run_call_i<Operand_width::wide, true>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::call_void_i:
+      run_call_i<Operand_width::wide, false>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::ret:
+      run_ret<Operand_width::wide>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::ret_void:
+      run_ret_void(instruction_pointer, *this);
       break;
     case bytecode::Opcode::jnz_i:
       run_jnz_i<Operand_width::wide>(instruction_pointer, *this);
@@ -775,6 +1001,39 @@ namespace benson::vm
       break;
     case bytecode::Opcode::store_64:
       run_store<Operand_width::wide, 8>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::alloca_i:
+      run_alloca_i<Operand_width::wide>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::alloca:
+      run_alloca<Operand_width::wide>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::mov_sp_i:
+      run_mov_sp_i<Operand_width::wide>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_8:
+      run_load_sp<Operand_width::wide, 1>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_16:
+      run_load_sp<Operand_width::wide, 2>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_32:
+      run_load_sp<Operand_width::wide, 4>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::load_sp_64:
+      run_load_sp<Operand_width::wide, 8>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_8:
+      run_store_sp<Operand_width::wide, 1>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_16:
+      run_store_sp<Operand_width::wide, 2>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_32:
+      run_store_sp<Operand_width::wide, 4>(instruction_pointer, *this);
+      break;
+    case bytecode::Opcode::store_sp_64:
+      run_store_sp<Operand_width::wide, 8>(instruction_pointer, *this);
       break;
 
 #define UNARY_CASE(opcode, type, fn)                   \
@@ -942,4 +1201,4 @@ namespace benson::vm
     }
   }
 
-} // namespace benson
+} // namespace benson::vm

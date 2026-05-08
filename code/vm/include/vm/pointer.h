@@ -35,7 +35,7 @@ namespace benson::vm
       return _value;
     }
 
-    Pointer_decode_result decode()
+    Pointer_decode_result decode() const
     {
       return {
         .space = static_cast<Address_space>(_value & 0xC000000000000000u),

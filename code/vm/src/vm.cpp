@@ -22,8 +22,10 @@ namespace benson::vm
     // to amortize capacity growth (only push_back-shaped operations do), so
     // this helper makes the contract explicit and independent of the
     // implementation's reallocation strategy.
-    void
-    grow_registers(std::vector<std::uint64_t> *registers, std::size_t new_size)
+    void grow_registers(
+      std::vector<std::uint64_t> *registers,
+      std::size_t new_size
+    )
     {
       if (new_size > registers->capacity())
       {
@@ -388,12 +390,14 @@ namespace benson::vm
       auto const new_base_register = vm.base_register + base.value;
       auto const &function =
         vm.module->functions[static_cast<std::size_t>(function_index.value)];
-      vm.call_stack.push_back(Virtual_machine::Call_frame{
-        .return_address = instruction_pointer,
-        .base_register = vm.base_register,
-        .stack_pointer = vm.stack_pointer,
-        .return_register = return_register,
-      });
+      vm.call_stack.push_back(
+        Virtual_machine::Call_frame{
+          .return_address = instruction_pointer,
+          .base_register = vm.base_register,
+          .stack_pointer = vm.stack_pointer,
+          .return_register = return_register,
+        }
+      );
       vm.base_register = new_base_register;
       auto const required_size =
         static_cast<std::size_t>(new_base_register + function.register_count);
@@ -418,8 +422,10 @@ namespace benson::vm
       instruction_pointer = frame.return_address;
     }
 
-    void
-    run_ret_void(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    void run_ret_void(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
     {
       auto const frame = vm.call_stack.back();
       vm.call_stack.pop_back();
@@ -429,8 +435,10 @@ namespace benson::vm
     }
 
     template <Operand_width width>
-    void
-    run_push_sp_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    void run_alloca_i(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
     {
       auto const amount = read_immediate<width>(instruction_pointer);
       // TODO: validate non-negative when running unverified bytecode
@@ -438,7 +446,7 @@ namespace benson::vm
     }
 
     template <Operand_width width>
-    void run_push_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    void run_alloca(std::byte const *&instruction_pointer, Virtual_machine &vm)
     {
       auto const amount = read_register<width>(instruction_pointer);
       // TODO: validate non-negative when running unverified bytecode
@@ -446,8 +454,10 @@ namespace benson::vm
     }
 
     template <Operand_width width>
-    void
-    run_mov_sp_i(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    void run_mov_sp_i(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
     {
       auto const dst = read_register<width>(instruction_pointer);
       auto const offset = read_immediate<width>(instruction_pointer);
@@ -478,7 +488,8 @@ namespace benson::vm
         using Signed = std::conditional_t<
           N == 1,
           std::int8_t,
-          std::conditional_t<N == 2, std::int16_t, std::int32_t>>;
+          std::conditional_t<N == 2, std::int16_t, std::int32_t>
+        >;
         auto narrow = Signed{};
         std::memcpy(&narrow, source, N);
         *vm.relative_register(dst.value) =
@@ -487,8 +498,10 @@ namespace benson::vm
     }
 
     template <Operand_width width, std::size_t N>
-    void
-    run_store_sp(std::byte const *&instruction_pointer, Virtual_machine &vm)
+    void run_store_sp(
+      std::byte const *&instruction_pointer,
+      Virtual_machine &vm
+    )
     {
       auto const src = read_register<width>(instruction_pointer);
       auto const offset = read_immediate<width>(instruction_pointer);
@@ -659,12 +672,14 @@ namespace benson::vm
       grow_registers(&registers, registers.size() + 1);
     }
     auto const exit_byte = bytecode::Opcode::exit;
-    call_stack.push_back(Call_frame{
-      .return_address = reinterpret_cast<std::byte const *>(&exit_byte),
-      .base_register = old_base_register,
-      .stack_pointer = old_stack_pointer,
-      .return_register = return_register,
-    });
+    call_stack.push_back(
+      Call_frame{
+        .return_address = reinterpret_cast<std::byte const *>(&exit_byte),
+        .base_register = old_base_register,
+        .stack_pointer = old_stack_pointer,
+        .return_register = return_register,
+      }
+    );
     instruction_pointer = module->code.data() + fn.position;
     run();
     if (fn.return_type == bytecode::Scalar_type::void_)
@@ -733,11 +748,11 @@ namespace benson::vm
     case bytecode::Opcode::store_64:
       run_store<Operand_width::narrow, 8>(instruction_pointer, *this);
       break;
-    case bytecode::Opcode::push_sp_i:
-      run_push_sp_i<Operand_width::narrow>(instruction_pointer, *this);
+    case bytecode::Opcode::alloca_i:
+      run_alloca_i<Operand_width::narrow>(instruction_pointer, *this);
       break;
-    case bytecode::Opcode::push_sp:
-      run_push_sp<Operand_width::narrow>(instruction_pointer, *this);
+    case bytecode::Opcode::alloca:
+      run_alloca<Operand_width::narrow>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::mov_sp_i:
       run_mov_sp_i<Operand_width::narrow>(instruction_pointer, *this);
@@ -987,11 +1002,11 @@ namespace benson::vm
     case bytecode::Opcode::store_64:
       run_store<Operand_width::wide, 8>(instruction_pointer, *this);
       break;
-    case bytecode::Opcode::push_sp_i:
-      run_push_sp_i<Operand_width::wide>(instruction_pointer, *this);
+    case bytecode::Opcode::alloca_i:
+      run_alloca_i<Operand_width::wide>(instruction_pointer, *this);
       break;
-    case bytecode::Opcode::push_sp:
-      run_push_sp<Operand_width::wide>(instruction_pointer, *this);
+    case bytecode::Opcode::alloca:
+      run_alloca<Operand_width::wide>(instruction_pointer, *this);
       break;
     case bytecode::Opcode::mov_sp_i:
       run_mov_sp_i<Operand_width::wide>(instruction_pointer, *this);
@@ -1186,4 +1201,4 @@ namespace benson::vm
     }
   }
 
-} // namespace benson
+} // namespace benson::vm

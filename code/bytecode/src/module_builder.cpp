@@ -77,7 +77,9 @@ namespace benson::bytecode
       .register_count = register_count,
     });
     auto const index = _module.functions.size() - 1;
-    assert(_module.function_indices.emplace(name, index).second);
+    auto const emplaced = _module.function_indices.emplace(name, index).second;
+    assert(emplaced);
+    (void)emplaced;
     return Immediate{static_cast<std::ptrdiff_t>(index)};
   }
 

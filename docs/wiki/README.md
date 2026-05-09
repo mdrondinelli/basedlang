@@ -63,6 +63,7 @@ Read [Conventions](./conventions.md).
 - [`parsing`](./parsing.md)
 - [`hlir`](./hlir.md)
 - [`llir`](./llir.md)
+- [`hlir2llir`](./hlir2llir.md)
 - [`frontend`](./frontend.md)
 - [`bytecode`](./bytecode.md)
 - [`vm`](./vm.md)

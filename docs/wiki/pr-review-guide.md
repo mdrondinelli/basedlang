@@ -32,6 +32,7 @@ Use this map first:
 - semantic lowering, diagnostics, type evaluation, and symbol resolution: [`frontend`](./frontend.md)
 - HLIR data model and interpretation: [`hlir`](./hlir.md)
 - LLIR data model: [`llir`](./llir.md)
+- HLIR-to-LLIR lowering: [`hlir2llir`](./hlir2llir.md)
 - bytecode encoding and module construction: [`bytecode`](./bytecode.md)
 - bytecode execution: [`vm`](./vm.md)
 - executable orchestration and CLI behavior: [`benson`](./benson.md)

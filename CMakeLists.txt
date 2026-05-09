@@ -55,6 +55,12 @@ add_library(llir INTERFACE)
 target_include_directories(llir INTERFACE code/llir/include)
 target_link_libraries(llir INTERFACE spelling)
 
+add_library(hlir2llir
+  code/hlir2llir/src/lower.cpp
+)
+target_include_directories(hlir2llir PUBLIC code/hlir2llir/include)
+target_link_libraries(hlir2llir PUBLIC hlir llir)
+
 add_library(frontend
   code/frontend/src/compile.cpp
   code/frontend/src/symbol_table.cpp
@@ -124,6 +130,11 @@ add_executable(llir-tests
   code/llir/test/llir_test.cpp
 )
 target_link_libraries(llir-tests PRIVATE llir Catch2::Catch2WithMain)
+
+add_executable(hlir2llir-tests
+  code/hlir2llir/test/lower_test.cpp
+)
+target_link_libraries(hlir2llir-tests PRIVATE hlir2llir Catch2::Catch2WithMain)
 
 add_executable(bytecode-tests
   code/bytecode/test/bytecode_writer_test.cpp

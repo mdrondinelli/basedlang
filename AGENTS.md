@@ -10,6 +10,10 @@ When the user asks you to make a plan for a task (e.g. from [`TODO.md`](TODO.md)
 * building and running ALL tests
 * committing changes, pushing the branch, and creating the PR
 
+Separate generated or programmatic mechanical changes (formatting-only churn,
+codegen, scripted rewrites such as Perl substitutions, etc.) into their own
+commits instead of mixing them with behavioral or design changes.
+
 ## Commands
 
 `clang-format-21 -i <path/to/source>`

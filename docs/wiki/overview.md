@@ -1,6 +1,6 @@
 # Architecture and pipeline overview
 
-bensonlang currently has twelve main modules:
+bensonlang currently has thirteen main modules:
 
 1. `source`
 2. `streams`
@@ -11,9 +11,10 @@ bensonlang currently has twelve main modules:
 7. `hlir`
 8. `frontend`
 9. `llir`
-10. `bytecode`
-11. `vm`
-12. `benson`
+10. `hlir2llir`
+11. `bytecode`
+12. `vm`
+13. `benson`
 
 The pipeline is simple:
 
@@ -86,6 +87,14 @@ Owns the low-level IR data model that will sit between HLIR and bytecode:
 - block parameters and structured control flow
 
 It depends on `spelling`, but not on frontend, HLIR, bytecode, or VM details.
+
+### `hlir2llir`
+
+Owns lowering executable HLIR into LLIR. It maps HLIR registers and block
+arguments onto LLIR virtual registers and keeps control flow structured for the
+future bytecode path.
+
+It depends on `hlir` and `llir`.
 
 ### `bytecode`
 

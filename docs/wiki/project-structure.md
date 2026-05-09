@@ -71,6 +71,13 @@ HLIR-to-bytecode path.
 
 See [`llir`](./llir.md).
 
+### `code/hlir2llir`
+
+The lowering pass from HLIR into LLIR. Owns the first out-of-SSA-shaped
+translation from HLIR registers and block arguments into LLIR virtual registers.
+
+See [`hlir2llir`](./hlir2llir.md).
+
 ### `code/bytecode`
 
 The bytecode library. Owns the low-level instruction representation, module
@@ -120,9 +127,10 @@ When deciding where a change belongs, ask this in order:
 4. Is this about meaning, type checking, lowering, or diagnostics?
 5. Is this about HLIR data or HLIR interpretation?
 6. Is this about low-level virtual registers or pre-bytecode control flow?
-7. Is this about bytecode encoding or bytecode module construction?
-8. Is this about running bytecode?
-9. Is this only about wiring the executable?
+7. Is this about lowering HLIR into LLIR?
+8. Is this about bytecode encoding or bytecode module construction?
+9. Is this about running bytecode?
+10. Is this only about wiring the executable?
 
 Those map directly to the main modules, with shared preserved-spelling storage
 living between lexing and later front-end consumers.
@@ -140,6 +148,7 @@ The repo may be reorganized internally over time. The stable structure to preser
 - semantic compiler
 - HLIR
 - LLIR
+- HLIR-to-LLIR lowering
 - bytecode
 - VM
 - executable wrapper

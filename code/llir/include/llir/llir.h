@@ -113,8 +113,21 @@ namespace benson::llir
     Operand rhs;
   };
 
-  using Instruction_payload =
-    std::variant<Copy_instruction, Unary_instruction, Binary_instruction>;
+  struct Function;
+
+  struct Call_instruction
+  {
+    std::optional<Register> result;
+    Function *callee;
+    std::vector<Operand> arguments;
+  };
+
+  using Instruction_payload = std::variant<
+    Copy_instruction,
+    Unary_instruction,
+    Binary_instruction,
+    Call_instruction
+  >;
 
   struct Instruction
   {

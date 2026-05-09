@@ -66,6 +66,7 @@ Understand:
 
 - [`hlir`](./hlir.md)
 - [`llir`](./llir.md)
+- [`hlir2llir`](./hlir2llir.md)
 
 ### If you are changing interpretation
 
@@ -116,6 +117,7 @@ Run the relevant test binary directly:
 ./build/parsing-tests
 ./build/hlir-tests
 ./build/llir-tests
+./build/hlir2llir-tests
 ```
 
 Before committing, format the changed code. See [Conventions](./conventions.md).

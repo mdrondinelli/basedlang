@@ -45,7 +45,7 @@ The parser library. Owns expression precedence, statement parsing, and AST const
 
 See [`parsing`](./parsing.md).
 
-### `code/ir`
+### `code/hlir`
 
 The HLIR model and interpreter. Owns:
 
@@ -54,7 +54,7 @@ The HLIR model and interpreter. Owns:
 - executable HLIR
 - interpretation of HLIR
 
-See [`ir`](./ir.md).
+See [`hlir`](./hlir.md).
 
 ### `code/frontend`
 
@@ -62,6 +62,14 @@ The semantic compiler. Owns AST-to-HLIR lowering, name resolution, type
 evaluation, operator resolution, and diagnostics.
 
 See [`frontend`](./frontend.md).
+
+### `code/llir`
+
+The low-level IR data model. Owns bytecode-friendly virtual registers, register
+types, block parameters, and structured control flow for the future
+HLIR-to-bytecode path.
+
+See [`llir`](./llir.md).
 
 ### `code/bytecode`
 
@@ -111,9 +119,10 @@ When deciding where a change belongs, ask this in order:
 3. Is this about syntax only — consuming tokens to produce AST nodes?
 4. Is this about meaning, type checking, lowering, or diagnostics?
 5. Is this about HLIR data or HLIR interpretation?
-6. Is this about bytecode encoding or bytecode module construction?
-7. Is this about running bytecode?
-8. Is this only about wiring the executable?
+6. Is this about low-level virtual registers or pre-bytecode control flow?
+7. Is this about bytecode encoding or bytecode module construction?
+8. Is this about running bytecode?
+9. Is this only about wiring the executable?
 
 Those map directly to the main modules, with shared preserved-spelling storage
 living between lexing and later front-end consumers.
@@ -130,6 +139,7 @@ The repo may be reorganized internally over time. The stable structure to preser
 - parser
 - semantic compiler
 - HLIR
+- LLIR
 - bytecode
 - VM
 - executable wrapper

@@ -72,7 +72,7 @@ Acceptance:
 
 ### Phase 4: Semantic lookup migration
 
-- Update AST-to-IR and symbol lookup paths to resolve identifier spelling
+- Update AST-to-HLIR and symbol lookup paths to resolve identifier spelling
   through `Spelling_table`.
 - Remove redundant `std::string`-based identifier ownership where spelling-table
   lookup is sufficient.

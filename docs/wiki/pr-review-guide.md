@@ -30,7 +30,8 @@ Use this map first:
 - AST node shapes and source spans over AST: [`ast`](./ast.md)
 - syntax consumption and AST construction: [`parsing`](./parsing.md)
 - semantic lowering, diagnostics, type evaluation, and symbol resolution: [`frontend`](./frontend.md)
-- HLIR data model and interpretation: [`ir`](./ir.md)
+- HLIR data model and interpretation: [`hlir`](./hlir.md)
+- LLIR data model: [`llir`](./llir.md)
 - bytecode encoding and module construction: [`bytecode`](./bytecode.md)
 - bytecode execution: [`vm`](./vm.md)
 - executable orchestration and CLI behavior: [`benson`](./benson.md)
@@ -74,7 +75,7 @@ Use this rule of thumb:
 
 - lexer behavior change: lexer tests
 - parser behavior change: parser tests
-- semantic or lowering change: frontend or IR-facing tests
+- semantic or lowering change: frontend, HLIR, or LLIR-facing tests
 - bytecode encoding change: bytecode tests
 - bytecode execution change: VM tests
 - executable wiring change: CLI-facing tests

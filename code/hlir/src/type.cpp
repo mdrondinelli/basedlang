@@ -1,9 +1,9 @@
 #include <bit>
 #include <cstdint>
 
-#include "ir/type.h"
+#include "hlir/type.h"
 
-namespace benson::ir
+namespace benson::hlir
 {
 
   bool is_object_type(Type const *type)
@@ -177,4 +177,4 @@ namespace benson::ir
     return result;
   }
 
-} // namespace benson::ir
+} // namespace benson::hlir

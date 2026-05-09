@@ -7,9 +7,9 @@ namespace benson
 
   Symbol *Symbol_table::declare_object(
     Spelling name,
-    ir::Type *type,
+    hlir::Type *type,
     bool is_mutable,
-    ir::Register reg
+    hlir::Register reg
   )
   {
     auto const sym =
@@ -33,7 +33,7 @@ namespace benson
   }
 
   Symbol *
-  Symbol_table::declare_value(Spelling name, ir::Constant_value const &value)
+  Symbol_table::declare_value(Spelling name, hlir::Constant_value const &value)
   {
     auto const sym =
       _symbols.emplace_back(std::make_unique<Symbol>(name, value)).get();

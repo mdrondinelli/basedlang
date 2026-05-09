@@ -44,19 +44,23 @@ add_library(parsing
 target_include_directories(parsing PUBLIC code/parsing/include)
 target_link_libraries(parsing PUBLIC ast)
 
-add_library(ir
-  code/ir/src/interpret.cpp
-  code/ir/src/type.cpp
+add_library(hlir
+  code/hlir/src/interpret.cpp
+  code/hlir/src/type.cpp
 )
-target_include_directories(ir PUBLIC code/ir/include)
-target_link_libraries(ir PUBLIC source spelling hashing)
+target_include_directories(hlir PUBLIC code/hlir/include)
+target_link_libraries(hlir PUBLIC source spelling hashing)
+
+add_library(llir INTERFACE)
+target_include_directories(llir INTERFACE code/llir/include)
+target_link_libraries(llir INTERFACE spelling)
 
 add_library(frontend
   code/frontend/src/compile.cpp
   code/frontend/src/symbol_table.cpp
 )
 target_include_directories(frontend PUBLIC code/frontend/include)
-target_link_libraries(frontend PUBLIC ir ast source spelling)
+target_link_libraries(frontend PUBLIC hlir ast source spelling)
 
 add_library(bytecode
   code/bytecode/src/bytecode_writer.cpp
@@ -110,11 +114,16 @@ add_executable(parsing-tests
 target_link_libraries(parsing-tests PRIVATE parsing Catch2::Catch2WithMain)
 target_compile_definitions(parsing-tests PRIVATE EXAMPLES_PATH="${CMAKE_SOURCE_DIR}/examples")
 
-add_executable(ir-tests
-  code/ir/test/source_map_test.cpp
-  code/ir/test/type_test.cpp
+add_executable(hlir-tests
+  code/hlir/test/source_map_test.cpp
+  code/hlir/test/type_test.cpp
 )
-target_link_libraries(ir-tests PRIVATE ir Catch2::Catch2WithMain)
+target_link_libraries(hlir-tests PRIVATE hlir Catch2::Catch2WithMain)
+
+add_executable(llir-tests
+  code/llir/test/llir_test.cpp
+)
+target_link_libraries(llir-tests PRIVATE llir Catch2::Catch2WithMain)
 
 add_executable(bytecode-tests
   code/bytecode/test/bytecode_writer_test.cpp

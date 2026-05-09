@@ -6,9 +6,9 @@
 #include <variant>
 #include <vector>
 
-#include <ir/constant_value.h>
-#include <ir/hlir.h>
-#include <ir/type.h>
+#include <hlir/constant_value.h>
+#include <hlir/hlir.h>
+#include <hlir/type.h>
 #include <spelling/spelling.h>
 
 namespace benson
@@ -16,15 +16,15 @@ namespace benson
 
   struct Object_binding
   {
-    ir::Type *type;
+    hlir::Type *type;
     bool is_mutable;
-    ir::Register reg;
+    hlir::Register reg;
   };
 
   struct Symbol
   {
     Spelling name;
-    std::variant<Object_binding, ir::Constant_value> data;
+    std::variant<Object_binding, hlir::Constant_value> data;
   };
 
   class Symbol_table
@@ -32,12 +32,12 @@ namespace benson
   public:
     Symbol *declare_object(
       Spelling name,
-      ir::Type *type,
+      hlir::Type *type,
       bool is_mutable,
-      ir::Register reg = {}
+      hlir::Register reg = {}
     );
 
-    Symbol *declare_value(Spelling name, ir::Constant_value const &value);
+    Symbol *declare_value(Spelling name, hlir::Constant_value const &value);
 
     Symbol *lookup(Spelling name) const;
 

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <variant>
 
-namespace benson::ir
+namespace benson::hlir
 {
 
   struct Type;
@@ -38,6 +38,6 @@ namespace benson::ir
     Function_value
   >;
 
-} // namespace benson::ir
+} // namespace benson::hlir
 
 #endif

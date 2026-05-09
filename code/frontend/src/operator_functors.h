@@ -11,7 +11,7 @@
 namespace benson
 {
 
-  using namespace ir;
+  using namespace hlir;
 
   template <
     typename OperandT,

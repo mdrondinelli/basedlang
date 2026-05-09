@@ -1,6 +1,6 @@
 # Architecture and pipeline overview
 
-bensonlang currently has eleven main modules:
+bensonlang currently has twelve main modules:
 
 1. `source`
 2. `streams`
@@ -8,11 +8,12 @@ bensonlang currently has eleven main modules:
 4. `spelling`
 5. `ast`
 6. `parsing`
-7. `ir`
+7. `hlir`
 8. `frontend`
-9. `bytecode`
-10. `vm`
-11. `benson`
+9. `llir`
+10. `bytecode`
+11. `vm`
+12. `benson`
 
 The pipeline is simple:
 
@@ -20,9 +21,9 @@ The pipeline is simple:
 2. characters are lexed into `Lexeme` values
 3. preserved variable spellings can be interned into `Spelling_table` storage
 4. lexemes are parsed into an AST (defined by `ast`, produced by `parsing`)
-5. the AST is compiled by `frontend` into HLIR (the `ir` data model) with name resolution, type evaluation, diagnostics, and constant evaluation
-6. the `benson` executable can currently interpret a chosen HLIR function using the `ir` interpreter
-7. separate bytecode and VM libraries are under development as a lower-level execution path
+5. the AST is compiled by `frontend` into HLIR (the `hlir` data model) with name resolution, type evaluation, diagnostics, and constant evaluation
+6. the `benson` executable can currently interpret a chosen HLIR function using the `hlir` interpreter
+7. LLIR, bytecode, and VM libraries are under development as a lower-level execution path
 
 ## Module boundaries
 
@@ -53,7 +54,7 @@ Owns the AST data model: expression and statement node types, operator identity,
 
 Owns syntax: consuming lexemes and constructing the `ast` data model. Owns precedence rules.
 
-### `ir`
+### `hlir`
 
 Owns the HLIR data model and its interpreter:
 
@@ -62,11 +63,11 @@ Owns the HLIR data model and its interpreter:
 - executable HLIR (`Register`, `Operand`, `Instruction`, `Terminator`, `Basic_block`, `Function`, `Translation_unit`)
 - HLIR interpretation
 
-The `ir` library does not depend on `ast`. Any module that only needs to hold or execute HLIR can link it in isolation.
+The `hlir` library does not depend on `ast`. Any module that only needs to hold or execute HLIR can link it in isolation.
 
 ### `frontend`
 
-Owns AST→IR lowering:
+Owns AST→HLIR lowering:
 
 - name resolution (`Symbol_table`)
 - type evaluation
@@ -74,7 +75,17 @@ Owns AST→IR lowering:
 - diagnostics
 - emission of HLIR (via `Frontend`, `compile`)
 
-Depends on both `ast` and `ir`.
+Depends on both `ast` and `hlir`.
+
+### `llir`
+
+Owns the low-level IR data model that will sit between HLIR and bytecode:
+
+- virtual registers with explicit register types
+- arbitrary-width bit registers
+- block parameters and structured control flow
+
+It depends on `spelling`, but not on frontend, HLIR, bytecode, or VM details.
 
 ### `bytecode`
 
@@ -119,8 +130,9 @@ HLIR is the executable representation produced by compilation. It should remain
 self-contained. Today it is directly interpreted for development convenience,
 but that should not be treated as the long-term product direction.
 
-Bytecode and the VM are a separate lower-level execution path. They are still
-subject to change and should be reviewed as implementation infrastructure.
+LLIR, bytecode, and the VM are a separate lower-level execution path. They are
+still subject to change and should be reviewed as implementation
+infrastructure.
 
 ## How to use this wiki
 

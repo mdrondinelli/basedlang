@@ -1,9 +1,9 @@
-# `ir`
+# `hlir`
 
-`ir` is the HLIR data model and its interpreter.
+`hlir` is the HLIR data model and its interpreter.
 
 It does **not** consume AST. The AST→HLIR transformation lives in
-[`frontend`](./frontend.md); `ir` just defines the shape of HLIR and how
+[`frontend`](./frontend.md); `hlir` just defines the shape of HLIR and how
 to execute it.
 
 ## Interface
@@ -16,7 +16,7 @@ The public surface is centered on:
 - `Basic_block`, `Function`, `Translation_unit`
 - `interpret(...)` and `Fuel_exhausted_error`
 
-All of these live in the `benson::ir` namespace.
+All of these live in the `benson::hlir` namespace.
 
 ## Core abstractions
 
@@ -70,4 +70,4 @@ It uses fuel accounting to stop runaway compile-time execution.
 - type identity must come from `Type_pool`
 - executable HLIR should stay self-contained
 - the interpreter may assume HLIR is valid except for explicit safety mechanisms like fuel exhaustion
-- `ir` must not gain a dependency on `ast` or on the frontend
+- `hlir` must not gain a dependency on `ast` or on the frontend

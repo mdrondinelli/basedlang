@@ -7,7 +7,7 @@
 #include <variant>
 #include <vector>
 
-namespace benson::ir
+namespace benson::hlir
 {
 
   struct Type;
@@ -150,6 +150,6 @@ namespace benson::ir
       _function_types;
   };
 
-} // namespace benson::ir
+} // namespace benson::hlir
 
 #endif

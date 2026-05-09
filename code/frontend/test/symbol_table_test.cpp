@@ -2,13 +2,13 @@
 #include <string_view>
 
 #include "frontend/symbol_table.h"
-#include "ir/constant_value.h"
-#include "ir/type.h"
+#include "hlir/constant_value.h"
+#include "hlir/type.h"
 #include "spelling/spelling.h"
 
 TEST_CASE("Symbol_table - declare and lookup in global scope")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   auto const x = spellings.intern("x");
@@ -24,16 +24,16 @@ TEST_CASE("Symbol_table - declare and lookup in global scope")
 
 TEST_CASE("Symbol_table - declare_value and lookup")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   auto const int32 = spellings.intern("Int32");
   auto const sym =
-    table.declare_value(int32, benson::ir::Type_value{pool.int32_type()});
+    table.declare_value(int32, benson::hlir::Type_value{pool.int32_type()});
   REQUIRE(sym != nullptr);
-  auto const cv = std::get_if<benson::ir::Constant_value>(&sym->data);
+  auto const cv = std::get_if<benson::hlir::Constant_value>(&sym->data);
   REQUIRE(cv != nullptr);
-  auto const tv = std::get_if<benson::ir::Type_value>(cv);
+  auto const tv = std::get_if<benson::hlir::Type_value>(cv);
   REQUIRE(tv != nullptr);
   CHECK(tv->type == pool.int32_type());
   CHECK(table.lookup(int32) == sym);
@@ -49,7 +49,7 @@ TEST_CASE("Symbol_table - lookup returns nullptr for undeclared name")
 
 TEST_CASE("Symbol_table - redeclaration in same scope shadows")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   table.push_scope();
@@ -62,7 +62,7 @@ TEST_CASE("Symbol_table - redeclaration in same scope shadows")
 
 TEST_CASE("Symbol_table - inner scope shadows outer")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   table.push_scope();
@@ -76,7 +76,7 @@ TEST_CASE("Symbol_table - inner scope shadows outer")
 
 TEST_CASE("Symbol_table - pop scope restores outer symbol")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   table.push_scope();
@@ -90,7 +90,7 @@ TEST_CASE("Symbol_table - pop scope restores outer symbol")
 
 TEST_CASE("Symbol_table - inner scope finds outer declaration")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   table.push_scope();
@@ -102,7 +102,7 @@ TEST_CASE("Symbol_table - inner scope finds outer declaration")
 
 TEST_CASE("Symbol_table - symbols outlive scope pop")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   table.push_scope();
@@ -117,7 +117,7 @@ TEST_CASE("Symbol_table - symbols outlive scope pop")
 
 TEST_CASE("Symbol_table - barrier blocks lookup of outer locals")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   table.push_scope();
@@ -128,7 +128,7 @@ TEST_CASE("Symbol_table - barrier blocks lookup of outer locals")
 
 TEST_CASE("Symbol_table - barrier does not block globals")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   auto const g = spellings.intern("g");
@@ -143,7 +143,7 @@ TEST_CASE("Symbol_table - barrier does not block globals")
 
 TEST_CASE("Symbol_table - declaration inside barrier scope is visible")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   table.push_scope();
@@ -157,7 +157,7 @@ TEST_CASE(
   "Symbol_table - local scope inside barrier finds barrier-scope declarations"
 )
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   table.push_scope();
@@ -170,7 +170,7 @@ TEST_CASE(
 
 TEST_CASE("Symbol_table - nested barriers")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   auto const g = spellings.intern("g");
@@ -191,12 +191,12 @@ TEST_CASE("Symbol_table - nested barriers")
 
 TEST_CASE("Symbol_table - global value symbols visible through barrier")
 {
-  auto pool = benson::ir::Type_pool{};
+  auto pool = benson::hlir::Type_pool{};
   auto spellings = benson::Spelling_table{};
   auto table = benson::Symbol_table{};
   auto const int32 = spellings.intern("Int32");
   auto const int32_sym =
-    table.declare_value(int32, benson::ir::Type_value{pool.int32_type()});
+    table.declare_value(int32, benson::hlir::Type_value{pool.int32_type()});
   table.push_scope(true);
   CHECK(table.lookup(int32) == int32_sym);
 }

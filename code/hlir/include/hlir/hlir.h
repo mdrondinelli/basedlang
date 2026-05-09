@@ -14,7 +14,7 @@
 #include "spelling/spelling.h"
 #include "type.h"
 
-namespace benson::ir
+namespace benson::hlir
 {
 
   class Register
@@ -331,6 +331,6 @@ namespace benson::ir
     std::unordered_map<Spelling, Function *> function_table;
   };
 
-} // namespace benson::ir
+} // namespace benson::hlir
 
 #endif

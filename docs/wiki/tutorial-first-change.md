@@ -64,13 +64,14 @@ Understand:
 
 Understand:
 
-- [`ir`](./ir.md)
+- [`hlir`](./hlir.md)
+- [`llir`](./llir.md)
 
 ### If you are changing interpretation
 
 Understand:
 
-- [`ir`](./ir.md)
+- [`hlir`](./hlir.md)
 
 ### If you are changing executable wiring
 
@@ -113,7 +114,8 @@ Run the relevant test binary directly:
 ./build/streams-tests
 ./build/lexing-tests
 ./build/parsing-tests
-./build/ir-tests
+./build/hlir-tests
+./build/llir-tests
 ```
 
 Before committing, format the changed code. See [Conventions](./conventions.md).

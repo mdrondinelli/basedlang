@@ -9,8 +9,8 @@
 #include <vector>
 
 #include <frontend/compile.h>
-#include <ir/interpret.h>
-#include <ir/type.h>
+#include <hlir/interpret.h>
+#include <hlir/type.h>
 #include <lexing/lexeme_stream.h>
 #include <lexing/lexeme_stream_reader.h>
 #include <parsing/parser.h>
@@ -58,7 +58,7 @@ namespace benson
       return 1;
     }
 
-    auto types = ir::Type_pool{};
+    auto types = hlir::Type_pool{};
     try
     {
       auto const tu = compile(ast, &spellings, &types);
@@ -77,8 +77,8 @@ namespace benson
 
       auto const &func = *it->second;
       auto const &param_types =
-        std::get<ir::Function_type>(func.type->data).parameter_types;
-      auto constant_args = std::vector<ir::Constant_value>{};
+        std::get<hlir::Function_type>(func.type->data).parameter_types;
+      auto constant_args = std::vector<hlir::Constant_value>{};
       constant_args.reserve(args.size());
       for (auto i = std::size_t{}; i < args.size(); ++i)
       {
@@ -96,7 +96,7 @@ namespace benson
         auto const target_type =
           (i < param_types.size()) ? param_types[i] : nullptr;
         if (target_type &&
-            std::holds_alternative<ir::Float32_type>(target_type->data))
+            std::holds_alternative<hlir::Float32_type>(target_type->data))
         {
           float val{};
           auto const [ptr, ec] =
@@ -109,7 +109,7 @@ namespace benson
           constant_args.push_back(val);
         }
         else if (target_type &&
-                 std::holds_alternative<ir::Float64_type>(target_type->data))
+                 std::holds_alternative<hlir::Float64_type>(target_type->data))
         {
           double val{};
           auto const [ptr, ec] =
@@ -122,7 +122,7 @@ namespace benson
           constant_args.push_back(val);
         }
         else if (target_type &&
-                 std::holds_alternative<ir::Int8_type>(target_type->data))
+                 std::holds_alternative<hlir::Int8_type>(target_type->data))
         {
           std::int32_t val{};
           auto const [ptr, ec] =
@@ -137,7 +137,7 @@ namespace benson
           constant_args.push_back(static_cast<std::int8_t>(val));
         }
         else if (target_type &&
-                 std::holds_alternative<ir::Int16_type>(target_type->data))
+                 std::holds_alternative<hlir::Int16_type>(target_type->data))
         {
           std::int32_t val{};
           auto const [ptr, ec] =
@@ -152,7 +152,7 @@ namespace benson
           constant_args.push_back(static_cast<std::int16_t>(val));
         }
         else if (target_type &&
-                 std::holds_alternative<ir::Int64_type>(target_type->data))
+                 std::holds_alternative<hlir::Int64_type>(target_type->data))
         {
           std::int64_t val{};
           auto const [ptr, ec] =
@@ -178,7 +178,7 @@ namespace benson
         }
       }
 
-      auto const result = ir::interpret(func, constant_args);
+      auto const result = hlir::interpret(func, constant_args);
       std::visit(
         [&](auto const &value)
         {
@@ -191,15 +191,15 @@ namespace benson
           {
             out << (value ? "true" : "false") << '\n';
           }
-          else if constexpr (std::is_same_v<T, ir::Void_value>)
+          else if constexpr (std::is_same_v<T, hlir::Void_value>)
           {
             out << "void\n";
           }
-          else if constexpr (std::is_same_v<T, ir::Type_value>)
+          else if constexpr (std::is_same_v<T, hlir::Type_value>)
           {
             out << "<type>\n";
           }
-          else if constexpr (std::is_same_v<T, ir::Function_value>)
+          else if constexpr (std::is_same_v<T, hlir::Function_value>)
           {
             out << "<function>\n";
           }

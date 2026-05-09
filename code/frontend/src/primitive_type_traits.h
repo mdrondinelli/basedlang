@@ -4,12 +4,12 @@
 #include <cstdint>
 #include <string_view>
 
-#include <ir/type.h>
+#include <hlir/type.h>
 
 namespace benson
 {
 
-  using namespace ir;
+  using namespace hlir;
 
   template <typename T>
   struct Primitive_type_traits;

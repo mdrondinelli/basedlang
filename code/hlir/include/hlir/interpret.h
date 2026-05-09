@@ -8,7 +8,7 @@
 #include "constant_value.h"
 #include "hlir.h"
 
-namespace benson::ir
+namespace benson::hlir
 {
 
   class Fuel_exhausted_error: public std::exception
@@ -31,6 +31,6 @@ namespace benson::ir
     std::span<Constant_value const> arguments
   );
 
-} // namespace benson::ir
+} // namespace benson::hlir
 
 #endif

@@ -14,8 +14,8 @@
 #include "parsing/parser.h"
 
 #include "frontend/compile.h"
-#include "ir/interpret.h"
-#include "ir/type.h"
+#include "hlir/interpret.h"
+#include "hlir/type.h"
 #include "spelling/spelling.h"
 #include "streams/istream_input_stream.h"
 #include "streams/utf8_char_input_stream.h"
@@ -47,7 +47,7 @@ struct Parse_fixture
 struct Compile_fixture
 {
   benson::Spelling_table spellings;
-  benson::ir::Type_pool types;
+  benson::hlir::Type_pool types;
   benson::Frontend compiler;
 
   explicit Compile_fixture()
@@ -60,7 +60,7 @@ struct Compile_fixture
   Compile_fixture &operator=(Compile_fixture const &other) = delete;
 };
 
-benson::ir::Constant_value
+benson::hlir::Constant_value
 evaluate_constant(Compile_fixture &fixture, std::string_view source)
 {
   auto parse_fixture = Parse_fixture{std::string{source}, &fixture.spellings};
@@ -68,7 +68,7 @@ evaluate_constant(Compile_fixture &fixture, std::string_view source)
   return fixture.compiler.evaluate_constant_expression(*expr);
 }
 
-benson::ir::Type *
+benson::hlir::Type *
 compile_type(Compile_fixture &fixture, std::string_view source)
 {
   auto parse_fixture = Parse_fixture{std::string{source}, &fixture.spellings};
@@ -263,7 +263,7 @@ TEST_CASE("compile_type_expression - sized array")
 {
   auto fixture = Compile_fixture{};
   auto const type = compile_type(fixture, "[4]Int32");
-  auto const sa = std::get_if<benson::ir::Sized_array_type>(&type->data);
+  auto const sa = std::get_if<benson::hlir::Sized_array_type>(&type->data);
   REQUIRE(sa != nullptr);
   CHECK(sa->element == fixture.types.int32_type());
   CHECK(sa->size == 4);
@@ -273,7 +273,7 @@ TEST_CASE("compile_type_expression - sized array with constant expression size")
 {
   auto fixture = Compile_fixture{};
   auto const type = compile_type(fixture, "[2 + 2]Int32");
-  auto const sa = std::get_if<benson::ir::Sized_array_type>(&type->data);
+  auto const sa = std::get_if<benson::hlir::Sized_array_type>(&type->data);
   REQUIRE(sa != nullptr);
   CHECK(sa->element == fixture.types.int32_type());
   CHECK(sa->size == 4);
@@ -312,13 +312,13 @@ TEST_CASE("evaluate_constant_expression - bool equality")
 
 // --- Function compilation and interpretation tests ---
 
-std::pair<benson::ir::Type_pool, benson::ir::Translation_unit>
+std::pair<benson::hlir::Type_pool, benson::hlir::Translation_unit>
 compile_program(std::string source)
 {
   auto spellings = benson::Spelling_table{};
   auto parse_fixture = Parse_fixture{std::move(source), &spellings};
   auto const ast = parse_fixture.parser.parse_translation_unit();
-  auto types = benson::ir::Type_pool{};
+  auto types = benson::hlir::Type_pool{};
   auto tu = benson::compile(ast, &spellings, &types);
   return {std::move(types), std::move(tu)};
 }
@@ -331,7 +331,7 @@ TEST_CASE("compile - function returning literal")
   auto const &f = *tu.functions[0];
   REQUIRE(!f.blocks.empty());
   CHECK(f.blocks[0]->parameters.empty());
-  auto const result = benson::ir::interpret(f, {});
+  auto const result = benson::hlir::interpret(f, {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 0);
 }
@@ -371,8 +371,9 @@ TEST_CASE("compile - function with parameter")
   auto const &f = *tu.functions[0];
   REQUIRE(!f.blocks.empty());
   CHECK(f.blocks[0]->parameters.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{42}};
-  auto const result = benson::ir::interpret(f, args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{42}};
+  auto const result = benson::hlir::interpret(f, args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 42);
 }
@@ -382,8 +383,9 @@ TEST_CASE("compile - function with arithmetic")
   auto const [types, tu] =
     compile_program("let add1 = fn(x: Int32): Int32 => { return x + 1; };");
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{41}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{41}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 42);
 }
@@ -394,9 +396,11 @@ TEST_CASE("compile - function with multiple parameters")
     "let first = fn(x: Int32, y: Int32): Int32 => { return x; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const args =
-    std::array<benson::ir::Constant_value, 2>{std::int32_t{1}, std::int32_t{2}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args = std::array<benson::hlir::Constant_value, 2>{
+    std::int32_t{1},
+    std::int32_t{2}
+  };
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 1);
 }
@@ -410,11 +414,12 @@ TEST_CASE("compile - function with if expression")
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
   auto const args1 =
-    std::array<benson::ir::Constant_value, 1>{std::int32_t{-5}};
-  auto const r1 = benson::ir::interpret(f, args1);
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{-5}};
+  auto const r1 = benson::hlir::interpret(f, args1);
   CHECK(std::get<std::int32_t>(r1) == 5);
-  auto const args2 = std::array<benson::ir::Constant_value, 1>{std::int32_t{3}};
-  auto const r2 = benson::ir::interpret(f, args2);
+  auto const args2 =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{3}};
+  auto const r2 = benson::hlir::interpret(f, args2);
   CHECK(std::get<std::int32_t>(r2) == 3);
 }
 
@@ -424,7 +429,7 @@ TEST_CASE("compile - function with block and let bindings")
     "let f = fn(): Int32 => { let x = 5; let y = 10; return x + y; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const result = benson::ir::interpret(*tu.functions[0], {});
+  auto const result = benson::hlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 15);
 }
@@ -433,7 +438,7 @@ TEST_CASE("compile - function with tail expression")
 {
   auto const [types, tu] = compile_program("let f = fn(): Int32 => { 42 };");
   REQUIRE(tu.functions.size() == 1);
-  auto const result = benson::ir::interpret(*tu.functions[0], {});
+  auto const result = benson::hlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 42);
 }
@@ -445,7 +450,7 @@ TEST_CASE("compile - function calling another function")
     "let main = fn(): Int32 => { return id(42); };"
   );
   REQUIRE(tu.functions.size() == 2);
-  auto const result = benson::ir::interpret(*tu.functions[1], {});
+  auto const result = benson::hlir::interpret(*tu.functions[1], {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 42);
 }
@@ -458,7 +463,7 @@ TEST_CASE("compile - nested function calls")
     "let main = fn(): Int32 => { return first(id(42), 0); };"
   );
   REQUIRE(tu.functions.size() == 3);
-  auto const result = benson::ir::interpret(*tu.functions[2], {});
+  auto const result = benson::hlir::interpret(*tu.functions[2], {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 42);
 }
@@ -471,8 +476,9 @@ TEST_CASE("compile - recursive function")
     "else { recurse(n - 1) + recurse(n - 2) }; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{10}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{10}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 55);
 }
@@ -484,8 +490,9 @@ TEST_CASE("compile - recurse keyword")
     "{ return if n == 0 { 1 } else { n * recurse(n - 1) }; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{5}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{5}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 120);
 }
@@ -506,17 +513,18 @@ TEST_CASE("compile - fuel exhaustion")
     "let loop = fn(n: Int32): Int32 => { return recurse(n); };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{0}};
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{0}};
   auto fuel = std::int32_t{100};
   CHECK_THROWS_AS(
-    benson::ir::interpret(*tu.functions[0], args, fuel),
-    benson::ir::Fuel_exhausted_error
+    benson::hlir::interpret(*tu.functions[0], args, fuel),
+    benson::hlir::Fuel_exhausted_error
   );
 }
 
 TEST_CASE("Fuel_exhausted_error - std::exception contract")
 {
-  auto const error = benson::ir::Fuel_exhausted_error{};
+  auto const error = benson::hlir::Fuel_exhausted_error{};
 
   CHECK(
     std::string_view{error.what()} == "compile-time evaluation ran out of fuel"
@@ -542,7 +550,7 @@ TEST_CASE("compile - pure expression body")
 {
   auto const [types, tu] = compile_program("let pi = fn(): Int32 => 3;");
   REQUIRE(tu.functions.size() == 1);
-  auto const result = benson::ir::interpret(*tu.functions[0], {});
+  auto const result = benson::hlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 3);
 }
@@ -670,9 +678,10 @@ TEST_CASE("compile - void if expression")
   auto const [types, tu] =
     compile_program("let f = fn(x: Int32): Void => { if x < 0 { 0 - x; }; };");
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{-5}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
-  CHECK(std::holds_alternative<benson::ir::Void_value>(result));
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{-5}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
+  CHECK(std::holds_alternative<benson::hlir::Void_value>(result));
 }
 
 TEST_CASE("compile - early return")
@@ -680,8 +689,9 @@ TEST_CASE("compile - early return")
   auto const [types, tu] =
     compile_program("let f = fn(x: Int32): Int32 => { return 1; return 2; };");
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{0}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{0}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 1);
 }
@@ -693,12 +703,13 @@ TEST_CASE("compile - if expression in tail position")
   );
   REQUIRE(tu.functions.size() == 1);
   auto const args1 =
-    std::array<benson::ir::Constant_value, 1>{std::int32_t{-3}};
-  auto const r1 = benson::ir::interpret(*tu.functions[0], args1);
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{-3}};
+  auto const r1 = benson::hlir::interpret(*tu.functions[0], args1);
   REQUIRE(std::holds_alternative<std::int32_t>(r1));
   CHECK(std::get<std::int32_t>(r1) == 0);
-  auto const args2 = std::array<benson::ir::Constant_value, 1>{std::int32_t{7}};
-  auto const r2 = benson::ir::interpret(*tu.functions[0], args2);
+  auto const args2 =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{7}};
+  auto const r2 = benson::hlir::interpret(*tu.functions[0], args2);
   REQUIRE(std::holds_alternative<std::int32_t>(r2));
   CHECK(std::get<std::int32_t>(r2) == 7);
 }
@@ -713,19 +724,21 @@ TEST_CASE("compile - nested if expressions")
   );
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
-  auto const args1 = std::array<benson::ir::Constant_value, 2>{
+  auto const args1 = std::array<benson::hlir::Constant_value, 2>{
     std::int32_t{-1},
     std::int32_t{-1}
   };
-  CHECK(std::get<std::int32_t>(benson::ir::interpret(f, args1)) == 1);
-  auto const args2 = std::array<benson::ir::Constant_value, 2>{
+  CHECK(std::get<std::int32_t>(benson::hlir::interpret(f, args1)) == 1);
+  auto const args2 = std::array<benson::hlir::Constant_value, 2>{
     std::int32_t{-1},
     std::int32_t{1}
   };
-  CHECK(std::get<std::int32_t>(benson::ir::interpret(f, args2)) == 2);
-  auto const args3 =
-    std::array<benson::ir::Constant_value, 2>{std::int32_t{1}, std::int32_t{0}};
-  CHECK(std::get<std::int32_t>(benson::ir::interpret(f, args3)) == 3);
+  CHECK(std::get<std::int32_t>(benson::hlir::interpret(f, args2)) == 2);
+  auto const args3 = std::array<benson::hlir::Constant_value, 2>{
+    std::int32_t{1},
+    std::int32_t{0}
+  };
+  CHECK(std::get<std::int32_t>(benson::hlir::interpret(f, args3)) == 3);
 }
 
 TEST_CASE("compile - multiple else-if branches")
@@ -737,14 +750,14 @@ TEST_CASE("compile - multiple else-if branches")
   );
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
-  auto const a1 = std::array<benson::ir::Constant_value, 1>{std::int32_t{1}};
-  CHECK(std::get<std::int32_t>(benson::ir::interpret(f, a1)) == 10);
-  auto const a2 = std::array<benson::ir::Constant_value, 1>{std::int32_t{2}};
-  CHECK(std::get<std::int32_t>(benson::ir::interpret(f, a2)) == 20);
-  auto const a3 = std::array<benson::ir::Constant_value, 1>{std::int32_t{3}};
-  CHECK(std::get<std::int32_t>(benson::ir::interpret(f, a3)) == 30);
-  auto const a4 = std::array<benson::ir::Constant_value, 1>{std::int32_t{99}};
-  CHECK(std::get<std::int32_t>(benson::ir::interpret(f, a4)) == 0);
+  auto const a1 = std::array<benson::hlir::Constant_value, 1>{std::int32_t{1}};
+  CHECK(std::get<std::int32_t>(benson::hlir::interpret(f, a1)) == 10);
+  auto const a2 = std::array<benson::hlir::Constant_value, 1>{std::int32_t{2}};
+  CHECK(std::get<std::int32_t>(benson::hlir::interpret(f, a2)) == 20);
+  auto const a3 = std::array<benson::hlir::Constant_value, 1>{std::int32_t{3}};
+  CHECK(std::get<std::int32_t>(benson::hlir::interpret(f, a3)) == 30);
+  auto const a4 = std::array<benson::hlir::Constant_value, 1>{std::int32_t{99}};
+  CHECK(std::get<std::int32_t>(benson::hlir::interpret(f, a4)) == 0);
 }
 
 TEST_CASE("compile - if merge jumps point at branch closing braces")
@@ -762,7 +775,7 @@ TEST_CASE("compile - if merge jumps point at branch closing braces")
   {
     REQUIRE(block->terminator.has_value());
     auto const jump =
-      std::get_if<benson::ir::Jump_terminator>(&block->terminator->payload);
+      std::get_if<benson::hlir::Jump_terminator>(&block->terminator->payload);
     if (jump != nullptr)
     {
       REQUIRE(block->terminator->source_span.has_value());
@@ -789,7 +802,7 @@ TEST_CASE("compile - block scoping")
     "let f = fn(): Int32 => { let x = 1; return { let x = 2; x } + x; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const result = benson::ir::interpret(*tu.functions[0], {});
+  auto const result = benson::hlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 3);
 }
@@ -799,8 +812,9 @@ TEST_CASE("compile - expression statement")
   auto const [types, tu] =
     compile_program("let f = fn(x: Int32): Int32 => { 0 - x; return x; };");
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{42}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{42}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<std::int32_t>(result));
   CHECK(std::get<std::int32_t>(result) == 42);
 }
@@ -855,7 +869,7 @@ TEST_CASE("compile - function returning Float64 literal")
   auto const [types, tu] =
     compile_program("let f = fn(): Float64 => { return 3.14; };");
   REQUIRE(tu.functions.size() == 1);
-  auto const result = benson::ir::interpret(*tu.functions[0], {});
+  auto const result = benson::hlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<double>(result));
   CHECK(std::get<double>(result) == 3.14);
 }
@@ -865,7 +879,7 @@ TEST_CASE("compile - function returning Float32 literal")
   auto const [types, tu] =
     compile_program("let f = fn(): Float32 => { return 1.5f; };");
   REQUIRE(tu.functions.size() == 1);
-  auto const result = benson::ir::interpret(*tu.functions[0], {});
+  auto const result = benson::hlir::interpret(*tu.functions[0], {});
   REQUIRE(std::holds_alternative<float>(result));
   CHECK(std::get<float>(result) == 1.5f);
 }
@@ -876,8 +890,8 @@ TEST_CASE("compile - function with Float64 parameter and arithmetic")
     "let scale = fn(x: Float64): Float64 => { return x * 2.0; };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{double{3.5}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args = std::array<benson::hlir::Constant_value, 1>{double{3.5}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   REQUIRE(std::holds_alternative<double>(result));
   CHECK(std::get<double>(result) == 7.0);
 }
@@ -889,10 +903,10 @@ TEST_CASE("compile - function with Float64 comparison")
   );
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
-  auto const args1 = std::array<benson::ir::Constant_value, 1>{double{1.0}};
-  CHECK(std::get<bool>(benson::ir::interpret(f, args1)) == true);
-  auto const args2 = std::array<benson::ir::Constant_value, 1>{double{-1.0}};
-  CHECK(std::get<bool>(benson::ir::interpret(f, args2)) == false);
+  auto const args1 = std::array<benson::hlir::Constant_value, 1>{double{1.0}};
+  CHECK(std::get<bool>(benson::hlir::interpret(f, args1)) == true);
+  auto const args2 = std::array<benson::hlir::Constant_value, 1>{double{-1.0}};
+  CHECK(std::get<bool>(benson::hlir::interpret(f, args2)) == false);
 }
 
 TEST_CASE("compile - return type mismatch Float32 vs Float64")
@@ -912,12 +926,16 @@ TEST_CASE("compile - bool operators")
   );
   REQUIRE(tu.functions.size() == 1);
   auto const &f = *tu.functions[0];
-  auto const args1 =
-    std::array<benson::ir::Constant_value, 2>{std::int32_t{1}, std::int32_t{1}};
-  CHECK(std::get<bool>(benson::ir::interpret(f, args1)) == true);
-  auto const args2 =
-    std::array<benson::ir::Constant_value, 2>{std::int32_t{1}, std::int32_t{2}};
-  CHECK(std::get<bool>(benson::ir::interpret(f, args2)) == false);
+  auto const args1 = std::array<benson::hlir::Constant_value, 2>{
+    std::int32_t{1},
+    std::int32_t{1}
+  };
+  CHECK(std::get<bool>(benson::hlir::interpret(f, args1)) == true);
+  auto const args2 = std::array<benson::hlir::Constant_value, 2>{
+    std::int32_t{1},
+    std::int32_t{2}
+  };
+  CHECK(std::get<bool>(benson::hlir::interpret(f, args2)) == false);
 }
 
 // --- named function expression syntax ---
@@ -926,7 +944,7 @@ TEST_CASE("compile - named fn expression returning literal")
 {
   auto const [types, tu] = compile_program("fn f(): Int32 => { return 42; };");
   REQUIRE(tu.functions.size() == 1);
-  auto const result = benson::ir::interpret(*tu.functions[0], {});
+  auto const result = benson::hlir::interpret(*tu.functions[0], {});
   CHECK(std::get<std::int32_t>(result) == 42);
 }
 
@@ -934,8 +952,9 @@ TEST_CASE("compile - named fn expression with parameter")
 {
   auto const [types, tu] = compile_program("fn id(x: Int32): Int32 => x;");
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{7}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{7}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   CHECK(std::get<std::int32_t>(result) == 7);
 }
 
@@ -946,7 +965,7 @@ TEST_CASE("compile - named fn callable by name from another function")
     "fn main(): Int32 => double(21);"
   );
   REQUIRE(tu.functions.size() == 2);
-  auto const result = benson::ir::interpret(*tu.functions[1], {});
+  auto const result = benson::hlir::interpret(*tu.functions[1], {});
   CHECK(std::get<std::int32_t>(result) == 42);
 }
 
@@ -957,8 +976,9 @@ TEST_CASE("compile - named fn recursion by name")
     "  if n == 0 { 1 } else { n * factorial(n - 1) };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{5}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{5}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   CHECK(std::get<std::int32_t>(result) == 120);
 }
 
@@ -969,8 +989,9 @@ TEST_CASE("compile - named fn fibonacci recursion by name")
     "  if n < 2 { n } else { fib(n - 1) + fib(n - 2) };"
   );
   REQUIRE(tu.functions.size() == 1);
-  auto const args = std::array<benson::ir::Constant_value, 1>{std::int32_t{10}};
-  auto const result = benson::ir::interpret(*tu.functions[0], args);
+  auto const args =
+    std::array<benson::hlir::Constant_value, 1>{std::int32_t{10}};
+  auto const result = benson::hlir::interpret(*tu.functions[0], args);
   CHECK(std::get<std::int32_t>(result) == 55);
 }
 
@@ -981,6 +1002,6 @@ TEST_CASE("compile - named fn and let fn can coexist")
     "let main = fn(): Int32 => { return inc(41); };"
   );
   REQUIRE(tu.functions.size() == 2);
-  auto const result = benson::ir::interpret(*tu.functions[1], {});
+  auto const result = benson::hlir::interpret(*tu.functions[1], {});
   CHECK(std::get<std::int32_t>(result) == 42);
 }

@@ -5,9 +5,9 @@
 #include <variant>
 #include <vector>
 
-#include "ir/interpret.h"
+#include "hlir/interpret.h"
 
-namespace benson::ir
+namespace benson::hlir
 {
 
   namespace
@@ -326,4 +326,4 @@ namespace benson::ir
     return interpret(function, arguments, fuel);
   }
 
-} // namespace benson::ir
+} // namespace benson::hlir

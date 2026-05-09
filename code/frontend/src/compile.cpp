@@ -10,14 +10,14 @@
 
 #include "frontend/compile.h"
 
-#include <ir/interpret.h>
+#include <hlir/interpret.h>
 
 #include "operator_functors.h"
 
 namespace benson
 {
 
-  using namespace ir;
+  using namespace hlir;
 
   template <typename T>
   class Scoped_assign

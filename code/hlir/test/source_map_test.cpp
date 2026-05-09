@@ -3,7 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "ir/hlir.h"
+#include "hlir/hlir.h"
 
 namespace
 {
@@ -33,9 +33,9 @@ namespace
 
 TEST_CASE("Instruction - source span is stored on the instruction")
 {
-  auto const result = benson::ir::Register{0};
-  auto instruction = benson::ir::Instruction{
-    benson::ir::Constant_instruction<std::int32_t>{
+  auto const result = benson::hlir::Register{0};
+  auto instruction = benson::hlir::Instruction{
+    benson::hlir::Constant_instruction<std::int32_t>{
       .result = result,
       .value = 1,
     },
@@ -47,9 +47,9 @@ TEST_CASE("Instruction - source span is stored on the instruction")
 
 TEST_CASE("Terminator - source span is stored on the terminator")
 {
-  auto terminator = benson::ir::Terminator{
-    benson::ir::Return_terminator{
-      .value = benson::ir::Constant_value{std::int32_t{1}},
+  auto terminator = benson::hlir::Terminator{
+    benson::hlir::Return_terminator{
+      .value = benson::hlir::Constant_value{std::int32_t{1}},
     },
     span_at(3, 4),
   };
@@ -59,12 +59,12 @@ TEST_CASE("Terminator - source span is stored on the terminator")
 
 TEST_CASE("Instruction - source span follows instruction when reordered")
 {
-  auto const first_result = benson::ir::Register{0};
-  auto const second_result = benson::ir::Register{1};
-  auto block = benson::ir::Basic_block{};
+  auto const first_result = benson::hlir::Register{0};
+  auto const second_result = benson::hlir::Register{1};
+  auto block = benson::hlir::Basic_block{};
   block.instructions.push_back(
-    benson::ir::Instruction{
-      benson::ir::Constant_instruction<std::int32_t>{
+    benson::hlir::Instruction{
+      benson::hlir::Constant_instruction<std::int32_t>{
         .result = first_result,
         .value = 1,
       },
@@ -72,8 +72,8 @@ TEST_CASE("Instruction - source span follows instruction when reordered")
     }
   );
   block.instructions.push_back(
-    benson::ir::Instruction{
-      benson::ir::Constant_instruction<std::int32_t>{
+    benson::hlir::Instruction{
+      benson::hlir::Constant_instruction<std::int32_t>{
         .result = second_result,
         .value = 2,
       },
